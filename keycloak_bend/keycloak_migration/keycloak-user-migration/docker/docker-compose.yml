@@ -1,0 +1,42 @@
+version: '3.2'
+
+services:
+  keycloak:
+    build:
+      context: ../
+      dockerfile: docker/keycloak/Dockerfile
+      args:
+        - KEYCLOAK_IMAGE=${KEYCLOAK_IMAGE}
+        - MAVEN_IMAGE=${MAVEN_IMAGE}
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_LOG_LEVEL: DEBUG
+      DB_VENDOR: h2
+    ports:
+      - "8024:8080"
+    networks:
+      - internal
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - 1025:1025 # smtp server
+      - 8025:8025 # web ui
+    networks:
+      - internal
+
+  legacy-system-example:
+    build:
+      context: legacy-system-example
+      dockerfile: Dockerfile
+      args:
+        - MAVEN_IMAGE=${MAVEN_IMAGE}
+        - OPENJDK_IMAGE=${OPENJDK_IMAGE}
+    ports:
+      - "8080:8080"
+    networks:
+      - internal
+
+networks:
+  internal:
