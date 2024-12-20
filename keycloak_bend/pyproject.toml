@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "keycloak-bend"
+version = "0.1.0"
+description = "Keycloak Backend Development Tools"
+authors = ["developers@arxiv.org"]
+license = "BSD-3"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+python-keycloak = "^5.1.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

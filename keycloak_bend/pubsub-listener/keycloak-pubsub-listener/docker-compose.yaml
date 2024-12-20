@@ -1,0 +1,45 @@
+version: '3.9'
+
+services:
+  pubsub:
+    container_name: pubsub
+    image: gcr.io/google.com/cloudsdktool/cloud-sdk:427.0.0-emulators
+    environment:
+      - PUBSUB_PROJECT_ID=project-test
+    entrypoint: gcloud beta emulators pubsub start --project test-project --host-port 0.0.0.0:8085
+    ports:
+      - "8085:8085"
+    networks:
+      - kc_pubsub_listener
+
+  keycloak:
+    container_name: keycloak-with-event-listener
+    image: keycloak-with-event-listener
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+    # https://www.keycloak.org/server/all-config
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=password
+      - DB_VENDOR=h2
+      - KC_HEALTH_ENABLED=true
+      # - KC_LOG_LEVEL=debug
+
+      - PUBSUB_EMULATOR_HOST=pubsub:8085
+
+      # EventListener vars
+      - GCP_PROJECT_ID=boreal-charter-277822
+      - GCP_EVENT_TOPIC_ID=keycloak-events
+      - GCP_ADMIN_EVENT_TOPIC_ID=keycloak-events
+      # - GCP_CREDENTIALS=your-json-service-account-in-base64
+    command:
+      - "start-dev"
+      - "--log-console-color=true"
+    ports:
+      - "8080:8080"
+    networks:
+      - kc_pubsub_listener
+networks:
+  kc_pubsub_listener:
+    driver: bridge
