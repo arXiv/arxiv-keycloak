@@ -11,6 +11,7 @@ if [ ! -r .env.localdb ] ; then
     echo JDBC_CONNECTION="?ssl=false&sslmode=disable" >> .env.localdb
     echo GCP_CRED= >> .env.localdb
     echo ARXIV_USER_SECRET=$(op item get bdmmxlepkfsqy5hfgfunpsli2i --format=json | jq -r '.fields[] | select(.id == "gxogpm2ztuyfeyvzjrwx4gqogi") | .value') >> .env.localdb
+    echo LEGACY_AUTH_API_TOKEN=$(op item get bdmmxlepkfsqy5hfgfunpsli2i --format=json | jq -r '.fields[] | select(.id == "rs25xevxhbvy6l2aom7z633rti") | .value') >> .env.localdb
 fi
 
 if [ ! -r .env.devdb ] ; then
@@ -23,7 +24,8 @@ if [ ! -r .env.devdb ] ; then
     echo GCP_PROJECT=arxiv-development >> .env.devdb
     echo JDBC_CONNECTION= >> .env.devdb
     echo GCP_CRED=$(op item get bdmmxlepkfsqy5hfgfunpsli2i --format=json | jq -r '.fields[] | select(.id == "bwh5wxl5lw4yfc3lf53azij4ny") | .value') >> .env.devdb
-    echo ARXIV_USER_SECRET=$(op item get bdmmxlepkfsqy5hfgfunpsli2i --format=json | jq -r '.fields[] | select(.id == "gxogpm2ztuyfeyvzjrwx4gqogi") | .value') >> .env.envdb
+    echo ARXIV_USER_SECRET=$(op item get bdmmxlepkfsqy5hfgfunpsli2i --format=json | jq -r '.fields[] | select(.id == "gxogpm2ztuyfeyvzjrwx4gqogi") | .value') >> .env.devdb
+    echo LEGACY_AUTH_API_TOKEN=$(op item get bdmmxlepkfsqy5hfgfunpsli2i --format=json | jq -r '.fields[] | select(.id == "rs25xevxhbvy6l2aom7z633rti") | .value') >> .env.devdb
 fi
 
 if [ ! -r .env ] ; then

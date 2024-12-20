@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import base64
+import string
 from typing import Optional
 
 from keycloak import KeycloakAdmin, KeycloakError
@@ -9,6 +11,20 @@ import argparse
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+
+
+def to_alnums(num: int) -> str:
+    chars = string.ascii_letters + string.digits
+    if num == 0:
+        return chars[0]
+    result = ""
+    while num > 0:
+        num, remainder = divmod(num, len(chars))
+        result = result + chars[remainder]
+    return result
+
+
+
 class KeycloakSetup:
     realm: dict
     admin: KeycloakAdmin
@@ -16,6 +32,7 @@ class KeycloakSetup:
     def __init__(self, *args, **kwargs):
         self.realm = kwargs.pop('realm')
         self.client_secret = kwargs.pop('client_secret')
+        self.legacy_auth_token = kwargs.pop('legacy_auth_token', None)
         self.admin = KeycloakAdmin(*args, **kwargs)
 
 
@@ -79,6 +96,10 @@ class KeycloakSetup:
 
 
     def restore_client(self, client_id: str, client_secret: str):
+        existing_clients = {cl['clientId']: cl for cl in self.admin.get_clients()}
+        if client_id in existing_clients:
+            return
+
         target: Optional[dict] = next((client for client in self.realm['clients'] if client['clientId'] == client_id), None)
         if not target:
             logger.error(f"Client '{client_id}' not found.")
@@ -93,12 +114,37 @@ class KeycloakSetup:
         self.admin.create_client(payload=payload, skip_exists=True)
 
 
+    def restore_legacy_auth_provider(self):
+        provider_type = "org.keycloak.storage.UserStorageProvider"
+        provider_name = "arXiv Legacy Auth Provider"
+        provider = next((prov for prov in self.realm['components'][provider_type] if prov['name'] == provider_name), None)
+        if not provider:
+            logger.error(f"Provider '{provider_name}' not found.")
+            exit(1)
+
+        existing_providers = {component['name']: component for component in self.admin.get_components({"type": provider_type})}
+        if provider_name in existing_providers:
+            logger.info(f"Provider '{provider_name}' already exists.")
+            return
+
+        provider['providerType'] = provider_type
+        del provider["id"]
+        del provider["subComponents"]
+        token = self.legacy_auth_token if self.legacy_auth_token else to_alnums(int.from_bytes(os.urandom(25), 'little'))
+        provider['config']['API_TOKEN'] = [token]
+        try:
+            self.admin.create_component(provider)
+            logger.info(f"Provider '{provider_name}' created successfully.")
+        except KeycloakError as e:
+            logger.error(f"Error creating {provider_name}: {e}")
+
+
     def run(self):
         self.restore_realm()
         self.restore_roles()
         self.restore_scopes()
         self.restore_client("arxiv-user", self.client_secret)
-        self.restore_auth
+        self.restore_legacy_auth_provider()
 
 
 
@@ -109,11 +155,12 @@ if __name__ == '__main__':
     parser.add_argument('--server', type=str, default=os.environ.get("KEYCLOAK_SERVER_URL", 'http://localhost:3033'))
     parser.add_argument('--admin-secret', type=str, default='')
     parser.add_argument('--arxiv-user-secret', type=str, default='')
+    parser.add_argument('--legacy-auth-token', type=str, default='')
 
     args = parser.parse_args()
     keycloak_bend = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    with open(os.path.expanduser(os.path.join(keycloak_bend, "realms", "arxiv-realm.json"))) as realm_fd:
+    with open(os.path.expanduser(os.path.join(keycloak_bend, "realms", "arxiv-realm-gcp-dev.json"))) as realm_fd:
         realm = json.load(realm_fd)
 
     secret = args.admin_secret
@@ -136,5 +183,6 @@ if __name__ == '__main__':
         realm_name=args.realm,
         verify=False,
         client_secret=client_secret,
+        legacy_auth_token=args.legacy_auth_token,
     )
     admin.run()
