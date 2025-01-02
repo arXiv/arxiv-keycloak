@@ -1,15 +1,16 @@
-include .env
-export $(shell sed 's/=.*//' .env)
 
-app_tag := arxiv-oauth2-client
-app_name := arxiv-oauth2-client
-app_port := 20241
+include ../.env
+export $(shell sed 's/=.*//' ../.env)
+
+
+app_tag := $(ARXIV_OAUTH2_CLIENT_TAG)
+app_name := $(ARXIV_OAUTH2_CLIENT_APP_NAME)
+app_port := $(ARXIV_OAUTH2_APP_PORT)
 dockerport := 8080
 
 ROOT_DIR := $(shell pwd)
 AAA_CPUS := $(shell echo $${AAA_CPUS:-2})
 AAA_WORKERS := $(shell echo $${AAA_WORKERS:-2})
-AAA_DOCKER_PLATFORM := $(shell echo $${AAA_DOCKER_PLATFORM:-linux/amd64})
 # AAA_CALLBACK_URL := $(shell echo $${AAA_CALLBACK_URL:-https://dev3.arxiv.org/aaa/callback})
 KEYCLOAK_SERVER_URL := ${shell cat ${HOME}/.arxiv/keycloak-url-dev}
 CLASSIC_DB_URI := $(shell cat ${HOME}/.arxiv/arxiv-db-dev)
@@ -33,7 +34,7 @@ APP_DOCKER_RUN := docker run --cpus ${AAA_CPUS} --rm -p ${app_port}:${dockerport
 # -e DOMAIN=${DOMAIN} \
 
 
-.PHONY: HELLO docker run stop
+.PHONY: HELLO docker-image run stop
 
 default: HELLO venv/lib/python3.12/site-packages/fastapi
 
@@ -52,9 +53,9 @@ help:
 	@awk '/^#-#/ { print substr($$0, 5)}' Makefile
 
 #-#
-#-# Command: docker
+#-# Command: docker-image
 #-#   builds the docker image
-docker:
+docker-image:
 	@echo "PLATFORM: ${PLATFORM}"
 	@echo "dockerport: ${app_port}"
 	@echo "tag: ${app_tag}"

@@ -1,0 +1,36 @@
+tapir_users:
+  - user_id: 505770
+    first_name: "Julien"
+    last_name: "Corman"
+    suffix_name: ""
+    share_first_name: 1
+    share_last_name: 1
+    email: "corman@inf.unibz.it"
+    share_email: 8
+    email_bouncing: 0
+    policy_class: 2
+    joined_date: 1555515974
+    joined_ip_num: "46.18.27.5"
+    joined_remote_host: "nat5.unibz.it"
+    flag_internal: 0
+    flag_edit_users: 0
+    flag_edit_system: 0
+    flag_email_verified: 1
+    flag_approved: 1
+    flag_deleted: 0
+    flag_banned: 0
+    flag_wants_email: 0
+    flag_html_email: 0
+    tracking_cookie: "46.18.27.5.1555510862794081"
+    flag_allow_tex_produced: 0
+    flag_can_lock: 0
+
+tapir_nicknames:
+  - nick_id: 503275
+    user_id: 505770
+    nickname: "juliencorman"
+    user_seq: 1
+    flag_valid: 1
+    role: 0
+    policy: 0
+    flag_primary: 1
