@@ -1,0 +1,44 @@
+
+tapir_users:
+  - user_id: 1212
+    first_name: "Random"
+    last_name: "Reader"
+    suffix_name: ""
+    share_first_name: 1
+    share_last_name: 1
+    email: "no-mail-randomreader@example.com"
+    share_email: 8
+    email_bouncing: 0
+    policy_class: 2
+    joined_date: 1384185389
+    joined_ip_num: "dedicated"
+    joined_remote_host: ""
+    flag_internal: 0
+    flag_edit_users: 0
+    flag_edit_system: 0
+    flag_email_verified: 1
+    flag_approved: 1
+    flag_deleted: 0
+    flag_banned: 0
+    flag_wants_email: 0
+    flag_html_email: 0
+    tracking_cookie: "xyz"
+    flag_allow_tex_produced: 0
+    flag_can_lock: 0
+
+tapir_nicknames:
+  - nick_id: 241212
+    nickname: "reader"
+    user_id: 1212
+    user_seq: 1
+    flag_valid: 1
+    role: 0
+    policy: 0
+    flag_primary: 1
+
+
+tapir_users_password:
+  - user_id: 1212
+    password_storage: 2
+    password_enc: "WuY3TK3dHBZTcxJlPeh3hpEM7J0IvwC0"
+

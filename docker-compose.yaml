@@ -1,0 +1,143 @@
+
+services:
+  auth-db:
+    image: postgres:16
+    container_name: keycloak_postgres
+    environment:
+      POSTGRES_USER: ${KC_DB_USER}
+      POSTGRES_PASSWORD: ${KC_DB_PASS}
+      POSTGRES_DB: keycloak
+    # volumes:
+    #   - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - arxiv-network
+
+  pubsub-emulator:
+    image: google/cloud-sdk:latest
+    container_name: pubsub-emulator
+    command: "/pubsub-setup.sh ${PUBSUB_EMULATOR_PORT} ${GCP_PROJECT} ${GCP_EVENT_TOPIC_ID} ${KC_TAPIR_BRIDGE_SUBSCRIPTION}"
+    ports:
+      - "${PUBSUB_EMULATOR_PORT}:${PUBSUB_EMULATOR_PORT}"
+    environment:
+      PUBSUB_EMULATOR_HOST: "0.0.0.0:${PUBSUB_EMULATOR_PORT}"
+    networks:
+      - arxiv-network
+    volumes:
+      - ./tests/config/pubsub-setup.sh:/pubsub-setup.sh
+
+  keycloak:
+    image: ${KC_DOCKER_TAG}:latest
+    container_name: keycloak
+    environment:
+      DB_ADDR: auth-db
+      DB_DATABASE: keycloak
+      DB_VENDOR: postgres
+      KC_DB_PASS: ${KC_DB_PASS}
+      KC_DB_USER: ${KC_DB_USER}
+      GCP_CREDENTIALS: ${GCP_CRED}
+      GCP_PROJECT_ID: ${GCP_PROJECT}
+      KC_JDBC_CONNECTION: ${KC_JDBC_CONNECTION}
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
+      LOG_LEVEL: "INFO,freemarker:DEBUG"
+      LOG_OUTPUT_FORMAT: "--log-console-output=default"
+      PUBSUB_EMULATOR_HOST: pubsub-emulator:${PUBSUB_EMULATOR_PORT}
+    command:
+      - start-dev --verbose
+    # This is needed when you connect to DB on GCP
+    # volumes:
+    #   - ${PWD}/keycloak_bend/cert:/secrets/authdb-certs:ro
+
+    ports:
+      - "${KC_PORT}:8080"
+    depends_on:
+      - auth-db
+      - pubsub-emulator
+    networks:
+      - arxiv-network
+
+  arxiv-db:
+    image: mysql:5.7.20
+    container_name: arxiv-test-db
+    ports:
+      - "${ARXIV_DB_PORT}:3306"  # Host port:Container port
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: arXiv
+      MYSQL_USER: arxiv
+      MYSQL_PASSWORD: arxiv_password
+    # volumes:
+    #  - mysql_data:/var/lib/mysql  # Persist data locally (optional)
+    networks:
+      - arxiv-network
+
+  oauth2-authenticator:
+    image: ${ARXIV_OAUTH2_CLIENT_TAG}
+    container_name: oauth2-authenticator
+    environment:
+      PORT: 8080
+      KEYCLOAK_SERVER_URL: http://keycloak
+      OAUTH2_CALLBACK_URL: ${AAA_CALLBACK_URL}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      CLASSIC_DB_URI: "mysql://arxiv:arxiv_password@arxiv-test-db:${ARXIV_DB_PORT}/arXiv"
+      SESSION_DURATION: 36000
+      CLASSIC_COOKIE_NAME: tapir_session
+      CLASSIC_SESSION_HASH: ${CLASSIC_SESSION_HASH}
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "${ARXIV_OAUTH2_APP_PORT}:8080"  # Host port:Container port
+
+    networks:
+      - arxiv-network
+    depends_on:
+      - arxiv-db
+
+  legacy-auth-provider:
+    image: ${LEGACY_AUTH_DOCKER_TAG}
+    container_name: legacy-auth-provider
+    ports:
+      - "${LEGACY_AUTH_PORT}:${LEGACY_AUTH_PORT}"  # Host port:Container port
+    networks:
+      - arxiv-network
+    environment:
+      API_SECRET_KEY: "secret"
+      PORT: ${LEGACY_AUTH_PORT}
+      CLASSIC_DB_URI: "mysql://arxiv:arxiv_password@arxiv-test-db:${ARXIV_DB_PORT}/arXiv"
+    depends_on:
+      - arxiv-db
+
+  keycloak-tapir-bridge:
+    image: "${KC_TAPIR_BRIDGE_DOCKER_TAG}"
+    container_name: kc-tapir-bridge
+    environment:
+      PUBSUB_EMULATOR_HOST: pubsub-emulator:${PUBSUB_EMULATOR_PORT}
+      # IRL, you set this so the app can read the events from pubsub
+      # GOOGLE_APPLICATION_CREDENTIALS: sync-test.json
+      SUBSCRIPTION: ${KC_TAPIR_BRIDGE_SUBSCRIPTION}
+    networks:
+      - arxiv-network
+    depends_on:
+      - arxiv-db
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx-proxy
+    volumes:
+      - ./tests/config/nginx.conf:/etc/nginx/nginx.conf:ro  # Mount custom NGINX config
+    ports:
+      - "${NGINX_PORT}:${NGINX_PORT}"
+      - "21508:21508"
+      - "21509:21509"
+    depends_on:
+      - oauth2-authenticator
+    networks:
+      - arxiv-network
+    
+
+# volumes:
+#   postgres_data:
+
+networks:
+  arxiv-network:
+    driver: bridge

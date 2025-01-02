@@ -7,7 +7,7 @@ cd /home/keycloak
 # export DEBUG=true
 
 #
-# Bootstrapping is needed only when you are starting a new cloud run
+#B ootstrapping is needed only when you are starting a new cloud run
 # Without this, you don't get the random? URL so you start once, and let it run even if
 # it has no DB connection which the Keycloak runs with Java's memory based database as
 # stand-in.
@@ -23,8 +23,8 @@ if [ -z $DB_ADDR ] ; then
   exit 1
 fi
 
-if [ -z $DB_PASS ] ; then
-  echo "DB_PASS needs to be set."
+if [ -z $KC_DB_PASS ] ; then
+  echo "KC_DB_PASS needs to be set."
   exit 1
 fi
 
@@ -40,13 +40,13 @@ fi
 #
 DB_VENDOR="${DB_VENDOR:-postgres}"
 DB_DATABASE="${DB_DATABASE:-keycloak}"
-DB_USER="${DB_USER:-keycloak}"
+KC_DB_USER="${KC_DB_USER:-keycloak}"
 
 # Unfortunate that the vendor name != driver name
 JDBC_DRIVER="${JDBC_DRIVER:-postgresql}"
 
 # Database connection certificate setting for postgres db
-JDBC_CONNECTION="${JDBC_CONNECTION:-?ssl=true&sslmode=require&sslrootcert=/home/keycloak/certs/server-ca.pem&sslcert=/home/keycloak/certs/client-cert.pem&sslkey=/home/keycloak/certs/client-key.key}"
+KC_JDBC_CONNECTION="${KC_JDBC_CONNECTION:-?ssl=true&sslmode=require&sslrootcert=/home/keycloak/certs/server-ca.pem&sslcert=/home/keycloak/certs/client-cert.pem&sslkey=/home/keycloak/certs/client-key.key}"
 
 # This shouldn't change as long as the db is postgres
 DB_SCHEMA="${DB_SCHEMA:- --db-schema=public}"
@@ -90,6 +90,6 @@ KEYCLOAK_START="${KEYCLOAK_START:-start-dev}"
   --transaction-xa-enabled=true \
   --db=$DB_VENDOR \
   --db-url="jdbc:$JDBC_DRIVER://$DB_ADDR/$DB_DATABASE$JDBC_CONNECTION" \
-  --db-username=$DB_USER \
-  --db-password=$DB_PASS \
+  --db-username=$KC_DB_USER \
+  --db-password=$KC_DB_PASS \
   $DB_SCHEMA $PROXY_MODE $LOG_OUTPUT_FORMAT

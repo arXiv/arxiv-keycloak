@@ -2,8 +2,8 @@
 set -x
 # Variables
 DB_NAME="keycloak"
-DB_USER="keycloak"
-DB_PASSWORD=$(../config.sh DB_PASS)
+KC_DB_USER="keycloak"
+DB_PASSWORD=$(../config.sh KC_DB_PASS)
 POSTGRES_VERSION="16"
 POSTGRES_CONFIG_PATH=$(find /etc/postgresql -name postgresql.conf | grep "$POSTGRES_VERSION")
 KEYCLOAK_HOME="/opt/keycloak"  # Change this to your Keycloak installation directory
@@ -27,8 +27,8 @@ create_keycloak_db() {
 
     sudo -i -u postgres psql <<EOF
 CREATE DATABASE ${DB_NAME};
-CREATE USER ${DB_USER} WITH PASSWORD '$DB_PASSWORD';
-GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};
+CREATE USER ${KC_DB_USER} WITH PASSWORD '$DB_PASSWORD';
+GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${KC_DB_USER};
 EOF
 }
 
@@ -36,9 +36,9 @@ EOF
 setup_keycloak_user() {
     echo " Keycloak user..."
     sudo -i -u postgres psql ${DB_NAME} <<EOF
-GRANT USAGE ON SCHEMA PUBLIC TO ${DB_USER};
-GRANT CREATE ON SCHEMA PUBLIC TO ${DB_USER};
-ALTER DEFAULT PRIVILEGES IN SCHEMA PUBLIC GRANT ALL ON TABLES TO ${DB_USER};
+GRANT USAGE ON SCHEMA PUBLIC TO ${KC_DB_USER};
+GRANT CREATE ON SCHEMA PUBLIC TO ${KC_DB_USER};
+ALTER DEFAULT PRIVILEGES IN SCHEMA PUBLIC GRANT ALL ON TABLES TO ${KC_DB_USER};
 EOF
 
 }
@@ -48,8 +48,8 @@ EOF
 configure_postgres_access() {
     echo "Enabling remote access for PostgreSQL..."
     sudo sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" ${POSTGRES_CONFIG_PATH}
-    echo "host    ${DB_NAME}    ${DB_USER}    ${NETWORK}   md5" | sudo tee -a /etc/postgresql/$POSTGRES_VERSION/main/pg_hba.conf
-    echo "host    ${DB_NAME}    ${DB_USER}    172.17.0.0/16           md5" | sudo tee -a /etc/postgresql/$POSTGRES_VERSION/main/pg_hba.conf
+    echo "host    ${DB_NAME}    ${KC_DB_USER}    ${NETWORK}   md5" | sudo tee -a /etc/postgresql/$POSTGRES_VERSION/main/pg_hba.conf
+    echo "host    ${DB_NAME}    ${KC_DB_USER}    172.17.0.0/16           md5" | sudo tee -a /etc/postgresql/$POSTGRES_VERSION/main/pg_hba.conf
 
     sudo systemctl restart postgresql
 }
@@ -63,7 +63,7 @@ configure_keycloak() {
     cat <<EOF > $KEYCLOAK_HOME/conf/keycloak.conf
 db=postgres
 db-url=jdbc:postgresql://localhost:5432/${DB_NAME}
-db-username=${DB_USER}
+db-username=${KC_DB_USER}
 db-password=$DB_PASSWORD
 EOF
 

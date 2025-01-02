@@ -33,7 +33,7 @@ RUN $VIRTUAL_ENV/bin/pip uninstall -y poetry
 
 COPY ./arxiv_oauth2 /opt/arxiv/arxiv_oauth2
 
-ENV WORKERS 8
-ENV SQLALCHEMY_TRACK_MODIFICATIONS False
+ENV WORKERS=8
+ENV SQLALCHEMY_TRACK_MODIFICATIONS=False
 EXPOSE $PORT
-CMD  $VIRTUAL_ENV/bin/hypercorn --config hypercorn-config.toml --bind 0.0.0.0:$PORT --log-config app-logging.conf --workers $WORKERS "arxiv_oauth2.main:create_app()"
+CMD ["sh", "-c", "${VIRTUAL_ENV}/bin/hypercorn --config hypercorn-config.toml --bind 0.0.0.0:${PORT} --log-config app-logging.conf --workers ${WORKERS} 'arxiv_oauth2.main:create_app()'"]

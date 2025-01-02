@@ -1,28 +1,23 @@
 
-GCP_PROJECT := arxiv-development
-DB_ADDR_PUBLIC := ${shell ./config.sh DB_ADDR_PUBLIC}
-DB_ADDR_PRIVATE := ${shell ./config.sh DB_ADDR_PRIVATE}
-DB_USER := keycloak
-DB_PASS := ${shell ./config.sh DB_PASS}
-GCP_CRED := ${shell ./config.sh GCP_CRED}
-JDBC_CONNECTION := ${shell ./config.sh JDBC_CONNECTION}
-KC_ADMIN_PASSWORD := ${shell ./config.sh KC_ADMIN_PASSWORD}
-ARXV_USER_SECRET := ${shell ./config.sh ARXIV_USER_SECRET}
+include ../.env
+export $(shell sed 's/=.*//' ../.env)
 
-tag := ${shell ./config.sh KC_DOCKER_TAG}
+tag := ${KC_DOCKER_TAG}
 
-.PHONY: setup run proxy sql docker-image push deploy local
+.PHONY: bootstrap run proxy sql docker-image push deploy local
 
 all: .env.localdb
-	@echo DB_ADDR_PUBLIC: ${DB_ADDR_PUBLIC}  DB_ADDR_PRIVATE:  ${DB_ADDR_PRIVATE}  DB_USER: ${DB_USER} DB_PASS: ${DB_PASS}
+	@echo KC_DB_ADDR_PUBLIC: ${KC_DB_ADDR_PUBLIC}  KC_DB_ADDR_PRIVATE:  ${KC_DB_ADDR_PRIVATE}  KC_DB_USER: ${KC_DB_USER} KC_DB_PASS: ${KC_DB_PASS}
 	@echo KC_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
-	@echo ARXV_USER_SECRET: ${ARXV_USER_SECRET}
+	@echo ARXIV_USER_SECRET: ${ARXIV_USER_SECRET}
 	@awk '/^#-#/ { print substr($$0, 5)}' Makefile
 
 .env.localdb:
 	./config.sh > /dev/null
 
-.bootstrap: .env.localdb ./cert/dev-authdb-client-cert.pem
+bootstrap: .bootstrap
+
+.bootstrap: ./cert/dev-authdb-client-cert.pem
 	../tools/install_py312.sh
 	if ! dpkg -l | grep -q docker-compose-plugin; then sudo apt install -y docker-compose-plugin; fi
 	${MAKE} venv/bin/poetry
@@ -78,7 +73,7 @@ proxy:
 #-# sql:
 #-#  This connects to the auth-db on -dev
 sql:
-	psql "sslmode=verify-ca sslrootcert=${HOME}/.arxiv/dev-authdb/dev-authdb-server-ca.pem sslcert=${HOME}/.arxiv/dev-authdb/dev-authdb-client-cert.pem sslkey=${HOME}/.arxiv/dev-authdb/dev-authdb-client-key.pem hostaddr=$DB_ADDR_PUBLIC port=5432 user=keycloak dbname=keycloak"
+	psql "sslmode=verify-ca sslrootcert=${HOME}/.arxiv/dev-authdb/dev-authdb-server-ca.pem sslcert=${HOME}/.arxiv/dev-authdb/dev-authdb-client-cert.pem sslkey=${HOME}/.arxiv/dev-authdb/dev-authdb-client-key.pem hostaddr=$KC_DB_ADDR_PUBLIC port=5432 user=keycloak dbname=keycloak"
 
 #-#
 #-# push:
@@ -92,8 +87,8 @@ push:
 #-#   This is a one-time operation to get the URL and IP address
 init:
 	gcloud run deploy keycloak-service --image ${tag}:latest --platform managed --allow-unauthenticated --memory=2Gi --min-instances=1 --max-instances=1 \
-	  --region us-central1 --set-env-vars "DB_ADDR=${DB_ADDR_PRIVATE},DB_PASS=PROXY_MODE=--proxy-headers=forwarded,KEYCLOAK_ADMIN=admin,BOOTSTRAP=yes,LOG_OUTPUT_FORMAT=--log-console-output=json,GCP_PROJECT_ID=arxiv-development" \
-	  --set-secrets=/secrets/authdb-certs/db-certs-expand.sh=authdb-certs:latest,DB_PASS=authdb-password:latest,KEYCLOAK_ADMIN_PASSWORD=keycloak-admin-password:latest,GCP_CREDENTIALS=keycloak-pubsub-event-sa:latest \
+	  --region us-central1 --set-env-vars "DB_ADDR=${KC_DB_ADDR_PRIVATE},KC_DB_PASS=PROXY_MODE=--proxy-headers=forwarded,KEYCLOAK_ADMIN=admin,BOOTSTRAP=yes,LOG_OUTPUT_FORMAT=--log-console-output=json,GCP_PROJECT_ID=arxiv-development" \
+	  --set-secrets=/secrets/authdb-certs/db-certs-expand.sh=authdb-certs:latest,KC_DB_PASS=authdb-password:latest,KEYCLOAK_ADMIN_PASSWORD=keycloak-admin-password:latest,GCP_CREDENTIALS=keycloak-pubsub-event-sa:latest \
 
 #-#
 #-# deploy:
@@ -113,8 +108,8 @@ deploy:
 	  --memory=2Gi \
 	  --timeout=300 \
 	  --concurrency=80 \
-	  --set-env-vars=DB_ADDR=${DB_ADDR_PRIVATE},PROXY_MODE=--proxy-headers=forwarded,KEYCLOAK_ADMIN=admin,BOOTSTRAP=no,LOG_OUTPUT_FORMAT=--log-console-output=json,GCP_PROJECT_ID=arxiv-development \
-	  --set-secrets=/secrets/authdb-certs/db-certs-expand.sh=authdb-certs:latest,DB_PASS=authdb-password:latest,KEYCLOAK_ADMIN_PASSWORD=keycloak-admin-password:latest,GCP_CREDENTIALS=keycloak-pubsub-event-sa:latest \
+	  --set-env-vars=DB_ADDR=${KC_DB_ADDR_PRIVATE},PROXY_MODE=--proxy-headers=forwarded,KEYCLOAK_ADMIN=admin,BOOTSTRAP=no,LOG_OUTPUT_FORMAT=--log-console-output=json,GCP_PROJECT_ID=arxiv-development \
+	  --set-secrets=/secrets/authdb-certs/db-certs-expand.sh=authdb-certs:latest,KC_DB_PASS=authdb-password:latest,KEYCLOAK_ADMIN_PASSWORD=keycloak-admin-password:latest,GCP_CREDENTIALS=keycloak-pubsub-event-sa:latest \
 	  --cpu-boost \
 	  --session-affinity \
 	  --vpc-egress=private-ranges-only

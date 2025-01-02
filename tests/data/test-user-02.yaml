@@ -1,0 +1,53 @@
+
+tapir_users:
+  - user_id: 246232
+    first_name: "Lo"
+    last_name: "Jack"
+    suffix_name: ""
+    share_first_name: 1
+    share_last_name: 1
+    email: "other-no-mail@example.com"
+    share_email: 8
+    email_bouncing: 0
+    policy_class: 2
+    joined_date: 1384185389
+    joined_ip_num: "net"
+    joined_remote_host: ""
+    flag_internal: 0
+    flag_edit_users: 0
+    flag_edit_system: 0
+    flag_email_verified: 1
+    flag_approved: 1
+    flag_deleted: 0
+    flag_banned: 0
+    flag_wants_email: 0
+    flag_html_email: 0
+    tracking_cookie: "cpe-24-59.com.1372902602452690"
+    flag_allow_tex_produced: 0
+    flag_can_lock: 0
+
+arXiv_moderators:
+  - user_id: 246232
+    archive: "q-bio"
+    subject_class: "NC"
+    is_public: 0
+    no_email: 0
+    no_web_email: 0
+    no_reply_to: 0
+    daily_update: 0
+
+tapir_nicknames:
+  - nick_id: 246209
+    nickname: "lowjack"
+    user_id: 246232
+    user_seq: 1
+    flag_valid: 1
+    role: 0
+    policy: 0
+    flag_primary: 1
+
+tapir_users_password:
+  - user_id: 246232
+    password_storage: 2
+    password_enc: "aMUDka2qNCveTJ0rZSi2giODYn8Vk0F4"
+
