@@ -4,7 +4,7 @@ export $(shell sed 's/=.*//' ../.env)
 
 tag := ${KC_DOCKER_TAG}
 
-.PHONY: bootstrap run proxy sql docker-image push deploy local
+.PHONY: bootstrap run proxy sql docker-image push deploy local arxiv-realm sh-arxiv-realm
 
 all: .env.localdb
 	@echo KC_DB_ADDR_PUBLIC: ${KC_DB_ADDR_PUBLIC}  KC_DB_ADDR_PRIVATE:  ${KC_DB_ADDR_PRIVATE}  KC_DB_USER: ${KC_DB_USER} KC_DB_PASS: ${KC_DB_PASS}
@@ -12,9 +12,10 @@ all: .env.localdb
 	@echo ARXIV_USER_SECRET: ${ARXIV_USER_SECRET}
 	@awk '/^#-#/ { print substr($$0, 5)}' Makefile
 
-.env.localdb:
-	./config.sh > /dev/null
 
+#-#
+#-# bootstrap:
+#-#   bootstraps the environment
 bootstrap: .bootstrap
 
 .bootstrap: ./cert/dev-authdb-client-cert.pem
@@ -30,8 +31,8 @@ venv:
 venv/bin/poetry: venv
 	. venv/bin/activate && pip install poetry
 
-venv/bin/poetry: venv
-	. venv/bin/activate && pip install poetry
+venv/lib/python3.12/site-packeages/keycloak: venv/bin/poetry
+	. venv/bin/activate && poetry install
 
 #-#
 #-# run: 
@@ -113,5 +114,33 @@ deploy:
 	  --cpu-boost \
 	  --session-affinity \
 	  --vpc-egress=private-ranges-only
+
+#-#
+#-# arxiv-realm:
+#-#   loads the arxiv realm.
+#-#   docker-compose loads this so no need to use this explicitly. However when you need to locally run,
+#-#   this is handy, esp. when you have some issues with DB connection within the docker-compose network.
+arxiv-realm:
+	docker run --rm --name keycloak-setup \
+	--network arxiv-keycloak_arxiv-network \
+	-v $(PWD):/keycloak_bend \
+	-e KC_PORT="${KC_PORT}" \
+	-e KEYCLOAK_SERVER_URL="http://keycloak:${KC_PORT}" \
+	-e KC_ADMIN_PASSWORD="${KC_ADMIN_PASSWORD}" \
+	-e ARXIV_USER_SECRET="${KEYCLOAK_CLIENT_SECRET}" \
+	-e LEGACY_AUTH_TOKEN="${LEGACY_AUTH_API_TOKEN}" \
+	python:3.11 sh /tools/setup-arxiv-realm.sh
+
+sh-arxiv-realm:
+	docker run -it --rm \
+	--network arxiv-keycloak_arxiv-network \
+	-v $(PWD):/keycloak_bend \
+	-e KC_PORT="${KC_PORT}" \
+	-e KEYCLOAK_SERVER_URL="http://keycloak:${KC_PORT}" \
+	-e KC_ADMIN_PASSWORD="${KC_ADMIN_PASSWORD}" \
+	-e ARXIV_USER_SECRET="${KEYCLOAK_CLIENT_SECRET}" \
+	-e LEGACY_AUTH_TOKEN="${LEGACY_AUTH_API_TOKEN}" \
+	python:3.11 /bin/bash
+
 
 #-#

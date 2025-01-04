@@ -1,4 +1,7 @@
+"""
+start_arxiv_mysql.py starts mysql docker and empties/bootstraps the database.
 
+"""
 import os
 import subprocess
 import logging

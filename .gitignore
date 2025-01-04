@@ -177,3 +177,6 @@ cython_debug/
 .idea/
 
 \#*
+
+.bootstrap
+foo.txt

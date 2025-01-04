@@ -1,11 +1,11 @@
 tapir_users:
   - user_id: 29538
     first_name: "Michael J."
-    last_name: "ODonnell"
+    last_name: "Jackson"
     suffix_name: ""
     share_first_name: 1
     share_last_name: 1
-    email: "michael_odonnell@acm.org"
+    email: "mj@example.com"
     share_email: 8
     email_bouncing: 0
     policy_class: 3

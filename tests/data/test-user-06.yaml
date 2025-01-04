@@ -6,7 +6,7 @@ tapir_users:
     suffix_name: ""
     share_first_name: 1
     share_last_name: 1
-    email: "qa-tools-sa@arxiv-proj.iam.gserviceaccount.com"
+    email: "qa-tools-sa@example.com"
     share_email: 8
     email_bouncing: 0
     policy_class: 2
