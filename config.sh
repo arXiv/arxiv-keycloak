@@ -62,7 +62,9 @@ if [ ! -r .env.localdb ] ; then
     # legacy auth provider
     #
     echo LEGACY_AUTH_PORT=21505 >> .env.localdb
-    echo LEGACY_AUTH_API_TOKEN=$(op item get bdmmxlepkfsqy5hfgfunpsli2i --format=json | jq -r '.fields[] | select(.id == "rs25xevxhbvy6l2aom7z633rti") | .value') >> .env.localdb
+    # This is the dev-token but for local, use something else
+    # echo LEGACY_AUTH_API_TOKEN=$(op item get bdmmxlepkfsqy5hfgfunpsli2i --format=json | jq -r '.fields[] | select(.id == "rs25xevxhbvy6l2aom7z633rti") | .value') >> .env.localdb
+    echo LEGACY_AUTH_API_TOKEN=legacy-api-token >> .env.localdb
     echo LEGACY_AUTH_DOCKER_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/legacy-auth-provider >> .env.localdb
     #
     # This is not strictry necessary but here

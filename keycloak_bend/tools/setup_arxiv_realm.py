@@ -89,7 +89,8 @@ class KeycloakSetup:
                 payload = scope.copy()
                 del payload['id']
                 scope_id = self.admin.create_client_scope(payload=payload, skip_exists=True)
-                logger.info(f"Scope '{payload["name"]}' created successfully. {scope_id}")
+                payload_name = payload.get("name", "unknown payload")
+                logger.info(f"Scope '{payload_name}' created successfully. {scope_id}")
 
             except KeycloakError as exc:
                 logger.error(f"Error creating {scope['name']}: {exc}")
@@ -149,18 +150,19 @@ class KeycloakSetup:
 
 
 if __name__ == '__main__':
+    keycloak_bend = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--realm', type=str, default='arxiv')
+    parser.add_argument('--source', type=path, default=os.path.expanduser(os.path.join(keycloak_bend, "realms", "arxiv-realm-gcp-dev.json")))
     parser.add_argument('--server', type=str, default=os.environ.get("KEYCLOAK_SERVER_URL", 'http://localhost:3033'))
     parser.add_argument('--admin-secret', type=str, default='')
     parser.add_argument('--arxiv-user-secret', type=str, default='')
-    parser.add_argument('--legacy-auth-token', type=str, default='')
+    parser.add_argument('--legacy-auth-token', type=str, default='', help="bearer token for legacy auth api")
 
     args = parser.parse_args()
-    keycloak_bend = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    with open(os.path.expanduser(os.path.join(keycloak_bend, "realms", "arxiv-realm-gcp-dev.json"))) as realm_fd:
+    with open(args.source) as realm_fd:
         realm = json.load(realm_fd)
 
     secret = args.admin_secret

@@ -1,17 +1,17 @@
 tapir_users:
   - user_id: 399388
-    first_name: "Sharon"
-    last_name: "Gannot"
+    first_name: "Ernie"
+    last_name: "Sesame"
     suffix_name: ""
     share_first_name: 1
     share_last_name: 1
-    email: "sharon.gannot@biu.ac.il"
+    email: "ernies@tcwri.org"
     share_email: 8
     email_bouncing: 0
     policy_class: 2
     joined_date: 1503689312
-    joined_ip_num: "109.64.53.231"
-    joined_remote_host: "bzq-109-64-53-231.red.bezeqint.net"
+    joined_ip_num: "192.168.1.1"
+    joined_remote_host: "bzq-192-168-1-1.tcwri.org"
     flag_internal: 0
     flag_edit_users: 0
     flag_edit_system: 0
@@ -28,7 +28,7 @@ tapir_users:
 tapir_nicknames:
   - nick_id: 399358
     user_id: 399388
-    nickname: "gannotsh"
+    nickname: "ernies"
     user_seq: 1
     flag_valid: 1
     role: 0

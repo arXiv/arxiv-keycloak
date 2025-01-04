@@ -1,17 +1,17 @@
 tapir_users:
   - user_id: 41106
     first_name: "Thomas"
-    last_name: "Dietterich"
+    last_name: "Engine"
     suffix_name: ""
     share_first_name: 1
     share_last_name: 1
-    email: "tgd@cs.orst.edu"
+    email: "tte@example.com"
     share_email: 8
     email_bouncing: 0
     policy_class: 3
     joined_date: 927294463
     joined_ip_num: null
-    joined_remote_host: "thomas.iiia.csic.es"
+    joined_remote_host: "www.example.com"
     flag_internal: 0
     flag_edit_users: 0
     flag_edit_system: 0
@@ -28,7 +28,7 @@ tapir_users:
 tapir_nicknames:
   - nick_id: 41104
     user_id: 41106
-    nickname: "tgd"
+    nickname: "ttengine"
     user_seq: 1
     flag_valid: 1
     role: 0
