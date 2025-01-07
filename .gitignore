@@ -180,3 +180,5 @@ cython_debug/
 
 .bootstrap
 foo.txt
+*~
+/tools/geckodriver-v0.35.0-linux64.tar.gz

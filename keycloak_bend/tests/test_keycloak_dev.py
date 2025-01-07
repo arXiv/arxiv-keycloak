@@ -4,6 +4,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 import time
 
+
 @pytest.fixture(scope="module")
 def web_driver() -> webdriver.Chrome:
     # Set up the Selenium WebDriver
@@ -12,17 +13,22 @@ def web_driver() -> webdriver.Chrome:
     yield _web_driver
     _web_driver.quit()  # Close the browser window after tests
 
+
 @pytest.fixture(scope="module")
 def toy_flask():
-    flask_app = subprocess.Popen(["python3", "-m", "arxiv.auth.openid.tests.toy_flask"])
+    test_env = os.environ.copy()
+    test_env['KEYCLOAK_SERVER_URL'] = 'http://localhost:21501' # KC_PORT
+    flask_app = subprocess.Popen(["python3", "-m", "keycloak_bend.tests.flask_fixture"],
+                                 env=test_env)
     time.sleep(5)  # Give the server time to start
     yield flask_app
     # Stop the Flask app
     flask_app.terminate()
     flask_app.wait()
 
+
 def test_login(web_driver, toy_flask):
-    web_driver.get("http://localhost:5000/login")  # URL of your Flask app's login route
+    web_driver.get("http://localhost:5000/aaa/login")  # URL of your Flask app's login route
 
     # Simulate user login on the IdP login page
     # Replace the following selectors with the actual ones from your IdP login form
@@ -31,8 +37,8 @@ def test_login(web_driver, toy_flask):
     login_button = web_driver.find_element(By.ID, "kc-login")    # Example selector
 
     # Enter credentials
-    username_field.send_keys("testuser")
-    password_field.send_keys("testpassword")
+    username_field.send_keys("bbaker")
+    password_field.send_keys("changeme")
     login_button.click()
 
     # Wait for the redirect back to the Flask app

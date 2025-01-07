@@ -9,7 +9,14 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.12"
 python-keycloak = "^5.1.1"
+arxiv-base = {git = "https://github.com/arXiv/arxiv-base.git", rev = "develop"}
 
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+selenium = "^4.27.1"
+types-requests = "^2.32.0.20241016"
+python-dotenv = "^1.0.1"
 
 [build-system]
 requires = ["poetry-core"]

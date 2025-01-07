@@ -55,6 +55,7 @@ services:
     depends_on:
       - auth-db
       - pubsub-emulator
+      - legacy-auth-provider
     networks:
       - ${DOCKER_NETWORK}
 
@@ -93,7 +94,10 @@ services:
     networks:
       - ${DOCKER_NETWORK}
     depends_on:
+      - nginx
       - arxiv-db
+      - keycloak
+      - keycloak-setup
 
   legacy-auth-provider:
     image: ${LEGACY_AUTH_DOCKER_TAG}
