@@ -7,7 +7,7 @@ tag := ${KC_DOCKER_TAG}
 .PHONY: bootstrap run proxy sql docker-image push deploy local arxiv-realm sh-arxiv-realm
 
 all: .env.localdb
-	@echo KC_DB_ADDR_PUBLIC: ${KC_DB_ADDR_PUBLIC}  KC_DB_ADDR_PRIVATE:  ${KC_DB_ADDR_PRIVATE}  KC_DB_USER: ${KC_DB_USER} KC_DB_PASS: ${KC_DB_PASS}
+	@echo KC_DB_HOST_PUBLIC: ${KC_DB_HOST_PUBLIC}  KC_DB_HOST_PRIVATE:  ${KC_DB_HOST_PRIVATE}  KC_DB_USER: ${KC_DB_USER} KC_DB_PASS: ${KC_DB_PASS}
 	@echo KC_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
 	@echo ARXIV_USER_SECRET: ${ARXIV_USER_SECRET}
 	@awk '/^#-#/ { print substr($$0, 5)}' Makefile
@@ -88,7 +88,7 @@ push:
 #-#   This is a one-time operation to get the URL and IP address
 init:
 	gcloud run deploy keycloak-service --image ${tag}:latest --platform managed --allow-unauthenticated --memory=2Gi --min-instances=1 --max-instances=1 \
-	  --region us-central1 --set-env-vars "DB_ADDR=${KC_DB_ADDR_PRIVATE},KC_DB_PASS=PROXY_MODE=--proxy-headers=forwarded,KEYCLOAK_ADMIN=admin,BOOTSTRAP=yes,LOG_OUTPUT_FORMAT=--log-console-output=json,GCP_PROJECT_ID=arxiv-development" \
+	  --region us-central1 --set-env-vars "DB_ADDR=${KC_DB_HOST_PRIVATE},KC_DB_PASS=PROXY_MODE=--proxy-headers=forwarded,KEYCLOAK_ADMIN=admin,BOOTSTRAP=yes,LOG_OUTPUT_FORMAT=--log-console-output=json,GCP_PROJECT_ID=arxiv-development" \
 	  --set-secrets=/secrets/authdb-certs/db-certs-expand.sh=authdb-certs:latest,KC_DB_PASS=authdb-password:latest,KEYCLOAK_ADMIN_PASSWORD=keycloak-admin-password:latest,GCP_CREDENTIALS=keycloak-pubsub-event-sa:latest \
 
 #-#
@@ -109,7 +109,7 @@ deploy:
 	  --memory=2Gi \
 	  --timeout=300 \
 	  --concurrency=80 \
-	  --set-env-vars=DB_ADDR=${KC_DB_ADDR_PRIVATE},PROXY_MODE=--proxy-headers=forwarded,KEYCLOAK_ADMIN=admin,BOOTSTRAP=no,LOG_OUTPUT_FORMAT=--log-console-output=json,GCP_PROJECT_ID=arxiv-development \
+	  --set-env-vars=DB_ADDR=${KC_DB_HOST_PRIVATE},PROXY_MODE=--proxy-headers=forwarded,KEYCLOAK_ADMIN=admin,BOOTSTRAP=no,LOG_OUTPUT_FORMAT=--log-console-output=json,GCP_PROJECT_ID=arxiv-development \
 	  --set-secrets=/secrets/authdb-certs/db-certs-expand.sh=authdb-certs:latest,KC_DB_PASS=authdb-password:latest,KEYCLOAK_ADMIN_PASSWORD=keycloak-admin-password:latest,GCP_CREDENTIALS=keycloak-pubsub-event-sa:latest \
 	  --cpu-boost \
 	  --session-affinity \
@@ -142,5 +142,8 @@ sh-arxiv-realm:
 	-e LEGACY_AUTH_TOKEN="${LEGACY_AUTH_API_TOKEN}" \
 	python:3.11 /bin/bash
 
+local-arxiv-realm:
+	@ echo python3 tools/setup_arxiv_realm.py --server ${KC_URL_PUBLIC} --admin-secret ${KC_ADMIN_PASSWORD} --arxiv-user-secret "${ARXIV_USER_SECRET}" --legacy-auth-token "${LEGACY_AUTH_API_TOKEN}"
+	. venv/bin/activate && python3 tools/setup_arxiv_realm.py --server localhost:${KC_PORT} --admin-secret ${KC_ADMIN_PASSWORD} --arxiv-user-secret "${ARXIV_USER_SECRET}" --legacy-auth-token "${LEGACY_AUTH_API_TOKEN}"
 
 #-#
