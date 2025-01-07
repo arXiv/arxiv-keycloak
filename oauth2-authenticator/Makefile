@@ -100,8 +100,10 @@ daemon: stop
 	sudo apt install -y libmysqlclient-dev build-essential python3.12-dev
 	touch .bootstrap
 
-venv/bin/poetry: /usr/bin/python3.12 /usr/lib/python3.12/ensurepip/__init__.py .bootstrap
+venv: /usr/bin/python3.12 /usr/lib/python3.12/ensurepip/__init__.py .bootstrap
 	python3.12 -m venv venv
+
+venv/bin/poetry: venv
 	. venv/bin/activate && pip install --upgrade pip && pip install poetry
 
 venv/lib/python3.12/site-packages/fastapi: venv/bin/poetry
@@ -111,6 +113,6 @@ venv/lib/python3.12/site-packages/fastapi: venv/bin/poetry
 	sh ./install-docker.sh
 
 show-env:
-	sed -e 's/^/export /g' .env
+	sed -e 's/^/export /g' ../.env
 
 

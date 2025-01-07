@@ -1,8 +1,10 @@
 import os
 import logging
+import time
 
 from sqlalchemy import create_engine, text, inspect
 from sqlalchemy.pool import NullPool
+from sqlalchemy.exc import OperationalError
 
 from arxiv.auth.legacy.util import bootstrap_arxiv_db
 from arxiv.util.database_loader import DatabaseLoader
@@ -13,18 +15,32 @@ logger = logging.getLogger(__name__)
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def main(create_schema: bool = False):
-    db_uri = os.environ.get('CLASSIC_DB_URI')
-    if not db_uri:
-        logger.error('CLASSIC_DB_URI is not set')
-        exit(1)
+    db_host = os.environ.get('ARXIV_DB_HOST')
+    db_port = os.environ.get('ARXIV_DB_PORT')
+    root_user = os.environ.get('ARXIV_DB_ROOT_USER', 'root')
+    root_password = os.environ.get('ARXIV_DB_ROOT_PASSWORD', 'root_password')
+    db_uri = f"mysql://{root_user}:{root_password}@{db_host}:{db_port}/arXiv"
+
     conn_args = {"ssl": None}
     db_engine = create_engine(db_uri, connect_args=conn_args, poolclass=NullPool)
-    tables = []
+    connected = False
+    logger.info("Attempt to connect to %s", db_uri)
+    for _ in range(180):
+        try:
+            inspector = inspect(db_engine)
+            tables = inspector.get_table_names()
+            connected = True
+        except OperationalError as exc:
+            logger.warning("Error to connect to %s", db_uri)
+        except Exception:
+            logger.warning("Error to connect to %s", db_uri, exc_info=True)
+        if connected:
+            break
+        time.sleep(10)
 
-    if not create_schema:
-        inspector = inspect(db_engine)
-        tables = inspector.get_table_names()
-        pass
+    if not connected:
+        logger.error("Failed to connect to %s", db_uri)
+        exit(1)
 
     if len(tables) == 0 or create_schema:
         # Don't use the db models for mysql. It does not work.
@@ -36,10 +52,17 @@ def main(create_schema: bool = False):
         with db_engine.connect() as connection:
             try:
                 connection.execute(text(sql_script))
-                logging.info("SQL file executed successfully!")
+                connection.commit()
+                logger.info("SQL file executed successfully!")
             except Exception as exc:
                 logger.error(f"Error executing SQL: {exc}")
                 raise exc
+
+    inspector = inspect(db_engine)
+    tables = inspector.get_table_names()
+    if len(tables) == 0:
+        logger.error("DB schema does not exist.")
+        exit(1)
 
     test_data_dir = os.path.join(root_dir, "tests", "development", "test-data")
     bootstrap_arxiv_db(db_engine, test_data_dir=test_data_dir)

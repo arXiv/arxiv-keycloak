@@ -4,6 +4,8 @@ if [ ! -r .env.localdb ] ; then
     PLATFORM=linux/amd64
     GCP_PROJECT=arxiv-development
 
+    echo DOCKER_NETWORK=host >> .env.localdb
+
     # IRL, this is a secure "password" for encrypting JWT token
     JWT_SECRET=jwt-secret
     echo JWT_SECRET=$JWT_SECRET >> .env.localdb
@@ -20,11 +22,19 @@ if [ ! -r .env.localdb ] ; then
 
     # keycloak and its database
     KC_PORT=21501
+    KC_HOST_PUBLIC=localhost
+    KC_HOST_PRIVATE=keycloak
+
     echo KC_PORT=$KC_PORT >> .env.localdb
-    echo KC_URL=http://localhost:$KC_PORT >> .env.localdb
+    echo KC_HOST_PUBLIC=$KC_HOST_PUBLIC >> .env.localdb
+    echo KC_HOST_PRIVATE=$KC_HOST_PRIVATE >> .env.localdb
+    echo KC_URL_PUBLIC=http://$KC_HOST_PUBLIC:$KC_PORT >> .env.localdb
+    echo KC_URL_PRIVATE=http://$KC_HOST_PRIVATE:$KC_PORT >> .env.localdb
+
     echo KC_DOCKER_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/keycloak >> .env.localdb
-    echo KC_DB_ADDR_PUBLIC=localhost >> .env.localdb
-    echo KC_DB_ADDR_PRIVATE=invalid >> .env.localdb
+    # kc db
+    echo KC_DB_HOST_PUBLIC=localhost >> .env.localdb
+    echo KC_DB_HOST_PRIVATE=auth-db >> .env.localdb
     echo KC_DB_PORT=21502 >> .env.localdb
     echo KC_DB_USER=keycloak >> .env.localdb
     echo KC_DB_PASS=$(op item get wos2wdt56jx2gjmvb4awlxk3ay --format=json | jq -r '.fields[] | select(.id == "vlf6422dpbnqhne535fpgg4vqm") | .value') >> .env.localdb
@@ -57,7 +67,9 @@ if [ ! -r .env.localdb ] ; then
     #
     # arxiv mysql db
     #
+    echo ARXIV_DB_HOST=arxiv-db >> .env.localdb
     echo ARXIV_DB_PORT=21504 >> .env.localdb
+    echo CLASSIC_DB_URI="mysql://arxiv:arxiv_password@${ARXIV_DB_HOST}:${ARXIV_DB_PORT}/arXiv"  >> .env.localdb
     #
     # legacy auth provider
     #
@@ -91,8 +103,8 @@ fi
 
 if [ ! -r .env.devdb ] ; then
     echo KC_DOCKER_TAG=gcr.io/$GCP_PROJECT/keycloak >> .env.devdb
-    echo KC_DB_ADDR_PUBLIC=$(op item get wos2wdt56jx2gjmvb4awlxk3ay --format=json | jq -r '.fields[] | select(.id == "fnxbox5ugfkr2ol5wtqbk6wkwq") | .value') >> .env.devdb
-    echo KC_DB_ADDR_PRIVATE=$(op item get wos2wdt56jx2gjmvb4awlxk3ay --format=json | jq -r '.fields[] | select(.id == "o4idffxy6bns7nihak4q4lo3xe") | .value') >> .env.devdb
+    echo KC_DB_HOST_PUBLIC=$(op item get wos2wdt56jx2gjmvb4awlxk3ay --format=json | jq -r '.fields[] | select(.id == "fnxbox5ugfkr2ol5wtqbk6wkwq") | .value') >> .env.devdb
+    echo KC_DB_HOST_PRIVATE=$(op item get wos2wdt56jx2gjmvb4awlxk3ay --format=json | jq -r '.fields[] | select(.id == "o4idffxy6bns7nihak4q4lo3xe") | .value') >> .env.devdb
     echo KC_DB_USER=keycloak >> .env.devdb
     echo KC_DB_PASS=$(op item get wos2wdt56jx2gjmvb4awlxk3ay --format=json | jq -r '.fields[] | select(.id == "vlf6422dpbnqhne535fpgg4vqm") | .value') >> .env.devdb
     echo KC_ADMIN_PASSWORD=$(op item get bdmmxlepkfsqy5hfgfunpsli2i --format=json | jq -r '.fields[] | select(.id == "password") | .value') >> .env.devdb

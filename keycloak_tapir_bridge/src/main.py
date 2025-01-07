@@ -3,6 +3,7 @@ keycloak_tapir_bridge subscribes to the audit events from keycloak and updates t
 """
 import argparse
 import signal
+import sys
 import threading
 import typing
 # from datetime import datetime, timedelta
@@ -161,11 +162,15 @@ if __name__ == "__main__":
         json_logHandler = logging.handlers.RotatingFileHandler(os.path.join(args.json_log_dir, "kc-to-tapir.log"),
                                                                maxBytes=4 * 1024 * 1024,
                                                                backupCount=10)
-        json_formatter = JsonFormatter(**LOG_FORMAT_KWARGS)
-        json_formatter.converter = gmtime
-        json_logHandler.setFormatter(json_formatter)
-        json_logHandler.setLevel(logging.DEBUG if args.debug else logging.INFO)
-        logger.addHandler(json_logHandler)
+    else:
+        json_logHandler = logging.StreamHandler(stream=sys.stdout)
+
+    json_formatter = JsonFormatter(**LOG_FORMAT_KWARGS)
+    json_formatter.converter = gmtime
+
+    json_logHandler.setFormatter(json_formatter)
+    json_logHandler.setLevel(logging.DEBUG if args.debug else logging.INFO)
+    logger.addHandler(json_logHandler)
 
     listeners = [
         threading.Thread(target=subscribe_keycloak_events, args=(project_id, args.subscription, args.timeout))

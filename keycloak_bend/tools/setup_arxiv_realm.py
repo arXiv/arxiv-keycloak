@@ -1,7 +1,9 @@
+"""
+Create ant populate arxiv realm, and arxiv-user client.
+"""
 import json
 import logging
 import os
-import base64
 import string
 from typing import Optional
 
@@ -109,8 +111,10 @@ class KeycloakSetup:
         payload = target.copy()
         payload['secret'] = client_secret
         del payload['id']
-        del payload['attributes']["client.secret.creation.time"]
-        del payload['protocolMappers']
+        if "client.secret.creation.time" in payload['attributes']:
+            del payload['attributes']["client.secret.creation.time"]
+        if "protocolMappers" in payload:
+            del payload['protocolMappers']
 
         self.admin.create_client(payload=payload, skip_exists=True)
 
@@ -154,7 +158,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--realm', type=str, default='arxiv')
-    parser.add_argument('--source', type=path, default=os.path.expanduser(os.path.join(keycloak_bend, "realms", "arxiv-realm-gcp-dev.json")))
+    parser.add_argument('--source', type=str, default=os.path.expanduser(os.path.join(keycloak_bend, "realms", "arxiv-realm-localhost.json")))
     parser.add_argument('--server', type=str, default=os.environ.get("KEYCLOAK_SERVER_URL", 'http://localhost:3033'))
     parser.add_argument('--admin-secret', type=str, default='')
     parser.add_argument('--arxiv-user-secret', type=str, default='')
