@@ -5,13 +5,13 @@ tapir_users:
     suffix_name: ""
     share_first_name: 1
     share_last_name: 1
-    email: "barts@tcwri.org"
+    email: "barts@example.com"
     share_email: 8
     email_bouncing: 0
     policy_class: 2
     joined_date: 1555515974
     joined_ip_num: "192.168.1.1"
-    joined_remote_host: "tcwri.org"
+    joined_remote_host: "example.com"
     flag_internal: 0
     flag_edit_users: 0
     flag_edit_system: 0

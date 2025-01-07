@@ -4,7 +4,7 @@ export $(shell sed 's/=.*//' ../.env)
 
 tag := ${KC_DOCKER_TAG}
 
-.PHONY: bootstrap run proxy sql docker-image push deploy local arxiv-realm sh-arxiv-realm
+.PHONY: bootstrap run proxy sql docker-image push deploy local arxiv-realm sh-arxiv-realm test
 
 all: .env.localdb
 	@echo KC_DB_HOST_PUBLIC: ${KC_DB_HOST_PUBLIC}  KC_DB_HOST_PRIVATE:  ${KC_DB_HOST_PRIVATE}  KC_DB_USER: ${KC_DB_USER} KC_DB_PASS: ${KC_DB_PASS}
@@ -33,6 +33,12 @@ venv/bin/poetry: venv
 
 venv/lib/python3.12/site-packeages/keycloak: venv/bin/poetry
 	. venv/bin/activate && poetry install
+
+#-#
+#-# test:
+#-#  Runs pytest
+test:
+	. venv/bin/activate && poetry run pytest
 
 #-#
 #-# run: 
