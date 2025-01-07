@@ -35,6 +35,7 @@ class KeycloakSetup:
         self.realm = kwargs.pop('realm')
         self.client_secret = kwargs.pop('client_secret')
         self.legacy_auth_token = kwargs.pop('legacy_auth_token', None)
+        self.legacy_auth_uri = kwargs.pop('legacy_auth_uri', None)
         self.admin = KeycloakAdmin(*args, **kwargs)
 
 
@@ -137,6 +138,9 @@ class KeycloakSetup:
         del provider["subComponents"]
         token = self.legacy_auth_token if self.legacy_auth_token else to_alnums(int.from_bytes(os.urandom(25), 'little'))
         provider['config']['API_TOKEN'] = [token]
+        if self.legacy_auth_uri:
+            provider['config']['URI'] = [self.legacy_auth_uri]
+            
         try:
             self.admin.create_component(provider)
             logger.info(f"Provider '{provider_name}' created successfully.")
@@ -163,6 +167,7 @@ if __name__ == '__main__':
     parser.add_argument('--admin-secret', type=str, default='')
     parser.add_argument('--arxiv-user-secret', type=str, default='')
     parser.add_argument('--legacy-auth-token', type=str, default='', help="bearer token for legacy auth api")
+    parser.add_argument('--legacy-auth-uri', type=str, default='', help="legacy auth provider URI")
 
     args = parser.parse_args()
 
@@ -190,5 +195,6 @@ if __name__ == '__main__':
         verify=False,
         client_secret=client_secret,
         legacy_auth_token=args.legacy_auth_token,
+        legacy_auth_uri=args.legacy_auth_uri,
     )
     admin.run()
