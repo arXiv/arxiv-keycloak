@@ -56,7 +56,6 @@ help:
 #-# Command: docker-image
 #-#   builds the docker image
 docker-image:
-	@echo "PLATFORM: ${PLATFORM}"
 	@echo "dockerport: ${app_port}"
 	@echo "tag: ${app_tag}"
 	docker buildx build -f ./Dockerfile \
