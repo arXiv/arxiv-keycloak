@@ -98,7 +98,9 @@ if [ ! -r .env.localdb ] ; then
     # see GCP_EVENT_TOPIC_ID, GCP_ADMIN_EVENT_TOPIC_ID
     echo KC_TAPIR_BRIDGE_SUBSCRIPTION=keycloak-arxiv-events-sub >> .env.localdb
     #
-    # 
+    #
+    echo TESTSITE_TAG=testsite >> .env.localdb
+    echo TESTSITE_PORT=21509 >> .env.localdb
 fi
 
 if [ ! -r .env.devdb ] ; then
