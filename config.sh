@@ -23,7 +23,9 @@ if [ ! -r .env.localdb ] ; then
     # keycloak and its database
     KC_PORT=21501
     KC_HOST_PUBLIC=localhost
-    KC_HOST_PRIVATE=keycloak
+
+    # would be "keycloak" if the network is NOT host network
+    KC_HOST_PRIVATE=localhost
 
     echo KC_PORT=$KC_PORT >> .env.localdb
     echo KC_HOST_PUBLIC=$KC_HOST_PUBLIC >> .env.localdb
@@ -67,13 +69,18 @@ if [ ! -r .env.localdb ] ; then
     #
     # arxiv mysql db
     #
-    echo ARXIV_DB_HOST=arxiv-db >> .env.localdb
-    echo ARXIV_DB_PORT=21504 >> .env.localdb
-    echo CLASSIC_DB_URI="mysql://arxiv:arxiv_password@${ARXIV_DB_HOST}:${ARXIV_DB_PORT}/arXiv"  >> .env.localdb
+    # if you are using non-host docker network, this would be "arxiv-db" to match the container name
+    # Do not use "localhost". It is special cased to use the Unix socket
+    ARXIV_DB_HOST=127.0.0.1
+    ARXIV_DB_PORT=21504
+    echo ARXIV_DB_HOST=${ARXIV_DB_HOST} >> .env.localdb
+    echo ARXIV_DB_PORT=${ARXIV_DB_PORT} >> .env.localdb
+    echo CLASSIC_DB_URI="mysql+mysqldb://arxiv:arxiv_password@${ARXIV_DB_HOST}:${ARXIV_DB_PORT}/arXiv?ssl=false&ssl_mode=DISABLED"  >> .env.localdb
     #
     # legacy auth provider
     #
-    echo LEGACY_AUTH_PORT=21505 >> .env.localdb
+    LEGACY_AUTH_PORT=21505
+    echo LEGACY_AUTH_PORT=${LEGACY_AUTH_PORT} >> .env.localdb
     # This is the dev-token but for local, use something else
     # echo LEGACY_AUTH_API_TOKEN=$(op item get bdmmxlepkfsqy5hfgfunpsli2i --format=json | jq -r '.fields[] | select(.id == "rs25xevxhbvy6l2aom7z633rti") | .value') >> .env.localdb
     echo LEGACY_AUTH_API_TOKEN=legacy-api-token >> .env.localdb

@@ -9,7 +9,7 @@ ARXIV_BASE_DIR ?= $(HOME)/arxiv/arxiv-base
 
 .PHONY: HELLO all bootstrap docker-image start arxiv-db nginx test
 
-all: HELLO  venv/bin/poetry .env.localdb bootstrap 
+all: HELLO  .env.localdb bootstrap 
 
 define run_in_docker_dirs
 	@for dir in $(DOCKER_DIRS); do \

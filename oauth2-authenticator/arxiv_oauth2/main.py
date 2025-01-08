@@ -1,7 +1,7 @@
 import os
 from typing import Callable
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -11,10 +11,12 @@ from arxiv.auth.legacy.util import missing_configs
 from arxiv.base.globals import get_application_config
 from arxiv.base.logging import getLogger
 from arxiv.auth.openid.oidc_idp import ArxivOidcIdpClient
+from arxiv.db.models import State
 
 from .authentication import router as auth_router
 from .app_logging import setup_logger
 from .mysql_retry import MySQLRetryMiddleware
+from . import get_db
 
 #
 # Since this is not a flask app, the config needs to be in the os.environ
@@ -72,12 +74,20 @@ origins = ["http://localhost",
            "http://localhost:5000/",
            "http://localhost:5000/admin-console",
            "http://localhost:5000/admin-console/",
+           "http://localhost:5100",
+           "http://localhost:5100/",
+           "http://localhost:5100/admin-console",
+           "http://localhost:5100/admin-console/",
            "https://dev3.arxiv.org",
            "https://dev3.arxiv.org/",
            "https://dev.arxiv.org",
            "https://dev.arxiv.org/",
            "https://arxiv.org",
-           "https://arxiv.org/"
+           "https://arxiv.org/",
+           "https://web40.arxiv.org",
+           "https://web40.arxiv.org/",
+           "https://web41.arxiv.org",
+           "https://web41.arxiv.org/",
            ]
 
 def create_app(*args, **kwargs) -> FastAPI:
@@ -172,5 +182,14 @@ def create_app(*args, **kwargs) -> FastAPI:
     @app.get("/")
     async def root(request: Request):
         return "Hello"
+
+    @app.get("/states", response_model=dict)
+    async def health_check(session=Depends(get_db)) -> dict:
+        try:
+            states: State = session.query(State).all()
+            result = {state.name: state.value for state in states}
+            return result
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=str(exc))
 
     return app
