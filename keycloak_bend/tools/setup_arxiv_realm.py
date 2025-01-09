@@ -7,6 +7,7 @@ import os
 import string
 from typing import Optional
 
+from arxiv.auth.legacy.accounts import update
 from keycloak import KeycloakAdmin, KeycloakError
 import argparse
 
@@ -148,13 +149,35 @@ class KeycloakSetup:
             logger.error(f"Error creating {provider_name}: {e}")
 
 
+    def restore_pubsub(self):
+        realm_name = self.realm['realm']
+        try:
+            realm_config = self.admin.get_realm(realm_name)
+        except KeycloakError as e:
+            logger.error(f"Error fetching {realm_name}: {e}")
+            return
+
+        changed = {}
+        for key in ["eventsListeners", "eventsEnabled", "eventsExpiration", "adminEventsEnabled","adminEventsDetailsEnabled"]:
+            if repr(realm_config[key]) != repr(self.realm[key]):
+                realm_config[key] = self.realm[key]
+                changed[key] = self.realm[key]
+                pass
+        if changed:
+            try:
+                self.admin.update_realm(realm_name, payload=realm_config)
+                logger.info(f"Event listeners updated successfully: {changed!r}")
+            except KeycloakError as e:
+                logger.error(f"Event listeners update failed: {changed!r}")
+
+
     def run(self):
         self.restore_realm()
         self.restore_roles()
         self.restore_scopes()
         self.restore_client("arxiv-user", self.client_secret)
         self.restore_legacy_auth_provider()
-
+        self.restore_pubsub()
 
 
 if __name__ == '__main__':

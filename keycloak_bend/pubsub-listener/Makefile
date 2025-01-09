@@ -1,5 +1,5 @@
 
-keycloak-pubsub-listener-main/target/keycloak-to-pubsub-1.0.0.jar: keycloak-pubsub-listener /usr/bin/java /usr/bin/mvn
+keycloak-pubsub-listener/target/keycloak-to-pubsub-jar-with-dependencies.jar: keycloak-pubsub-listener /usr/bin/java /usr/bin/mvn
 	cd keycloak-pubsub-listener && mvn clean install
 
 keycloak-pubsub-listener: 

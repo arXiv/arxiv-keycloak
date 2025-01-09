@@ -11,10 +11,14 @@ package-mode = false
 python = "^3.11"
 arxiv-base = {git = "https://github.com/arXiv/arxiv-base.git", rev = "dd1104a0dd4c6a925401c9d7eef249799d287b4e"}
 mysqlclient = "^2.2.6"
+google-cloud-pubsub = "^2.27.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
 pypi = "^2.1"
+selenium = "^4.27.1"
+types-requests = "^2.32.0.20241016"
+pytest-mock = "^3.14.0"
 
 [build-system]
 requires = ["poetry-core"]

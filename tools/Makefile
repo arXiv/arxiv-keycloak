@@ -3,7 +3,7 @@ export $(shell sed 's/=.*//' ../.env)
 
 ARXIV_BASE_DIR ?= $(HOME)/arxiv/arxiv-base
 
-.PHONY: HELLO all load-test-data bootstrap
+.PHONY: HELLO all load-test-data bootstrap test
 
 all: ../venv/bin/poetry HELLO 
 
@@ -37,3 +37,10 @@ venv/bin/poetry: venv
 #-#   loads test data to arxiv db
 load-test-data: venv/bin/poetry
 	. venv/bin/activate && CLASSIC_DB_URI=${CLASSIC_DB_URI} python3 ./load_test_data.py
+
+
+#-#
+#-# test:
+#-#   runs tests
+test:
+	@echo "No tests in tools yet"
