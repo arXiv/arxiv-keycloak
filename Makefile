@@ -9,7 +9,8 @@ ARXIV_BASE_DIR ?= $(HOME)/arxiv/arxiv-base
 
 .PHONY: HELLO all bootstrap docker-image start arxiv-db nginx test
 
-all: HELLO  .env.localdb bootstrap 
+all: HELLO
+
 
 define run_in_docker_dirs
 	@for dir in $(DOCKER_DIRS); do \
@@ -27,6 +28,8 @@ endef
 
 HELLO:
 	@echo To see the README of this Makefile, type "make help"
+	@echo First, run "bash config.sh"
+	@echo Then, "make bootstrap" to set up the environment.
 
 #-#
 #-# help:
@@ -34,10 +37,10 @@ HELLO:
 help:
 	@awk '/^#-#/ { print substr($$0, 5)}' Makefile
 
+.env: .env.localdb
 
 .env.localdb:
-	config.sh > /dev/null
-
+	bash config.sh > /dev/null
 
 
 #-#
@@ -46,6 +49,7 @@ help:
 bootstrap: .bootstrap
 
 .bootstrap:
+	./tools/install_py311.sh
 	$(call run_in_all_subdirs,bootstrap)
 	touch .bootstrap
 

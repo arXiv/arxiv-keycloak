@@ -6,4 +6,4 @@ shift
 OP_FILENAME=$1
 shift
 
-op item get $ITEM_ID --format json | jq -r ".files[] | select(.name == \"$OP_FILENAME\") | .content_path" | awk -F / '{ print "op://"$4"/"$6"/"$8 }' | xargs op read
+op item get $ITEM_ID --account arxiv.1password.com --format json | jq -r ".files[] | select(.name == \"$OP_FILENAME\") | .content_path" | awk -F / '{ print "op://"$4"/"$6"/"$8 }' | xargs op read
