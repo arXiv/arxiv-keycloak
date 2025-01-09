@@ -24,6 +24,9 @@ bootstrap: .bootstrap
 	${MAKE} venv/bin/poetry
 	touch .bootstrap
 
+./cert/dev-authdb-client-cert.pem:
+	cd ./cert/ && ${MAKE} 
+
 venv:
 	python3.12 -m venv venv
 	. venv/bin/activate && pip install --upgrade pip
@@ -68,7 +71,7 @@ keycloak_migration/keycloak-user-migration/target/keycloak-rest-provider-5.0.1-S
 	cd keycloak_migration && $(MAKE) keycloak-user-migration/target/keycloak-rest-provider-5.0.1-SNAPSHOT.jar
 
 pubsub-listener/keycloak-pubsub-listener/target/keycloak-to-pubsub-1.0.0.jar:
-	cd pubsub-listener && $(MAKE) keycloak-user-migration/target/keycloak-rest-provider-5.0.1-SNAPSHOT.jar
+	cd pubsub-listener && $(MAKE) keycloak-pubsub-listener-main/target/keycloak-to-pubsub-1.0.0.jar
 
 #-#
 #-# proxy:
