@@ -32,7 +32,7 @@ RUN $VIRTUAL_ENV/bin/pip install hypercorn
 RUN $VIRTUAL_ENV/bin/pip uninstall -y poetry
 
 RUN mkdir  ./templates ./static
-COPY ./static/* ./static
+# COPY ./static/* ./static
 COPY ./templates/* ./templates
 COPY app.py .
 
