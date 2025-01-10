@@ -1,0 +1,62 @@
+# cross submission
+arXiv_submissions:
+  - submission_id: 3400
+    document_id: null
+    doc_paper_id: null
+    sword_id: null
+    userinfo: 1
+    is_author: 1
+    agree_policy: 1
+    viewed: 1
+    stage: 5
+    submitter_id: 246231
+    submitter_name: "Brandon Barker"
+    submitter_email: "no-mail@example.com"
+    created: "2015-11-16 19:58:40"
+    updated: "2015-11-17 14:15:41"
+    status: 1
+    sticky_status: null
+    must_process: 0
+    submit_time: null
+    release_time: null
+    source_size: 1502662
+    source_format: "pdftex"
+    source_flags: ""
+    has_pilot_data: 0
+    is_withdrawn: 0
+    title: "Second timeout test case"
+    authors: "Brandon barker"
+    comments: null
+    proxy: null
+    report_num: null
+    msc_class: null
+    acm_class: null
+    journal_ref: null
+    doi: null
+    abstract: "Second timeout test case"
+    license: "http://arxiv.org/licenses/nonexclusive-distrib/1.0/"
+    version: 1
+    type: "cross"
+    is_ok: 0
+    admin_ok: 0
+    allow_tex_produced: 0
+    remote_addr: "10.2.3.4"
+    remote_host: "imaginary.example.com"
+    package: "/users/e-prints/arXivLib/t/user_data/extraction_timeout1_1137932.tar.gz"
+    rt_ticket_id: null
+    auto_hold: 0
+    is_oversize: null
+
+arXiv_submission_category:
+  - submission_id: 3400
+    category: "cs.LG"
+    is_primary: 1
+    is_published: 1
+  - submission_id: 3400
+    category: "cs.DC"
+    is_primary: 0
+    is_published: 1
+  - submission_id: 3400
+    category: "hep-ph"
+    is_primary: 0
+    is_published: 0

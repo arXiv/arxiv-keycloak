@@ -67,3 +67,26 @@ tapir_users_password:
   - user_id: 246231
     password_storage: 2
     password_enc: "LMi3KDCqff2NKmgK1lCNrcMUwzKFRc48"
+
+arXiv_demographics:
+  - user_id: 246231
+    country: "us"
+    affiliation: "test"
+    url: "www.example.com"
+    type: 1
+    original_subject_classes: ""
+    flag_group_math: 0
+    flag_group_cs: 1
+    flag_group_nlin: 0
+    flag_proxy: 0
+    flag_journal: 0
+    flag_xml: 0
+    dirty: 2
+    flag_group_test: 0
+    flag_suspect: 0
+    flag_group_q_bio: 0
+    flag_group_q_fin: 0
+    flag_group_stat: 0
+    flag_group_eess: 0
+    flag_group_econ: 0
+    veto_status: 'ok'

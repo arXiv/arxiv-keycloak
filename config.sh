@@ -89,10 +89,6 @@ if [ ! -r .env.localdb ] ; then
     echo LEGACY_AUTH_API_TOKEN=legacy-api-token >> .env.localdb
     echo LEGACY_AUTH_DOCKER_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/legacy-auth-provider >> .env.localdb
     #
-    # This is not strictry necessary but here
-    #
-    echo ADMIN_CONSOLE_URL=http://localhost:$HTTP_PORT/arxiv-admin-console/admin-console >> .env.localdb
-    #
     # pubsub emulator port
     #
     PUBSUB_PORT=21507
@@ -111,6 +107,13 @@ if [ ! -r .env.localdb ] ; then
     #
     echo TESTSITE_TAG=testsite >> .env.localdb
     echo TESTSITE_PORT=21509 >> .env.localdb
+    #
+    # This is not strictry necessary but here
+    #
+    echo ADMIN_API_PORT=21510 >> .env.localdb
+    echo ADMIN_API_URL=http://localhost:$HTTP_PORT/admin-api >> .env.localdb
+    echo ADMIN_CONSOLE_PORT=21511 >> .env.localdb
+    echo ADMIN_CONSOLE_URL=http://localhost:$HTTP_PORT/admin-console >> .env.localdb
 fi
 
 if [ ! -r .env.devdb ] ; then

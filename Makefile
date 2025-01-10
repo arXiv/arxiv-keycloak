@@ -7,7 +7,7 @@ export $(shell sed 's/=.*//' .env)
 
 ARXIV_BASE_DIR ?= $(HOME)/arxiv/arxiv-base
 
-.PHONY: HELLO all bootstrap docker-image start arxiv-db nginx test
+.PHONY: HELLO all bootstrap docker-image arxiv-db nginx test up down
 
 all: HELLO
 

@@ -1,0 +1,55 @@
+# locked submissions
+
+arXiv_submissions:
+  - submission_id: 1137931
+    document_id: null
+    doc_paper_id: null
+    sword_id: null
+    userinfo: 1
+    is_author: 1
+    agree_policy: 1
+    viewed: 1
+    stage: 5
+    submitter_id: 246231
+    submitter_name: "Brandon Barker"
+    submitter_email: "no-mail@example.com"
+    created: "2015-11-16 18:34:31"
+    updated: "2015-11-17 13:37:25"
+    status: 1
+    sticky_status: null
+    must_process: 0
+    submit_time: "2015-11-16 19:50:55"
+    release_time: null
+    source_size: 998628
+    source_format: "pdftex"
+    source_flags: ""
+    has_pilot_data: 0
+    is_withdrawn: 0
+    title: "First timeout fail case"
+    authors: "Brandon Barker"
+    comments: null
+    proxy: null
+    report_num: null
+    msc_class: null
+    acm_class: null
+    journal_ref: null
+    doi: null
+    abstract: "First timeout fail case"
+    license: "http://arxiv.org/licenses/nonexclusive-distrib/1.0/"
+    version: 1
+    type: "new"
+    is_ok: null
+    admin_ok: null
+    allow_tex_produced: 0
+    remote_addr: "10.2.3.4"
+    remote_host: "imaginary.example.com"
+    package: "/users/e-prints/arXivLib/t/user_data/extraction_timeout1_1137931.tar.gz"
+    rt_ticket_id: null
+    auto_hold: 1
+    is_oversize: null
+
+arXiv_submission_category:
+  - submission_id: 1137931
+    category: "q-bio.GN"
+    is_primary: 1
+    is_published: 0
