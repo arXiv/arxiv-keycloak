@@ -1,0 +1,55 @@
+# Locked submission
+arXiv_submissions:
+  - submission_id: 100430
+    document_id: null
+    doc_paper_id: null
+    sword_id: null
+    userinfo: 1
+    is_author: 1
+    agree_policy: 1
+    viewed: 1
+    stage: 5
+    submitter_id: 246231
+    submitter_name: "Brandon Barker"
+    submitter_email: "no-mail@example.com"
+    created: "2015-11-17 15:37:23"
+    updated: "2015-11-17 15:11:21"
+    status: 1
+    sticky_status: null
+    must_process: 0
+    submit_time: "2015-11-17 15:11:21"
+    release_time: null
+    source_size: 500
+    source_format: "tex"
+    source_flags: "1"
+    has_pilot_data: 0
+    is_withdrawn: 0
+    title: "A very simple LaTeX example"
+    authors: "Brandon Barker"
+    comments: null
+    proxy: null
+    report_num: null
+    msc_class: null
+    acm_class: null
+    journal_ref: null
+    doi: null
+    abstract: "A very simple LaTeX example."
+    license: "http://arxiv.org/licenses/nonexclusive-distrib/1.0/"
+    version: 1
+    type: "new"
+    is_ok: 0
+    admin_ok: 0
+    allow_tex_produced: 0
+    remote_addr: "10.2.3.4"
+    remote_host: "imaginary.example.com"
+    package: "/users/e-prints/arXivLib/t/user_data/very_simple_1137933.gz"
+    rt_ticket_id: null
+    auto_hold: 0
+    is_oversize: null
+    is_locked: 1
+
+arXiv_submission_category:
+  - submission_id: 100430
+    category: "q-bio.NC"
+    is_primary: 1
+    is_published: 0

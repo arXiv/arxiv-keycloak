@@ -1,0 +1,59 @@
+# a submission in status "published"
+arXiv_submissions:
+  - submission_id: 4024428
+    document_id: null
+    doc_paper_id: null
+    sword_id: null
+    userinfo: 1
+    is_author: 1
+    agree_policy: 1
+    viewed: 1
+    stage: 5
+    submitter_id: 246231
+    submitter_name: "xyz"
+    submitter_email: "x@x.com"
+    created: "2021-11-12 05:43:20"
+    updated: "2021-11-22 01:22:33"
+    status: 7
+    sticky_status: null
+    must_process: 0
+    submit_time: "2021-11-19 01:42:49"
+    release_time: null
+    source_size: 2893811
+    source_format: "pdf"
+    source_flags: "1"
+    has_pilot_data: 0
+    is_withdrawn: 0
+    title: "Wishing for the stars enhance the creativity of children"
+    authors: "Cookie Monstah, Big Bird, Ernie, Bart"
+    comments: "29 pages"
+    proxy: null
+    report_num: null
+    msc_class: null
+    acm_class: null
+    journal_ref: "ApJL 920 L39 (2021)"
+    doi: "10.3847/2041-8213/ac2b34"
+    abstract: "Biologically relevant abiotic extraterrestrial soluble organic matter (SOM) has been widely investigated to study the origin of life and the chemical evolution of protoplanetary disks. Synthesis of biologically relevant organics, in particular, seems to require aqueous environments in the early solar system."
+    license: "http://creativecommons.org/licenses/by/4.0/"
+    version: 1
+    type: "new"
+    is_ok: 1
+    admin_ok: 0
+    allow_tex_produced: 0
+    is_oversize: 0
+    remote_addr: "127.0.0.1"
+    remote_host: "xyz.ac.jp"
+    package: "/data/new/4024/4024428/4024428.pdf"
+    rt_ticket_id: null
+    auto_hold: 0
+    is_locked: 0
+
+arXiv_submission_category:
+  - submission_id: 4024428
+    category: "astro-ph.EP"
+    is_primary: 1
+    is_published: 1
+  - submission_id: 4024428
+    category: "physics.data-an"
+    is_primary: 0
+    is_published: 1

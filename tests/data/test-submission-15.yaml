@@ -1,0 +1,68 @@
+# a submission with bad classifier JSON
+arXiv_submissions:
+  - submission_id: 1234888
+    document_id: null
+    doc_paper_id: null
+    sword_id: null
+    userinfo: 1
+    is_author: 1
+    agree_policy: 1
+    viewed: 1
+    stage: 4
+    submitter_id: 246231
+    submitter_name: "Brandon Barker"
+    submitter_email: "no-mail@example.com"
+    created: "2015-10-12 17:11:21"
+    updated: "2015-10-12 21:58:44"
+    status: 1
+    sticky_status: null
+    must_process: 0
+    submit_time: "2015-11-17 15:11:21"
+    release_time: null
+    source_size: 2848951
+    source_format: "pdf"
+    source_flags: "1"
+    has_pilot_data: 0
+    is_withdrawn: 0
+    title: "MPI 3 One more time"
+    authors: "Brandon Barker"
+    comments: null
+    proxy: null
+    report_num: null
+    msc_class: null
+    acm_class: null
+    journal_ref: null
+    doi: null
+    abstract: "The Message Passing Interface, version three point zero."
+    license: "http://arxiv.org/licenses/nonexclusive-distrib/1.0/"
+    version: 1
+    type: "new"
+    is_ok: null
+    admin_ok: null
+    allow_tex_produced: 0
+    remote_addr: "10.2.3.4"
+    remote_host: "imaginary.example.com"
+    package: "/users/e-prints/arXivLib/t/user_data/Kubla_Khan.pdf"
+    rt_ticket_id: null
+    auto_hold: 0
+    is_oversize: null
+
+arXiv_submission_category:
+  - submission_id: 1234888
+    category: "q-bio.CB"
+    is_primary: 1
+    is_published: 0
+
+arXiv_submission_abs_classifier_data:
+  - submission_id: 1234888
+    json: "total-junk-json"
+    last_update: "2021-04-13 12:49:38"
+    status: "success"
+    message: null
+    is_oversize: 0
+    suggested_primary: null
+    suggested_reason: null
+    autoproposal_primary: null
+    autoproposal_reason: null
+    classifier_service_version: null
+    classifier_model_version: null

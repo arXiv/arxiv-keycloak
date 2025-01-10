@@ -82,7 +82,7 @@ services:
     environment:
       PORT: ${ARXIV_OAUTH2_APP_PORT}
       # hostname keycloak for non-host network
-      KEYCLOAK_SERVER_URL: http://localhost:${KC_PORT}/
+      KEYCLOAK_SERVER_URL: http://localhost:${KC_PORT}
       OAUTH2_CALLBACK_URL: ${AAA_CALLBACK_URL}
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
       CLASSIC_DB_URI: ${CLASSIC_DB_URI}

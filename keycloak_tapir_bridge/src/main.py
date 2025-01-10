@@ -95,7 +95,7 @@ def subscribe_keycloak_events(project_id: str, subscription_id: str, request_tim
             message.nack()
             return
 
-        print(json_str)
+        logger.debug(json_str)
 
         try:
             data = json.loads(json_str)
@@ -109,6 +109,9 @@ def subscribe_keycloak_events(project_id: str, subscription_id: str, request_tim
             logger.info("Not for arxiv - ack %s", data.get('id', '<no-id>'))
             message.ack()
             return
+
+        #
+
 
         message.ack()
         logger.info("ack %s", data.get('id', '<no-id>'))
