@@ -15,6 +15,8 @@ from arxiv.base import logging
 from arxiv.auth.user_claims import ArxivUserClaims
 from arxiv.auth.openid.oidc_idp import ArxivOidcIdpClient
 from arxiv.auth.legacy.sessions import invalidate as legacy_invalidate
+from arxiv.auth import domain
+from arxiv.db import Session as ArxivSession
 
 from . import get_current_user_or_none, get_db
 
@@ -317,3 +319,9 @@ def make_cookie_response(request: Request, user_claims: Optional[ArxivUserClaims
         response.set_cookie(classic_cookie_key, '', max_age=0,
                             domain=domain, path="/", secure=secure, samesite=samesite)
     return response
+
+
+@router.post('/register')
+async def register_user(request: Request, user: domain.User) -> JSONResponse:
+    """Register a new user."""
+
