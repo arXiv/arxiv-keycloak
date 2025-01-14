@@ -1,12 +1,16 @@
 import os
+from typing import Optional
+
+from MySQLdb._mysql import IntegrityError
 from sqlalchemy import Engine
 from sqlalchemy.orm import sessionmaker
 
 from arxiv.util.dict_io import from_file_to_dict
-from arxiv.auth.legacy import accounts, authenticate
+from arxiv.auth.legacy import accounts, authenticate, exceptions
 from arxiv.auth import domain
 from arxiv.taxonomy.definitions import GROUPS, CATEGORIES
 from arxiv.db import Session
+from arxiv.db.models import TapirNickname
 
 from . import ROOT_DIR
 
@@ -38,6 +42,10 @@ def get_dom_user(filename: str) -> domain.User:
     )
     return dom_user
 
+def get_user_id_from_login_name(session, username: str) -> Optional[int]:
+    data: TapirNickname = Session.query(TapirNickname).filter(TapirNickname.nickname == username).one_or_none()
+    return None if data is None else data.user_id
+
 
 def test_add_user(localenv: dict, configured_db: Engine):
     password = "changeme"
@@ -48,7 +56,12 @@ def test_add_user(localenv: dict, configured_db: Engine):
 
     for character in [ernie, bert, big_bird]:
         with Session() as session:
-            accounts.register(character, password, '10.11.12.13', 'localhost')
+            user_id = get_user_id_from_login_name(session, character.username)
+            if user_id:
+                character.user_id = user_id
+                accounts.update(character)
+            else:
+                accounts.register(character, password, '10.11.12.13', 'localhost')
             session.commit()
 
         with Session() as session:
