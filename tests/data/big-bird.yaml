@@ -1,6 +1,5 @@
 tapir_users:
-  - user_id: 20584
-    first_name: "Big"
+  - first_name: "Big"
     last_name: "Bird"
     suffix_name: ""
     share_first_name: 1
@@ -26,9 +25,7 @@ tapir_users:
     flag_can_lock: 0
 
 tapir_nicknames:
-  - nick_id: 20584
-    nickname: "big_bird"
-    user_id: 20584
+  - nickname: "big_bird"
     user_seq: 1
     flag_valid: 1
     role: 0
@@ -36,13 +33,11 @@ tapir_nicknames:
     flag_primary: 1
 
 tapir_users_password:
-  - user_id: 20584
-    password_storage: 2
+  - password_storage: 2
     password_enc: "vb19bLKYsLxhmcFI9btCStaoQMc0D25p"
 
 arXiv_demographics:
-  - user_id: 20584
-    country: "us"
+  - country: "us"
     affiliation: "Sesame street"
     url: "www.example.com"
     type: 1

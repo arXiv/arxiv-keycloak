@@ -94,8 +94,8 @@ def load_test_data(db_engine: Engine) -> None:
     :param db_engine:
     :return:
     """
-    # dev_test_data_dir = os.path.join(root_dir, "tests", "development", "test-data")
-    # bootstrap_arxiv_db(db_engine, test_data_dir=dev_test_data_dir)
+    dev_test_data_dir = os.path.join(root_dir, "tests", "development", "test-data")
+    bootstrap_arxiv_db(db_engine, test_data_dir=dev_test_data_dir)
     logger.info('arxiv db bootstapped')
 
     test_data_dir = os.path.join(root_dir, 'tests', 'data')
@@ -106,8 +106,8 @@ def load_test_data(db_engine: Engine) -> None:
     loader.load_data_from_files(users)
 
     # load submissions
-    #submissions = [os.path.join(test_data_dir, filename) for filename in sorted([fn for fn in os.listdir(test_data_dir) if fn.startswith('test-submission')])]
-    #loader.load_data_from_files(submissions)
+    submissions = [os.path.join(test_data_dir, filename) for filename in sorted([fn for fn in os.listdir(test_data_dir) if fn.startswith('test-submission')])]
+    loader.load_data_from_files(submissions)
     pass
 
 
