@@ -28,7 +28,7 @@ def toy_flask():
 
 
 def test_login(web_driver, toy_flask):
-    web_driver.get("http://localhost:5000/aaa/login")  # URL of your Flask app's login route
+    web_driver.get("http://localhost:5101/aaa/login")  # URL of your Flask app's login route
 
     # Simulate user login on the IdP login page
     # Replace the following selectors with the actual ones from your IdP login form
@@ -45,6 +45,6 @@ def test_login(web_driver, toy_flask):
     time.sleep(5)
 
     # Check if the login was successful by verifying the presence of a specific element or text
-    web_driver.get("http://localhost:5000/protected")  # URL of your protected route
+    web_driver.get("http://localhost:5101/protected")  # URL of your protected route
     body_text = web_driver.find_element(By.TAG_NAME, "body").text
     assert "Token is valid" in body_text

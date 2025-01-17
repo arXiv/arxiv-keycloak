@@ -1,16 +1,17 @@
 import os
+from datetime import datetime
 
 from arxiv.config import settings
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Tuple, List, Dict
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
 import logging
+from sqlalchemy.orm import Session
 
-from arxiv.db import get_db
-from arxiv.db.models import TapirUser, TapirUsersPassword, \
-    TapirNickname, Demographic, configure_db, State, TapirPolicyClass
+
+from arxiv.db import configure_db, Session as DatabaseSession
+from arxiv.db.models import TapirUser, TapirUsersPassword, TapirNickname, Demographic, State, TapirPolicyClass
 from arxiv.auth.legacy.passwords import check_password
 from arxiv.auth.legacy.exceptions import PasswordAuthenticationFailed, NoSuchUser
 
@@ -239,9 +240,9 @@ def tapir_user_to_auth_response(tapir_user: TapirUser) -> AuthResponse:
 
     # seems to exist in DB
     if tapir_user.joined_date:
-        attributes["joined_date"] = [tapir_user.joined_date]
+        attributes["joined_date"] = [datetime.utcfromtimestamp(tapir_user.joined_date).isoformat() + "Z"]
     if tapir_user.joined_ip_num:
-        attributes["joined_ip_num"] = [tapir_user.joined_ip_num]
+        attributes["joined_ip_num"] = [str(tapir_user.joined_ip_num)]
     if tapir_user.joined_remote_host:
         attributes["joined_remote_host"] = [tapir_user.joined_remote_host]
 
@@ -261,12 +262,14 @@ def tapir_user_to_auth_response(tapir_user: TapirUser) -> AuthResponse:
         groups.append(tpc.name)
         roles.append(tpc.name)
 
-    username = tapir_user.tapir_nicknames.nickname
+    username = ""
+    if tapir_user.tapir_nicknames:
+        username = tapir_user.tapir_nicknames[0].nickname
     if os.environ.get("NORMALIZE_USERNAME", "true") == "true":
         username = username.lower()
 
     return AuthResponse(
-        id=tapir_user.user_id,
+        id=str(tapir_user.user_id),
         username=username,
         email=tapir_user.email,
         firstName=tapir_user.first_name,
@@ -282,7 +285,7 @@ def tapir_user_to_auth_response(tapir_user: TapirUser) -> AuthResponse:
 
 @app.get("/auth/{name}", response_model=AuthResponse)
 async def get_auth_name(name: str, _token: str=Depends(verify_token)) -> AuthResponse:
-    with get_db() as session:
+    with DatabaseSession() as session:
         tapir_user = get_tapir_user(session, name)
 
         if not tapir_user:
@@ -293,7 +296,7 @@ async def get_auth_name(name: str, _token: str=Depends(verify_token)) -> AuthRes
 
 @app.post("/auth/{name}")
 async def validate_user(name: str, pwd: PasswordData, _token: str=Depends(verify_token)):
-    with get_db() as session:
+    with DatabaseSession() as session:
         tapir_user = get_tapir_user(session, name)
         if not tapir_user:
             raise HTTPException(status_code=404, detail="User not found")
@@ -315,7 +318,7 @@ async def validate_user(name: str, pwd: PasswordData, _token: str=Depends(verify
 @app.get("/states", response_model=dict)
 async def health_check() -> dict:
     try:
-        with get_db() as session:
+        with DatabaseSession() as session:
             states: State = session.query(State).all()
             result = {state.name: state.value for state in states}
             return result
@@ -330,7 +333,7 @@ def on_startup():
 
     logger.debug(f"Engine: {engine.name}, DBURI: {settings.CLASSIC_DB_URI}")
     try:
-        with get_db() as session:
+        with DatabaseSession() as session:
             tapir_user = get_tapir_user(session, "ph18@cornell.edu")
             if tapir_user:
                 logger.info(f"TapirUser: {str(tapir_user_to_auth_response(tapir_user))}")

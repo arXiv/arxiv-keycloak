@@ -7,7 +7,6 @@ import os
 import string
 from typing import Optional
 
-from arxiv.auth.legacy.accounts import update
 from keycloak import KeycloakAdmin, KeycloakError
 import argparse
 
@@ -158,11 +157,15 @@ class KeycloakSetup:
             return
 
         changed = {}
-        for key in ["eventsListeners", "eventsEnabled", "eventsExpiration", "adminEventsEnabled","adminEventsDetailsEnabled"]:
-            if repr(realm_config[key]) != repr(self.realm[key]):
-                realm_config[key] = self.realm[key]
-                changed[key] = self.realm[key]
-                pass
+        for key in ["eventsListeners", "eventsEnabled", "eventsExpiration", "adminEventsEnabled", "adminEventsDetailsEnabled"]:
+            try:
+                if key not in realm_config or repr(realm_config[key]) != repr(self.realm[key]):
+                    realm_config[key] = self.realm[key]
+                    changed[key] = self.realm[key]
+                    pass
+            except KeyError:
+                logger.error(f"Key '{key}' not found in {realm_config!r}")
+
         if changed:
             try:
                 self.admin.update_realm(realm_name, payload=realm_config)

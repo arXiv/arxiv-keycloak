@@ -12,7 +12,7 @@ python = "^3.11"
 google-cloud = "^0.34.0"
 google-cloud-pubsub = "^2.25.2"
 logging-json = "^0.5.0"
-arxiv-base = {git = "https://github.com/arXiv/arxiv-base.git", rev = "405551162493109f147da965621a573d73e1cc32"}
+arxiv-base = {git = "https://github.com/arXiv/arxiv-base.git", rev = "656c8e841a2c610019f19fff8cc8d13d0983e377"}
 
 
 [build-system]
