@@ -13,7 +13,8 @@ from arxiv.base.logging import getLogger
 from arxiv.auth.openid.oidc_idp import ArxivOidcIdpClient
 from arxiv.db.models import State
 
-from .authentication import router as auth_router
+from .authentication import router as authn_router
+from .account import router as account_router
 from .app_logging import setup_logger
 from .mysql_retry import MySQLRetryMiddleware
 from . import get_db
@@ -58,6 +59,9 @@ KEYCLOAK_CLIENT_SECRET = os.environ.get('KEYCLOAK_CLIENT_SECRET', 'gsG2HIu/lYZaw
 # NOTE: You also need the classic session cookie name "tapir_session" but it's set
 # slightly differently since it needs to be passed to arxiv-base
 AUTH_SESSION_COOKIE_NAME = os.environ.get("AUTH_SESSION_COOKIE_NAME", "arxiv_oidc_session")
+
+# arXiv's Keycloak access token names
+ARXIV_KEYCLOAK_COOKIE_NAME = os.environ.get("ARXIV_KEYCLOAK_COOKIE_NAME", "arxiv_keycloak_token")
 
 # More cors origins
 CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "")
@@ -143,6 +147,7 @@ def create_app(*args, **kwargs) -> FastAPI:
         JWT_SECRET=jwt_secret,
         COOKIE_MAX_AGE=int(os.environ.get('COOKIE_MAX_AGE', '99073266')),
         AUTH_SESSION_COOKIE_NAME=AUTH_SESSION_COOKIE_NAME,
+        ARXIV_KEYCLOAK_COOKIE_NAME=ARXIV_KEYCLOAK_COOKIE_NAME,
         CLASSIC_COOKIE_NAME=CLASSIC_COOKIE_NAME,
         SESSION_DURATION=SESSION_DURATION,
         **{f"ARXIV_URL_{name.upper()}": value for name, value, site in settings.URLS }
@@ -167,7 +172,9 @@ def create_app(*args, **kwargs) -> FastAPI:
 
     app.add_middleware(MySQLRetryMiddleware, engine=_classic_engine,  retry_attempts=3)
 
-    app.include_router(auth_router)
+    app.include_router(authn_router)
+    # app.include_router(authz_router)
+    app.include_router(account_router)
 
     @app.middleware("http")
     async def apply_response_headers(request: Request, call_next: Callable) -> Response:

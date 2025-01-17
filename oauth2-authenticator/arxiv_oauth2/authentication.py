@@ -1,7 +1,6 @@
 """Provides integration for the external user interface."""
 import json
 import urllib.parse
-from json import JSONDecodeError
 from typing import Optional, Tuple, Literal, Any
 
 from fastapi import APIRouter, Depends, status, Request, HTTPException
@@ -15,18 +14,19 @@ from arxiv.base import logging
 from arxiv.auth.user_claims import ArxivUserClaims
 from arxiv.auth.openid.oidc_idp import ArxivOidcIdpClient
 from arxiv.auth.legacy.sessions import invalidate as legacy_invalidate
+from arxiv.auth.legacy import accounts, exceptions
 from arxiv.auth import domain
-from arxiv.db import Session as ArxivSession
 
 from . import get_current_user_or_none, get_db
 
 from .sessions import create_tapir_session
 
 
-def cookie_params(request: Request) -> Tuple[str, str, Optional[str], bool, Literal["lax", "none"]]:
+def cookie_params(request: Request) -> Tuple[str, str, str, Optional[str], bool, Literal["lax", "none"]]:
     return (
         request.app.extra['AUTH_SESSION_COOKIE_NAME'],
         request.app.extra['CLASSIC_COOKIE_NAME'],
+        request.app.extra['ARXIV_KEYCLOAK_COOKIE_NAME'],
         request.app.extra.get('DOMAIN'),
         request.app.extra.get('SECURE', True),
         request.app.extra.get('SAMESITE', "lax"))
@@ -39,7 +39,7 @@ router = APIRouter()
 @router.get('/login')
 async def login(request: Request,
           current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none)
-          ) -> Response:
+          ) -> RedirectResponse:
     """User can log in with username and password, or permanent token."""
     # redirect to IdP
     idp: ArxivOidcIdpClient = request.app.extra["idp"]
@@ -68,7 +68,7 @@ async def oauth2_callback(request: Request,
     idp: ArxivOidcIdpClient = request.app.extra["idp"]
     user_claims: Optional[ArxivUserClaims] = idp.from_code_to_user_claims(code)
 
-    session_cookie_key, classic_cookie_key, domain, secure, samesite = cookie_params(request)
+    # session_cookie_key, classic_cookie_key, keycloak_key, domain, secure, samesite = cookie_params(request)
 
     if user_claims is None:
         logger.warning("Getting user claim failed. code: %s", repr(code))
@@ -116,7 +116,7 @@ async def refresh_token(
     checking the cookies and rehydrate it.
     """
     next_page = request.query_params.get('next_page', request.query_params.get('next', ''))
-    _session_cookie_key, classic_cookie_key, _domain, _secure, _samesite = cookie_params(request)
+    _session_cookie_key, classic_cookie_key, _keycloak_key, _domain, _secure, _samesite = cookie_params(request)
     user_claims: Optional[ArxivUserClaims] = None
     tapir_cookie = request.cookies.get(classic_cookie_key, "")
     login_url = request.url_for("login")  # Assuming you have a route named 'login'
@@ -193,7 +193,7 @@ async def refresh_tokens(request: Request, tokens: Tokens) -> RefreshedTokens:
 
     secret = request.app.extra['JWT_SECRET']
 
-    session_cookie_key, classic_cookie_key, domain, secure, samesite = cookie_params(request)
+    session_cookie_key, classic_cookie_key, _keycloak_key, domain, secure, samesite = cookie_params(request)
     cookie_max_age = int(request.app.extra['COOKIE_MAX_AGE'])
 
     content = RefreshedTokens(
@@ -219,7 +219,7 @@ async def logout(request: Request,
     """Log out of arXiv."""
     default_next_page = request.app.extra['ARXIV_URL_HOME']
     next_page = request.query_params.get('next_page', request.query_params.get('next', default_next_page))
-    session_cookie_key, classic_cookie_key, domain, secure, samesite = cookie_params(request)
+    session_cookie_key, classic_cookie_key, _keycloak_key, domain, secure, samesite = cookie_params(request)
 
     classic_cookie = request.cookies.get(classic_cookie_key)
 
@@ -259,10 +259,11 @@ async def logout(request: Request) -> Response:
 
 @router.get('/token-names')
 async def get_token_names(request: Request) -> JSONResponse:
-    session_cookie_key, classic_cookie_key, _domain, _secure, _samesite = cookie_params(request)
+    session_cookie_key, classic_cookie_key, keycloak_key, _domain, _secure, _samesite = cookie_params(request)
     return {
         "session": session_cookie_key,
-        "classic": classic_cookie_key
+        "classic": classic_cookie_key,
+        "arxiv_keycloak": keycloak_key,
     }
 
 
@@ -274,14 +275,17 @@ async def check_db(request: Request,
     return {"count": count}
 
 
-def make_cookie_response(request: Request, user_claims: Optional[ArxivUserClaims],
-                         tapir_cookie: str, next_page: str, content: Optional[Any] = None) -> Response:
+def make_cookie_response(request: Request,
+                         user_claims: Optional[ArxivUserClaims],
+                         tapir_cookie: str,
+                         next_page: str,
+                         content: Optional[Any] = None) -> Response:
 
-    session_cookie_key, classic_cookie_key, domain, secure, samesite = cookie_params(request)
+    session_cookie_key, classic_cookie_key, keycloak_key, domain, secure, samesite = cookie_params(request)
     cookie_max_age = int(request.app.extra['COOKIE_MAX_AGE'])
 
     response: Response
-    if (next_page):
+    if next_page:
         if user_claims and user_claims.access_token:
             # Construct the updated URL with access token as query param
             parsed_url = urllib.parse.urlparse(next_page)
@@ -306,6 +310,8 @@ def make_cookie_response(request: Request, user_claims: Optional[ArxivUserClaims
         logger.debug('%s=%s',session_cookie_key, token)
         response.set_cookie(session_cookie_key, token, max_age=cookie_max_age,
                             domain=domain, path="/", secure=secure, samesite=samesite)
+        response.set_cookie(keycloak_key, user_claims.access_token,  max_age=cookie_max_age,
+                            domain=domain, path="/", secure=secure, samesite=samesite)
     else:
         response.set_cookie(session_cookie_key, "", max_age=0,
                             domain=domain, path="/", secure=secure, samesite=samesite)
@@ -321,7 +327,29 @@ def make_cookie_response(request: Request, user_claims: Optional[ArxivUserClaims
     return response
 
 
-@router.post('/register')
-async def register_user(request: Request, user: domain.User) -> JSONResponse:
-    """Register a new user."""
+class UserRegistration(domain.User):
+    """User registration API"""
 
+    password: str
+    remote_ipv4: str
+    remote_hostname: str
+
+
+@router.post('/register')
+async def register_user(_request: Request,
+                        registration: UserRegistration,
+                        _db: Session = Depends(get_db)
+                        ) -> Tuple[domain.User, domain.Authorizations]:
+    """Register a new user."""
+    registration.user_id = None
+    registration.verified = False
+
+    try:
+        dom_user, dom_auth = accounts.register(registration,
+                          registration.password,
+                          registration.remote_ipv4,
+                          registration.remote_hostname)
+    except exceptions.RegistrationFailed:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,)
+
+    return (dom_user, dom_auth)
