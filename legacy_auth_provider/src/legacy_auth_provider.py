@@ -264,7 +264,13 @@ def tapir_user_to_auth_response(tapir_user: TapirUser) -> AuthResponse:
 
     username = ""
     if tapir_user.tapir_nicknames:
-        username = tapir_user.tapir_nicknames[0].nickname
+        if isinstance(tapir_user.tapir_nicknames, str):
+            username = tapir_user.tapir_nicknames.nickname
+        elif isinstance(tapir_user.tapir_nicknames, list):
+            username = tapir_user.tapir_nicknames[0].nickname
+        else:
+            raise Exception("Unexpected value type")
+
     if os.environ.get("NORMALIZE_USERNAME", "true") == "true":
         username = username.lower()
 
