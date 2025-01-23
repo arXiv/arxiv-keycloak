@@ -163,6 +163,18 @@ services:
       - testsite
     network_mode: host
     
+  mta:
+    image: "${TEST_MTA_TAG}"
+    container_name: test-mta
+    ports:
+      - "${SMTP_PORT}:${SMTP_PORT}"
+      - "${MAILSTORE_PORT}:${MAILSTORE_PORT}"
+    network_mode: host
+    environment:
+      SMTP_PORT: "${SMTP_PORT}"
+      MAILSTORE_PORT: "${MAILSTORE_PORT}"
+      
+    
   keycloak-setup:
     image: python:3.11
     container_name: keycloak-setup
