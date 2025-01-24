@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from token import TILDE
 
 from arxiv.config import settings
 from fastapi import FastAPI, HTTPException, Depends
@@ -264,12 +265,12 @@ def tapir_user_to_auth_response(tapir_user: TapirUser) -> AuthResponse:
 
     username = ""
     if tapir_user.tapir_nicknames:
-        if isinstance(tapir_user.tapir_nicknames, str):
+        if isinstance(tapir_user.tapir_nicknames, TapirNickname):
             username = tapir_user.tapir_nicknames.nickname
-        elif isinstance(tapir_user.tapir_nicknames, list):
+        elif isinstance(tapir_user.tapir_nicknames.nickname, list):
             username = tapir_user.tapir_nicknames[0].nickname
         else:
-            raise Exception("Unexpected value type")
+            raise Exception(f"Unexpected value type: {tapir_user.tapir_nicknames!r}")
 
     if os.environ.get("NORMALIZE_USERNAME", "true") == "true":
         username = username.lower()
