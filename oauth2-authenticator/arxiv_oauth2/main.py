@@ -6,6 +6,7 @@ from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 # from sqlalchemy.orm import sessionmaker
+from keycloak import KeycloakAdmin, KeycloakError
 
 from arxiv.auth.legacy.util import missing_configs
 from arxiv.base.globals import get_application_config
@@ -137,6 +138,19 @@ def create_app(*args, **kwargs) -> FastAPI:
     from arxiv.db import init as arxiv_db_init, _classic_engine
     arxiv_db_init(settings=settings)
 
+    #
+    realm_name = os.environ.get('ARXIV_REALM_NAME', "arxiv")
+    keycloak_admin_secret = os.environ.get('KEYCLOAK_ADMIN_SECRET', "<NOT-SET>")
+    keycloak_admin = KeycloakAdmin(
+        server_url=KEYCLOAK_SERVER_URL,
+        user_realm_name="master",
+        client_id="admin-cli",
+        username="admin",
+        password=keycloak_admin_secret,
+        realm_name=realm_name,
+        verify=False,
+    )
+
     app = FastAPI(
         root_path=SERVER_ROOT_PATH,
         idp=_idp_,
@@ -150,6 +164,7 @@ def create_app(*args, **kwargs) -> FastAPI:
         ARXIV_KEYCLOAK_COOKIE_NAME=ARXIV_KEYCLOAK_COOKIE_NAME,
         CLASSIC_COOKIE_NAME=CLASSIC_COOKIE_NAME,
         SESSION_DURATION=SESSION_DURATION,
+        KEYCLOAK_ADMIN=keycloak_admin,
         **{f"ARXIV_URL_{name.upper()}": value for name, value, site in settings.URLS }
     )
 

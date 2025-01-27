@@ -24,10 +24,10 @@ RUN $VIRTUAL_ENV/bin/poetry config virtualenvs.create false ; exit 0
 
 WORKDIR /opt/arxiv/
 
-COPY poetry.lock app-logging.conf hypercorn-config.toml pyproject.toml /opt/arxiv/
-
-# RUN $VIRTUAL_ENV/bin/poetry lock --no-update ; exit 0
-RUN $VIRTUAL_ENV/bin/poetry install --no-dev --no-interaction --no-ansi ; exit 0
+COPY poetry.lock app-logging.conf hypercorn-config.toml pyproject.toml ./
+     
+#RUN $VIRTUAL_ENV/bin/poetry lock --no-update 
+RUN $VIRTUAL_ENV/bin/poetry install --no-ansi
 RUN $VIRTUAL_ENV/bin/pip install hypercorn
 RUN $VIRTUAL_ENV/bin/pip uninstall -y poetry
 

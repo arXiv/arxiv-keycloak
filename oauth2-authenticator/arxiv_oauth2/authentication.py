@@ -34,7 +34,7 @@ def cookie_params(request: Request) -> Tuple[str, str, str, Optional[str], bool,
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(tags=["authentication"])
 
 @router.get('/login')
 async def login(request: Request,

@@ -7,9 +7,12 @@ import jwcrypto
 import jwcrypto.jwt
 
 from arxiv.auth.user_claims import ArxivUserClaims
+from keycloak import KeycloakAdmin
+from mypy.build import read_quickstart_file
 from sqlalchemy.orm import sessionmaker
 
 ALGORITHM = "HS256"
+
 
 def get_current_user_or_none(request: Request) -> ArxivUserClaims | None:
     logger = getLogger(__name__)
@@ -81,3 +84,8 @@ def get_db():
         raise
     finally:
         db.close()
+
+KEYCLOAK_ADMIN = 'KEYCLOAK_ADMIN'
+
+def get_keycloak_admin(request: Request) -> KeycloakAdmin:
+    return request.app.extra[KEYCLOAK_ADMIN]

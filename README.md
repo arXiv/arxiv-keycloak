@@ -76,11 +76,14 @@ Once created, you may change the .env as needed but YMMV. Adding is fine but
 be careful of removing entries.
 
 This is used for building Docker images as well as running Docker containers.
+docker compose takes this env file.
 
 
 ## Building Container images
 
 `make docker-image`
+
+Run this at the top-level and it runs the docker build in sub-directories.
 
 ## Local running
 
@@ -100,4 +103,6 @@ This is used for building Docker images as well as running Docker containers.
 - nginx: To tie up the web site to the callback endpoint
 - keycloak-setup: Creates "arxiv" realm, "arxiv-user" client and Legacy Auth user federation
 - arxiv-db-setup: Creates and populates arXiv+Tapir tables
-
+- testsite: Test web site
+- test-mta: SMTP server that is also a REST api. Keycloak sends email to this, and you can
+  retrieve and investigate.
