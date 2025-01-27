@@ -89,6 +89,11 @@ if [ ! -r .env.localdb ] ; then
     echo LEGACY_AUTH_API_TOKEN=legacy-api-token >> .env.localdb
     echo LEGACY_AUTH_DOCKER_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/legacy-auth-provider >> .env.localdb
     #
+    #
+    echo USER_PORTAL_PORT=21506 >> .env.localdb
+    echo USER_PORTAL_APP_TAG=gcr.io/arxiv-development/arxiv-keycloak/uesr-portal >> .env.localdb
+    echo USER_PORTAL_APP_NAME=arxiv-user-portal >> .env.localdb
+    #
     # pubsub emulator port
     #
     PUBSUB_PORT=21507
@@ -104,8 +109,16 @@ if [ ! -r .env.localdb ] ; then
     # see GCP_EVENT_TOPIC_ID, GCP_ADMIN_EVENT_TOPIC_ID
     echo KC_TAPIR_BRIDGE_SUBSCRIPTION=keycloak-arxiv-events-sub >> .env.localdb
     #
+    # email
     #
-    echo TESTSITE_TAG=testsite >> .env.localdb
+    SMTP_PORT=21508
+    echo SMTP_PORT=$SMTP_PORT >> .env.localdb
+    echo SMTP_HOST=0.0.0.0:$SMTP_PORT >> .env.localdb
+    echo MAILHOG_HTTP_PORT=21512 >> .env.localdb
+    echo TEST_MTA_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/test-mta
+    #
+    #
+    echo TESTSITE_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/testsite >> .env.localdb
     echo TESTSITE_PORT=21509 >> .env.localdb
     #
     # This is not strictry necessary but here
@@ -117,7 +130,7 @@ if [ ! -r .env.localdb ] ; then
 fi
 
 if [ ! -r .env.devdb ] ; then
-    echo KC_DOCKER_TAG=gcr.io/$GCP_PROJECT/keycloak >> .env.devdb
+    echo KC_DOCKER_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/keycloak >> .env.devdb
     echo KC_DB_HOST_PUBLIC=$(op item get  wos2wdt56jx2gjmvb4awlxk3ay --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "fnxbox5ugfkr2ol5wtqbk6wkwq") | .value') >> .env.devdb
     echo KC_DB_HOST_PRIVATE=$(op item get  wos2wdt56jx2gjmvb4awlxk3ay --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "o4idffxy6bns7nihak4q4lo3xe") | .value') >> .env.devdb
     echo KC_DB_USER=keycloak >> .env.devdb
