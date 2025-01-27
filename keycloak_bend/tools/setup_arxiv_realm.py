@@ -38,9 +38,12 @@ class KeycloakSetup:
         self.legacy_auth_uri = kwargs.pop('legacy_auth_uri', None)
         self.admin = KeycloakAdmin(*args, **kwargs)
 
+    @property
+    def realm_name(self) -> str:
+        return self.realm['realm']
 
     def create_realm(self):
-        realm_name = realm['realm']
+        realm_name = self.realm_name
         payload = {
             "realm": realm_name,
             "displayName": realm['displayName'],
@@ -54,9 +57,8 @@ class KeycloakSetup:
 
 
     def restore_realm(self):
-        realm_name = self.realm['realm']
         realms = {realm['realm']: realm for realm in self.admin.get_realms()}
-        if realm_name not in realms:
+        if self.realm_name not in realms:
             self.create_realm()
 
 
@@ -98,6 +100,36 @@ class KeycloakSetup:
             except KeycloakError as exc:
                 logger.error(f"Error creating {scope['name']}: {exc}")
 
+
+    def create_admin_user(self):
+        payload = {
+            "username": "arxiv-user-admin",
+            "firstName": "User bot",
+            "lastName": "arXiv",
+            "email": "keycloak-admin@arxiv.org",
+            "emailVerified": True,
+            "enabled": True,
+            "realmRoles": ["manage-users"]
+        }
+
+        user_id = self.admin.create_user(
+            payload=payload,
+            exist_ok=True
+        )
+
+        if user_id:
+            self.admin.set_user_password(user_id, password="changeme", temporary=False)
+        pass
+
+
+    def _update_toplevel_setting(self, name: str) -> None:
+        self.admin.update_realm(self.realm_name, {name: self.realm[name]})
+        pass
+
+    def restore_smtp_server(self):
+        # self.admin
+        self._update_toplevel_setting('smtpServer')
+        pass
 
     def restore_client(self, client_id: str, client_secret: str):
         existing_clients = {cl['clientId']: cl for cl in self.admin.get_clients()}
@@ -178,7 +210,10 @@ class KeycloakSetup:
         self.restore_realm()
         self.restore_roles()
         self.restore_scopes()
+        self.restore_smtp_server()
+        self.create_admin_user()
         self.restore_client("arxiv-user", self.client_secret)
+        self.restore_client("arxiv-user-m2m", self.client_secret)
         self.restore_legacy_auth_provider()
         self.restore_pubsub()
 
