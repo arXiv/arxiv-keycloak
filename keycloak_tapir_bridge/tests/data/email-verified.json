@@ -1,0 +1,18 @@
+{
+  "id" : "8b4aaf3b-14ee-4b1d-b532-79d7d178d4b8",
+  "time" : 1738005796557,
+  "realmId" : "c35229b5-75cf-42d4-aa83-976a0609b73d",
+  "realmName" : "arxiv",
+  "authDetails" : {
+    "realmId" : "dc5d84a5-348f-4956-a7b9-e6a74a35cc66",
+    "realmName" : "master",
+    "clientId" : "1e15cfc1-4d87-465a-a369-6e70af387895",
+    "userId" : "ce43077d-2b2b-4090-996f-d11757b32e83",
+    "ipAddress" : "0:0:0:0:0:0:0:1"
+  },
+  "resourceType" : "USER",
+  "operationType" : "UPDATE",
+  "resourcePath" : "users/1212",
+  "representation" : "{\"id\":\"1212\",\"username\":\"reader\",\"firstName\":\"Random\",\"lastName\":\"Reader\",\"email\":\"no-mail-randomreader@example.com\",\"emailVerified\":false,\"attributes\":{\"tracking_cookie\":[\"xyz\"],\"joined_date\":[\"2013-11-11T15:56:29Z\"],\"joined_ip_num\":[\"dedicated\"],\"share\":[\"FirstName\",\"LastName\",\"Email\"]},\"createdTimestamp\":1738005757855,\"enabled\":true,\"totp\":false,\"disableableCredentialTypes\":[],\"requiredActions\":[],\"notBefore\":0,\"access\":{\"manageGroupMembership\":true,\"view\":true,\"mapRoles\":true,\"impersonate\":true,\"manage\":true}}",
+  "resourceTypeAsString" : "USER"
+}

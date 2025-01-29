@@ -43,7 +43,7 @@ docker-image:
 #-# Command: run
 #-#   runs the docker image
 run:
-	docker run --name testsite_app --rm -p ${TESTSITE_PORT}:${TESTSITE_PORT} -e JWT_SECRET=${JWT_SECRET} -e KC_URL_PUBLIC=${KC_URL_PUBLIC} -e KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET} -e NGINX_PORT=${NGINX_PORT} -e PORT=${TESTSITE_PORT} ${app_tag}
+	docker run --name testsite_app --rm -p ${TESTSITE_PORT}:${TESTSITE_PORT} -e JWT_SECRET=${JWT_SECRET} -e KC_URL_PUBLIC=${KC_URL_PUBLIC} -e KEYCLOAK_TEST_CLIENT_SECRET=${KEYCLOAK_TEST_CLIENT_SECRET} -e NGINX_PORT=${NGINX_PORT} -e PORT=${TESTSITE_PORT} ${app_tag}
 
 sh:
-	docker run --name testsite_app --rm -it -p ${TESTSITE_PORT}:${TESTSITE_PORT} -e JWT_SECRET=${JWT_SECRET} -e KC_URL_PUBLIC=${KC_URL_PUBLIC} -e KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET} -e NGINX_PORT=${NGINX_PORT} -e PORT=${TESTSITE_PORT} ${app_tag} /bin/bash
+	docker run --name testsite_app --rm -it -p ${TESTSITE_PORT}:${TESTSITE_PORT} -e JWT_SECRET=${JWT_SECRET} -e KC_URL_PUBLIC=${KC_URL_PUBLIC} -e KEYCLOAK_TEST_CLIENT_SECRET=${KEYCLOAK_TEST_CLIENT_SECRET} -e NGINX_PORT=${NGINX_PORT} -e PORT=${TESTSITE_PORT} ${app_tag} /bin/bash

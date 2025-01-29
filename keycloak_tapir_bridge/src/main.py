@@ -2,13 +2,19 @@
 keycloak_tapir_bridge subscribes to the audit events from keycloak and updates the tapir db accordingly.
 """
 import argparse
+import importlib
 import signal
 import sys
 import threading
-import typing
+from typing import Any, Dict, Callable
+import inspect
+
+
 # from datetime import datetime, timedelta
 # from pathlib import Path
 from time import sleep, gmtime, strftime as time_strftime
+
+from sqlalchemy import Engine
 
 import json
 import os
@@ -19,6 +25,9 @@ import logging_json
 from google.cloud.pubsub_v1.subscriber.message import Message
 from google.cloud.pubsub_v1 import SubscriberClient
 
+from arxiv.auth.legacy.exceptions import NoSuchUser
+
+
 class JsonFormatter(logging_json.JSONFormatter):
     def formatTime(self, record, datefmt=None):
         ct = self.converter(record.created)
@@ -28,9 +37,7 @@ class JsonFormatter(logging_json.JSONFormatter):
 
 RUNNING = True
 
-logging.basicConfig(level=logging.INFO, format='(%(levelname)s): (%(asctime)s) %(message)s')
-logger = logging.getLogger(__file__)
-logger.setLevel(logging.INFO)
+# logging.basicConfig(level=logging.INFO, format='(%(levelname)s): (%(asctime)s) %(message)s')
 
 LOG_FORMAT_KWARGS = {
     "fields": {
@@ -41,7 +48,7 @@ LOG_FORMAT_KWARGS = {
     # time.strftime has no %f code "datefmt": "%Y-%m-%dT%H:%M:%S.%fZ%z",
 }
 
-def signal_handler(_signal: int, _frame: typing.Any):
+def signal_handler(_signal: int, _frame: Any):
     """Graceful shutdown request"""
     global RUNNING
     RUNNING = False # Just a very negative int
@@ -52,7 +59,8 @@ signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
 
-def subscribe_keycloak_events(project_id: str, subscription_id: str, request_timeout: int) -> None:
+def subscribe_keycloak_events(project_id: str, subscription_id: str, request_timeout: int, db: Engine,
+                              dispatch_functions: Dict[str, Callable]) -> None:
     """
     Create a subscriber client and pull messages from the keycloak events
 
@@ -60,7 +68,9 @@ def subscribe_keycloak_events(project_id: str, subscription_id: str, request_tim
         project_id (str): Google Cloud project ID
         subscription_id (str): ID of the Pub/Sub subscription
         request_timeout: request timeout
+        db: SQLAlchemy database engine
     """
+    logger = logging.getLogger(__file__)
 
     def handle_keycloak_event(message: Message) -> None:
         """Keycloak event handler
@@ -111,7 +121,24 @@ def subscribe_keycloak_events(project_id: str, subscription_id: str, request_tim
             return
 
         #
-
+        resource_type = data.get("resourceType").lower()
+        op = data.get("operationType").lower()
+        dispatch_name = f"dispatch_{resource_type}_do_{op}"
+        dispatch = dispatch_functions.get(dispatch_name)
+        representation = json.loads(data.get("representation", "{}"))
+        from arxiv.db import Session
+        if dispatch is not None:
+            try:
+                logger.debug("dispatch %s", dispatch_name)
+                with Session() as session:
+                    dispatch(data, representation, session, logger)
+            except NoSuchUser:
+                logger.warning("No such user: %s", repr(data))
+                pass
+            except Exception as _exc:
+                raise
+        else:
+            logger.info("dispatch %s does not exist: %s", dispatch_name, repr(data))
 
         message.ack()
         logger.info("ack %s", data.get('id', '<no-id>'))
@@ -137,6 +164,28 @@ def subscribe_keycloak_events(project_id: str, subscription_id: str, request_tim
     logger.info("Exiting", extra=log_extra)
 
 
+def get_dispatch_functions(directory: str) -> Dict[str, Callable]:
+    # Dictionary to store dispatch functions
+    dispatch_functions = {}
+
+    # Get the list of Python files in the actions directory
+    for filename in os.listdir(directory):
+        if filename.endswith(".py") and not filename.startswith("__"):
+            # Get the module name
+            module_name = filename[:-3]
+
+            # Import the module dynamically
+            module = importlib.import_module(f"actions.{module_name}")
+
+            # Inspect the module to find functions starting with "dispatch_"
+            for name, func in inspect.getmembers(module, inspect.isfunction):
+                if name.startswith("dispatch_"):
+                    dispatch_functions[name] = func
+
+    return dispatch_functions
+
+
+
 if __name__ == "__main__":
     # projects/arxiv-production/subscriptions/webnode-pdf-compilation
     ad = argparse.ArgumentParser(epilog=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -158,9 +207,13 @@ if __name__ == "__main__":
 
     project_id = args.project
 
+    logger = logging.getLogger(__file__)
+    logger.setLevel(logging.INFO)
+
     if args.debug:
         logger.setLevel(logging.DEBUG)
 
+    # Logging init
     if args.json_log_dir and os.path.exists(args.json_log_dir):
         json_logHandler = logging.handlers.RotatingFileHandler(os.path.join(args.json_log_dir, "kc-to-tapir.log"),
                                                                maxBytes=4 * 1024 * 1024,
@@ -175,8 +228,15 @@ if __name__ == "__main__":
     json_logHandler.setLevel(logging.DEBUG if args.debug else logging.INFO)
     logger.addHandler(json_logHandler)
 
+    # DB init
+    from arxiv.config import settings
+    from arxiv.db import init as arxiv_db_init, _classic_engine
+    arxiv_db_init(settings=settings)
+
+    dispatch_functions = get_dispatch_functions(os.path.join(os.path.dirname(os.path.abspath(__file__)), "actions"))
+
     listeners = [
-        threading.Thread(target=subscribe_keycloak_events, args=(project_id, args.subscription, args.timeout))
+        threading.Thread(target=subscribe_keycloak_events, args=(project_id, args.subscription, args.timeout, _classic_engine, dispatch_functions)),
     ]
 
     for listener in listeners:

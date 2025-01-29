@@ -80,6 +80,9 @@ LOG_OUTPUT_FORMAT="${LOG_OUTPUT_FORMAT:- --log-console-output=json}"
 export GCP_EVENT_TOPIC_ID=keycloak-arxiv-events
 export GCP_ADMIN_EVENT_TOPIC_ID=keycloak-arxiv-events
 
+echo "GCP_PROJECT_ID=$GCP_PROJECT_ID"
+echo "GCP_EVENT_TOPIC_ID=$GCP_EVENT_TOPIC_ID"
+
 # -------------------------------------------------------------------------------------------
 # start / start-dev
 #

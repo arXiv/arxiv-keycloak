@@ -20,7 +20,7 @@ services:
   pubsub-emulator:
     image: google/cloud-sdk:latest
     container_name: pubsub-emulator
-    command: "/pubsub-setup.sh ${PUBSUB_EMULATOR_PORT} ${GCP_PROJECT} ${GCP_EVENT_TOPIC_ID} ${KC_TAPIR_BRIDGE_SUBSCRIPTION}"
+    command: "/pubsub-setup.sh ${PUBSUB_EMULATOR_PORT} ${PUBSUB_PROJECT} ${GCP_EVENT_TOPIC_ID} ${KC_TAPIR_BRIDGE_SUBSCRIPTION}"
     ports:
       - "${PUBSUB_EMULATOR_PORT}:${PUBSUB_EMULATOR_PORT}"
     environment:
@@ -39,7 +39,7 @@ services:
       KC_DB_PASS: ${KC_DB_PASS}
       KC_DB_USER: ${KC_DB_USER}
       GCP_CREDENTIALS: ${GCP_CRED}
-      GCP_PROJECT_ID: ${GCP_PROJECT}
+      GCP_PROJECT_ID: ${PUBSUB_PROJECT}
       KC_JDBC_CONNECTION: ${KC_JDBC_CONNECTION}
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
@@ -47,6 +47,11 @@ services:
       LOG_OUTPUT_FORMAT: "--log-console-output=default"
       PUBSUB_EMULATOR_HOST: 127.0.0.1:${PUBSUB_EMULATOR_PORT}
       KC_HTTP_PORT: ${KC_PORT}
+      #
+      # These are used for troubleshooting of audit event not going into pubsub.
+      # (not sure this works with te pubsub emulator)
+      GRPC_LOG_LEVEL: DEBUG
+      GRPC_TRACE: tcp,http,api
     command:
       - start-dev --verbose --http-port ${KC_PORT}
     # This is needed when you connect to DB on GCP
@@ -84,7 +89,7 @@ services:
       # hostname keycloak for non-host network
       KEYCLOAK_SERVER_URL: http://localhost:${KC_PORT}
       OAUTH2_CALLBACK_URL: ${AAA_CALLBACK_URL}
-      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      ARXIV_USER_SECRET: ${KEYCLOAK_TEST_CLIENT_SECRET}
       CLASSIC_DB_URI: ${CLASSIC_DB_URI}
       SESSION_DURATION: 36000
       CLASSIC_COOKIE_NAME: tapir_session
@@ -133,7 +138,7 @@ services:
     depends_on:
       - arxiv-db
       - pubsub-emulator
-    command: python main.py --project "${GCP_PROJECT}" --subscription "${KC_TAPIR_BRIDGE_SUBSCRIPTION}" --debug 
+    command: python main.py --project "${PUBSUB_PROJECT}" --subscription "${KC_TAPIR_BRIDGE_SUBSCRIPTION}" --debug 
 
 
   testsite:
@@ -145,7 +150,7 @@ services:
       PORT: ${TESTSITE_PORT}
       JWT_SECRET: ${JWT_SECRET}
       KC_URL_PUBLIC: ${KC_URL_PUBLIC}
-      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      KEYCLOAK_TEST_CLIENT_SECRET: ${KEYCLOAK_TEST_CLIENT_SECRET}
       NGINX_PORT: ${NGINX_PORT} 
     network_mode: host
 
@@ -187,7 +192,7 @@ services:
       # This is running in the docker network - so use private address
       KC_URL: "${KC_URL_PRIVATE}"
       KC_ADMIN_PASSWORD: "${KC_ADMIN_PASSWORD}"
-      ARXIV_USER_SECRET: "${KEYCLOAK_CLIENT_SECRET}"
+      ARXIV_USER_SECRET: "${KEYCLOAK_TEST_CLIENT_SECRET}"
       LEGACY_AUTH_API_TOKEN: "${LEGACY_AUTH_API_TOKEN}"
       SOURCE: /keycloak_bend/realms/arxiv-realm-localhost.json
 

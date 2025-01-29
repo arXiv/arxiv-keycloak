@@ -24,7 +24,7 @@ class FlaskFixture(Flask):
         super().__init__(*args, **kwargs)
         assert load_dotenv(dotenv_path=os.path.join(arxiv_keycloak_dir, ".env"))
         self.env = dotenv_values()
-        self.secret_key = self.env['KEYCLOAK_CLIENT_SECRET']
+        self.secret_key = self.env['KEYCLOAK_TEST_CLIENT_SECRET']
         nginx_port = self.env['NGINX_PORT']
         self.idp = ArxivOidcIdpClient(f"http://localhost:{nginx_port}/aaa/callback",
                                       scope=["openid"],

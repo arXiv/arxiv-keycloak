@@ -18,10 +18,10 @@ class FlaskFixture(Flask):
         super().__init__(*args, **kwargs)
         assert os.environ.get('JWT_SECRET')
         assert os.environ.get('KC_URL_PUBLIC')
-        assert os.environ.get('KEYCLOAK_CLIENT_SECRET')
+        assert os.environ.get('KEYCLOAK_TEST_CLIENT_SECRET')
         assert os.environ.get('NGINX_PORT')
 
-        self.secret_key = os.environ['KEYCLOAK_CLIENT_SECRET']
+        self.secret_key = os.environ['KEYCLOAK_TEST_CLIENT_SECRET']
         nginx_port = os.environ['NGINX_PORT']
         self.jwt_secret = os.environ.get('JWT_SECRET')
         self.idp = ArxivOidcIdpClient(f"http://localhost:{nginx_port}/aaa/callback",
