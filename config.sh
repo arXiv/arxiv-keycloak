@@ -6,7 +6,9 @@ ACCOUNT=arxiv.1password.com
 if [ ! -r .env.localdb ] ; then
     PLATFORM=linux/amd64
     GCP_PROJECT=arxiv-development
+    PUBSUB_PROJECT=local-test
 
+    echo PUBSUB_PROJECT=$PUBSUB_PROJECT  >> .env.localdb
     echo DOCKER_NETWORK=host >> .env.localdb
 
     # IRL, this is a secure "password" for encrypting JWT token
@@ -44,10 +46,10 @@ if [ ! -r .env.localdb ] ; then
     echo KC_DB_USER=keycloak >> .env.localdb
     echo KC_DB_PASS=$(op item get  wos2wdt56jx2gjmvb4awlxk3ay --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "vlf6422dpbnqhne535fpgg4vqm") | .value') >> .env.localdb
     echo KC_ADMIN_PASSWORD=$(op item get  bdmmxlepkfsqy5hfgfunpsli2i --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "password") | .value') >> .env.localdb
-    echo GCP_PROJECT=$GCP_PROJECT >> .env.localdb
+    echo GCP_PROJECT=$PUBSUB_PROJECT >> .env.localdb
     echo KC_JDBC_CONNECTION="?ssl=false&sslmode=disable" >> .env.localdb
     echo GCP_CRED= >> .env.localdb
-    echo ARXIV_USER_SECRET=$(op item get  bdmmxlepkfsqy5hfgfunpsli2i --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "gxogpm2ztuyfeyvzjrwx4gqogi") | .value') >> .env.localdb
+    # echo ARXIV_USER_SECRET=$(op item get  bdmmxlepkfsqy5hfgfunpsli2i --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "gxogpm2ztuyfeyvzjrwx4gqogi") | .value') >> .env.localdb
     # audit logging to GCP subsub
     # keycloak-tapir bridge uses this to update the tapir tables
     echo GCP_EVENT_TOPIC_ID=keycloak-arxiv-events >> .env.localdb
@@ -56,7 +58,7 @@ if [ ! -r .env.localdb ] ; then
     # This is the oauth2 handshake (simple http auth secret)
     # Don't use this anywhere else since this is in github. Just for testing
     # This needs to be set to Keycloak's client.
-    echo KEYCLOAK_CLIENT_SECRET=f3dc975132f09b27d90f >> .env.localdb
+    echo KEYCLOAK_TEST_CLIENT_SECRET=f3dc975132f09b27d90 >> .env.localdb
     #
     # oauth2 client - aka cookie maker
     #

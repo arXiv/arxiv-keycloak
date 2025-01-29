@@ -136,7 +136,7 @@ arxiv-realm:
 	-e KC_PORT="${KC_PORT}" \
 	-e KEYCLOAK_SERVER_URL="http://keycloak:${KC_PORT}" \
 	-e KC_ADMIN_PASSWORD="${KC_ADMIN_PASSWORD}" \
-	-e ARXIV_USER_SECRET="${KEYCLOAK_CLIENT_SECRET}" \
+	-e ARXIV_USER_SECRET="${KEYCLOAK_TEST_CLIENT_SECRET}" \
 	-e LEGACY_AUTH_TOKEN="${LEGACY_AUTH_API_TOKEN}" \
 	python:3.11 sh /tools/setup-arxiv-realm.sh
 
@@ -147,7 +147,7 @@ sh-arxiv-realm:
 	-e KC_PORT="${KC_PORT}" \
 	-e KEYCLOAK_SERVER_URL="http://keycloak:${KC_PORT}" \
 	-e KC_ADMIN_PASSWORD="${KC_ADMIN_PASSWORD}" \
-	-e ARXIV_USER_SECRET="${KEYCLOAK_CLIENT_SECRET}" \
+	-e ARXIV_USER_SECRET="${KEYCLOAK_TEST_CLIENT_SECRET}" \
 	-e LEGACY_AUTH_TOKEN="${LEGACY_AUTH_API_TOKEN}" \
 	python:3.11 /bin/bash
 

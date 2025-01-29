@@ -54,7 +54,7 @@ CALLBACK_URL = os.environ.get("OAUTH2_CALLBACK_URL", "https://dev3.arxiv.org/aaa
 # For arxiv-user, the client needs to know the secret.
 # This is in keycloak's setting. Do not ever ues this value. This is for development only.
 # You should generate one, and use it in keycloak. it can generate a good one on UI.
-KEYCLOAK_CLIENT_SECRET = os.environ.get('KEYCLOAK_CLIENT_SECRET', 'gsG2HIu/lYZawKCwvlVE4fUYJpw=')
+ARXIV_USER_SECRET = os.environ.get('ARXIV_USER_SECRET', 'gsG2HIu/lYZawKCwvlVE4fUYJpw=')
 
 # session cookie names
 # NOTE: You also need the classic session cookie name "tapir_session" but it's set
@@ -70,7 +70,7 @@ CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "")
 _idp_ = ArxivOidcIdpClient(CALLBACK_URL,
                            scope=["openid"],
                            server_url=KEYCLOAK_SERVER_URL,
-                           client_secret=KEYCLOAK_CLIENT_SECRET,
+                           client_secret=ARXIV_USER_SECRET,
                            logger=getLogger(__name__)
                            )
 
@@ -96,7 +96,6 @@ origins = ["http://localhost",
            ]
 
 def create_app(*args, **kwargs) -> FastAPI:
-    global SessionLocal
     setup_logger()
     from arxiv.config import settings
 

@@ -7,16 +7,16 @@ RUN apt-get update -y && \
 WORKDIR /opt/arxiv/
 ENV VIRTUAL_ENV=/opt/arxiv/venv
 RUN python3 -m venv $VIRTUAL_ENV
-
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-ADD pyproject.toml poetry.lock src/main.py README.md ./
-
 RUN $VIRTUAL_ENV/bin/pip install -U pip
 RUN $VIRTUAL_ENV/bin/pip install poetry
+
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+ADD pyproject.toml poetry.lock src/ README.md ./
+
 RUN $VIRTUAL_ENV/bin/poetry config virtualenvs.create false
 RUN $VIRTUAL_ENV/bin/poetry install --no-interaction --no-ansi
 RUN $VIRTUAL_ENV/bin/pip uninstall -y poetry
 
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 # ENV CLASSIC_DB_URI="${CLASSIC_DB_URI}"
-CMD ["python", "main.py"]
+CMD ["python", "src/main.py"]

@@ -15,17 +15,18 @@ shift
 
 export CLOUDSDK_CORE_ACCOUNT="fake-account"
 export CLOUDSDK_CORE_PROJECT="${GCP_PROJECT}"
+export PUBSUB_EMULATOR_HOST=0.0.0.0:$PORT
 
-gcloud beta emulators pubsub start --host-port=0.0.0.0:$PORT &
+gcloud beta emulators pubsub start --host-port=$PUBSUB_EMULATOR_HOST --verbosity=debug &
 sleep 10
-
-export PUBSUB_EMULATOR_HOST=localhost:$PORT
 
 # Use the emulator directly for gcloud commands
 gcloud config configurations create pubsub-emulator-config --quiet || true
 gcloud config set auth/disable_credentials true --configuration=pubsub-emulator-config
 gcloud config set project "${GCP_PROJECT}" --configuration=pubsub-emulator-config
-gcloud config set api_endpoint_overrides/pubsub "http://localhost:${PORT}/" --configuration=pubsub-emulator-config
+gcloud config set api_endpoint_overrides/pubsub "http://127.0.0.1:${PORT}/" --configuration=pubsub-emulator-config
+
+gcloud config configurations list
 
 # Create the topic and subscription
 gcloud pubsub topics create "${PUBSUB_TOPIC}" --configuration=pubsub-emulator-config

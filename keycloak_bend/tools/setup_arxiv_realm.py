@@ -211,11 +211,11 @@ class KeycloakSetup:
         self.restore_roles()
         self.restore_scopes()
         self.restore_smtp_server()
-        self.create_admin_user()
-        self.restore_client("arxiv-user", self.client_secret)
-        self.restore_client("arxiv-user-m2m", self.client_secret)
         self.restore_legacy_auth_provider()
         self.restore_pubsub()
+        self.restore_client("arxiv-user", self.client_secret)
+        self.restore_client("arxiv-user-migration", self.client_secret)
+        self.create_admin_user()
 
 
 if __name__ == '__main__':
