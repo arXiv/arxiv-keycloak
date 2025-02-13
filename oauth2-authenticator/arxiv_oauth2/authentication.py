@@ -23,10 +23,13 @@ from .sessions import create_tapir_session
 
 
 def cookie_params(request: Request) -> Tuple[str, str, str, Optional[str], bool, Literal["lax", "none"]]:
+    """
+
+    """
     return (
         request.app.extra['AUTH_SESSION_COOKIE_NAME'],
         request.app.extra['CLASSIC_COOKIE_NAME'],
-        request.app.extra['ARXIV_KEYCLOAK_COOKIE_NAME'],
+        request.app.extra['ARXIV_KEYCLOAK_COOKIE_NAME'], # This is the Keycloak access token
         request.app.extra.get('DOMAIN'),
         request.app.extra.get('SECURE', True),
         request.app.extra.get('SAMESITE', "lax"))
@@ -65,8 +68,10 @@ async def oauth2_callback(request: Request,
         request.session.clear()
         return Response(status_code=status.HTTP_200_OK)
 
+    client_ip = request.headers.get("x-real-ip", request.client.host)
+
     idp: ArxivOidcIdpClient = request.app.extra["idp"]
-    user_claims: Optional[ArxivUserClaims] = idp.from_code_to_user_claims(code)
+    user_claims: Optional[ArxivUserClaims] = idp.from_code_to_user_claims(code, client_ipv4=client_ip)
 
     # session_cookie_key, classic_cookie_key, keycloak_key, domain, secure, samesite = cookie_params(request)
 
@@ -84,7 +89,6 @@ async def oauth2_callback(request: Request,
     logger.debug("User claims: user id=%s, email=%s", user_claims.user_id, user_claims.email)
 
     # legacy cookie and session
-    client_ip = request.headers.get("x-real-ip", request.client.host)
     tapir_cookie, tapir_session = create_tapir_session(user_claims, client_ip)
 
     # NG cookie
@@ -148,8 +152,7 @@ async def refresh_token(
     idp: ArxivOidcIdpClient = request.app.extra["idp"]
     user_claims = idp.refresh_access_token(refresh_token)
     if user_claims is None:
-        # should I redirect to login?
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+        return RedirectResponse(url=login_url, status_code=status.HTTP_303_SEE_OTHER)
 
     response = make_cookie_response(request, user_claims, tapir_cookie, next_page)
     return response
@@ -326,30 +329,3 @@ def make_cookie_response(request: Request,
                             domain=domain, path="/", secure=secure, samesite=samesite)
     return response
 
-
-class UserRegistration(domain.User):
-    """User registration API"""
-
-    password: str
-    remote_ipv4: str
-    remote_hostname: str
-
-
-@router.post('/register')
-async def register_user(_request: Request,
-                        registration: UserRegistration,
-                        _db: Session = Depends(get_db)
-                        ) -> Tuple[domain.User, domain.Authorizations]:
-    """Register a new user."""
-    registration.user_id = None
-    registration.verified = False
-
-    try:
-        dom_user, dom_auth = accounts.register(registration,
-                          registration.password,
-                          registration.remote_ipv4,
-                          registration.remote_hostname)
-    except exceptions.RegistrationFailed:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,)
-
-    return (dom_user, dom_auth)

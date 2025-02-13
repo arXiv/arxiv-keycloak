@@ -7,7 +7,7 @@ export $(shell sed 's/=.*//' .env)
 
 ARXIV_BASE_DIR ?= $(HOME)/arxiv/arxiv-base
 
-.PHONY: HELLO all bootstrap docker-image arxiv-db nginx test up down
+.PHONY: HELLO all bootstrap docker-image arxiv-db nginx test up down restart
 
 all: HELLO
 
@@ -48,7 +48,7 @@ help:
 #-#   bootstraps the environment
 bootstrap: .bootstrap
 
-.bootstrap:
+.bootstrap: tests/data/arxiv-test-db.sql
 	./tools/install_py311.sh
 	$(call run_in_all_subdirs,bootstrap)
 	touch .bootstrap
@@ -95,14 +95,24 @@ sh-nginx:
 
 
 #-#
-#-# arxiv-db:
+#-# arxiv-test-db:
 #-#   loads the arxiv-db aka mysql database.
 #-#   NOTE: you need to run docker compose ("make up") so that the network exists.
-arxiv-db:
+arxiv-test-db:
 	docker run --rm --name arxiv-db-setup \
-	--network arxiv-keycloak_arxiv-network \
-	-e CLASSIC_DB_URI="mysql://root:root_password@arxiv-test-db:${ARXIV_DB_PORT}/arXiv" \
+	--network host \
+	-e CLASSIC_DB_URI="mysql+pymysql://arxiv:arxiv_password@127.0.0.1:${ARXIV_DB_PORT}/arXiv?&ssl_disabled=true" \
 	-v $(PWD):/arxiv-keycloak \
 	python:3.11 bash /arxiv-keycloak/tools/load_test_data.sh
 
+#-#
+#-# restart:
+#-#   restarts nginx (so that it picks up the new config)
+restart:
+	docker kill nginx-proxy
+	docker start nginx-proxy
+
+
+tests/data/sanitized-test-db.sql:
+	gsutil cp gs://arxiv-dev-sql-data/test-data/arxiv-test-db.sql $@
 #-#

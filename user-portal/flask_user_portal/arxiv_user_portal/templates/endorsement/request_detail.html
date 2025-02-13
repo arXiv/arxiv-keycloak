@@ -1,0 +1,56 @@
+{%- extends "base.html" -%}
+
+{% macro yn( value ) -%}
+{%- if value -%}
+<span class='badge bg-success'>Y</span>
+{%- else -%}
+<span class='badge bg-warning'>N</span>
+{%- endif -%}
+{%- endmacro %}
+
+{% macro flipbtn( url ) %}
+<form class="d-inline" action="{{url}}" method="post">
+  <button class="btn btn-primary btn-sm" type="submit" name="flip" value="flip">flip</button>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+</form>
+{%- endmacro %}
+
+{%block content%}
+<h1>Endorsement Request</h1>
+
+<table>
+  <tr><td>Category:</td><td> {{endo_req.archive}}.{{endo_req.subject_class}}</td></tr>
+</table>
+
+<div class="row">
+  <div class="col card">
+    <table>
+      <tr><td>Endorser:</td><td> {% if endo_req.endorsement %}<a href='{{url_for('user.detail', user_id=endo_req.endorsement.endorser_id)}}'>
+            {{endo_req.endorsement.endorser.nickname}}</a>{% else %}(endorsement missing){% endif %}</td></tr>
+      <tr><td>Valid?:</td><td> {{ yn(endo_req.endorsement.flag_valid) }}  {{flipbtn(url_for('endorsement.flip_valid', endorsement_req_id=endo_req.request_id))}}</td></tr>
+
+      <tr><td>Positive?:</td><td> {{ yn( endo_req.endorsement.point_value)}} {{ flipbtn(url_for('endorsement.flip_score', endorsement_req_id=endo_req.request_id))}} </td></tr>
+
+      <tr><td>Knows Personally?:</td><td> {{ yn( endo_req.audit.flag_knows_personally ) }}</td></tr>
+      <tr><td>  Has Seen Paper?:</td><td> {{ yn(endo_req.audit.flag_seen_paper ) }}</td></tr>
+      <tr><td>  Type:</td><td> {% if endo_req.endorsement %}{{endo_req.endorsement.type}}{% else %}(endorsement missing){% endif %}</td></tr>
+      <tr><td>Points:</td><td> {{endo_req.endorsement.point_value}}</td></tr>
+      <tr><td>Endorsement:</td><td> {% if endo_req.endorsement %}<a href='{{url_for('endorsement.request_detail', endorsement_req_id=endo_req.endorsement.endorsement_id)}}'>{{endo_req.endorsement.endorsement_id}}</a>{% else %}(endorsement missing){% endif %}</td></tr>
+    </table>
+  </div>
+
+  <div class="col card">
+    <table>
+      <tr><td>Endorsee:</td><td> <a href='{{url_for('user.detail', user_id=endo_req.endorsee_id)}}'>
+            {{endo_req.endorsee.nickname}}</a></td></tr>
+      <tr><td>Request Id:</td><td> {{endo_req.request_id}}</td></tr>
+      <tr><td>Issued When:</td><td> {{endo_req.issued_when}}</td></tr>
+      <tr><td>Session Id:</td><td> {% if endo_req.audit %}<a href='{{url_for('session.detail', session_id=endo_req.audit.session_id)}}'>{{endo_req.audit.session_id}}</a>{% else %}(session missing){% endif %}</td></tr>
+      <tr><td>Remote Hostname:</td><td>{{endo_req.audit.remote_host}}</td></tr>
+      <tr><td>Remote Address:</td><td> {{endo_req.audit.remote_addr}}</td></tr>
+      <tr><td>Tracking Cookie:</td><td> {{endo_req.audit.tracking_cookie}}</td></tr>
+    </table>
+  </div>
+      <div>Comment:<strong>{{endo_req.audit.comment}}</strong></div>
+</div>
+{%endblock content%}

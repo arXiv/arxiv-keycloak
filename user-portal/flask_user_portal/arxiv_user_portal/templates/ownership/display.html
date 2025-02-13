@@ -1,0 +1,100 @@
+{% macro render_paper(paper, original) %}
+<div class='card'>
+  <div>
+    <input type='checkbox' name='approve_{{paper.document_id}}' value=1 {{'checked=checked' if original}} />
+    <a href='{{url_for("paper.detail", paper_id=paper.paper_id)}}'>{{paper.paper_id}}</a> [<a href='https://arxiv.org/abs/{{paper_id}}'>abs</a>]
+      {% if paper.already_owns %}<span class='text-warning'>User already owns this paper!</span>{% endif %}
+  </div>
+
+  <div>{{paper.title}}</div>
+  <div>{{paper.authors}}</div>
+  <div>{{paper.submitter_email}}</div>
+</div>
+{% endmacro %}
+
+{%- extends "base.html" -%}
+{%block content%}
+{% if success %}
+<div class="alert alert-success" role="alert">
+  Ownership request {{success}},
+  {% if success_count is defined and success_count >0 %}owner of {{success_count}} papers.{% endif %}
+  {% if success_count is defined and success_count == 0 %}Set ownership on {{success_count}} papers.
+    {% if success_already_owned > 0 %}{{success_already_owned}} were already owned.{% endif %}
+  {% endif %}
+  Continue to <a href='{{url_for('ownership.pending')}}'>pending</a>
+</div>
+{% endif %}
+
+<h1>
+  {{nickname}} wants to claim ownership of
+  {%- for paper in papers %}
+  {{ paper.paper_id -}}
+  {% if not loop.last %} and {% endif %}
+  {%- endfor -%}
+</h1>
+
+<div class='row user'>
+  <div class='column'>
+    <div>Name:{{user.first_name}} {{user.last_name}}</div>
+    <div>Email: {{user.email}}</div>
+    <div>Nickname: {{nickname}}</div>
+  </div>
+  <div class='column'>
+    <div>Policy Class: {{user.tapir_policy_classes.name}}</div>
+    <div>Joined On: {{user.joined_date}}</div>
+  </div>
+</div>
+
+<div class='row ownership_reqeust'>
+  <div class='column'>
+    <div>Request Status: {{ownership.workflow_status}}</div>
+    <div>Request Date: {{audit.date}}</div>
+  </div>
+  <div class='column'>
+    <div>Remote Host: {{audit.remote_host}}</div>
+    <div>Remote Addr: {{audit.remote_addr}}</div>
+    <div>cookie: {{audit.tracking_cookie}} </div>
+  </div>
+</div>
+
+<div class='row endorsement'>
+  {% if endorsement_req is not defined or not endorsement_req %}
+  <div>No endorsement request connected.</div>
+  {% else %}
+  <div class='column'>
+    <div>Connected with endorsement request:
+      <a href='{{url_for('endorsement.request_detail', request_id=endorsement_req.request_id)}}'>{{endorsement_req.request_id}}</a></div>
+    <div>Enrorsee: {{endorsement_req.endorsee.tapir_nicknames[0].nickname}}</div>
+    <div>Enrorsee Email: {{endorsement_req.endorsee.email}}</div>
+    <div>Category: {{endorsement_req.archive}}{{endorsement_req.subject_class}}</div>
+    <div>Request Date: {{endorsement_req.issued_when}}</div>
+  </div>
+  <div class='column'>
+    <div>Remote Host: {{endorsement_req.audit.remote_host}}</div>
+    <div>Remote Addr: {{endorsement_req.audit.remote_addr}}</div>
+    <div>cookie: {{endorsement_req.audit.tracking_cookie}} </div>
+  </div>
+  {% endif %}
+</div>
+
+<form action='{{url_for(request.endpoint, ownership_id=ownership.request_id)}}' method='post' enctype="multipart/form-data">
+  <input type=hidden name='reqeust_id' value='{{ownership.request_id}}'/>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <div class="alert {{'alert-info' if ownership.workflow_status == 'accepted' else 'alert-warning'}}" role="alert">Request is currently {{ownership.workflow_status}}
+  {% if ownership.workflow_status == 'accepted' -%}
+  <input type='submit' value='Revisit request' name='revisit'/>
+  {%- endif -%}
+</div>
+
+  {%- for paper in papers -%}
+  {{ render_paper(paper, True) }}
+  {%- endfor -%}
+
+  <select name='is_author'>
+    <option value="1">Author</option>
+    <option value="2">Not Author</option>
+  </select>
+  <input type="submit" value="Make Owner" name="make_owner">
+  <input type="submit" value="Reject" name="reject">
+</form>
+{%endblock content%}

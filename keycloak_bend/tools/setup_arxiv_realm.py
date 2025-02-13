@@ -126,6 +126,54 @@ class KeycloakSetup:
         self.admin.update_realm(self.realm_name, {name: self.realm[name]})
         pass
 
+    def restore_realm_settings(self):
+        realm = self.realm.copy()
+        transfers = {
+            "accessTokenLifespan",
+            "accessTokenLifespanForImplicitFlow",
+            "ssoSessionIdleTimeout",
+            "ssoSessionMaxLifespan",
+            "ssoSessionIdleTimeoutRememberMe",
+            "ssoSessionMaxLifespanRememberMe",
+            "offlineSessionIdleTimeout",
+            "offlineSessionMaxLifespanEnabled",
+            "offlineSessionMaxLifespan",
+            "clientSessionIdleTimeout",
+            "clientSessionMaxLifespan",
+            "clientOfflineSessionIdleTimeout",
+            "clientOfflineSessionMaxLifespan",
+            "accessCodeLifespan",
+            "accessCodeLifespanUserAction",
+            "accessCodeLifespanLogin",
+            "actionTokenGeneratedByAdminLifespan",
+            "actionTokenGeneratedByUserLifespan",
+            "oauth2DeviceCodeLifespan",
+            "oauth2DevicePollingInterval",
+            "sslRequired",
+            "registrationAllowed",
+            "registrationEmailAsUsername",
+            "rememberMe",
+            "verifyEmail",
+            "loginWithEmailAllowed",
+            "duplicateEmailsAllowed",
+            "resetPasswordAllowed",
+            "editUsernameAllowed",
+            "bruteForceProtected",
+            "permanentLockout",
+            "maxTemporaryLockouts",
+            "maxFailureWaitSeconds",
+            "minimumQuickLoginWaitSeconds",
+            "waitIncrementSeconds",
+            "quickLoginCheckMilliSeconds",
+            "maxDeltaTimeSeconds",
+            "failureFactor",
+        }
+        for key in self.realm.keys():
+            if key not in transfers:
+                del realm[key]
+        self.admin.update_realm(self.realm_name, realm)
+
+
     def restore_smtp_server(self):
         # self.admin
         self._update_toplevel_setting('smtpServer')
@@ -208,6 +256,7 @@ class KeycloakSetup:
 
     def run(self):
         self.restore_realm()
+        self.restore_realm_settings()
         self.restore_roles()
         self.restore_scopes()
         self.restore_smtp_server()

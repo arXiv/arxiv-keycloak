@@ -1,0 +1,34 @@
+{%- extends "base/base.html" -%}
+{% block content %}
+<div>
+  <h1>Landing page</h1>
+  <div>
+    You are {% if request.auth %} logged in as '{{request.auth.user.username}}' ({{request.auth.user.email}}), user-id: {{request.auth.user.user_id}}
+    {% else %} not logged in.{% endif %}
+  </div>
+  <div>
+    <ul>
+      <li><a href="{{url_for('ui.login')}}">login</a></li>
+      <li><a href="{{url_for('ui.logout')}}">logout</a></li>
+      <li><a href="{{url_for('ui.register')}}">Register user</a></li>
+      <li><a href="{{url_for('ui.an_example')}}">an example protected page</a></li>
+      <li><a href="{{url_for('ownership.pending')}}">ownership.pending</a></li>
+      <li><a href="{{url_for('ownership.accepted')}}">ownership.accepted</a></li>
+      <li><a href="{{url_for('ownership.rejected')}}">ownership.rejected</a></li>
+    </ul>
+  </div>
+  <div>
+    <p></p>
+    <h2>Servers</h2>
+    <ul>
+      <li><a href="http://localhost.arxiv.org:21501" target="_blank">Keycloak</a></li>
+      <li><a href="http://localhost.arxiv.org:21503/docs" target="_blank">Arxiv Authorization Server</a></li>
+      <li><a href="http://localhost.arxiv.org:21505/docs" target="_blank">Legacy Authorization Server</a></li>
+      <li><a href="http://localhost.arxiv.org:21510/docs" target="_blank">Admin API</a></li>
+      <li><a href="http://localhost.arxiv.org:21512/docs" target="_blank">Mail Store Server</a></li>
+      <li><a href="http://localhost.arxiv.org:21515/docs" target="_blank">User Portal API</a></li>
+    </ul>
+  </div>
+</div>
+
+{% endblock content %}

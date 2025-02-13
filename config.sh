@@ -129,6 +129,11 @@ if [ ! -r .env.localdb ] ; then
     echo ADMIN_API_URL=http://localhost:$HTTP_PORT/admin-api >> .env.localdb
     echo ADMIN_CONSOLE_PORT=21511 >> .env.localdb
     echo ADMIN_CONSOLE_URL=http://localhost:$HTTP_PORT/admin-console >> .env.localdb
+    #
+    # portals
+    #
+    echo ARXIV_PORTAL_PORT=21513  >> .env.localdb
+    echo USER_PORTAL_PORT=21514  >> .env.localdb
 fi
 
 if [ ! -r .env.devdb ] ; then

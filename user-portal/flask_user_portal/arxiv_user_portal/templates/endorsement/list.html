@@ -1,0 +1,49 @@
+{%- extends "base.html" -%}
+{%- from "macros.html" import render_pagination with context -%}
+
+{%- block content -%}
+<h1>{{title}}</h1>
+
+{%- if count > 0 -%}
+<div>Found {{count}} endorsement requests. Page {{pagination.page}} of {{pagination.pages}}.</div>
+{%- else -%}
+ {% if report_type == 'today' %}
+<div>None found for last 24h. <a href='{{url_for('endorsement.last_week')}}'>See all of last week.</a></div>
+ {% else %}
+<div>None found in past {{days_back}} days, <a href='{{url_for(request.endpoint, days_back=days_back*10)}}'>see {{days_back*10}} days back</a></div>
+{% endif %}
+{% endif -%}
+
+<table class="table">
+  <tr>
+    <th>Id</th><th>Endorser</th><th>Endorsee</th><th>Category</th><th>Issued
+    When</th><th>Valid?</th><th>Type</th><th>Positive?</th>
+  </tr>
+  {%for row in endorsements%}
+  <tr>
+    <td><a href='{{url_for("endorsement.request_detail", endorsement_req_id=row.request_id)}}'>{{row.request_id}}</a></td>
+
+    <td>
+      {% if row.endorsement and row.endorsement.endorser %}
+      <a href='{{url_for("user.detail", user_id=row.endorsement.endorser.user_id)}}'>
+        {{row.endorsement.endorser.first_name}} {{row.endorsement.endorser.last_name}}</a>
+      {% else %}
+      (missing)
+      {% endif %}
+    </td>
+    <td><a href='{{url_for("user.detail", user_id=row.endorsee_id)}}'>
+        {{row.endorsee.first_name}} {{row.endorsee.last_name}}</a>
+    </td>
+    <td>
+      {{row.archive}}.{{row.subject_class}}
+    </td>
+    <td>{{row.issued_when}}</td>
+    <td>{{'yes' if row.flag_valid else 'no'}}</td>
+    <td>{{row.endorsement.type}}</td>
+    <td>{{'yes' if row.point_value > 0 else 'no'}}</td>
+  </tr>
+  {%endfor%}
+</table>
+
+{{ render_pagination(pagination, request.endpoint) }}
+{%- endblock content -%}

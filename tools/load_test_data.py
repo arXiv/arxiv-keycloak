@@ -5,6 +5,7 @@ import os
 import logging
 import time
 from typing import List, Tuple
+import argparse
 
 from sqlalchemy import create_engine, text, inspect, Engine
 from sqlalchemy.pool import NullPool
@@ -111,7 +112,7 @@ def load_test_data(db_engine: Engine) -> None:
     pass
 
 
-def main(create_schema: bool = False) -> None:
+def main(load_schema: bool = False, load_data: bool = True) -> None:
     """
     Create db schema and load test data
 
@@ -119,10 +120,18 @@ def main(create_schema: bool = False) -> None:
     :return: None
     """
     db_engine, tables = instantiate_db_engine()
-    if len(tables) == 0 or create_schema:
+
+    if len(tables) == 0 or load_schema:
         create_db_schema(db_engine)
-    load_test_data(db_engine)
+
+    if load_data:
+        load_test_data(db_engine)
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description="Initial load arxvi database")
+    parser.add_argument('--load-schema', action='store_true', help="Load the schema.")
+    parser.add_argument('--load-test-data', action='store_true', help="Load test data.")
+    args = parser.parse_args()
+
+    main(load_schema=args.load_schema, load_data=args.load_test_data)
