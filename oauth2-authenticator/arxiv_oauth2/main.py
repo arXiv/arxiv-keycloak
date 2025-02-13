@@ -6,7 +6,7 @@ from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 # from sqlalchemy.orm import sessionmaker
-from keycloak import KeycloakAdmin, KeycloakError
+from keycloak import KeycloakAdmin # , KeycloakError
 
 from arxiv.auth.legacy.util import missing_configs
 from arxiv.base.globals import get_application_config
@@ -16,6 +16,8 @@ from arxiv.db.models import State
 
 from .authentication import router as authn_router
 from .account import router as account_router
+from .captcha import router as captcha_router
+
 from .app_logging import setup_logger
 from .mysql_retry import MySQLRetryMiddleware
 from . import get_db
@@ -54,7 +56,7 @@ CALLBACK_URL = os.environ.get("OAUTH2_CALLBACK_URL", "https://dev3.arxiv.org/aaa
 # For arxiv-user, the client needs to know the secret.
 # This is in keycloak's setting. Do not ever ues this value. This is for development only.
 # You should generate one, and use it in keycloak. it can generate a good one on UI.
-ARXIV_USER_SECRET = os.environ.get('ARXIV_USER_SECRET', 'gsG2HIu/lYZawKCwvlVE4fUYJpw=')
+ARXIV_USER_SECRET = os.environ.get('ARXIV_USER_SECRET', '<arxiv-user-secret-is-not-set>')
 
 # session cookie names
 # NOTE: You also need the classic session cookie name "tapir_session" but it's set
@@ -164,6 +166,8 @@ def create_app(*args, **kwargs) -> FastAPI:
         CLASSIC_COOKIE_NAME=CLASSIC_COOKIE_NAME,
         SESSION_DURATION=SESSION_DURATION,
         KEYCLOAK_ADMIN=keycloak_admin,
+        ARXIV_USER_SECRET=ARXIV_USER_SECRET,
+        CAPTCHA_SECRET=os.environ.get("CAPTCHA_SECRET", "foocaptcha"),
         **{f"ARXIV_URL_{name.upper()}": value for name, value, site in settings.URLS }
     )
 
@@ -189,6 +193,7 @@ def create_app(*args, **kwargs) -> FastAPI:
     app.include_router(authn_router)
     # app.include_router(authz_router)
     app.include_router(account_router)
+    app.include_router(captcha_router)
 
     @app.middleware("http")
     async def apply_response_headers(request: Request, call_next: Callable) -> Response:

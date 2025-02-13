@@ -21,13 +21,13 @@
 #
 # MySQLdb.OperationalError: (2006, 'Server has gone away')
 #
-from typing import Callable
+#from typing import Callable
 
 import MySQLdb  # type: ignore
 import logging
 
 import sqlalchemy.exc
-from fastapi import FastAPI, Request
+from fastapi import FastAPI # , Request
 from sqlalchemy.engine import Engine
 import asyncio
 from starlette.types import Scope, Receive, Send
