@@ -4,6 +4,7 @@ ACCOUNT=arxiv.1password.com
 
 
 if [ ! -r .env.localdb ] ; then
+    SERVER_HOST=localhost.arxiv.org
     PLATFORM=linux/amd64
     GCP_PROJECT=arxiv-development
     PUBSUB_PROJECT=local-test
@@ -27,7 +28,7 @@ if [ ! -r .env.localdb ] ; then
 
     # keycloak and its database
     KC_PORT=21501
-    KC_HOST_PUBLIC=localhost
+    KC_HOST_PUBLIC=$SERVER_HOST
 
     # would be "keycloak" if the network is NOT host network
     KC_HOST_PRIVATE=localhost
@@ -40,7 +41,7 @@ if [ ! -r .env.localdb ] ; then
 
     echo KC_DOCKER_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/keycloak >> .env.localdb
     # kc db
-    echo KC_DB_HOST_PUBLIC=localhost >> .env.localdb
+    echo KC_DB_HOST_PUBLIC=$SERVER_HOST >> .env.localdb
     echo KC_DB_HOST_PRIVATE=auth-db >> .env.localdb
     echo KC_DB_PORT=21502 >> .env.localdb
     echo KC_DB_USER=keycloak >> .env.localdb
@@ -69,8 +70,8 @@ if [ ! -r .env.localdb ] ; then
     #
     # where aaa is hosted
     #
-    echo AAA_CALLBACK_URL=http://localhost:$HTTP_PORT/aaa/callback >> .env.localdb
-    echo AAA_LOGIN_REDIRECT_URL=http://localhost:$HTTP_PORT/aaa/login >> .env.localdb
+    echo AAA_CALLBACK_URL=http://$SERVER_HOST:$HTTP_PORT/aaa/callback >> .env.localdb
+    echo AAA_LOGIN_REDIRECT_URL=http://$SERVER_HOST:$HTTP_PORT/aaa/login >> .env.localdb
     #
     # arxiv mysql db
     #
@@ -126,9 +127,9 @@ if [ ! -r .env.localdb ] ; then
     # This is not strictry necessary but here
     #
     echo ADMIN_API_PORT=21510 >> .env.localdb
-    echo ADMIN_API_URL=http://localhost:$HTTP_PORT/admin-api >> .env.localdb
+    echo ADMIN_API_URL=http://$SERVER_HOST:$HTTP_PORT/admin-api >> .env.localdb
     echo ADMIN_CONSOLE_PORT=21511 >> .env.localdb
-    echo ADMIN_CONSOLE_URL=http://localhost:$HTTP_PORT/admin-console >> .env.localdb
+    echo ADMIN_CONSOLE_URL=http://$SERVER_HOST:$HTTP_PORT/admin-console >> .env.localdb
     #
     # portals
     #
