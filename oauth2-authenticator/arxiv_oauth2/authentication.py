@@ -1,6 +1,7 @@
 """Provides integration for the external user interface."""
 import json
 import urllib.parse
+from dataclasses import asdict
 from typing import Optional, Tuple, Literal, Any
 
 from fastapi import APIRouter, Depends, status, Request, HTTPException
@@ -17,7 +18,7 @@ from arxiv.auth.legacy.sessions import invalidate as legacy_invalidate
 from arxiv.auth.legacy import accounts, exceptions
 from arxiv.auth import domain
 
-from . import get_current_user_or_none, get_db
+from . import get_current_user_or_none, get_db, COOKIE_ENV_NAMES
 
 from .sessions import create_tapir_session
 
@@ -27,9 +28,9 @@ def cookie_params(request: Request) -> Tuple[str, str, str, Optional[str], bool,
 
     """
     return (
-        request.app.extra['AUTH_SESSION_COOKIE_NAME'],
-        request.app.extra['CLASSIC_COOKIE_NAME'],
-        request.app.extra['ARXIV_KEYCLOAK_COOKIE_NAME'], # This is the Keycloak access token
+        request.app.extra[COOKIE_ENV_NAMES.auth_session_cookie_env],
+        request.app.extra[COOKIE_ENV_NAMES.classic_cookie_env],
+        request.app.extra[COOKIE_ENV_NAMES.arxiv_keycloak_cookie_env], # This is the Keycloak access token
         request.app.extra.get('DOMAIN'),
         request.app.extra.get('SECURE', True),
         request.app.extra.get('SAMESITE', "lax"))
@@ -127,7 +128,7 @@ async def refresh_token(
     if next_page:
         login_url = f"{login_url}?next_page={urllib.parse.quote(next_page)}"
 
-    session_cookie_key = request.app.extra['AUTH_SESSION_COOKIE_NAME']
+    session_cookie_key = request.app.extra[COOKIE_ENV_NAMES.auth_session_cookie_env]
     token = request.cookies.get(session_cookie_key)
     if not token:
         logger.debug(f"There is no cookie '{session_cookie_key}'")
@@ -172,8 +173,10 @@ class RefreshedTokens(BaseModel):
     secure: bool
     samesite: str
 
+reported_env_name = set()
+
 @router.post('/refresh')
-async def refresh_tokens(request: Request, tokens: Tokens) -> RefreshedTokens:
+async def refresh_tokens(request: Request, response: Response, tokens: Tokens) -> RefreshedTokens:
     session = tokens.session
     if not session:
         logger.debug(f"There is no oidc session cookie.")
@@ -192,6 +195,19 @@ async def refresh_tokens(request: Request, tokens: Tokens) -> RefreshedTokens:
 
     user = idp.refresh_access_token(refresh_token)
     if user is None:
+        # The refresh token is invalid, or expired. Purge the session cookie
+        for env_name in asdict(COOKIE_ENV_NAMES).values():
+            if env_name in request.app.extra:
+                response.delete_cookie(request.app.extra[env_name])
+                pass
+            else:
+                # This is an ALARMING bug. app initialization is not done correctly.
+                if env_name not in reported_env_name:
+                    logger.warning("app.extra has no %s - which is very likely a bug", env_name)
+                    reported_env_name.add(env_name)
+                    pass
+                pass
+            pass
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
     secret = request.app.extra['JWT_SECRET']
@@ -293,7 +309,10 @@ def make_cookie_response(request: Request,
             # Construct the updated URL with access token as query param
             parsed_url = urllib.parse.urlparse(next_page)
             query_params = urllib.parse.parse_qs(parsed_url.query)
-            query_params['access_token'] = user_claims.access_token
+            #
+            # ** Drop setting the access token in favor of using cookie. **
+            #
+            # query_params['access_token'] = user_claims.access_token
             # Maybe too pedantic?
             # query_params['token_type'] = "bearer"
             # query_params['refresh_token'] = user_claims.refresh_token

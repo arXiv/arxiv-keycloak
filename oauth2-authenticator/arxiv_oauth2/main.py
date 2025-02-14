@@ -20,7 +20,8 @@ from .captcha import router as captcha_router
 
 from .app_logging import setup_logger
 from .mysql_retry import MySQLRetryMiddleware
-from . import get_db
+from . import get_db, COOKIE_ENV_NAMES
+
 
 #
 # Since this is not a flask app, the config needs to be in the os.environ
@@ -33,7 +34,7 @@ from . import get_db
 #
 CONFIG_DEFAULTS = {
     'SESSION_DURATION': os.environ.get('SESSION_DURATION', '120'),
-    'CLASSIC_COOKIE_NAME': os.environ.get("CLASSIC_COOKIE_NAME", "tapir_session"),
+    COOKIE_ENV_NAMES.classic_cookie_env: os.environ.get(COOKIE_ENV_NAMES.classic_cookie_env, "tapir_session"),
     'CLASSIC_SESSION_HASH': os.environ.get('CLASSIC_SESSION_HASH', 'not-very-safe-hash-value')
 }
 
@@ -61,10 +62,11 @@ ARXIV_USER_SECRET = os.environ.get('ARXIV_USER_SECRET', '<arxiv-user-secret-is-n
 # session cookie names
 # NOTE: You also need the classic session cookie name "tapir_session" but it's set
 # slightly differently since it needs to be passed to arxiv-base
-AUTH_SESSION_COOKIE_NAME = os.environ.get("AUTH_SESSION_COOKIE_NAME", "arxiv_oidc_session")
+AUTH_SESSION_COOKIE_NAME = os.environ.get(COOKIE_ENV_NAMES.auth_session_cookie_env, "arxiv_oidc_session")
 
 # arXiv's Keycloak access token names
-ARXIV_KEYCLOAK_COOKIE_NAME = os.environ.get("ARXIV_KEYCLOAK_COOKIE_NAME", "arxiv_keycloak_token")
+ARXIV_KEYCLOAK_COOKIE_NAME = os.environ.get(COOKIE_ENV_NAMES.arxiv_keycloak_cookie_env, "arxiv_keycloak_token")
+
 
 # More cors origins
 CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "")
@@ -105,7 +107,7 @@ def create_app(*args, **kwargs) -> FastAPI:
     for key in missing_configs(get_application_config()):
         os.environ[key] = CONFIG_DEFAULTS[key]
         os.putenv(key, CONFIG_DEFAULTS[key])
-    CLASSIC_COOKIE_NAME = os.environ.get('CLASSIC_COOKIE_NAME', "tapir_session")
+    CLASSIC_COOKIE_NAME = os.environ.get(COOKIE_ENV_NAMES.classic_cookie_env, "tapir_session")
     SESSION_DURATION = int(os.environ.get("SESSION_DURATION", 120))
     logger = getLogger(__name__)
 
