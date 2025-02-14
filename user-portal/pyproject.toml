@@ -28,6 +28,7 @@ flask-sqlalchemy = "^3.1.1"
 pycountry = "^24.6.1"
 captcha = "^0.6.0"
 fastapi = "^0.115.8"
+gunicorn = "^23.0.0"
 
 [tool.poetry.group.dev.dependencies]
 uvicorn = "^0.34.0"
