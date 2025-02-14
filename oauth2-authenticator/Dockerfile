@@ -2,11 +2,6 @@ FROM python:3.11-bookworm
 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 0E98404D386FA1D9 6ED0E7B82643E131 F8D2585B8783D481 54404762BBB6E853 BDE6D2B9216EC7A8 ; exit 0
 
-RUN apt-get update -y -o APT::Get::AllowUnauthenticated=true
-RUN apt-get install -y --allow-unauthenticated --no-install-recommends build-essential gcc python3-dev default-libmysqlclient-dev pkg-config
-RUN apt-get clean
-RUN rm -rf /var/lib/apt/lists/*
-
 RUN apt-get update -y -o APT::Get::AllowUnauthenticated=true && \
     apt-get install -y --allow-unauthenticated --no-install-recommends build-essential gcc python3-dev default-libmysqlclient-dev pkg-config && \
     apt-get clean && \

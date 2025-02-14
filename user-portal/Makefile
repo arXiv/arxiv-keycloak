@@ -15,7 +15,7 @@ USER_PORTAL_APP_WORKERS := $(shell echo $${USER_PORTAL_APP_WORKERS:-2})
 
 APP_DOCKER_RUN := docker run --cpus ${USER_PORTAL_APP_CPUS} --rm -p ${app_port}:${dockerport} \
 -e PORT=${dockerport} -e WORKERS=${USER_PORTAL_APP_WORKERS} \
--e CLASSIC_DB_URI=${CLASSIC_DB_URI} \
+-e CLASSIC_DB_URI="${CLASSIC_DB_URI}" \
 -e SESSION_DURATION=36000 \
 -e CLASSIC_COOKIE_NAME=tapir_session \
 -e JWT_SECRET=${JWT_SECRET} \

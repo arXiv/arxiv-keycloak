@@ -16,12 +16,12 @@ from arxiv.auth import auth
 from arxiv.auth.auth.sessions import SessionStore
 from arxiv.auth.legacy.util import missing_configs
 
-from helpers.arxiv_ce_auth import ArxivCEAuthMiddleware
 
 from arxiv.db import configure_db
 
-from arxiv_user_portal.routes import ui, ownership, endorsement, user, paper
-from arxiv_user_portal.legacy.util import init_app as legacy_init_app
+from .routes import ui, ownership, endorsement, user, paper
+from .legacy.util import init_app as legacy_init_app
+from .helpers.arxiv_ce_auth import ArxivCEAuthMiddleware
 
 logging.basicConfig(level=logging.DEBUG)
 
