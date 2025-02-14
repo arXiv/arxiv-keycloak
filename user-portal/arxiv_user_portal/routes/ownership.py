@@ -5,7 +5,7 @@ from flask import Blueprint, render_template, request, \
 
 from arxiv.auth.auth.decorators import scoped
 
-from ..controllers.ownership import (
+from arxiv_user_portal.controllers.ownership import (
     ownership_detail, ownership_listing, ownership_post, paper_password_post, PaperPasswordForm)
 
 

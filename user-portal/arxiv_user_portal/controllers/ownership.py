@@ -18,7 +18,7 @@ from arxiv.db.models import (
 from arxiv.db import Session
 import logging
 
-from . import get_db
+from arxiv_user_portal.controllers import get_db
 
 logger = logging.getLogger(__file__)
 

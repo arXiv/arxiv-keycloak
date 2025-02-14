@@ -12,7 +12,7 @@ from arxiv.base import logging
 
 from arxiv.auth.auth.decorators import scoped
 
-from ..controllers import registration
+from arxiv_user_portal.controllers import registration
 
 
 logger = logging.getLogger(__name__)

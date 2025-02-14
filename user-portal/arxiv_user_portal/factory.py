@@ -20,8 +20,8 @@ from helpers.arxiv_ce_auth import ArxivCEAuthMiddleware
 
 from arxiv.db import configure_db
 
-from .routes import ui, ownership, endorsement, user, paper
-from .legacy.util import init_app as legacy_init_app
+from arxiv_user_portal.routes import ui, ownership, endorsement, user, paper
+from arxiv_user_portal.legacy.util import init_app as legacy_init_app
 
 logging.basicConfig(level=logging.DEBUG)
 
