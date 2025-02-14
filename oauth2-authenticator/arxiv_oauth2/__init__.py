@@ -1,6 +1,7 @@
 """Contains route information."""
 from logging import getLogger
 from typing import Optional
+from dataclasses import dataclass
 
 from fastapi import Request, HTTPException, status
 
@@ -17,9 +18,21 @@ from sqlalchemy.orm import sessionmaker
 ALGORITHM = "HS256"
 
 
+@dataclass(frozen=True)
+class COOKIE_ENV_NAMES_TYPE:
+    classic_cookie_env: str
+    auth_session_cookie_env: str
+    arxiv_keycloak_cookie_env: str
+
+COOKIE_ENV_NAMES = COOKIE_ENV_NAMES_TYPE(
+    "CLASSIC_COOKIE_NAME",
+    "AUTH_SESSION_COOKIE_NAME",
+    "ARXIV_KEYCLOAK_COOKIE_NAME"
+)
+
 def get_current_user_or_none(request: Request) -> ArxivUserClaims | None:
     logger = getLogger(__name__)
-    session_cookie_key = request.app.extra['AUTH_SESSION_COOKIE_NAME']
+    session_cookie_key = request.app.extra[COOKIE_ENV_NAMES.auth_session_cookie_env]
     token = request.cookies.get(session_cookie_key)
     if not token:
         logger.debug(f"There is no cookie '{session_cookie_key}'")
