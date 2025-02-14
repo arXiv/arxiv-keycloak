@@ -3,7 +3,7 @@ from http import HTTPStatus
 from typing import Tuple, Optional
 from werkzeug.exceptions import BadRequest
 
-from .. import stateless_captcha
+from arxiv_user_portal import stateless_captcha
 
 ResponseData = Tuple[dict, int, dict]
 

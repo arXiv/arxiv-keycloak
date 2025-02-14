@@ -11,7 +11,7 @@ from flask import Blueprint, render_template, Response, request, current_app, ab
 
 from arxiv.db.models import EndorsementRequest, Endorsement, TapirUser, Demographic
 
-from .. import get_db
+from arxiv_user_portal import get_db
 
 blueprint = Blueprint('endorsement', __name__, url_prefix='/endorsement')
 

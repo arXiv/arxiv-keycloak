@@ -26,9 +26,9 @@ from markupsafe import Markup
 import pycountry
 
 from arxiv.taxonomy import definitions
-from .util import MultiCheckboxField, OptGroupSelectField
+from arxiv_user_portal.controllers.util import MultiCheckboxField, OptGroupSelectField
 
-from .. import stateless_captcha
+from arxiv_user_portal import stateless_captcha
 
 from arxiv.auth import legacy
 from arxiv.auth.legacy import accounts
