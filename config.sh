@@ -10,7 +10,7 @@ if [ ! -r .env.localdb ] ; then
     PUBSUB_PROJECT=local-test
 
     echo PUBSUB_PROJECT=$PUBSUB_PROJECT  >> .env.localdb
-    echo DOCKER_NETWORK=host >> .env.localdb
+    echo DOCKER_NETWORK=arxiv-network >> .env.localdb
 
     # IRL, this is a secure "password" for encrypting JWT token
     JWT_SECRET=jwt-secret
@@ -41,7 +41,7 @@ if [ ! -r .env.localdb ] ; then
 
     echo KC_DOCKER_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/keycloak >> .env.localdb
     # kc db
-    echo KC_DB_HOST_PUBLIC=$SERVER_HOST >> .env.localdb
+    echo KC_DB_HOST_PUBLIC=$SERVER_HOST.arxiv.org >> .env.localdb
     echo KC_DB_HOST_PRIVATE=auth-db >> .env.localdb
     echo KC_DB_PORT=21502 >> .env.localdb
     echo KC_DB_USER=keycloak >> .env.localdb
@@ -93,7 +93,7 @@ if [ ! -r .env.localdb ] ; then
     echo LEGACY_AUTH_DOCKER_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/legacy-auth-provider >> .env.localdb
     #
     #
-    echo USER_PORTAL_PORT=21506 >> .env.localdb
+    echo USER_PORTAL_APP_PORT=21506 >> .env.localdb
     echo USER_PORTAL_APP_TAG=gcr.io/arxiv-development/arxiv-keycloak/uesr-portal >> .env.localdb
     echo USER_PORTAL_APP_NAME=arxiv-user-portal >> .env.localdb
     #
@@ -117,7 +117,7 @@ if [ ! -r .env.localdb ] ; then
     SMTP_PORT=21508
     echo SMTP_PORT=$SMTP_PORT >> .env.localdb
     echo SMTP_HOST=0.0.0.0:$SMTP_PORT >> .env.localdb
-    echo MAILHOG_HTTP_PORT=21512 >> .env.localdb
+    echo MAILSTORE_PORT=21512 >> .env.localdb
     echo TEST_MTA_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/test-mta
     #
     #
@@ -135,6 +135,11 @@ if [ ! -r .env.localdb ] ; then
     #
     echo ARXIV_PORTAL_PORT=21513  >> .env.localdb
     echo USER_PORTAL_PORT=21514  >> .env.localdb
+    #
+    echo USER_PORTAL_API_PORT=21515 >>  .env.localdb
+    echo USER_PORTAL_APP_NAME=arxiv-user-portal  >>  .env.localdb
+    echo USER_PORTAL_APP_PORT=21506 >>  .env.localdb
+    echo USER_PORTAL_APP_TAG=gcr.io/arxiv-development/arxiv-keycloak/uesr-portal  >>  .env.localdb
 fi
 
 if [ ! -r .env.devdb ] ; then
