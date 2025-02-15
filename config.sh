@@ -118,7 +118,7 @@ if [ ! -r .env.localdb ] ; then
     echo SMTP_PORT=$SMTP_PORT >> .env.localdb
     echo SMTP_HOST=0.0.0.0:$SMTP_PORT >> .env.localdb
     echo MAILSTORE_PORT=21512 >> .env.localdb
-    echo TEST_MTA_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/test-mta
+    echo TEST_MTA_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/test-mta >> .env.localdb
     #
     #
     echo TESTSITE_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/testsite >> .env.localdb

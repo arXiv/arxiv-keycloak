@@ -64,14 +64,15 @@ sh:
 #-#
 #-# docker-image:
 #-#   builds docker image
-docker-image: keycloak_migration/keycloak-user-migration/target/keycloak-rest-provider-5.0.1-SNAPSHOT.jar pubsub-listener/keycloak-pubsub-listener/target/keycloak-to-pubsub-1.0.0.jar
+docker-image: keycloak_migration/keycloak-user-migration/target/keycloak-rest-provider-5.0.1-SNAPSHOT.jar pubsub-listener/keycloak-to-pubsub-jar-with-dependencies.jar
 	docker build --progress plain -t ${tag}:latest .
 
 keycloak_migration/keycloak-user-migration/target/keycloak-rest-provider-5.0.1-SNAPSHOT.jar:
 	cd keycloak_migration && $(MAKE) keycloak-user-migration/target/keycloak-rest-provider-5.0.1-SNAPSHOT.jar
 
-pubsub-listener/keycloak-pubsub-listener/target/keycloak-to-pubsub-1.0.0.jar:
-	cd pubsub-listener && $(MAKE) keycloak-pubsub-listener-main/target/keycloak-to-pubsub-1.0.0.jar
+# keycloak-to-pubsub-1.0.0.jar
+pubsub-listener/keycloak-to-pubsub-jar-with-dependencies.jar:
+	cd pubsub-listener && $(MAKE)
 
 #-#
 #-# proxy:

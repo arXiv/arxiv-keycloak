@@ -20,15 +20,14 @@ help:
 #-#
 #-# bootstrap:
 #-#   sets up the tools.
-bootstrap: venv/bin/poetry
+bootstrap: venv/lib/python3.12/site-packages/fastapi
 	touch .bootstrap
 
 venv: /usr/bin/python3.12
 	python3.12 -m venv venv
 
-venv/bin/poetry: venv
-	. venv/bin/activate && pip install poetry
-	. venv/bin/activate && poetry install
+venv/lib/python3.12/site-packages/fastapi: venv
+	. venv/bin/activate && pip install -r ./requirements.txt
 
 #-#
 #-# Command: docker-image
