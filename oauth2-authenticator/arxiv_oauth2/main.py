@@ -122,8 +122,8 @@ def create_app(*args, **kwargs) -> FastAPI:
     if SECURE in ["false", "no"]:
         secure = False
 
-
     logger.info(f"DOMAIN: {DOMAIN!r}")
+    logger.info(f"SECURE: {secure!r}")
     logger.info(f"SERVER_ROOT_PATH: {SERVER_ROOT_PATH}")
     logger.info(f"CALLBACK_URL: {CALLBACK_URL}")
     logger.info(f"AUTH_SESSION_COOKIE_NAME: {AUTH_SESSION_COOKIE_NAME}")

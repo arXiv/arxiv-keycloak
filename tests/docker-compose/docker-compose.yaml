@@ -85,7 +85,11 @@ services:
     image: ${ARXIV_OAUTH2_CLIENT_TAG}
     container_name: oauth2-authenticator
     environment:
+      # Cookie domain. This doesn't need to be set but also it is an excercise
       DOMAIN: ${OAUTH2_DOMAIN}
+      # Secure domain. HTTPS -> secure, HTTP -> NOT secure - since this is running
+      # local test, needs to be set to false.
+      SECURE: "false"
       PORT: ${ARXIV_OAUTH2_APP_PORT}
       # hostname keycloak for non-host network
       KEYCLOAK_SERVER_URL: http://localhost:${KC_PORT}
