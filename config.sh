@@ -9,6 +9,7 @@ if [ ! -r .env.localdb ] ; then
     GCP_PROJECT=arxiv-development
     PUBSUB_PROJECT=local-test
 
+    echo OAUTH2_DOMAIN=.${SERVER_HOST} >> .env.localdb
     echo PUBSUB_PROJECT=$PUBSUB_PROJECT  >> .env.localdb
     echo DOCKER_NETWORK=arxiv-network >> .env.localdb
 
