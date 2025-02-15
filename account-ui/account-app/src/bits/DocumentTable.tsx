@@ -19,7 +19,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import {RuntimeProps} from "../RuntimeContext.tsx";
 import {paths} from "../types/up-api.ts"
-import DocumentStatusName from "./DocumentStatusName.tsx";
+// import DocumentStatusName from "./DocumentStatusName.tsx";
 // import categoryChooser from "./CategoryChooser.tsx";
 
 type DocumentType = paths['/v1/documents/{id}']['get']['responses']['200']['content']['application/json'];
@@ -163,7 +163,7 @@ const DocumentTable: React.FC<{runtimeProps: RuntimeProps}> = ({runtimeProps}) =
                                             <Collapse in={expandedRows[document.id]} timeout="auto" unmountOnExit>
                                                 <Box margin={2}>
                                                     <strong>Additional Details:</strong>
-                                                    <pre>{JSON.stringify(document.abstract, null, 2)}</pre>
+                                                    <pre>{JSON.stringify(document.paper_id,  null, 2)}</pre>
                                                 </Box>
                                             </Collapse>
                                         </TableCell>
