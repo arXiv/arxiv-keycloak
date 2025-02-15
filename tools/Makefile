@@ -3,7 +3,7 @@ export $(shell sed 's/=.*//' ../.env)
 
 ARXIV_BASE_DIR ?= $(HOME)/arxiv/arxiv-base
 
-.PHONY: HELLO all load-test-data bootstrap test
+.PHONY: HELLO all load-test-data bootstrap test upload-test-data dump-test-data
 
 all: ../venv/bin/poetry HELLO 
 
@@ -53,6 +53,12 @@ load-test-data: .bootstrap
 test:
 	@echo "No tests in tools yet"
 
+
+#-#
+#-# upload-test-data:
+#-#   upload arxiv test db data
+upload-test-data:
+	gsutil cp /home/ntai/arxiv/arxiv-keycloak/tests/data/sanitized-test-db.sql gs://arxiv-dev-sql-data/test-data/arxiv-test-db.sql 
 
 #-#
 #-# dump-test-data:

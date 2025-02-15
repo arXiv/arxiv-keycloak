@@ -34,7 +34,7 @@ const ArxivAppBar = () => {
     <AppBar position="sticky" sx={{backgroundColor: '#B31B1B'}}>
         <Container maxWidth="xl">
             <Toolbar disableGutters>
-                <img src="/user/static/images/arxiv-logo-one-color-white.svg?react" width="160"
+                <img src="/user/static/images/arxiv-logo-one-color-white.svg?react" width="85"
                      alt="arXiv Logo" aria-label="arxiv-logo" />
                 <Box sx={{flexGrow: 1}}/>
                 <Box sx={{flexGrow: 0}}>
