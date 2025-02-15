@@ -13,6 +13,7 @@ import ArxivFooter from "./components/ArxivFooter.tsx";
 import AccountSettings from "./pages/AccountSettings.tsx";
 import OwnershipRequest from "./pages/OwnershipRequest.tsx";
 import NotFound404 from "./components/NotFound404.tsx";
+import AuthorshipStatus from "./pages/AuthorshipStatus.tsx";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => {
                             <Route path="/user/logout" element={<Logout />} />
                             <Route path="/user/register" element={<AccountRegistration />} />
                             <Route path="/user/ownership-request" element={<OwnershipRequest />} />
+                            <Route path="/user/change-author-status" element={<AuthorshipStatus />} />
                             <Route path="*" element={<NotFound404 />} />
                         </Routes>
                     </Container>

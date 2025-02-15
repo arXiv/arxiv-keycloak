@@ -32,7 +32,7 @@ const ArxivBanner = () => {
 
         <Box
             sx={{
-                flex: 2,
+                flex: 3,
                 display: "flex",
                 justifyContent: "space-between", // Text on left, Button on right
                 alignItems: "center", // Align everything vertically

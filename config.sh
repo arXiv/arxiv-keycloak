@@ -65,7 +65,7 @@ if [ ! -r .env.localdb ] ; then
     #
     AAA_PORT=21503
     echo ARXIV_OAUTH2_CLIENT_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/arxiv-oauth2-client >> .env.localdb
-    echo ARXIV_OAUTH2_CLIENT_APP_NAME= arxiv-oauth2-client >> .env.localdb
+    echo ARXIV_OAUTH2_CLIENT_APP_NAME=arxiv-oauth2-client >> .env.localdb
     echo ARXIV_OAUTH2_APP_PORT=$AAA_PORT >> .env.localdb
     #
     # where aaa is hosted
