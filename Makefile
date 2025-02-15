@@ -48,7 +48,7 @@ help:
 #-#   bootstraps the environment
 bootstrap: .bootstrap
 
-.bootstrap: tests/data/arxiv-test-db.sql
+.bootstrap: tests/data/sanitized-test-db.sql
 	./tools/install_py311.sh
 	$(call run_in_all_subdirs,bootstrap)
 	touch .bootstrap
@@ -114,5 +114,5 @@ restart:
 
 
 tests/data/sanitized-test-db.sql:
-	gsutil cp gs://arxiv-dev-sql-data/test-data/arxiv-test-db.sql $@
+	gsutil cp gs://arxiv-dev-sql-data/test-data/sanitized-test-db.sql $@
 #-#
