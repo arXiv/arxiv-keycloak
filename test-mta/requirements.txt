@@ -1,5 +1,5 @@
-fastapi
-uvicorn
-sqlalchemy
-requests
-aiosmtpd
+fastapi==0.115.8
+uvicorn==0.34.0
+SQLAlchemy==2.0.38
+requests==2.32.3
+aiosmtpd==1.4.6

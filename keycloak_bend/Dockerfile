@@ -21,7 +21,7 @@ RUN chmod 755 /home/keycloak/start-keycloak.sh /home/keycloak/certs
 COPY ./keycloak_migration/keycloak-user-migration/target/keycloak-rest-provider-5.0.1-SNAPSHOT.jar /opt/keycloak/providers/
 
 # Pub/sub event posting
-COPY ./pubsub-listener/keycloak-pubsub-listener/target/keycloak-to-pubsub-jar-with-dependencies.jar /opt/keycloak/providers/
+COPY ./pubsub-listener/keycloak-to-pubsub-jar-with-dependencies.jar /opt/keycloak/providers/
 
 # Themes
 # COPY ./arxiv-theme/  /opt/keycloak/themes/arxiv-theme/

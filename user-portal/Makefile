@@ -98,9 +98,6 @@ venv/bin/poetry: venv
 venv/lib/python3.11/site-packages/fastapi: venv/bin/poetry
 	. venv/bin/activate && poetry install
 
-/usr/bin/docker:
-	sh ./install-docker.sh
-
 show-env:
 	sed -e 's/^/export /g' ../.env
 
