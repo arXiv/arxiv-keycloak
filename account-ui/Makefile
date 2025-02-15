@@ -105,7 +105,7 @@ local:
 #-#
 #-# Command: aaa-api
 #-#   builds the docker image
-local:
+aaa-api:
 	cd account-app && npm install --save-dev openapi-typescript
-	cd account-app && npx openapi-typescript http://localhost:5100/aaa/openapi.json -o src/types/aaa-api.ts
-	cd account-app && npx openapi-typescript http://localhost:5100/up-api/openapi.json -o src/types/up-api.ts
+	cd account-app && npx openapi-typescript http://localhost.arxiv.org:5100/aaa/openapi.json -o src/types/aaa-api.ts
+	cd account-app && npx openapi-typescript http://localhost.arxiv.org:5100/up-api/openapi.json -o src/types/up-api.ts

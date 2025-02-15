@@ -42,9 +42,13 @@ help:
 
 #-#
 #-# Command: bootstrap
-#-#   noop
-bootstrap:
+#-#   installs packages
+
+boostsrap: .bootstrap
+
+.bootstrap:
 	npm install
+	touch .bootstrap
 
 #-#
 #-# Command: docker-image
@@ -85,8 +89,8 @@ sh: stop
 
 
 #-#
-#-# Command: sh
-#-#   runs a bash shell in the container to look inside of it
+#-# Command: build
+#-#   runs the vite build
 build:
 	npm run build
 
@@ -105,7 +109,7 @@ local:
 #-#
 #-# Command: aaa-api
 #-#   builds the docker image
-local:
-	cd account-app && npm install --save-dev openapi-typescript
-	cd account-app && npx openapi-typescript http://localhost:5100/aaa/openapi.json -o src/types/aaa-api.ts
-	cd account-app && npx openapi-typescript http://localhost:5100/up-api/openapi.json -o src/types/up-api.ts
+aaa-api:
+	# cd account-app && npm install --save-dev openapi-typescript
+	npx openapi-typescript http://localhost:5100/aaa/openapi.json -o src/types/aaa-api.ts
+	npx openapi-typescript http://localhost:5100/up-api/openapi.json -o src/types/up-api.ts

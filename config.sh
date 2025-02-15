@@ -126,8 +126,10 @@ if [ ! -r .env.localdb ] ; then
     #
     # This is not strictry necessary but here
     #
+    echo ADMIN_API_TAG=gcr.io/$GCP_PROJECT/admin-console/admin-api >> .env.localdb
     echo ADMIN_API_PORT=21510 >> .env.localdb
     echo ADMIN_API_URL=http://$SERVER_HOST:$HTTP_PORT/admin-api >> .env.localdb
+    echo ADMIN_CONSOLE_TAG=gcr.io/$GCP_PROJECT/admin-console/admin-ui >> .env.localdb
     echo ADMIN_CONSOLE_PORT=21511 >> .env.localdb
     echo ADMIN_CONSOLE_URL=http://$SERVER_HOST:$HTTP_PORT/admin-console >> .env.localdb
     #
