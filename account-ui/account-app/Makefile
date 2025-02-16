@@ -4,7 +4,8 @@ export $(shell sed 's/=.*//' ../../.env)
 app_tag := ${ACCOUNT_PORTAL_APP_TAG}
 app_name := ${ACCOUNT_PORTAL_APP_NAME}
 app_port := ${ACCOUNT_PORTAL_APP_PORT}
-dockerport := ${ACCOUNT_PORTAL_APP_PORT}
+# This is hard coded in nginx
+dockerport := 8888
 
 ROOT_DIR := $(shell pwd)
 WEBAPP_CPUS := 2
@@ -20,7 +21,6 @@ RUN_HOST := http://localhost.arxiv.org
 
 APP_DOCKER_RUN := docker run --cpus ${WEBAPP_CPUS} --rm -p ${app_port}:${dockerport} \
 -e WORKERS=4 \
--e PORT=${dockerport} \
 -e AAA_URL=${RUN_HOST}/aaa \
 -e ADMIN_API_BACKEND_URL=${RUN_HOST}/admin-api/v1 \
 -e ACOOUNT_UI_APP_ROOT=${RUN_HOST}/user/ \

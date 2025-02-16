@@ -1,5 +1,5 @@
 
-DOCKER_DIRS := keycloak_bend oauth2-authenticator keycloak_tapir_bridge legacy_auth_provider test-mta user-portal
+DOCKER_DIRS := keycloak_bend oauth2-authenticator keycloak_tapir_bridge legacy_auth_provider test-mta user-portal account-ui
 ALL_DIRS := $(DOCKER_DIRS) tools tests
 
 include .env

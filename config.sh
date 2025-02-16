@@ -74,6 +74,7 @@ if [ ! -r .env.localdb ] ; then
     #
     echo AAA_CALLBACK_URL=http://$SERVER_HOST:$HTTP_PORT/aaa/callback >> .env.localdb
     echo AAA_LOGIN_REDIRECT_URL=http://$SERVER_HOST:$HTTP_PORT/aaa/login >> .env.localdb
+    echo AAA_TOKEN_REFRESH_URL=http://$SERVER_HOST:$HTTP_PORT/aaa/refresh >> .env.localdb
     #
     # arxiv mysql db
     #
