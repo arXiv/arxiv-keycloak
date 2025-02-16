@@ -1,5 +1,5 @@
 import React from "react";
-import {Box, Checkbox, FormControlLabel, FormGroup, ToggleButtonGroup, Typography} from "@mui/material";
+import {Box, Checkbox, FormControlLabel, FormGroup, Typography} from "@mui/material";
 // import BolderToggleButton from "./BolderToggleButton.tsx";
 
 export type CategoryGroupType = "flag_group_cs" | "flag_group_econ" | "flag_group_eess" | "flag_group_math" | "flag_group_physics" | "flag_group_q_bio" | "flag_group_q_fin" | "flag_group_stat";
@@ -44,7 +44,7 @@ const CategorySelection : React.FC<{
             </Typography>
             <FormGroup
                 aria-label="archive groups"
-                sx={{ display: "flex", flexWrap: "wrap", gap: 1, p: 1 }}
+                sx={{ display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 1, p: 1 }}
             >
                 {
                     choices.map((choice) =>  (
@@ -53,12 +53,6 @@ const CategorySelection : React.FC<{
                                          value={choice.value} label={choice.label} callback={handleSelection} />))
                 }
             </FormGroup>
-
-            <ToggleButtonGroup
-                value={selectedGroups}
-                aria-label="archive groups"
-            >i
-            </ToggleButtonGroup>
         </Box>
     );
 };
