@@ -8,4 +8,6 @@ cat > /usr/share/nginx/html/user/env-config.json <<EOF
 }
 EOF
 
+envsubst < /etc/nginx/conf.d/template-source > /etc/nginx/conf.d/nginx.conf
+
 nginx -g 'daemon off;'

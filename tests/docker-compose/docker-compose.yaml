@@ -172,11 +172,26 @@ services:
     network_mode: host
 
 
+  account-portal:
+    image: ${ACCOUNT_PORTAL_APP_TAG}:latest
+    container_name: account-portal
+    ports:
+      - ${ACCOUNT_PORTAL_APP_PORT}:8888  # Host port:Container port. it is hard coded - 
+    environment:
+      # docker
+      PORT: ${ACCOUNT_PORTAL_APP_PORT}
+      AAA_URL: http://localhost.arxiv.org:5100/aaa
+      ADMIN_API_BACKEND_URL: http://localhost.arxiv.org:5100/admin-api
+      ACCOUNT_UI_APP_ROOT: http://localhost.arxiv.org:5100/user
+    network_mode: host
+
+
   nginx-proxy:
     image: nginx:latest
     container_name: nginx-proxy
     volumes:
-      - ./tests/config/nginx-docker.conf:/etc/nginx/nginx.conf:ro  # Mount custom NGINX config
+      - ./tests/config/nginx-docker-dev.conf:/etc/nginx/nginx.conf:ro  # Mount custom NGINX config
+      # - ./tests/config/nginx-docker.conf:/etc/nginx/nginx.conf:ro  # If you want to use static web
       - ./tests/nginx/:/nginx/:ro
       - ./tests/log.d/:/log.d/
       - ./account-ui/account-app/dist:/account-app:ro

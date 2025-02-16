@@ -789,19 +789,19 @@
       "clientId": "arxiv-user-migration",
       "name": "arXiv user migration client",
       "description": "",
-      "rootUrl": "http://localhost:5100",
-      "adminUrl": "http://localhost:5100",
-      "baseUrl": "http://localhost:5100",
+      "rootUrl": "http://localhost.arxiv.org:5100",
+      "adminUrl": "",
+      "baseUrl": "http://localhost.arxiv.org:5100/",
       "surrogateAuthRequired": false,
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
       "secret": "**********",
       "redirectUris": [
-        "http://localhost:5100/*"
+        "http://localhost.arxiv.org:5100/*"
       ],
       "webOrigins": [
-        "http://localhost:5100"
+        "http://localhost.arxiv.org:5100"
       ],
       "notBefore": 0,
       "bearerOnly": false,

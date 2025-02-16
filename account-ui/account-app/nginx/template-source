@@ -1,5 +1,5 @@
 server {
-    listen       21514;
+    listen       ${PORT};
     server_name  _;
 
     port_in_redirect on;
@@ -12,9 +12,13 @@ server {
         root   /usr/share/nginx/html/;
     }
 
-    location ^~ /user {
-        alias   /usr/share/nginx/html/user;
+    location ^~ /user/ {
+        root   /usr/share/nginx/html/;
         index  index.html;
-        try_files $uri $uri/ /user/index.html;
+    }
+
+    location ^~ / {
+        root   /usr/share/nginx/html/;
+        index  index.html;
     }
 }
