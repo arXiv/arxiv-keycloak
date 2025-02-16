@@ -137,7 +137,7 @@ if [ ! -r .env.localdb ] ; then
     echo ARIXV_PORTAL_APP_NAME=arxiv-user-portal >> .env.localdb
     #
     # echo ACCOUNT_PORTAL_API_PORT=21515 >>  .env.localdb
-    echo ACCOUNT_PORTAL_APP_PORT=21506 >>  .env.localdb
+    echo ACCOUNT_PORTAL_APP_PORT=21514 >>  .env.localdb
     echo ACCOUNT_PORTAL_APP_TAG=gcr.io/arxiv-development/arxiv-keycloak/account-portal  >>  .env.localdb
     echo ACCOUNT_PORTAL_APP_NAME=account-portal >> .env.localdb
     #

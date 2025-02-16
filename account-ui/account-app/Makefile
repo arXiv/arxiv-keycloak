@@ -15,7 +15,7 @@ WEBAPP_DOCKER_PLATFORM := $(shell echo $${WEBAPP_DOCKER_PLATFORM:-linux/amd64})
 # export const backendUrl = process.env.ADMIN_API_BACKEND_URL || 'http://127.0.0.1:5000/api/v1'
 # // and the UI is serving from
 # export const appUrl = process.env.ADMIN_APP_ROOT || 'http://127.0.0.1:5000/';
-RUN_HOST := https://dev3.arxiv.org
+RUN_HOST := http://localhost.arxiv.org
 # RUN_HOST := http://localhost:5000
 
 APP_DOCKER_RUN := docker run --cpus ${WEBAPP_CPUS} --rm -p ${app_port}:${dockerport} \
