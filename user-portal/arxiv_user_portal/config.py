@@ -81,19 +81,8 @@ if LOCALHOST_DEV:
     REDIS_FAKE=True
     FLASK_DEBUG=True
     DEBUG=True
+    # Don't want to use HTTPS for local dev
+    AUTH_SESSION_COOKIE_SECURE=0
     if not SQLALCHEMY_DATABASE_URI:
         SQLALCHEMY_DATABASE_URI = 'sqlite:///../locahost_dev.db'
         CLASSIC_DATABASE_URI = SQLALCHEMY_DATABASE_URI
-
-    DEFAULT_LOGIN_REDIRECT_URL='/protected'
-    # Need to use this funny name where we have a DNS entry to 127.0.0.1
-    # because browsers will reject cookie domains with fewer than 2 dots
-    AUTH_SESSION_COOKIE_DOMAIN='localhost.arxiv.org'
-    # Want to not conflict with any existing cookies for subdomains of arxiv.org
-    # so give it a different name
-    CLASSIC_COOKIE_NAME='LOCALHOST_DEV_admin_webapp_classic_cookie'
-    # Don't want to use HTTPS for local dev
-    AUTH_SESSION_COOKIE_SECURE=0
-    # Redirect to relative pages instead of arxiv.org pages
-    DEFAULT_LOGOUT_REDIRECT_URL='/login'
-    DEFAULT_LOGIN_REDIRECT_URL='/protected'
