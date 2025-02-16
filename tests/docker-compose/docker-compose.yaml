@@ -145,19 +145,32 @@ services:
       - pubsub-emulator
     command: python main.py --project "${PUBSUB_PROJECT}" --subscription "${KC_TAPIR_BRIDGE_SUBSCRIPTION}" --debug 
 
-# ues arxivportal
-#   testsite:
-#     image: ${TESTSITE_TAG}:latest
-#     container_name: testsite
-#     ports:
-#       - "${TESTSITE_PORT}:${TESTSITE_PORT}"  # Host port:Container port
-#     environment:
-#       PORT: ${TESTSITE_PORT}
-#       JWT_SECRET: ${JWT_SECRET}
-#       KC_URL_PUBLIC: ${KC_URL_PUBLIC}
-#       KEYCLOAK_TEST_CLIENT_SECRET: ${KEYCLOAK_TEST_CLIENT_SECRET}
-#       NGINX_PORT: ${NGINX_PORT} 
-#     network_mode: host
+
+  arxiv-portal:
+    image: ${ARXIV_PORTAL_APP_TAG}:latest
+    container_name: arxiv-portal
+    ports:
+      - "${ARXIV_PORTAL_PORT}:${ARXIV_PORTAL_PORT}"  # Host port:Container port
+    environment:
+      # docker
+      PORT: ${ARXIV_PORTAL_PORT}
+      #
+      # config.py
+      LOCALHOST_DEV: 1
+      BASE_SERVER: localhost.arxiv.org:5100
+      # SECRET_KEY:
+      ARXIV_AUTH_DEBUG: 1
+      CLASSIC_COOKIE_NAME: tapir_session
+      CLASSIC_SESSION_HASH: ${CLASSIC_SESSION_HASH}
+      SQLALCHEMY_DATABASE_URI: ${CLASSIC_DB_URI}
+      JWT_SECRET: ${JWT_SECRET}
+      CLASSIC_DB_URI: ${CLASSIC_DB_URI}
+      DEFAULT_LOGIN_REDIRECT_URL: "/user"
+      DEFAULT_LOGOUT_REDIRECT_URL: "http://localhost.arxiv.org:5100"
+      AUTH_SESSION_COOKIE_DOMAIN: 'localhost.arxiv.org'
+
+    network_mode: host
+
 
   nginx-proxy:
     image: nginx:latest
