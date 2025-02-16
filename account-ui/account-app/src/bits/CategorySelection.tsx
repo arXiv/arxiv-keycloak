@@ -1,38 +1,63 @@
 import React from "react";
-import { Box, ToggleButtonGroup, Typography } from "@mui/material";
-import BolderToggleButton from "./BolderToggleButton.tsx";
+import {Box, Checkbox, FormControlLabel, FormGroup, ToggleButtonGroup, Typography} from "@mui/material";
+// import BolderToggleButton from "./BolderToggleButton.tsx";
 
 export type CategoryGroupType = "flag_group_cs" | "flag_group_econ" | "flag_group_eess" | "flag_group_math" | "flag_group_physics" | "flag_group_q_bio" | "flag_group_q_fin" | "flag_group_stat";
 
+const CategoryOption : React.FC<{ value: string, checked: boolean, label: string, callback: (event: React.ChangeEvent<HTMLInputElement>) => void }> = ({value, checked, label, callback}) => {
+    return (
+        <FormControlLabel control={<Checkbox key={value} checked={checked} value={value} onChange={callback} />} label={label} />
+    );
+}
 
 const CategorySelection : React.FC<{
     selectedGroups: CategoryGroupType[],
     setSelectedGroups: (groups: CategoryGroupType[]) => void,
 }> = ({selectedGroups, setSelectedGroups}) => {
 
-    const handleSelection = (_event: any, newSelection: string[]) => {
-        setSelectedGroups(newSelection as unknown as CategoryGroupType[]);
+    const handleSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const checked = event.target.checked;
+        const value: CategoryGroupType = event.target.value as unknown as CategoryGroupType;
+        if (checked) {
+            if (!selectedGroups.includes(value))
+                setSelectedGroups(selectedGroups.concat(value));
+        } else {
+            setSelectedGroups(selectedGroups.filter((group) => group !== value));
+        }
     };
+
+    const choices: {value: CategoryGroupType, label: string}[] = [
+            {value: "flag_group_cs", label: "CS"},
+            {value: "flag_group_econ", label: "Econ"},
+            {value: "flag_group_eess", label: "EESS"},
+            {value: "flag_group_math", label: "Math"},
+            {value: "flag_group_physics", label: "Physics"},
+            {value: "flag_group_q_bio", label: "Q_Bio"},
+            {value: "flag_group_q_fin", label: "Q_Fin"},
+            {value: "flag_group_stat", label: "Stat"}
+        ];
 
     return (
         <Box sx={{ border: "1px solid #ddd", borderRadius: 1, padding: 1 }}>
             <Typography variant="body1" sx={{ marginBottom: 1 }}>
                 *Group(s) you would like to submit to:
             </Typography>
-            <ToggleButtonGroup
-                value={selectedGroups}
-                onChange={handleSelection}
+            <FormGroup
                 aria-label="archive groups"
                 sx={{ display: "flex", flexWrap: "wrap", gap: 1, p: 1 }}
+            >
+                {
+                    choices.map((choice) =>  (
+                        <CategoryOption
+                            checked={selectedGroups.includes(choice.value)}
+                                         value={choice.value} label={choice.label} callback={handleSelection} />))
+                }
+            </FormGroup>
+
+            <ToggleButtonGroup
+                value={selectedGroups}
+                aria-label="archive groups"
             >i
-                <BolderToggleButton value="flag_group_cs">cs</BolderToggleButton>
-                <BolderToggleButton value="flag_group_econ">econ</BolderToggleButton>
-                <BolderToggleButton value="flag_group_eess">eess</BolderToggleButton>
-                <BolderToggleButton value="flag_group_math">math</BolderToggleButton>
-                <BolderToggleButton value="flag_group_physics">physics</BolderToggleButton>
-                <BolderToggleButton value="flag_group_q_bio">q-bio</BolderToggleButton>
-                <BolderToggleButton value="flag_group_q_fin">q-fin</BolderToggleButton>
-                <BolderToggleButton value="flag_group_stat">stat</BolderToggleButton>
             </ToggleButtonGroup>
         </Box>
     );

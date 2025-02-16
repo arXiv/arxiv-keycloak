@@ -1,8 +1,10 @@
+include ../../.env
+export $(shell sed 's/=.*//' ../../.env)
 
-app_tag := arxiv-admin-console
-app_name := arxiv-admin-console
-app_port := 21511
-dockerport := 21511
+app_tag := ${ACCOUNT_PORTAL_APP_TAG}
+app_name := ${ACCOUNT_PORTAL_APP_NAME}
+app_port := ${ACCOUNT_PORTAL_APP_PORT}
+dockerport := ${ACCOUNT_PORTAL_APP_PORT}
 
 ROOT_DIR := $(shell pwd)
 WEBAPP_CPUS := 2
@@ -21,7 +23,7 @@ APP_DOCKER_RUN := docker run --cpus ${WEBAPP_CPUS} --rm -p ${app_port}:${dockerp
 -e PORT=${dockerport} \
 -e AAA_URL=${RUN_HOST}/aaa \
 -e ADMIN_API_BACKEND_URL=${RUN_HOST}/admin-api/v1 \
--e ADMIN_APP_ROOT=${RUN_HOST}/admin-console/ \
+-e ACOOUNT_UI_APP_ROOT=${RUN_HOST}/user/ \
 --name ${app_name} --security-opt="no-new-privileges=true" 
 
 .PHONY: HELLO docker run stop build bootstrap aaa-api

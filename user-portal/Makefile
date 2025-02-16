@@ -3,19 +3,19 @@ include ../.env
 export $(shell sed 's/=.*//' ../.env)
 
 
-app_tag := $(USER_PORTAL_APP_TAG)
-app_name := $(USER_PORTAL_APP_NAME)
-# app_port := $(USER_PORTAL_APP_PORT)
+app_tag := $(ARXIV_PORTAL_APP_TAG)
+app_name := $(ARXIV_PORTAL_APP_NAME)
+# app_port := $(ARXIV_PORTAL_APP_PORT)
 app_port := $(ARXIV_PORTAL_PORT)
 dockerport := 8080
 
 ROOT_DIR := $(shell pwd)
 
-USER_PORTAL_APP_CPUS := $(shell echo $${USER_PORTAL_APP_CPUS:-2})
-USER_PORTAL_APP_WORKERS := $(shell echo $${USER_PORTAL_APP_WORKERS:-2})
+ARXIV_PORTAL_APP_CPUS := $(shell echo $${ARXIV_PORTAL_APP_CPUS:-2})
+ARXIV_PORTAL_APP_WORKERS := $(shell echo $${ARXIV_PORTAL_APP_WORKERS:-2})
 
-APP_DOCKER_RUN := docker run --cpus ${USER_PORTAL_APP_CPUS} --rm -p ${app_port}:${dockerport} \
--e PORT=${dockerport} -e WORKERS=${USER_PORTAL_APP_WORKERS} \
+APP_DOCKER_RUN := docker run --cpus ${ARXIV_PORTAL_APP_CPUS} --rm -p ${app_port}:${dockerport} \
+-e PORT=${dockerport} -e WORKERS=${ARXIV_PORTAL_APP_WORKERS} \
 -e CLASSIC_DB_URI="${CLASSIC_DB_URI}" \
 -e SESSION_DURATION=36000 \
 -e CLASSIC_COOKIE_NAME=tapir_session \
