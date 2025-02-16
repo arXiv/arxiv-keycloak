@@ -33,6 +33,7 @@ if [ ! -r .env.localdb ] ; then
 
     # would be "keycloak" if the network is NOT host network
     KC_HOST_PRIVATE=localhost
+    KC_AUTH_DB_1P_ITEM=bcoicp62oiepvqggwpj5f7lury
 
     echo KC_PORT=$KC_PORT >> .env.localdb
     echo KC_HOST_PUBLIC=$KC_HOST_PUBLIC >> .env.localdb
@@ -46,7 +47,7 @@ if [ ! -r .env.localdb ] ; then
     echo KC_DB_HOST_PRIVATE=auth-db >> .env.localdb
     echo KC_DB_PORT=21502 >> .env.localdb
     echo KC_DB_USER=keycloak >> .env.localdb
-    echo KC_DB_PASS=$(op item get  wos2wdt56jx2gjmvb4awlxk3ay --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "vlf6422dpbnqhne535fpgg4vqm") | .value') >> .env.localdb
+    echo KC_DB_PASS=$(op item get  $KC_AUTH_DB_1P_ITEM --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "vlf6422dpbnqhne535fpgg4vqm") | .value') >> .env.localdb
     echo KC_ADMIN_PASSWORD=$(op item get  bdmmxlepkfsqy5hfgfunpsli2i --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "password") | .value') >> .env.localdb
     echo GCP_PROJECT=$PUBSUB_PROJECT >> .env.localdb
     echo KC_JDBC_CONNECTION="?ssl=false&sslmode=disable" >> .env.localdb
@@ -145,10 +146,10 @@ fi
 
 if [ ! -r .env.devdb ] ; then
     echo KC_DOCKER_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/keycloak >> .env.devdb
-    echo KC_DB_HOST_PUBLIC=$(op item get  wos2wdt56jx2gjmvb4awlxk3ay --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "fnxbox5ugfkr2ol5wtqbk6wkwq") | .value') >> .env.devdb
-    echo KC_DB_HOST_PRIVATE=$(op item get  wos2wdt56jx2gjmvb4awlxk3ay --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "o4idffxy6bns7nihak4q4lo3xe") | .value') >> .env.devdb
+    echo KC_DB_HOST_PUBLIC=$(op item get  $KC_AUTH_DB_1P_ITEM --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "fnxbox5ugfkr2ol5wtqbk6wkwq") | .value') >> .env.devdb
+    echo KC_DB_HOST_PRIVATE=$(op item get  $KC_AUTH_DB_1P_ITEM --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "o4idffxy6bns7nihak4q4lo3xe") | .value') >> .env.devdb
     echo KC_DB_USER=keycloak >> .env.devdb
-    echo KC_DB_PASS=$(op item get  wos2wdt56jx2gjmvb4awlxk3ay --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "vlf6422dpbnqhne535fpgg4vqm") | .value') >> .env.devdb
+    echo KC_DB_PASS=$(op item get  $KC_AUTH_DB_1P_ITEM --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "vlf6422dpbnqhne535fpgg4vqm") | .value') >> .env.devdb
     echo KC_ADMIN_PASSWORD=$(op item get  bdmmxlepkfsqy5hfgfunpsli2i --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "password") | .value') >> .env.devdb
     echo GCP_PROJECT=$GCP_PROJECT >> .env.devdb
     echo KC_JDBC_CONNECTION= >> .env.devdb
