@@ -94,10 +94,6 @@ if [ ! -r .env.localdb ] ; then
     echo LEGACY_AUTH_DOCKER_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/legacy-auth-provider >> .env.localdb
     #
     #
-    echo USER_PORTAL_APP_PORT=21506 >> .env.localdb
-    echo USER_PORTAL_APP_TAG=gcr.io/arxiv-development/arxiv-keycloak/uesr-portal >> .env.localdb
-    echo USER_PORTAL_APP_NAME=arxiv-user-portal >> .env.localdb
-    #
     # pubsub emulator port
     #
     PUBSUB_PORT=21507
@@ -137,12 +133,14 @@ if [ ! -r .env.localdb ] ; then
     # portals
     #
     echo ARXIV_PORTAL_PORT=21513  >> .env.localdb
-    echo USER_PORTAL_PORT=21514  >> .env.localdb
+    echo ARXIV_PORTAL_APP_TAG=gcr.io/arxiv-development/arxiv-keycloak/arxiv-user-portal  >>  .env.localdb
+    echo ARIXV_PORTAL_APP_NAME=arxiv-user-portal >> .env.localdb
     #
-    echo USER_PORTAL_API_PORT=21515 >>  .env.localdb
-    echo USER_PORTAL_APP_NAME=arxiv-user-portal  >>  .env.localdb
-    echo USER_PORTAL_APP_PORT=21506 >>  .env.localdb
-    echo USER_PORTAL_APP_TAG=gcr.io/arxiv-development/arxiv-keycloak/uesr-portal  >>  .env.localdb
+    # echo ACCOUNT_PORTAL_API_PORT=21515 >>  .env.localdb
+    echo ACCOUNT_PORTAL_APP_PORT=21506 >>  .env.localdb
+    echo ACCOUNT_PORTAL_APP_TAG=gcr.io/arxiv-development/arxiv-keycloak/account-portal  >>  .env.localdb
+    echo ACCOUNT_PORTAL_APP_NAME=account-portal >> .env.localdb
+    #
 fi
 
 if [ ! -r .env.devdb ] ; then
