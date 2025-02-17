@@ -29,23 +29,30 @@ const ArxivFooter: React.FC = () => {
         display: "flex",
         alignItems: "center", // Align everything vertically
         px: 1,
-    }}><SlackIcon style={{ fill: "red", width: "16px", height: "16px" }} />Slack</Box>);
+    }}><SlackIcon style={{fill: "red", width: "16px", height: "16px"}}/>Slack</Box>);
 
     return (
+        <Box
+            component="footer"
+            sx={{
+                width: "100%",
+                backgroundColor: "#eeeeee",
+                mt: "auto",
+                display: "flex",
+            }}
+        >
             <Box
-                component="footer"
                 sx={{
                     width: "100%",
-                    backgroundColor: "#eeeeee",
                     textAlign: "left",
-                    mt: "auto",
                     display: "flex",
                     justifyContent: "space-between",
-                }}
-            >
-                <Box sx={{flex: 1}} />
+                    py: 2
+                }}>
 
-                <Box sx={{flex: 4, }}>
+                <Box sx={{flex: 1}}/>
+
+                <Box sx={{flex: 4,}}>
                     <HoverLink label={"About"} href="/about"/>
                     <Box sx={{flex: 1}}/>
                     <HoverLink label={"Help"} href="/help"/>
@@ -63,27 +70,29 @@ const ArxivFooter: React.FC = () => {
                     <HoverLink label={"Privacy Policy"} href="/help/policies/privacy_policy"/>
                 </Box>
                 <Box sx={{flex: 6}}>
-                <Box sx={{ display: "flex", width: "100%" }}>
-                    {/* Left side: Two HoverLinks stacked in a column */}
-                    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                        <HoverLink label={"Web Accessibility Assistance"} href="/help/web_accessibility" />
-                        <HoverLink label={"arXiv Operation Status"} href="https://status.arxiv.org" />
-                    </Box>
+                    <Box sx={{display: "flex", width: "100%"}}>
+                        {/* Left side: Two HoverLinks stacked in a column */}
+                        <Box sx={{flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between"}}>
+                            <HoverLink label={"Web Accessibility Assistance"} href="/help/web_accessibility"/>
+                            <HoverLink label={"arXiv Operation Status"} href="https://status.arxiv.org"/>
+                        </Box>
 
-                    {/* Right side: Status notifications */}
-                    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                        <Typography sx={{ fontSize: "9px", display: "inline", color: "black" }}>
-                            {"Get status notifications via >"}
-                        </Typography>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                            <HoverLink label={emailTitle("email")} href="https://subscribe.sorryapp.com/24846f03/email/new" />
-                            <HoverLink label={slackTitle} href="https://subscribe.sorryapp.com/24846f03/slack/new" />
+                        {/* Right side: Status notifications */}
+                        <Box sx={{flex: 1, display: "flex", flexDirection: "column", justifyContent: "center"}}>
+                            <Typography sx={{fontSize: "9px", display: "inline", color: "black"}}>
+                                {"Get status notifications via >"}
+                            </Typography>
+                            <Box sx={{display: "flex", alignItems: "center", gap: 1}}>
+                                <HoverLink label={emailTitle("email")}
+                                           href="https://subscribe.sorryapp.com/24846f03/email/new"/>
+                                <HoverLink label={slackTitle} href="https://subscribe.sorryapp.com/24846f03/slack/new"/>
+                            </Box>
                         </Box>
                     </Box>
-                    </Box>
                 </Box>
-                <Box sx={{flex: 1}} />
+                <Box sx={{flex: 1}}/>
             </Box>
+        </Box>
     );
 }
 
