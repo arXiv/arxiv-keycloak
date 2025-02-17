@@ -121,8 +121,13 @@ def subscribe_keycloak_events(project_id: str, subscription_id: str, request_tim
             return
 
         #
-        resource_type = data.get("resourceType").lower()
-        op = data.get("operationType").lower()
+        event_type = data.get("type", "").lower()
+        if event_type in ["login", "logout"]:
+            resource_type = "authn"
+            op = event_type
+        else:
+            resource_type = data.get("resourceType", "no_resource").lower()
+            op = data.get("operationType", "").lower()
         dispatch_name = f"dispatch_{resource_type}_do_{op}"
         dispatch = dispatch_functions.get(dispatch_name)
         representation = json.loads(data.get("representation", "{}"))
