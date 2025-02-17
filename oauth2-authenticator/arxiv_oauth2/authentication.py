@@ -33,7 +33,7 @@ def cookie_params(request: Request) -> Tuple[str, str, str, Optional[str], bool,
         request.app.extra[COOKIE_ENV_NAMES.arxiv_keycloak_cookie_env], # This is the Keycloak access token
         request.app.extra.get('DOMAIN'),
         request.app.extra.get('SECURE', True),
-        request.app.extra.get('SAMESITE', "lax"))
+        request.app.extra.get('SAMESITE', "Lax"))
 
 
 logger = logging.getLogger(__name__)
@@ -336,7 +336,9 @@ def make_cookie_response(request: Request,
                             domain=domain, path="/", secure=secure, samesite=samesite)
     else:
         response.set_cookie(session_cookie_key, "", max_age=0,
-                            domain=domain, path="/", secure=secure, samesite=samesite)
+                            domain=domain, path="/", secure=secure, samesite=samesite, expires=1)
+        response.set_cookie(keycloak_key, "",  max_age=0,
+                            domain=domain, path="/", secure=secure, samesite=samesite, expires=1)
 
     if tapir_cookie:
         logger.debug('%s=%s',classic_cookie_key, tapir_cookie)
@@ -345,6 +347,7 @@ def make_cookie_response(request: Request,
     else:
         logger.debug('%s=<EMPTY>',classic_cookie_key)
         response.set_cookie(classic_cookie_key, '', max_age=0,
-                            domain=domain, path="/", secure=secure, samesite=samesite)
+                            domain=domain, path="/", secure=secure, samesite=samesite,
+                            expires=1)
     return response
 
