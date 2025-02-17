@@ -125,6 +125,7 @@ def create_app(*args, **kwargs) -> FastAPI:
     logger.info(f"DOMAIN: {DOMAIN!r}")
     logger.info(f"SECURE: {secure!r}")
     logger.info(f"SERVER_ROOT_PATH: {SERVER_ROOT_PATH}")
+    logger.info(f"KEYCLOAK_SERVER_URL {KEYCLOAK_SERVER_URL}")
     logger.info(f"CALLBACK_URL: {CALLBACK_URL}")
     logger.info(f"AUTH_SESSION_COOKIE_NAME: {AUTH_SESSION_COOKIE_NAME}")
     logger.info(f"CLASSIC_COOKIE_NAME: {CLASSIC_COOKIE_NAME}")

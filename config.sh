@@ -5,6 +5,8 @@ ACCOUNT=arxiv.1password.com
 
 if [ ! -r .env.localdb ] ; then
     SERVER_HOST=localhost.arxiv.org
+    HTTP_PORT=5100
+    SERVER_URL=http://$SERVER_HOST:$HTTP_PORT
     PLATFORM=linux/amd64
     GCP_PROJECT=arxiv-development
     PUBSUB_PROJECT=local-test
@@ -24,8 +26,8 @@ if [ ! -r .env.localdb ] ; then
     echo DOCKER_PLATFORM=$PLATFORM >> .env.localdb
     
     # This is what nginx runs
-    HTTP_PORT=5100
     echo NGINX_PORT=$HTTP_PORT >> .env.localdb
+
 
     # keycloak and its database
     KC_PORT=21501
@@ -72,9 +74,9 @@ if [ ! -r .env.localdb ] ; then
     #
     # where aaa is hosted
     #
-    echo AAA_CALLBACK_URL=http://$SERVER_HOST:$HTTP_PORT/aaa/callback >> .env.localdb
-    echo AAA_LOGIN_REDIRECT_URL=http://$SERVER_HOST:$HTTP_PORT/aaa/login >> .env.localdb
-    echo AAA_TOKEN_REFRESH_URL=http://$SERVER_HOST:$HTTP_PORT/aaa/refresh >> .env.localdb
+    echo AAA_CALLBACK_URL=$SERVER_URL/aaa/callback >> .env.localdb
+    echo AAA_LOGIN_REDIRECT_URL=$SERVER_URL/aaa/login >> .env.localdb
+    echo AAA_TOKEN_REFRESH_URL=$SERVER_URL/aaa/refresh >> .env.localdb
     #
     # arxiv mysql db
     #
@@ -127,22 +129,31 @@ if [ ! -r .env.localdb ] ; then
     #
     echo ADMIN_API_TAG=gcr.io/$GCP_PROJECT/admin-console/admin-api >> .env.localdb
     echo ADMIN_API_PORT=21510 >> .env.localdb
-    echo ADMIN_API_URL=http://$SERVER_HOST:$HTTP_PORT/admin-api >> .env.localdb
+    echo ADMIN_API_URL=$SERVER_URL/admin-api >> .env.localdb
     echo ADMIN_CONSOLE_TAG=gcr.io/$GCP_PROJECT/admin-console/admin-ui >> .env.localdb
     echo ADMIN_CONSOLE_PORT=21511 >> .env.localdb
-    echo ADMIN_CONSOLE_URL=http://$SERVER_HOST:$HTTP_PORT/admin-console >> .env.localdb
+    echo ADMIN_CONSOLE_URL=$SERVER_URL/admin-console >> .env.localdb
     #
     # portals
     #
     echo ARXIV_PORTAL_PORT=21513  >> .env.localdb
     echo ARXIV_PORTAL_APP_TAG=gcr.io/arxiv-development/arxiv-keycloak/arxiv-user-portal  >>  .env.localdb
     echo ARIXV_PORTAL_APP_NAME=arxiv-user-portal >> .env.localdb
+    # portal config - these are set in the docker-compose.yaml for the docker. But it's convenient for running Flask with .env
+    echo ARXIV_AUTH_DEBUG=1  >> .env.localdb
+    echo BASE_SERVER=$SERVER_HOST >> .env.localdb
+    echo DEFAULT_LOGIN_REDIRECT_URL=/user/ >> .env.localdb
+    echo DEFAULT_LOGOUT_REDIRECT_URL=$SERVER_URL >> .env.localdb
+    echo AUTH_SESSION_COOKIE_DOMAIN=$SERVER_HOST >> .env.localdb
+    echo CLASSIC_COOKIE_NAME=tapir_session  >> .env.localdb
+    
     #
     # echo ACCOUNT_PORTAL_API_PORT=21515 >>  .env.localdb
     echo ACCOUNT_PORTAL_APP_PORT=21514 >>  .env.localdb
     echo ACCOUNT_PORTAL_APP_TAG=gcr.io/arxiv-development/arxiv-keycloak/account-portal  >>  .env.localdb
     echo ACCOUNT_PORTAL_APP_NAME=account-portal >> .env.localdb
     #
+
 fi
 
 if [ ! -r .env.devdb ] ; then
