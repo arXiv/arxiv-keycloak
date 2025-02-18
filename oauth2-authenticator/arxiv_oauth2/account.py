@@ -1,11 +1,18 @@
 """Account management,
 
 """
+import re
+import traceback
+from http import HTTPStatus
+from pyexpat.errors import messages
+from traceback import TracebackException
 from typing import Optional, List
 
 import httpx
 from arxiv.auth.domain import UserFullName, UserProfile, OTHER
 from fastapi import APIRouter, Depends, status, HTTPException, Request
+from fastapi.responses import JSONResponse
+# from mypyc.irbuild.expression import transform_bytes_expr
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -14,12 +21,14 @@ from keycloak import KeycloakAdmin, KeycloakError
 from arxiv.base import logging
 from arxiv.auth.user_claims import ArxivUserClaims
 from arxiv.db.models import TapirUser, Demographic, Category, TapirNickname
+from arxiv.db import Session as BaseDbSession
 from arxiv.auth import domain
 from arxiv.auth.legacy.exceptions import RegistrationFailed
 from arxiv.auth.legacy import accounts
+from starlette.responses import JSONResponse
 
-from . import get_current_user_or_none, get_db, get_keycloak_admin, get_client_host
-from . import stateless_captcha
+from . import get_current_user_or_none, get_db, get_keycloak_admin # , get_client_host
+# from . import stateless_captcha
 from .captcha import CaptchaTokenReplyModel, get_captcha_token
 
 logger = logging.getLogger(__name__)
@@ -80,6 +89,9 @@ class AccountRegistrationModel(AccountInfoBaseModel):
     captcha_value: str
     keycloak_migration: bool = False
 
+
+class AccountRegistrationError(BaseModel):
+    message: str
 
 def to_group_name(group_flag, demographic: Demographic) -> Optional[str]:
     group_name, flag_name = group_flag
@@ -167,7 +179,14 @@ async def info(id: str,
     return reply_account_info(session, id)
 
 
-@router.post('/register/')
+@router.post('/register/',
+             response_model=AccountInfoModel,
+             status_code=status.HTTP_201_CREATED,
+             responses={
+                 status.HTTP_400_BAD_REQUEST: {"model": AccountRegistrationError, "description": "Invalid registration data"},
+                 status.HTTP_404_NOT_FOUND: {"model": AccountRegistrationError, "description": "User not found"},
+             }
+             )
 async def register(
         request: Request,
         registration: AccountRegistrationModel,
@@ -182,7 +201,8 @@ async def register(
     if registration.keycloak_migration:
         data: Optional[TapirNickname] = session.query(TapirNickname).filter(TapirNickname.nickname == registration.username).one_or_none()
         if not data:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+            error_response = AccountRegistrationError(message="Username is not found")
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content=error_response.dict())
         account = get_account_info(session, str(data.user_id))
         # Rather than creating user, let the legacy user migration create the account.
         _migrate_to_keycloak(kc_admin, account, registration.password, client_secret)
@@ -203,18 +223,42 @@ async def register(
             name=full_name,
             profile=user_profile,
         )
+
+        # Purge the base's db session
+        try:
+            BaseDbSession.reset()
+        except:
+            pass
+
         try:
             user, auth = accounts.register(user, registration.password, registration.origin_ip, registration.origin_host)
-        except RegistrationFailed as e:
-            msg = 'Registration failed'
-            raise RegistrationFailed(msg) from e
+        except RegistrationFailed as this_e:
+            # PITA - this is the only place I have to use arxiv base's db session
+            BaseDbSession.rollback()
+
+            tb_exception = traceback.TracebackException.from_exception(this_e)
+            messages = []
+            cause = tb_exception.__cause__
+            if isinstance(cause, TracebackException):
+                messages.append(str(cause.exc_type))
+                messages.append(str(cause))
+            flattened_error = "\n".join(messages)
+            message = flattened_error
+            match = re.search(r"Duplicate entry '([^']+)' for key '([^']+)'", flattened_error, flags=re.MULTILINE)
+            if match:
+                field = match.group(2)
+                where = {"nickname": "User name", "email": "Email"}.get(field, field)
+                message = f"'{match.group(1)}' for '{where}' belongs to an existing user."
+            error_response = AccountRegistrationError(message=message)
+            return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=error_response.dict())
         logger.info("Tapir user account created successfully. Next is Keycloak.")
         account = get_account_info(session, user.user_id)
         # _register_to_keycloak(kc_admin, account)
         _migrate_to_keycloak(kc_admin, account, registration.password, client_secret)
 
     if not account:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        error_response = AccountRegistrationError(message="The account not found.")
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content=error_response.dict())
 
     logger.info("User account created successfully")
     return account
@@ -311,7 +355,7 @@ def email_verify_requset(
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
         ):
-    user = session.query(TapirUser).filter(TapirUser.email == body.email).one_or_none()
+    user: TapirUser|None = session.query(TapirUser).filter(TapirUser.email == body.email).one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     _send_verify_email(kc_admin, user.user_id, force_verify=True)

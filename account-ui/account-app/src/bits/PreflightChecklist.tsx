@@ -1,5 +1,12 @@
 import React from "react";
-import {Typography, List, ListItem, Link, Card, CardContent, ListItemAvatar, Avatar,} from "@mui/material";
+import Typography from "@mui/material/Typography";
+import Link from "@mui/material/Link";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemAvatar from "@mui/material/ListItemAvatar";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Avatar from "@mui/material/Avatar";
 import NotificationIcon from '@mui/icons-material/NotificationImportant';
 import RecommendIcon from '@mui/icons-material/Recommend';
 import SecurityIcon from '@mui/icons-material/Security';

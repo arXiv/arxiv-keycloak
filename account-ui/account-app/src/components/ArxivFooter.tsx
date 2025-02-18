@@ -1,13 +1,11 @@
 import React from 'react';
 // import {RuntimeContext} from "../RuntimeContext";
-import {
-    Typography,
-    Box,
-} from '@mui/material';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
 import EmailIcon from "@mui/icons-material/Email";
 import SubscriptionsIcon from "@mui/icons-material/Subscriptions";
-import HoverLink from "../bits/HoverLink.tsx";
-import SlackIcon from "../assets/SlackIcon.tsx";
+import HoverLink from "../bits/HoverLink";
+import SlackIcon from "../assets/SlackIcon";
 
 
 const ArxivFooter: React.FC = () => {

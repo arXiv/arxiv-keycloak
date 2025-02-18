@@ -1,19 +1,27 @@
 import {useContext, useEffect, useState} from "react";
-import { Autocomplete, TextField } from "@mui/material";
+import Autocomplete from "@mui/material/Autocomplete";
+import TextField from "@mui/material/TextField";
 import { paths } from "../types/aaa-api.ts";
-import {RuntimeContext} from "../RuntimeContext.tsx";
+import {RuntimeContext} from "../RuntimeContext";
+import arxivCategories from "./arxivCategories"
 
-type CategoryType = paths["/categories/{id}"]["get"]["responses"]["200"]["content"]["application/json"];
+export type CategoryType = paths["/categories/{id}"]["get"]["responses"]["200"]["content"]["application/json"];
+
 
 type CategoryGroupType = {
     group: string;
     subcategories: CategoryType[];
 };
 
-const CategoryChooser = () => {
+interface CategoryChooserProps {
+    onSelect?: (category: CategoryType) => void;
+}
+
+
+const CategoryChooser: React.FC<CategoryChooserProps> = ({onSelect}) => {
     const runtimeContext = useContext(RuntimeContext);
     const [selectedCategory, setSelectedCategory] = useState<CategoryType | null>(null);
-    const [categoryList, setCategoryList] = useState<CategoryType[]>([]);
+    const [categoryList, setCategoryList] = useState<CategoryType[]>(arxivCategories);
     const [categories, setCategories] = useState<CategoryGroupType[]>([]);
 
     useEffect(() => {
@@ -52,6 +60,13 @@ const CategoryChooser = () => {
         (option) => !option.isHeader && option.value.id === selectedCategory?.id
     ) ?? null;
 
+    const setSelection = (selected: CategoryType | null) => {
+        setSelectedCategory(selected);
+        if (onSelect) {
+            onSelect(selected);
+        }
+    }
+
     return (
         <Autocomplete
             options={categoryOptions.filter((cat) => !cat.isHeader)}
@@ -74,7 +89,7 @@ const CategoryChooser = () => {
             disableCloseOnSelect
             value={selectedOption} // ✅ Now correctly displays selected value
             onChange={(_event, newValue) =>
-                setSelectedCategory(newValue && !newValue.isHeader ? newValue.value : null)
+                setSelection(newValue && !newValue.isHeader ? newValue.value : null)
             }
         />
     );
