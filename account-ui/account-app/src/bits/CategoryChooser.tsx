@@ -1,11 +1,12 @@
-import {useContext, useEffect, useState} from "react";
+import React, {useContext, useEffect, useState} from "react";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
-import { paths } from "../types/aaa-api.ts";
+//  import { paths } from "../types/aaa-api.ts";
+import { paths as adminApi } from "../types/admin-api";
 import {RuntimeContext} from "../RuntimeContext";
 import arxivCategories from "./arxivCategories"
 
-export type CategoryType = paths["/categories/{id}"]["get"]["responses"]["200"]["content"]["application/json"];
+export type CategoryType = adminApi["/v1/categories/{id}"]["get"]["responses"]["200"]["content"]["application/json"];
 
 
 type CategoryGroupType = {
@@ -14,7 +15,7 @@ type CategoryGroupType = {
 };
 
 interface CategoryChooserProps {
-    onSelect?: (category: CategoryType) => void;
+    onSelect?: (category: CategoryType | null) => void;
 }
 
 

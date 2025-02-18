@@ -3,12 +3,12 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import {DataGrid, GridColDef, GridRowParams, GridFilterModel, GridPaginationModel} from '@mui/x-data-grid';
 import {RuntimeProps} from "../RuntimeContext.tsx";
-import {paths} from "../types/up-api.ts"
 // import SubmissionStatusName from "./SubmissionStatusName.tsx";
 // import categoryChooser from "./CategoryChooser.tsx";
+import { paths as adminApi } from "../types/admin-api";
 
-type SubmissionType = paths['/v1/submissions/{id}']['get']['responses']['200']['content']['application/json'];
-type SubmissionsType = paths['/v1/submissions/']['get']['responses']['200']['content']['application/json'];
+type SubmissionType = adminApi['/v1/submissions/{id}']['get']['responses']['200']['content']['application/json'];
+type SubmissionsType = adminApi['/v1/submissions/']['get']['responses']['200']['content']['application/json'];
 
 const PAGE_SIZES = [5, 20, 100];
 
