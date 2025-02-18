@@ -1,7 +1,20 @@
-import {Box, Button, IconButton, Card, CardContent, Container, TextField, Typography, Link } from "@mui/material";
+import Box from "@mui/material/Box";
+import Button  from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Container from "@mui/material/Container";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import Link from "@mui/material/Link";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+
 import React, {useCallback, useContext, useEffect, useState} from "react";
-import CategorySelection, {CategoryGroupType} from "../bits/CategorySelection.tsx";
-import CategoryChooser from "../bits/CategoryChooser.tsx";
+import CategoryGroupSelection, {CategoryGroupType} from "../bits/CategoryGroupSelection.tsx";
+import CategoryChooser, {CategoryType} from "../bits/CategoryChooser.tsx";
 import CountrySelector from "../bits/CountrySelector.tsx";
 import CareerStatusSelect from "../bits/CareerStatus.tsx";
 import {RuntimeContext} from "../RuntimeContext.tsx";
@@ -10,7 +23,35 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 
 type TokenResponse = paths["/account/register/"]['get']['responses']['200']['content']['application/json'];
 type SubmitRequest = paths["/account/register/"]['post']['requestBody']['content']['application/json'];
+// type RegistrationSuccessReply = paths["/account/register/"]['post']['responses']['200']['content']['application/json'];
+type RegistrationErrorReply = paths["/account/register/"]['post']['responses']['400']['content']['application/json'];
 
+interface PostSubmitDialogProps {
+    title: string;
+    message: string;
+    open: boolean;
+    onClose?: () => void;
+    onConfirm?: () => void;
+}
+
+const PostSubmitActionDialog: React.FC<PostSubmitDialogProps> = ({ title, message, open, onClose, onConfirm }) => {
+    return (
+        <Dialog open={open} onClose={onClose}>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogContent>
+                <Typography>{message}</Typography>
+            </DialogContent>
+            <DialogActions>
+                {
+                    onClose ? <Button onClick={onClose} color="secondary">Cancel</Button> : null
+                }
+                {
+                    onConfirm ? <Button onClick={onConfirm} color="secondary">Okay</Button> : null
+                }
+            </DialogActions>
+        </Dialog>
+    );
+}
 
 const AccountRegistration = () => {
     const runtimeContext = useContext(RuntimeContext);
@@ -53,23 +94,24 @@ const AccountRegistration = () => {
         groups?: string[],
         default_category?: string,
         captcha_value?: string
-    }>({});
+    }>({captcha_value: "Please fill"});
 
     const [token, setToken] = useState<string|null>(null);
     const [captchaImage, setCaptchaImage] = useState<React.ReactNode|null>(null);
 
-    const [selectedGroups, setSelectedGroups] = useState<CategoryGroupType[]>([]); // Default checked value
-    /*
-                <ToggleButton value="flag_group_cs">cs</ToggleButton>
-                <ToggleButton value="flag_group_econ">econ</ToggleButton>
-                <ToggleButton value="flag_group_eess">eess</ToggleButton>
-                <ToggleButton value="flag_group_math">math</ToggleButton>
-                <ToggleButton value="flag_group_physics">physics</ToggleButton>
-                <ToggleButton value="flag_group_q_bio">q-bio</ToggleButton>
-                <ToggleButton value="flag_group_q_fin">q-fin</ToggleButton>
-                <ToggleButton value="flag_group_stat">stat</ToggleButton>
-     */
+    const setSelectedGroups = (groups: CategoryGroupType[]) => {
+        setFormData({...formData, groups: groups});
+    }
 
+    const [postSubmitDialog, setPostSubmitDialog] = useState<PostSubmitDialogProps>(
+        {
+            open: false,
+            onClose: () => {},
+            onConfirm: () => {},
+            message: "",
+            title: ""
+        }
+    );
 
     useEffect(() => {
         console.log(JSON.stringify(formData));
@@ -93,6 +135,10 @@ const AccountRegistration = () => {
     const validateEmail = (email: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
+    };
+
+    const validateCaptcha = (value: string) => {
+        return value.length > 4;
     };
 
     // Handle text field changes
@@ -145,7 +191,37 @@ const AccountRegistration = () => {
                 setErrors((prev) => ({ ...prev, email: "" }));
             }
         }
+
+        if (name === "captcha_value") {
+            if (!validateCaptcha(value)) {
+                console.log("X captcha_value = " + value);
+                setErrors((prev) => ({ ...prev, captcha_value: "Not provided" }));
+            } else {
+                console.log("O captcha_value = " + value);
+                setErrors((prev) => ({ ...prev, captcha_value: undefined }));
+            }
+        }
+
     };
+
+    const setCarrerStatus = (value: string | null) => {
+        if (value) {
+            setFormData({...formData, career_status: value})
+        }
+    };
+
+    const setCountry = (value: string | null) => {
+        if (value) {
+            setFormData({...formData, country: value})
+        }
+    };
+
+    const setDefaultCategory = (cat: CategoryType | null) => {
+        if (cat) {
+            setFormData({...formData, default_category: {archive: cat.archive, subject_class: cat.subject_class || "*"}});
+        }
+    }
+
 
     // Handle form submission
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -164,21 +240,58 @@ const AccountRegistration = () => {
                 },
                 body: JSON.stringify(formData),
             });
+            const data = await response.json();
+            console.log("Response:", data);
 
-            if (!response.ok) {
-                throw new Error("Failed to register");
+            if (response.ok) {
+                setPostSubmitDialog({
+                    open: true,
+                    title: "Registration Success",
+                    message: "Account is registered successfully! Please go to home page, and login.",
+                    onConfirm: () => {
+                        window.location.href="/";
+                    },
+                })
+            }
+            else if (response.status === 400) {
+                const reply: RegistrationErrorReply = data as any;
+                setPostSubmitDialog({
+                    open: true,
+                    title: "Registration Unsuccessful",
+                    message: reply.message,
+                    onClose: () => {
+                        setPostSubmitDialog(
+                            {
+                                ...postSubmitDialog,
+                                open: false,
+                            }
+                        )
+                    },
+                });
             }
 
-            const data = await response.json();
-            alert("Registration successful!");
-            console.log("Response:", data);
         } catch (error) {
             console.error("Error:", error);
-            alert("Registration failed.");
+            setPostSubmitDialog({
+                open: true,
+                title: "Registration Unsuccessful",
+                message: JSON.stringify(error),
+                onClose: () => {
+                    setPostSubmitDialog(
+                        {
+                            ...postSubmitDialog,
+                            open: false,
+                        }
+                    )
+                },
+            });
         }
     };
 
-    const invalidFormData = formData.username.length < 2 || formData.password.length < 10 || formData.password !== secondPassword;
+    const hasErrors = Object.values(errors).some(value =>
+        Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && value !== ''
+    );
+    const invalidFormData = hasErrors || formData.username.length < 2 || formData.password.length < 10 || formData.password !== secondPassword;
 
     return (
         <Container maxWidth="md" sx={{ mt: 2 }} >
@@ -210,10 +323,7 @@ const AccountRegistration = () => {
                           right: 0,
                           height: '95%',
                           backgroundColor: 'transparent',
-                          borderTop: '2px solid #ddd', // Add the border
-                          borderLeft: '2px solid #ddd', // Add the border
-                          borderRight: '2px solid #ddd', // Add the border
-                          borderBottom: '2px solid #ddd', // Add the border
+                          border: '2px solid #ddd', // Add the border
                       },
                   }}>
 
@@ -345,11 +455,11 @@ const AccountRegistration = () => {
                                 onChange={handleChange}
                                 sx={{ flex: 3 }} // Ensures both fields take equal width
                             />
-                            <CountrySelector />
-                            <CareerStatusSelect />
+                            <CountrySelector onSelect={setCountry} />
+                            <CareerStatusSelect onSelect={setCarrerStatus} />
                         </Box>
-                        <CategorySelection selectedGroups={selectedGroups} setSelectedGroups={setSelectedGroups} />
-                        <CategoryChooser />
+                        <CategoryGroupSelection selectedGroups={formData.groups as unknown as CategoryGroupType[]} setSelectedGroups={setSelectedGroups} />
+                        <CategoryChooser onSelect={setDefaultCategory} />
                         <TextField
                             label="Your Homepage URL"
                             name="url"
@@ -369,6 +479,7 @@ const AccountRegistration = () => {
                                 name="captcha_value"
                                 value={formData.captcha_value}
                                 variant="outlined"
+                                helperText={errors.captcha_value}
                                 fullWidth
                                 onChange={handleChange}
                                 sx={{ width: "12em" }}
@@ -386,6 +497,7 @@ const AccountRegistration = () => {
                 </CardContent>
             </Card>
 
+            <PostSubmitActionDialog {...postSubmitDialog} />
         </Container>
     );
 };

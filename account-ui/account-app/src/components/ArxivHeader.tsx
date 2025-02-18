@@ -1,10 +1,11 @@
 import React, {useContext} from 'react';
 import {RuntimeContext} from "../RuntimeContext";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Link from "@mui/material/Link";
+import Button  from "@mui/material/Button";
 import {
-    Typography,
-    Box,
-    Link,
-    Button, useTheme, useMediaQuery,
+    useTheme, useMediaQuery,
 } from '@mui/material';
 import ArxivAppBar from "./ArxivAppBar.tsx";
 

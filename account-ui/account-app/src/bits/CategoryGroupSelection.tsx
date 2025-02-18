@@ -1,5 +1,10 @@
 import React from "react";
-import {Box, Checkbox, FormControlLabel, FormGroup, Typography} from "@mui/material";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormGroup from "@mui/material/FormGroup";
+
 // import BolderToggleButton from "./BolderToggleButton.tsx";
 
 export type CategoryGroupType = "flag_group_cs" | "flag_group_econ" | "flag_group_eess" | "flag_group_math" | "flag_group_physics" | "flag_group_q_bio" | "flag_group_q_fin" | "flag_group_stat";
@@ -10,7 +15,7 @@ const CategoryOption : React.FC<{ value: string, checked: boolean, label: string
     );
 }
 
-const CategorySelection : React.FC<{
+const CategoryGroupSelection : React.FC<{
     selectedGroups: CategoryGroupType[],
     setSelectedGroups: (groups: CategoryGroupType[]) => void,
 }> = ({selectedGroups, setSelectedGroups}) => {
@@ -57,4 +62,4 @@ const CategorySelection : React.FC<{
     );
 };
 
-export default CategorySelection;
+export default CategoryGroupSelection;

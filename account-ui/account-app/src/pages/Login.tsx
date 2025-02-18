@@ -1,4 +1,12 @@
-import {Box, Button, Card, CardContent, Container, TextField, Typography, Link } from "@mui/material";
+import Typography from "@mui/material/Typography";
+import Button  from "@mui/material/Button";
+import Box from "@mui/material/Box";
+import TextField from "@mui/material/TextField";
+import Link from "@mui/material/Link";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Container from "@mui/material/Container";
+
 import {Link as RouterLink} from "react-router-dom";
 
 const Login = () => {

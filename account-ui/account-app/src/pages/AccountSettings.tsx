@@ -1,20 +1,28 @@
 import React, {useCallback, useContext, useState} from "react";
-import {
-    Container,
-    Typography,
-    Paper,
-    Button,
-    Link,
-    Box,
-    Checkbox, FormGroup, FormControlLabel, Tooltip
-} from "@mui/material";
-import { VerifiedUser, Edit, Lock, Email, Link as LinkIcon, Notifications as NofificationIcon } from "@mui/icons-material";
+import Container from '@mui/material/Container'
+import Typography from "@mui/material/Typography";
+import Link from "@mui/material/Link";
+import Paper  from "@mui/material/Paper";
+import Button  from "@mui/material/Button";
+import Box from "@mui/material/Box";
+// import Checkbox from "@mui/material/Checkbox";
+import FormGroup from "@mui/material/FormGroup";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Tooltip from "@mui/material/Tooltip";
+
+import VerifiedUser from "@mui/icons-material/VerifiedUser";
+import Edit from "@mui/icons-material/Edit";
+import Email from "@mui/icons-material/Email";
+import Lock from "@mui/icons-material/Lock";
+import LinkIcon from "@mui/icons-material/Link";
+import NofificationIcon from "@mui/icons-material/Notifications";
 
 import {RuntimeContext, RuntimeProps} from "../RuntimeContext.tsx";
 import PreflightChecklist from "../bits/PreflightChecklist.tsx";
 import Authorship from "../bits/Authorship.tsx";
 import YesNoDialog from "../bits/YesNoDialog.tsx";
 import SubmissionsTable from "../bits/SubmissionsTable.tsx";
+import Switch from "@mui/material/Switch";
 
 
 const VerifyEmailButton: React.FC<{ runtimeProps: RuntimeProps }> = ({ runtimeProps }) => {
@@ -132,8 +140,8 @@ const AccountSettings = () => {
                     <FormGroup>
                         <Tooltip title="MathJax is a javascript display engine for rendering TEX or MathML-coded mathematics in browsers without requiring font installation or browser plug-ins. Any modern browser with javascript enabled will be MathJax-ready. For general information about MathJax, visit mathjax.org.">
                             <FormControlLabel control={
-                                <Checkbox defaultChecked
-                                          disabled={user === null}
+                                <Switch value={true}
+                                        disabled={user === null}
                                 />
                             } label={(
                                 <div>

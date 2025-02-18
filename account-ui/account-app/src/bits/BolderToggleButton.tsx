@@ -1,4 +1,4 @@
-import { ToggleButton } from "@mui/material";
+import ToggleButton from "@mui/material/ToggleButton";
 import { styled } from "@mui/system";
 
 // Styled ToggleButton with better visibility

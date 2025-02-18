@@ -1,14 +1,16 @@
 import React, { useState } from "react";
-import { Box, Autocomplete, TextField } from "@mui/material";
+import Box from "@mui/material/Box";
+import Autocomplete from "@mui/material/Autocomplete";
+import TextField from "@mui/material/TextField";
 
 type CareerStatus = string;
 
-const careerStatusList: CareerStatus[] = [
+export const careerStatusList: CareerStatus[] = [
     "Unknown", "Professor", "Post Graduate", "Under graduate", "Staff"
 ];
 
 interface CareerStatusProps {
-    onSelect?: (country: CareerStatus | null) => void;
+    onSelect?: (careerStatus: CareerStatus | null) => void;
 }
 
 const CareerStatusSelect: React.FC<CareerStatusProps> = ({ onSelect }) => {

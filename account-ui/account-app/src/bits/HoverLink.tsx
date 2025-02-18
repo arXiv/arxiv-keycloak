@@ -1,5 +1,6 @@
 import React, {ReactNode} from "react";
-import {Link, Typography} from "@mui/material";
+import Typography from "@mui/material/Typography";
+import Link from "@mui/material/Link";
 
 interface HoverLinkProps {
     href: string;
