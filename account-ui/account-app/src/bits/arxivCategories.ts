@@ -1,5 +1,5 @@
-import { paths } from "../types/aaa-api.ts";
-type CategoryType = paths["/categories/{id}"]["get"]["responses"]["200"]["content"]["application/json"];
+import { paths as adminApi } from "../types/admin-api";
+type CategoryType = adminApi["/v1/categories/{id}"]["get"]["responses"]["200"]["content"]["application/json"];
 const arxivCategories: CategoryType[] = [
     {
         "id": "acc-phys.",

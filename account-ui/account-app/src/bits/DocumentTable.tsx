@@ -22,12 +22,12 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import {RuntimeProps} from "../RuntimeContext.tsx";
-import {paths} from "../types/up-api.ts"
+import { paths as adminApi } from "../types/admin-api";
 // import DocumentStatusName from "./DocumentStatusName.tsx";
 // import categoryChooser from "./CategoryChooser.tsx";
 
-type DocumentType = paths['/v1/documents/{id}']['get']['responses']['200']['content']['application/json'];
-type DocumentsType = paths['/v1/documents/']['get']['responses']['200']['content']['application/json'];
+type DocumentType = adminApi['/v1/documents/{id}']['get']['responses']['200']['content']['application/json'];
+type DocumentsType = adminApi['/v1/documents/']['get']['responses']['200']['content']['application/json'];
 
 const PAGE_SIZES = [10, 25, 50];
 

@@ -18,9 +18,9 @@ import { useQuery } from "@tanstack/react-query";
 
 import {RuntimeContext, RuntimeProps} from "../RuntimeContext.tsx";
 // import YesNoDialog from "../bits/YesNoDialog.tsx";
-import {paths} from "../types/aaa-api.ts";
+import { paths as adminApi } from "../types/admin-api";
 
-type ArxivDocument = paths['/documents/paper_id/{paper_id}']['get']['responses']['200']['content']['application/json'];
+type ArxivDocument = adminApi['/v1/documents/paper_id/{paper_id}']['get']['responses']['200']['content']['application/json'];
 
 /*
 const SubmitRequest: React.FC<{ runtimeProps: RuntimeProps }> = ({ runtimeProps }) => {
