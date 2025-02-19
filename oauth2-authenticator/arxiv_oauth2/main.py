@@ -4,6 +4,7 @@ from typing import Callable
 from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 # from sqlalchemy.orm import sessionmaker
 from keycloak import KeycloakAdmin # , KeycloakError
@@ -20,8 +21,7 @@ from .captcha import router as captcha_router
 
 from .app_logging import setup_logger
 from .mysql_retry import MySQLRetryMiddleware
-from . import get_db, COOKIE_ENV_NAMES
-
+from . import get_db, COOKIE_ENV_NAMES, get_keycloak_admin
 
 #
 # Since this is not a flask app, the config needs to be in the os.environ
@@ -216,12 +216,24 @@ def create_app(*args, **kwargs) -> FastAPI:
         return "Hello"
 
     @app.get("/states", response_model=dict)
-    async def health_check(session=Depends(get_db)) -> dict:
+    async def health_check(session: Session = Depends(get_db),
+                           kc_admin: KeycloakAdmin = Depends(get_keycloak_admin)) -> dict | HTTPException:
+        result = {}
+
+        try:
+            keycloak_admin.connection.get_token()
+            token = keycloak_admin.connection.token
+            result.update({"keycloak": "good" if isinstance(token, dict) and token.get('access_token', None) else "bad"})
+        except Exception as exc:
+            result.update({"keycloak": f"{str(exc)}"})
+            pass
+
         try:
             states: State = session.query(State).all()
-            result = {state.name: state.value for state in states}
+            result.update({state.name: str(state.value) for state in states})
             return result
+
         except Exception as exc:
-            raise HTTPException(status_code=500, detail=str(exc))
+            return HTTPException(status_code=500, detail=str(exc))
 
     return app
