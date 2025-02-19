@@ -10,7 +10,11 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import Paper from "@mui/material/Paper";
 
+/*
 
+This is a terrible page. This is mimicing the existing one but disfunctional and ugly.
+
+ */
 const AuthorshipStatus: React.FC = () => {
     return (
         <Box id="content" p={3}>
