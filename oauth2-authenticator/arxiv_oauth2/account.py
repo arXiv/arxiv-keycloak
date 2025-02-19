@@ -3,20 +3,18 @@
 """
 import re
 import traceback
-from http import HTTPStatus
-from pyexpat.errors import messages
 from traceback import TracebackException
 from typing import Optional, List
 
 import httpx
+# from PIL.EpsImagePlugin import field
 from arxiv.auth.domain import UserFullName, UserProfile, OTHER
 from fastapi import APIRouter, Depends, status, HTTPException, Request
-from fastapi.responses import JSONResponse
 # from mypyc.irbuild.expression import transform_bytes_expr
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from keycloak import KeycloakAdmin, KeycloakError
+from keycloak import KeycloakAdmin, KeycloakError, KeycloakAuthenticationError
 
 from arxiv.base import logging
 from arxiv.auth.user_claims import ArxivUserClaims
@@ -25,11 +23,12 @@ from arxiv.db import Session as BaseDbSession
 from arxiv.auth import domain
 from arxiv.auth.legacy.exceptions import RegistrationFailed
 from arxiv.auth.legacy import accounts
-from starlette.responses import JSONResponse
 
-from . import get_current_user_or_none, get_db, get_keycloak_admin # , get_client_host
+from . import get_current_user_or_none, get_db, get_keycloak_admin, stateless_captcha, \
+    get_client_host  # , get_client_host
 # from . import stateless_captcha
 from .captcha import CaptchaTokenReplyModel, get_captcha_token
+from .stateless_captcha import InvalidCaptchaToken, InvalidCaptchaValue
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +91,8 @@ class AccountRegistrationModel(AccountInfoBaseModel):
 
 class AccountRegistrationError(BaseModel):
     message: str
+    field_name: Optional[str] = None
+
 
 def to_group_name(group_flag, demographic: Demographic) -> Optional[str]:
     group_name, flag_name = group_flag
@@ -192,17 +193,35 @@ async def register(
         registration: AccountRegistrationModel,
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
-        ) -> AccountInfoModel:
+        ) -> HTTPException | AccountInfoModel:
     """
     Create a new user
     """
+    captcha_secret = request.app.extra['CAPTCHA_SECRET']
+    host = get_client_host(request)
+
+    # Check the captcha value against the captcha token.
+    try:
+        stateless_captcha.check(registration.token, registration.captcha_value, captcha_secret, host)
+
+    except InvalidCaptchaToken:
+        logger.warning(f"Registration: captcha token is invalid {registration.token!r} {host!r}")
+        detail = AccountRegistrationError(message="Captcha token is invalid. Restart the registration")
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail.model_dump())
+
+    except InvalidCaptchaValue:
+        logger.info(f"Registration: wrong captcha value {registration.token!r} {host!r} {registration.captcha_value!r}")
+        detail = AccountRegistrationError(message="Captcha answer is incorrect.")
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail.model_dump())
+
+
     client_secret = request.app.extra['ARXIV_USER_SECRET']
 
     if registration.keycloak_migration:
         data: Optional[TapirNickname] = session.query(TapirNickname).filter(TapirNickname.nickname == registration.username).one_or_none()
         if not data:
-            error_response = AccountRegistrationError(message="Username is not found")
-            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content=error_response.dict())
+            error_response = AccountRegistrationError(message="Username is not found", field="username")
+            return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_response.model_dump())
         account = get_account_info(session, str(data.user_id))
         # Rather than creating user, let the legacy user migration create the account.
         _migrate_to_keycloak(kc_admin, account, registration.password, client_secret)
@@ -245,12 +264,13 @@ async def register(
             flattened_error = "\n".join(messages)
             message = flattened_error
             match = re.search(r"Duplicate entry '([^']+)' for key '([^']+)'", flattened_error, flags=re.MULTILINE)
+            where = None
             if match:
                 field = match.group(2)
                 where = {"nickname": "User name", "email": "Email"}.get(field, field)
                 message = f"'{match.group(1)}' for '{where}' belongs to an existing user."
-            error_response = AccountRegistrationError(message=message)
-            return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=error_response.dict())
+            error_response = AccountRegistrationError(message=message, field=where)
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_response.model_dump())
         logger.info("Tapir user account created successfully. Next is Keycloak.")
         account = get_account_info(session, user.user_id)
         # _register_to_keycloak(kc_admin, account)
@@ -258,11 +278,10 @@ async def register(
 
     if not account:
         error_response = AccountRegistrationError(message="The account not found.")
-        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content=error_response.dict())
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_response.model_dump())
 
     logger.info("User account created successfully")
     return account
-
 
 
 @router.get("/register/")
@@ -273,6 +292,12 @@ def get_register(request: Request) -> CaptchaTokenReplyModel:
 def _set_user_password(kc_admin: KeycloakAdmin, account: AccountInfoModel, password: str):
     try:
         kc_admin.set_user_password(account.id, password, temporary=False)
+
+    except KeycloakAuthenticationError:
+        message = "Setting Keycloak user password failed, and kc_admin has the wrong secret"
+        logger.error(message, exc_info=e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message) from e
+
     except KeycloakError as e:
         logger.error("Setting Keycloak user password failed.", exc_info=e)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR) from e

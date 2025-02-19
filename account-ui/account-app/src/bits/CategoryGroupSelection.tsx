@@ -42,10 +42,15 @@ const CategoryGroupSelection : React.FC<{
             {value: "flag_group_stat", label: "Stat"}
         ];
 
+    const prompt = selectedGroups.length == 0 ? (<Typography variant="caption"> Please select at least one </Typography>) : null;
+
     return (
         <Box sx={{ border: "1px solid #ddd", borderRadius: 1, padding: 1 }}>
             <Typography variant="body1" sx={{ marginBottom: 1 }}>
                 *Group(s) you would like to submit to:
+                {
+                    prompt
+                }
             </Typography>
             <FormGroup
                 aria-label="archive groups"

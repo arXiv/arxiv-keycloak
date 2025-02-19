@@ -146,6 +146,8 @@ def create_app(*args, **kwargs) -> FastAPI:
     #
     realm_name = os.environ.get('ARXIV_REALM_NAME', "arxiv")
     keycloak_admin_secret = os.environ.get('KEYCLOAK_ADMIN_SECRET', "<NOT-SET>")
+    if keycloak_admin_secret == "<NOT-SET>":
+        logger.warning("KEYCLOAK_ADMIN_SECRET is not set correctly. kc_admin operations will fail.")
     keycloak_admin = KeycloakAdmin(
         server_url=KEYCLOAK_SERVER_URL,
         user_realm_name="master",

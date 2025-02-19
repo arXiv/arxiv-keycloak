@@ -100,6 +100,11 @@ services:
       CLASSIC_COOKIE_NAME: tapir_session
       CLASSIC_SESSION_HASH: ${CLASSIC_SESSION_HASH}
       JWT_SECRET: ${JWT_SECRET}
+      #
+      # This is the almighty admin client (admin-cli) secret
+      #
+      KEYCLOAK_ADMIN_SECRET: ${KC_ADMIN_PASSWORD}
+      #
       # Do not set DOMAIN - this is to designate the cookie domain and for
       # local run, having this is harmful.
       # In production, this is probably set to .arxiv.org

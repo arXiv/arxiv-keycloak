@@ -91,16 +91,21 @@ const AccountRegistration = () => {
         affiliation?: string,
         country?: string,
         career_status?: string,
-        groups?: string[],
+        groups?: string,
         default_category?: string,
         captcha_value?: string
-    }>({captcha_value: "Please fill"});
+    }>({groups: "Please select at least one group", captcha_value: "Please fill"});
 
-    const [token, setToken] = useState<string|null>(null);
     const [captchaImage, setCaptchaImage] = useState<React.ReactNode|null>(null);
 
     const setSelectedGroups = (groups: CategoryGroupType[]) => {
         setFormData({...formData, groups: groups});
+        if (groups.length > 0) {
+            setErrors({ ...errors, groups: "" });
+        }
+        else {
+            setErrors({ ...errors, groups: "Please select at least one group" });
+        }
     }
 
     const [postSubmitDialog, setPostSubmitDialog] = useState<PostSubmitDialogProps>(
@@ -115,20 +120,24 @@ const AccountRegistration = () => {
 
     useEffect(() => {
         console.log(JSON.stringify(formData));
-        if (token) {
+        if (formData.token) {
             setCaptchaImage(
-                <img alt={"captcha"} src={runtimeContext.AAA_URL + `/captcha/image?token=${token}`}/>
+                <img alt={"captcha"} src={runtimeContext.AAA_URL + `/captcha/image?token=${formData.token}`}/>
             )
         }
         else {
             fetch(runtimeContext.AAA_URL + "/account/register/")
                 .then(response => response.json()
-                    .then((data: TokenResponse) => setToken(data.token)));
+                    .then((data: TokenResponse) => setFormData(
+                        {
+                            ...formData, token: data.token,
+                        }
+                    )));
         }
-    }, [token]);
+    }, [formData.token]);
 
     const resetCaptcha = useCallback(() => {
-        setToken(null);
+        setFormData({...formData, token: ""});
     }, []);
 
 
@@ -141,58 +150,30 @@ const AccountRegistration = () => {
         return value.length > 4;
     };
 
-    // Handle text field changes
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-
-        if (name === "secondPassword") {
-            setSecondPassword(value);
-        }
-        else if (name === "token") {
-            setToken(value);
-        }
-        else {
-            setFormData({
-                ...formData,
-                [name]: value,
-            });
-        }
-
-        if (name === "username") {
+    const validators: Record<string, (value: string) => void> = {
+        "username": (value: string) => {
             const minUsernameLength = 3;
             if (value.length < minUsernameLength) {
                 setErrors((prev) => ({ ...prev, username: `User name must be minimum of ${minUsernameLength} characters` }));
             } else {
                 setErrors((prev) => ({ ...prev, username: undefined }));
             }
-        }
-
-        if (name === "password") {
+        },
+        "password": (value: string) => {
             if (value.length < 10) {
                 setErrors((prev) => ({ ...prev, password: "Password must be at least 10 characters" }));
             } else {
                 setErrors((prev) => ({ ...prev, password: undefined }));
             }
-        }
-
-        if (name === "secondPassword") {
-            if (value !== formData.password) {
-                setErrors((prev) => ({ ...prev, secondPassword: "Reentered password does not match" }));
-            } else {
-                setErrors((prev) => ({ ...prev, secondPassword: undefined }));
-            }
-        }
-
-        // Validate email
-        if (name === "email") {
+        },
+        "email": (value: string) => {
             if (!validateEmail(value)) {
                 setErrors((prev) => ({ ...prev, email: "Invalid email format" }));
             } else {
                 setErrors((prev) => ({ ...prev, email: "" }));
             }
-        }
-
-        if (name === "captcha_value") {
+        },
+        "captcha_value": (value: string) => {
             if (!validateCaptcha(value)) {
                 console.log("X captcha_value = " + value);
                 setErrors((prev) => ({ ...prev, captcha_value: "Not provided" }));
@@ -201,7 +182,32 @@ const AccountRegistration = () => {
                 setErrors((prev) => ({ ...prev, captcha_value: undefined }));
             }
         }
+    }
 
+    // Handle text field changes
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        console.log("change: " + name + " = " + value)
+
+        if (name === "secondPassword") {
+            setSecondPassword(value);
+            if (value !== formData.password) {
+                setErrors((prev) => ({ ...prev, secondPassword: "Reentered password does not match" }));
+            } else {
+                setErrors((prev) => ({ ...prev, secondPassword: undefined }));
+            }
+        }
+        else {
+            setFormData({
+                ...formData,
+                [name]: value,
+            });
+        }
+
+        const validator = validators[name];
+        if (validator) {
+            validator(value)
+        }
     };
 
     const setCarrerStatus = (value: string | null) => {
