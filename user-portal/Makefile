@@ -31,7 +31,7 @@ APP_DOCKER_RUN := docker run --cpus ${ARXIV_PORTAL_APP_CPUS} --rm -p ${app_port}
 
 .PHONY: HELLO docker-image run stop
 
-default: HELLO venv/lib/python3.11/site-packages/fastapi
+default: HELLO venv/lib/python3.12/site-packages/fastapi
 
 HELLO:
 	@echo To see the README of this Makefile, type "make help"
@@ -39,7 +39,7 @@ HELLO:
 	@echo Docker command params is:
 	@echo ${APP_DOCKER_RUN}
 
-bootstrap: venv/lib/python3.11/site-packages/fastapi
+bootstrap: venv/lib/python3.12/site-packages/fastapi
 
 #-#
 #-# Command: help
@@ -83,24 +83,16 @@ sh: stop
 daemon: stop
 	${APP_DOCKER_RUN} -d ${app_tag}:latest
 
-
-/usr/bin/python3.11:
-	sudo apt install -y python3.11
-
-/usr/lib/python3.11/ensurepip/__init__.py:
-	sudo apt install -y python3.11-venv
-
 .bootstrap:
-	sudo apt install -y libmysqlclient-dev build-essential python3.11-dev
 	touch .bootstrap
 
-venv: /usr/bin/python3.11 /usr/lib/python3.11/ensurepip/__init__.py .bootstrap
-	python3.11 -m venv venv
+venv: .bootstrap
+	python3.12 -m venv venv
 
 venv/bin/poetry: venv
 	. venv/bin/activate && pip install --upgrade pip && pip install poetry
 
-venv/lib/python3.11/site-packages/fastapi: venv/bin/poetry
+venv/lib/python3.12/site-packages/fastapi: venv/bin/poetry
 	. venv/bin/activate && poetry install
 
 show-env:

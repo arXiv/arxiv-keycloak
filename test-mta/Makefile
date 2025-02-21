@@ -20,10 +20,12 @@ help:
 #-#
 #-# bootstrap:
 #-#   sets up the tools.
-bootstrap: venv/lib/python3.12/site-packages/fastapi
+boostrap: .bootstrap
+
+.bootstrap: venv/lib/python3.12/site-packages/fastapi
 	touch .bootstrap
 
-venv: /usr/bin/python3.12
+venv:
 	python3.12 -m venv venv
 
 venv/lib/python3.12/site-packages/fastapi: venv

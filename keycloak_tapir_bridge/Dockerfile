@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends git build-essential gcc python3-dev default-libmysqlclient-dev pkg-config && \
     apt-get clean && \

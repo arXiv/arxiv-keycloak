@@ -43,8 +43,7 @@ help:
 #-#   noop
 bootstrap: .bootstrap
 
-.bootstrap: tests/data/sanitized-test-db.sql
-	./tools/install_py311.sh
+.bootstrap:
 	$(call run_in_all_subdirs,bootstrap)
 	touch .bootstrap
 

@@ -8,7 +8,7 @@ mysql_port := ${ARXIV_DB_PORT}
 
 .PHONY: help login docker-image push deploy run sh bootstrap kill
 
-all: help venv/lib/python3.11/site-packages/fastapi
+all: help venv/lib/python3.12/site-packages/fastapi
 
 #-#
 #-# Hwo to: Run legacy auth provider under debugger
@@ -29,17 +29,17 @@ kill:
 	docker kill legacy-auth-provider
 
 venv:
-	python3.11 -m venv venv
+	python3.12 -m venv venv
 
 venv/bin/poetry: venv
 	. venv/bin/activate && pip install --upgrade pip && pip install poetry
 
-venv/lib/python3.11/site-packages/fastapi: venv/bin/poetry
+venv/lib/python3.12/site-packages/fastapi: venv/bin/poetry
 	. venv/bin/activate && poetry install
 
-venv/bin/pytest: venv/lib/python3.11/site-packages/fastapi
+venv/bin/pytest: venv/lib/python3.12/site-packages/fastapi
 
-bootstrap: venv/lib/python3.11/site-packages/fastapi
+bootstrap: venv/lib/python3.12/site-packages/fastapi
 	@echo "nothing to be done"
 
 docker-image:

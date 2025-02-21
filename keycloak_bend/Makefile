@@ -19,7 +19,7 @@ all: .env.localdb
 bootstrap: .bootstrap
 
 .bootstrap: ./cert/dev-authdb-client-cert.pem
-	../tools/install_py312.sh
+	pyenv install -s 3.12
 	if ! dpkg -l | grep -q docker-compose-plugin; then sudo apt install -y docker-compose-plugin; fi
 	${MAKE} venv/bin/poetry
 	touch .bootstrap

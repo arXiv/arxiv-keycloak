@@ -9,7 +9,7 @@ ARXIV_BASE_DIR ?= $(HOME)/arxiv/arxiv-base
 
 .PHONY: HELLO all bootstrap docker-image arxiv-db nginx test up down restart
 
-all: HELLO
+default: HELLO
 
 
 define run_in_docker_dirs
@@ -27,9 +27,10 @@ define run_in_all_subdirs
 endef
 
 HELLO:
+	@echo First, run "bash config.sh" , if this is first time. It sets up the .env file.
 	@echo To see the README of this Makefile, type "make help"
-	@echo First, run "bash config.sh"
 	@echo Then, "make bootstrap" to set up the environment.
+	@echo "make docker-image" builds the docker images
 
 #-#
 #-# help:
@@ -49,7 +50,12 @@ help:
 bootstrap: .bootstrap
 
 .bootstrap: tests/data/sanitized-test-db.sql
-	./tools/install_py311.sh
+	# To non-Debian Linux user - You may have to do something about this.
+	# libmysqlclient-dev (or equivalent) is required to build the mysql clint
+	# and other mysql client is known to not work with arxiv-base.
+	sudo apt install -y libmysqlclient-dev build-essential python3.12-dev
+	#
+	pyenv install -s 3.12
 	$(call run_in_all_subdirs,bootstrap)
 	touch .bootstrap
 
@@ -103,7 +109,7 @@ arxiv-test-db:
 	--network host \
 	-e CLASSIC_DB_URI="mysql+pymysql://arxiv:arxiv_password@127.0.0.1:${ARXIV_DB_PORT}/arXiv?&ssl_disabled=true" \
 	-v $(PWD):/arxiv-keycloak \
-	python:3.11 bash /arxiv-keycloak/tools/load_test_data.sh
+	python:3.12 bash /arxiv-keycloak/tools/load_test_data.sh
 
 #-#
 #-# restart:
