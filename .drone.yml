@@ -17,6 +17,9 @@ kind: pipeline
 type: kubernetes
 name: build
 
+node:
+  environment: gcp
+
 environment:
   ARTIFACT_REPO: arxiv-keycloak
 
