@@ -96,10 +96,9 @@ daemon: stop
 	sudo apt install -y python3.12-venv
 
 .bootstrap:
-	sudo apt install -y libmysqlclient-dev build-essential python3.12-dev
 	touch .bootstrap
 
-venv: /usr/bin/python3.12 /usr/lib/python3.12/ensurepip/__init__.py .bootstrap
+venv: .bootstrap
 	python3.12 -m venv venv
 
 venv/bin/poetry: venv

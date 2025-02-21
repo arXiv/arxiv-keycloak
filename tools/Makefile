@@ -23,8 +23,8 @@ bootstrap: .bootstrap
 	bash ./install_firefox_esr.sh
 	touch .bootstrap
 
-venv: /usr/bin/python3.11
-	python3.11 -m venv venv
+venv:
+	python3.12 -m venv venv
 
 venv/bin/poetry: venv
 	. venv/bin/activate && pip install poetry

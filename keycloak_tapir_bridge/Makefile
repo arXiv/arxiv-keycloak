@@ -7,11 +7,11 @@ tag := ${KC_TAPIR_BRIDGE_DOCKER_TAG}
 
 bootstrap: .bootstrap
 
-.bootstrap: venv/lib/python3.11/site-packages/google
+.bootstrap: venv/lib/python3.12/site-packages/google
 	touch $@
 
 venv:
-	/usr/bin/python3.11 -m venv venv
+	python3.12 -m venv venv
 
 venv/bin/poetry: venv
 	. venv/bin/activate && pip install --upgrade pip && pip install poetry
