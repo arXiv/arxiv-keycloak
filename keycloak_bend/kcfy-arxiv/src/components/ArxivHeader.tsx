@@ -7,6 +7,7 @@ import {
     useTheme, useMediaQuery,
 } from '@mui/material';
 import ArxivAppBar from "./ArxivAppBar";
+import CornellLogo from "../assets/images/cornell-reduced-white-SMALL.svg";
 
 const ArxivBanner = () => {
     return (
@@ -21,8 +22,7 @@ const ArxivBanner = () => {
         <Box
             sx={{flex: 2, display: "flex", justifyContent: "left", padding: "0em 0.5em", alignItems: "center"}}>
             <Link href={"https://cornell.edu"} className="level-item">
-                <img src="/static/images/cornell-reduced-white-SMALL.svg" alt="Cornell logo"
-                     width="180"/>
+                <img src={CornellLogo} alt="Cornell logo" width="180"/>
             </Link>
         </Box>
 

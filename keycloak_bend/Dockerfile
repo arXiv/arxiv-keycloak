@@ -25,7 +25,8 @@ COPY ./pubsub-listener/keycloak-to-pubsub-jar-with-dependencies.jar /opt/keycloa
 
 # Themes
 # COPY ./arxiv-theme/  /opt/keycloak/themes/arxiv-theme/
-COPY ./keycloakify-arxiv/dist_keycloak/keycloak-theme-for-kc-22-and-above.jar /opt/keycloak/providers/keycloakify-arxiv-theme.jar
+# COPY ./keycloakify-arxiv/dist_keycloak/keycloak-theme-for-kc-22-and-above.jar /opt/keycloak/providers/keycloakify-arxiv-theme.jar
+COPY ./kcfy-arxiv/dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar /opt/keycloak/providers/kc-arXiv-react-theme.jar
 RUN chown -R keycloak /home/keycloak /opt/keycloak/providers /opt/keycloak/themes/
 
 USER keycloak
