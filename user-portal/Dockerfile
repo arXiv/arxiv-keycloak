@@ -21,7 +21,7 @@ WORKDIR /opt/arxiv/
 COPY poetry.lock app-logging.conf pyproject.toml ./
 COPY ./arxiv_user_portal/ ./arxiv_user_portal/
      
-#RUN $VIRTUAL_ENV/bin/poetry lock --no-update 
+RUN $VIRTUAL_ENV/bin/poetry lock
 RUN $VIRTUAL_ENV/bin/poetry install --no-ansi && $VIRTUAL_ENV/bin/pip uninstall -y poetry
 
 ENV WORKERS=2

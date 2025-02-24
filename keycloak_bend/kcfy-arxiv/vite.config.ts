@@ -10,8 +10,8 @@ export default defineConfig({
             themeName: "kc-arXiv-react",
             accountThemeImplementation: "none",
             environmentVariables: [
-                { name: "ARXIV_USER_LOGIN_URL", default: "https://arxiv.org/user/login" },
-                { name: "ARXIV_USER_REGISTRATION_URL", default: "https://arxiv.org/user/register" },
+                { name: "ARXIV_USER_LOGIN_URL", default: "https://arxiv.org/login" },
+                { name: "ARXIV_USER_REGISTRATION_URL", default: "https://arxiv.org/user-account/register" },
                 { name: "ARXIV_PRIVACY_POLICY", default: "https://arxiv.org/help/policies/privacy_policy" },
                 { name: "ARXIV_MEMBER_INSTITUTIONS", default: "https://info.arxiv.org/about/ourmembers.html" }
             ]

@@ -18,7 +18,7 @@ const queryClient = new QueryClient();
 
 const App: React.FC = () => {
 
-    const ExternalRedirect = ({ to }) => {
+    const ExternalRedirect : React.FC<{to: string}> = ({ to }) => {
         useEffect(() => {
             // This causes a full page reload to the given URL.
             window.location.replace(to);
@@ -33,14 +33,14 @@ const App: React.FC = () => {
             <Box sx={{minHeight: '100vh', backgroundColor: 'white', display: 'flex', flexDirection: 'column'}}>
                 <Router>
                     <ArxivHeader />
-                    <Container component="main">
+i                    <Container component="main">
                         <Routes>
-                            <Route path="/user" element={<AccountSettings />} />
-                            <Route path="/user/login" element={<ExternalRedirect to={"/login"} />} />
-                            <Route path="/user/logout" element={<Logout />} />
-                            <Route path="/user/register" element={<AccountRegistration />} />
-                            <Route path="/user/ownership-request" element={<OwnershipRequest />} />
-                            <Route path="/user/change-author-status" element={<AuthorshipStatus />} />
+                            <Route path="/user-account" element={<AccountSettings />} />
+                            <Route path="/user-account/login" element={<ExternalRedirect to={"/login"} />} />
+                            <Route path="/user-account/logout" element={<Logout />} />
+                            <Route path="/user-account/register" element={<AccountRegistration />} />
+                            <Route path="/user-account/ownership-request" element={<OwnershipRequest />} />
+                            <Route path="/user-account/change-author-status" element={<AuthorshipStatus />} />
                             <Route path="*" element={<NotFound404 />} />
                         </Routes>
                     </Container>

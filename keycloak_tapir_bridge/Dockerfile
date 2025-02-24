@@ -14,7 +14,8 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 ADD pyproject.toml poetry.lock src/ README.md ./
 
 RUN $VIRTUAL_ENV/bin/poetry config virtualenvs.create false
-RUN $VIRTUAL_ENV/bin/poetry install --no-interaction --no-ansi
+RUN $VIRTUAL_ENV/bin/poetry lock
+RUN $VIRTUAL_ENV/bin/poetry install --no-ansi
 RUN $VIRTUAL_ENV/bin/pip uninstall -y poetry
 
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"

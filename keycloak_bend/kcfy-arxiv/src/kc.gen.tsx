@@ -25,7 +25,7 @@ export const kcEnvNames: KcEnvName[] = [
 ];
 
 export const kcEnvDefaults: Record<KcEnvName, string> = {
-    ARXIV_USER_REGISTRATION_URL: "https://arxiv.org/user/register",
+    ARXIV_USER_REGISTRATION_URL: "https://arxiv.org/user-account/register",
     ARXIV_PRIVACY_POLICY: "https://arxiv.org/help/policies/privacy_policy",
     ARXIV_MEMBER_INSTITUTIONS: "https://info.arxiv.org/about/ourmembers.html"
 };

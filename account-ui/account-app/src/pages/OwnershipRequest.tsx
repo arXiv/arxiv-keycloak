@@ -49,7 +49,7 @@ const SubmitRequest: React.FC<{ runtimeProps: RuntimeProps }> = ({ runtimeProps 
         setDialogOpen(false); // Close dialog after sending request
     }, [user?.email, runtimeProps.UP_API_URL]);
 
-    //          <Button variant="outlined" startIcon={<VerifiedUser />} href="/user/verify-email" disabled={user?.email_verified}>Send verification email</Button>
+    //          <Button variant="outlined" startIcon={<VerifiedUser />} href="/user-account/verify-email" disabled={user?.email_verified}>Send verification email</Button>
 
     return (
         <>

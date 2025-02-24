@@ -98,7 +98,7 @@ const Login = () => {
                 </Typography>
                 <Button
                     component={RouterLink}
-                    to="/user/register"
+                    to="/user-account/register"
                     variant="contained"
                     sx={{
                         backgroundColor: "#1976d2",
