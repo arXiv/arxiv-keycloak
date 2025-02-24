@@ -303,13 +303,21 @@ const AccountRegistration = () => {
         <Container maxWidth="md" sx={{ mt: 2 }} >
             <Typography variant={"h5"}>Register for the first time</Typography>
             {/* Privacy Policy Notice */}
-            <Card elevation={3} sx={{ p: 3, mb: 3, backgroundColor: "#eeeef8" }}>
-                <Typography variant="body1" fontWeight={"bold"} color="textSecondary" align="left">
+            <Card elevation={3} sx={{ px: 3, py: 2, mb: 2, backgroundColor: "#eeeef8" }}>
+                <Typography variant="body1" fontWeight={"bold"} color="textPrimary" align="left" >
                     {"By registering with arXiv you are agreeing to the "}
                     <Link href="https://arxiv.org/help/policies/privacy_policy" target="_blank" rel="noopener" underline="hover">
                         arXiv Privacy Policy
                     </Link>
                     {"."}
+                </Typography>
+            </Card>
+
+            {/* Register once */}
+            <Card elevation={3} sx={{ px: 3, py: 1, mb: 2, backgroundColor: "#F8F8F8" }}>
+                <Typography variant="body1" color="black" align="left">
+                    <Typography fontWeight={"bold"} component="span">{"You should only register with arXiv once: "}</Typography>
+                    arXiv associates papers that you have submitted with your user account. We must retain the information you submit for registration indefinitely in order to preserve the scholarly record, support academic integrity, and prevent abuse of our systems. If you register twice, with different accounts, your submission history will be inaccurate.
                 </Typography>
             </Card>
 
@@ -367,16 +375,30 @@ const AccountRegistration = () => {
                             Fields with * are required.
                         </Typography>
 
+                        <Box >
+                            <Typography fontWeight={"bold"}>{"Email: "}</Typography>
+                            <Typography sx={{paddingLeft: 3, mb: 1}}>{"You "}
+                                <Typography component="span" fontWeight="bold">{"must"}</Typography>
+                                {" able to receive mail at this address to register. We take "}
+                                <Link href="https://info.arxiv.org/help/email-protection" target="_blank" rel="noopener" underline="hover">strong measure</Link>
+                                {" to protect your email address from viruses and spam. Do not register with an e-mail address that belongs to someone else: if we discover that you've done so, we will suspend your account."}
+                            </Typography>
+                            <TextField label="Email *" sx={{ flex: 2 }}
+                                       error={Boolean(errors.email)}
+                                       helperText={errors.email}
+                                       name="email" value={formData.email} variant="outlined" fullWidth  onChange={handleChange} />
+                        </Box>
+                        <Box>
+                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"User name: "}</Typography>
                         <Box sx={{ display: "flex", gap: 2 }}>
-                        <TextField label="Username *" sx={{ flex: 1 }}
+                            <TextField label="Username *" sx={{ flex: 1 }}
                                    error={Boolean(errors.username)}
                                    helperText={errors.username}
                                    name="username" value={formData.username} variant="outlined" fullWidth  onChange={handleChange} />
-                        <TextField label="Email *" sx={{ flex: 2 }}
-                                   error={Boolean(errors.email)}
-                                   helperText={errors.email}
-                                   name="email" value={formData.email} variant="outlined" fullWidth  onChange={handleChange} />
                         </Box>
+                        </Box>
+                        <Box>
+                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Password and reenter password:  "}</Typography>
                         <Box sx={{ display: "flex", gap: 2 }}>
                             <TextField
                                 label="Password *"
@@ -404,6 +426,7 @@ const AccountRegistration = () => {
                                 sx={{ flex: 1 }} // Ensures both fields take equal width
                             />
                         </Box>
+                        </Box>
                         <Box  sx={{ display: "flex", gap: 2 }}>
                             <Typography variant={"body2"}>
                                 Please supply your correct name and affiliation.
@@ -413,6 +436,8 @@ const AccountRegistration = () => {
                                 </Typography>
                             </Typography>
                         </Box>
+                        <Box>
+                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"First, Last and Sur name:  "}</Typography>
                         <Box sx={{ display: "flex", gap: 2 }}>
                             <TextField
                                 label="First name *"
@@ -448,7 +473,10 @@ const AccountRegistration = () => {
                                 sx={{ flex: 1 }} // Ensures both fields take equal width
                             />
                         </Box>
+                        </Box>
 
+                        <Box>
+                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Organization, Country and Career Status:  "}</Typography>
                         <Box sx={{ display: "flex", gap: 2 }}>
                             <TextField
                                 label="Organization *"
@@ -464,8 +492,14 @@ const AccountRegistration = () => {
                             <CountrySelector onSelect={setCountry} />
                             <CareerStatusSelect onSelect={setCarrerStatus} />
                         </Box>
+                        </Box>
                         <CategoryGroupSelection selectedGroups={formData.groups as unknown as CategoryGroupType[]} setSelectedGroups={setSelectedGroups} />
+                    <Box>
+                        <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Your default category:  "}</Typography>
                         <CategoryChooser onSelect={setDefaultCategory} />
+                    </Box>
+                        <Box>
+                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Home page URL:  "}</Typography>
                         <TextField
                             label="Your Homepage URL"
                             name="url"
@@ -475,7 +509,10 @@ const AccountRegistration = () => {
                             onChange={handleChange}
                             sx={{ flex: 1 }}
                         />
+                        </Box>
 
+                        <Box>
+                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Verification:  "}</Typography>
                         <Box display="flex" justifyContent="space-between" alignItems="center">
                             {captchaImage}
                             <IconButton onClick={resetCaptcha} > <RefreshIcon /></IconButton>
@@ -498,6 +535,7 @@ const AccountRegistration = () => {
                                 } }} >
                                 Submit
                             </Button>
+                        </Box>
                         </Box>
                     </Box>
                 </CardContent>

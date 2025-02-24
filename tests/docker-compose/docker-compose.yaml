@@ -52,6 +52,8 @@ services:
       # (not sure this works with te pubsub emulator)
       GRPC_LOG_LEVEL: DEBUG
       GRPC_TRACE: tcp,http,api
+      #
+      ARXIV_USER_REGISTRATION_URL: ${ARXIV_USER_REGISTRATION_URL}
     command:
       - start-dev --verbose --http-port ${KC_PORT}
     # This is needed when you connect to DB on GCP

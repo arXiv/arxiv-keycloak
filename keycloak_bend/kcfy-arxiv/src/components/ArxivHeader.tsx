@@ -14,7 +14,7 @@ const ArxivBanner = () => {
     <Box sx={{
         width: "100vw",
         display: "flex",
-        backgroundColor: "#222222",
+        backgroundColor: "#222",
         color: "white",
         textAlign: "center",
         py: 1,
