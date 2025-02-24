@@ -144,7 +144,7 @@ if [ ! -r .env.localdb ] ; then
     # portal config - these are set in the docker-compose.yaml for the docker. But it's convenient for running Flask with .env
     echo ARXIV_AUTH_DEBUG=1  >> .env.localdb
     echo BASE_SERVER=$SERVER_HOST >> .env.localdb
-    echo DEFAULT_LOGIN_REDIRECT_URL=/user/ >> .env.localdb
+    echo DEFAULT_LOGIN_REDIRECT_URL=/user-account/ >> .env.localdb
     echo DEFAULT_LOGOUT_REDIRECT_URL=$SERVER_URL >> .env.localdb
     echo AUTH_SESSION_COOKIE_DOMAIN=$SERVER_HOST >> .env.localdb
     echo CLASSIC_COOKIE_NAME=tapir_session  >> .env.localdb

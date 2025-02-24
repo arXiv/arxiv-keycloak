@@ -51,7 +51,7 @@ const VerifyEmailButton: React.FC<{ runtimeProps: RuntimeProps }> = ({ runtimePr
         setDialogOpen(false); // Close dialog after sending request
     }, [user?.email, runtimeProps.AAA_URL]);
 /*
-         <Button variant="outlined" startIcon={<VerifiedUser />} href="/user/verify-email" disabled={user?.email_verified}>Send verification email</Button>
+         <Button variant="outlined" startIcon={<VerifiedUser />} href="/user-account/verify-email" disabled={user?.email_verified}>Send verification email</Button>
 
  */
     return (
@@ -129,11 +129,11 @@ const AccountSettings = () => {
                 </Box>
                 <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
                     <Button disabled={user === null}
-                            variant="outlined" startIcon={<Edit />} href="/user/edit">Change User Information</Button>
+                            variant="outlined" startIcon={<Edit />} href="/user-account/edit">Change User Information</Button>
                     <Button disabled={user === null}
-                            variant="outlined" startIcon={<Lock />} href="/user/change_own_password">Change Password</Button>
+                            variant="outlined" startIcon={<Lock />} href="/user-account/change_own_password">Change Password</Button>
                     <Button disabled={user === null}
-                            variant="outlined" startIcon={<Email />} href="/user/change_email">Change Email</Button>
+                            variant="outlined" startIcon={<Email />} href="/user-account/change_email">Change Email</Button>
                     <VerifyEmailButton runtimeProps={runtimeProps} />
                 </Box>
                 <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>

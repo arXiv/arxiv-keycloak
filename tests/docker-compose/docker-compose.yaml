@@ -172,7 +172,7 @@ services:
       SQLALCHEMY_DATABASE_URI: ${CLASSIC_DB_URI}
       JWT_SECRET: ${JWT_SECRET}
       CLASSIC_DB_URI: ${CLASSIC_DB_URI}
-      DEFAULT_LOGIN_REDIRECT_URL: "/user"
+      DEFAULT_LOGIN_REDIRECT_URL: "/user-account/"
       DEFAULT_LOGOUT_REDIRECT_URL: "http://localhost.arxiv.org:5100"
       AUTH_SESSION_COOKIE_DOMAIN: 'localhost.arxiv.org'
 
@@ -189,7 +189,7 @@ services:
       PORT: ${ACCOUNT_PORTAL_APP_PORT}
       AAA_URL: http://localhost.arxiv.org:5100/aaa
       ADMIN_API_BACKEND_URL: http://localhost.arxiv.org:5100/admin-api
-      ACCOUNT_UI_APP_ROOT: http://localhost.arxiv.org:5100/user
+      ACCOUNT_UI_APP_ROOT: http://localhost.arxiv.org:5100/user-account/
     network_mode: host
 
 

@@ -23,7 +23,7 @@ const ArxivBanner = () => {
         <Box
             sx={{flex: 2, display: "flex", justifyContent: "left", padding: "0em 0.5em", alignItems: "center"}}>
             <Link href={runtimeProps.UNIVERSITY} className="level-item">
-                <img src="/user/static/images/cornell-reduced-white-SMALL.svg" alt="Cornell logo"
+                <img src="/user-account/static/images/cornell-reduced-white-SMALL.svg" alt="Cornell logo"
                      width="180"/>
             </Link>
         </Box>

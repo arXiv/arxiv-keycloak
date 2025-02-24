@@ -135,7 +135,7 @@ def old_register() -> Response:
 @anonymous_only
 def register() -> Response:
     """Interface for creating new accounts."""
-    response = redirect("/user/register" )
+    response = redirect("/user-account/register" )
     return response
 
 

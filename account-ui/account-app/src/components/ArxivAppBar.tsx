@@ -14,10 +14,10 @@ import {RuntimeContext} from "../RuntimeContext";
 
 
 const pages = [
-    {label: 'Account', link: '/user/'},
-    {label: 'Endorsements', link: '/user/endorsements'},
-    {label: 'Ownership', link: '/user/ownership-request'},
-    {label: 'Moderation', link: '/user/moderation'},
+    {label: 'Account', link: '/user-account/'},
+    {label: 'Endorsements', link: '/user-account/endorsements'},
+    {label: 'Ownership', link: '/user-account/ownership-request'},
+    {label: 'Moderation', link: '/user-account/moderation'},
     {label: 'Administration', link: '/admin-console/'},
 ];
 
@@ -31,7 +31,7 @@ const ArxivAppBar = () => {
     const in_or_out = user ? (
         <>
             <Tooltip title={userText}>
-                <Button sx={{p: 0}} color={"inherit"} onClick={() => navigate("/user/")}>
+                <Button sx={{p: 0}} color={"inherit"} onClick={() => navigate("/user-account/")}>
                     {accountName}
                 </Button>
             </Tooltip>
@@ -51,7 +51,7 @@ const ArxivAppBar = () => {
     );
 
     const handleCloseNavMenu = (page: typeof pages[0]) => {
-        if (page.link.startsWith('/user'))
+        if (page.link.startsWith('/user-account'))
             navigate(page.link);
         else
             window.location.href = page.link;
@@ -61,7 +61,7 @@ const ArxivAppBar = () => {
     <AppBar position="sticky" sx={{backgroundColor: '#B31B1B'}}>
         <Container maxWidth="xl">
             <Toolbar disableGutters>
-                <img src="/user/static/images/arxiv-logo-one-color-white.svg?react" width="85"
+                <img src="/user-account/static/images/arxiv-logo-one-color-white.svg?react" width="85"
                      alt="arXiv Logo" aria-label="arxiv-logo" />
                 <Box sx={{width: 20}}/>
                 <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>

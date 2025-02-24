@@ -397,7 +397,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/paper_owners/user/{user_id}": {
+    "/v1/paper_owners/user-account/{user_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -635,7 +635,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/moderators/user/{user_id}/archive/{archive}/subject_class/{subject_class}": {
+    "/v1/moderators/user-account/{user_id}/archive/{archive}/subject_class/{subject_class}": {
         parameters: {
             query?: never;
             header?: never;
@@ -911,7 +911,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/tapir_sessions/user/{user_id}": {
+    "/v1/tapir_sessions/user-account/{user_id}": {
         parameters: {
             query?: never;
             header?: never;

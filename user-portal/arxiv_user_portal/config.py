@@ -45,7 +45,7 @@ CAPTCHA_FONT = os.environ.get('CAPTCHA_FONT', None)
 
 URLS = [
     ("lost_password", "/user/lost_password", BASE_SERVER),
-    ("account", "/user", BASE_SERVER)
+    ("account", "/user-account", BASE_SERVER)
 ]
 
 
