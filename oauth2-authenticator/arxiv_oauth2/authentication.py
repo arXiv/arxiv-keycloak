@@ -15,10 +15,11 @@ from arxiv.base import logging
 from arxiv.auth.user_claims import ArxivUserClaims
 from arxiv.auth.openid.oidc_idp import ArxivOidcIdpClient
 from arxiv.auth.legacy.sessions import invalidate as legacy_invalidate
-from arxiv.auth.legacy import accounts, exceptions
-from arxiv.auth import domain
+# from arxiv.auth.legacy import accounts, exceptions
+# from arxiv.auth import domain
 
 from . import get_current_user_or_none, get_db, COOKIE_ENV_NAMES
+# from .account import AccountRegistrationModel
 
 from .sessions import create_tapir_session
 
@@ -226,7 +227,7 @@ async def refresh_tokens(request: Request, response: Response, tokens: Tokens) -
     default_next_page = request.app.extra['ARXIV_URL_HOME']
     # "post" should not redirect, I think.
     # next_page = request.query_params.get('next_page', request.query_params.get('next', default_next_page))
-    response = make_cookie_response(request, user, classic_cookie, '', content=content.dict())
+    response = make_cookie_response(request, user, classic_cookie, '', content=content.model_dump())
     return response
 
 
@@ -275,7 +276,6 @@ async def logout(request: Request) -> Response:
     return Response(status_code=status.HTTP_200_OK)
 
 
-
 @router.get('/token-names')
 async def get_token_names(request: Request) -> JSONResponse:
     session_cookie_key, classic_cookie_key, keycloak_key, _domain, _secure, _samesite = cookie_params(request)
@@ -284,6 +284,23 @@ async def get_token_names(request: Request) -> JSONResponse:
         "classic": classic_cookie_key,
         "arxiv_keycloak": keycloak_key,
     }
+
+
+class WellKnownServices(BaseModel):
+    arxiv_base_url: str
+    account: str
+    login: str
+    logout: str
+    account_registration: str
+    change_password: str
+    password_recovery: str
+    oidc_url: str
+
+
+@router.get('/well-known')
+async def get_token_names(request: Request) -> WellKnownServices:
+    well_known: WellKnownServices = request.app.extra["WELL_KNOWN"]
+    return well_known
 
 
 @router.get('/check-db')

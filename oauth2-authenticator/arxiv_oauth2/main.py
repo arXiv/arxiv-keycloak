@@ -15,7 +15,7 @@ from arxiv.base.logging import getLogger
 from arxiv.auth.openid.oidc_idp import ArxivOidcIdpClient
 from arxiv.db.models import State
 
-from .authentication import router as authn_router
+from .authentication import router as authn_router, WellKnownServices
 from .account import router as account_router
 from .captcha import router as captcha_router
 
@@ -66,7 +66,6 @@ AUTH_SESSION_COOKIE_NAME = os.environ.get(COOKIE_ENV_NAMES.auth_session_cookie_e
 
 # arXiv's Keycloak access token names
 ARXIV_KEYCLOAK_COOKIE_NAME = os.environ.get(COOKIE_ENV_NAMES.arxiv_keycloak_cookie_env, "arxiv_keycloak_token")
-
 
 # More cors origins
 CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "")
@@ -158,6 +157,21 @@ def create_app(*args, **kwargs) -> FastAPI:
         verify=False,
     )
 
+    URLs: dict = {f"ARXIV_URL_{name.upper()}": value for name, value, site in settings.URLS}
+
+    #
+    #
+    well_known = WellKnownServices(
+        arxiv_base_url=settings.BASE_SERVER,
+        account="/user-account/",
+        login=URLs['ARXIV_URL_LOGIN'],
+        logout=URLs['ARXIV_URL_LOGOUT'],
+        account_registration="/user-account/register",
+        change_password="/user-account/change-password",
+        password_recovery="/user-account/password-recover",
+        oidc_url=KEYCLOAK_SERVER_URL,
+    )
+
     app = FastAPI(
         root_path=SERVER_ROOT_PATH,
         idp=_idp_,
@@ -166,6 +180,7 @@ def create_app(*args, **kwargs) -> FastAPI:
         SECURE=secure,
         DOMAIN=DOMAIN,
         JWT_SECRET=jwt_secret,
+        KEYCLOAK_SERVER_URL=KEYCLOAK_SERVER_URL,
         COOKIE_MAX_AGE=int(os.environ.get('COOKIE_MAX_AGE', '99073266')),
         AUTH_SESSION_COOKIE_NAME=AUTH_SESSION_COOKIE_NAME,
         ARXIV_KEYCLOAK_COOKIE_NAME=ARXIV_KEYCLOAK_COOKIE_NAME,
@@ -174,7 +189,8 @@ def create_app(*args, **kwargs) -> FastAPI:
         KEYCLOAK_ADMIN=keycloak_admin,
         ARXIV_USER_SECRET=ARXIV_USER_SECRET,
         CAPTCHA_SECRET=os.environ.get("CAPTCHA_SECRET", "foocaptcha"),
-        **{f"ARXIV_URL_{name.upper()}": value for name, value, site in settings.URLS }
+        WELL_KNOWN=well_known,
+        **URLs
     )
 
     if CORS_ORIGINS:
