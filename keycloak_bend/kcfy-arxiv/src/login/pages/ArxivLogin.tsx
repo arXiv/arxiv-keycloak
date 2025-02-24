@@ -25,6 +25,9 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 export default function ArxivLogin(props: PageProps<Extract<KcContext, { pageId: "login.ftl" }>, I18n>) {
     const { kcContext, i18n, doUseDefaultCss, Template, classes } = props;
 
+    // @ts-expect-error from environment variable in vite.config.ts
+    const registrationUrl = kcContext.properties.ARXIV_USER_REGISTRATION_URL;
+
     const { kcClsx } = getKcClsx({
         doUseDefaultCss,
         classes
@@ -55,7 +58,9 @@ export default function ArxivLogin(props: PageProps<Extract<KcContext, { pageId:
             </Typography>
         <Box id="kc-registration-container">
             <div id="kc-registration">
-                <Button tabIndex={8}  variant="contained" color="primary" onClick={() => { window.location.href = url.registrationUrl}}
+                <Button tabIndex={8}  variant="contained" color="primary" onClick={() => {
+                    window.location.href = url.registrationUrl
+                }}
                 >
                     {"Register for the first time"}
                 </Button>
@@ -120,7 +125,8 @@ export default function ArxivLogin(props: PageProps<Extract<KcContext, { pageId:
                     <Card elevation={3} sx={{ p: 3, mb: 3, backgroundColor: "#eeeef8" }}>
                         <Typography variant="body1" fontWeight={"bold"} color="textSecondary" align="left">
                             {"The "}
-                            <Link href="https://arxiv.org/help/policies/privacy_policy" target="_blank" rel="noopener" underline="hover">
+                            <Link href={registrationUrl}
+                                  target="_blank" rel="noopener" underline="hover">
                                 arXiv Privacy Policy
                             </Link>
                             {" has changed. By continuing to use arxiv.org, you are agreeing to the privacy policy."}

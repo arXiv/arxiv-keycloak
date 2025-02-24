@@ -10,7 +10,7 @@ import Button from '@mui/material/Button';
 // import Typography from '@mui/material/Typography';
 import { useNavigate } from "react-router-dom";
 import {useContext} from "react"; // Ensure this is correct
-import {RuntimeContext} from "../RuntimeContext.tsx";
+import {RuntimeContext} from "../RuntimeContext";
 
 
 const pages = [
@@ -37,14 +37,14 @@ const ArxivAppBar = () => {
             </Tooltip>
 
             <Tooltip title={userText}>
-            <Button sx={{p: 0}} color={"inherit"} onClick={() => navigate("/user/logout")}>
+            <Button sx={{p: 0}} color={"inherit"} onClick={() => {window.location.replace("/logout")}}>
                 Logout
             </Button>
         </Tooltip>
         </>
     ) : (
         <Tooltip title="If you are not logged in.">
-            <Button sx={{p: 0}} color={"inherit"} onClick={() => navigate("/user/login")}>
+            <Button sx={{p: 0}} color={"inherit"} onClick={() => {window.location.replace("/login")}}>
                 Login
             </Button>
         </Tooltip>

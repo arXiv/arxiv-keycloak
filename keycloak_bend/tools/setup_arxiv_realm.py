@@ -129,6 +129,8 @@ class KeycloakSetup:
     def restore_realm_settings(self):
         realm = self.realm.copy()
         transfers = {
+            "revokeRefreshToken",
+            "refreshTokenMaxReuse",
             "accessTokenLifespan",
             "accessTokenLifespanForImplicitFlow",
             "ssoSessionIdleTimeout",
