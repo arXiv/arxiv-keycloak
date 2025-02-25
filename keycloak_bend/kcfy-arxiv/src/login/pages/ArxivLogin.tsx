@@ -1,7 +1,5 @@
-import type { JSX } from "keycloakify/tools/JSX";
 import React, { useState } from "react";
 import { kcSanitize } from "keycloakify/lib/kcSanitize";
-import { useIsPasswordRevealed } from "keycloakify/tools/useIsPasswordRevealed";
 import { clsx } from "keycloakify/tools/clsx";
 import type { PageProps } from "keycloakify/login/pages/PageProps";
 import { getKcClsx } from "keycloakify/login/lib/kcClsx";
@@ -17,9 +15,8 @@ import TextField from "@mui/material/TextField";
 import CardActions from "@mui/material/CardActions";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
-import IconButton from '@mui/material/IconButton';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import PasswordWrapper from "./PasswordWrapper.tsx";
+
 // import  CardHeader from "@mui/material/CardHeader";
 
 export default function ArxivLogin(props: PageProps<Extract<KcContext, { pageId: "login.ftl" }>, I18n>) {
@@ -214,7 +211,7 @@ export default function ArxivLogin(props: PageProps<Extract<KcContext, { pageId:
                                 )}
 
                                 <Typography variant={"h5"} sx={{p: 1}}>{msg("password")}</Typography>
-                                <PasswordWrapper  i18n={i18n} passwordInputId="password">
+                                <PasswordWrapper i18n={i18n} passwordInputId="password">
                                     <TextField
                                         id="password"
                                         name="password"
@@ -236,20 +233,18 @@ export default function ArxivLogin(props: PageProps<Extract<KcContext, { pageId:
                                     />
                                 </PasswordWrapper>
 
-                                <CardActions>
-                                    <div id="kc-form-buttons" >
+                                <CardActions id="kc-form-buttons">
                                         <input type="hidden" id="id-hidden-input" name="credentialId" value={auth.selectedCredential} />
                                         <Button name="login" id="kc-login" tabIndex={7} type="submit" variant={"contained"} disabled={isLoginButtonDisabled} >
                                             {msgStr("doLogIn")}
                                         </Button>
-                                    </div>
 
                                     <div id="kc-form-options">
                                         {realm.rememberMe && !usernameHidden && (
                                             <FormControlLabel
                                                 control={
                                                     <Checkbox
-                                                        tabIndex={5}
+                                                        tabIndex={8}
                                                         id="rememberMe"
                                                         name="rememberMe"
                                                         defaultChecked={!!login.rememberMe}
@@ -279,21 +274,3 @@ export default function ArxivLogin(props: PageProps<Extract<KcContext, { pageId:
     );
 }
 
-/* eslint-disable react/prop-types */
-const PasswordWrapper: React.FC<{i18n: I18n, passwordInputId: string, children: JSX.Element}> = ({i18n, passwordInputId, children}) => {
-    const { msgStr } = i18n;
-    const { isPasswordRevealed, toggleIsPasswordRevealed } = useIsPasswordRevealed({ passwordInputId });
-
-    return (
-        <Box display="flex" alignItems="center">
-            {children}
-            <IconButton
-                onClick={toggleIsPasswordRevealed}
-                aria-label={msgStr(isPasswordRevealed ? "hidePassword" : "showPassword")}
-                aria-controls={passwordInputId}
-            >
-                {isPasswordRevealed ? <VisibilityOff /> : <Visibility />}
-            </IconButton>
-        </Box>
-    );
-};

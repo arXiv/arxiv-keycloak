@@ -9,7 +9,7 @@ import { createTheme, ThemeProvider } from "@mui/material/styles";
 const theme = createTheme({
     typography: {
         fontFamily:
-            '"Open Sans", "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif',
+            "\"Open Sans\", \"Lucida Grande\", \"Helvetica Neue\", Helvetica, Arial, sans-serif",
         h1: {
             fontWeight: 600,
             fontSize: "2rem"
@@ -36,6 +36,7 @@ const doMakeUserConfirmPassword = true;
 const Login = lazy(() => import("./pages/ArxivLogin.tsx"));
 const Register = lazy(() => import("./pages/Register"));
 const LoginResetPassword = lazy(() => import("./pages/LoginResetPassword"));
+const LoginUpdatePassword = lazy(() => import("./pages/LoginUpdatePassword"));
 
 export default function KcPage(props: { kcContext: KcContext }) {
     const { kcContext } = props;
@@ -74,6 +75,16 @@ export default function KcPage(props: { kcContext: KcContext }) {
                                     doUseDefaultCss={false}
                                 />
                             );
+
+                        case "login-update-password.ftl":
+                            return (
+                                <LoginUpdatePassword
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
+
                         default:
                             return (
                                 <DefaultPage
