@@ -9,7 +9,7 @@ import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 import CardActions from "@mui/material/CardActions";
 import Button from "@mui/material/Button";
-import { CardHeader } from "@mui/material";
+import CardHeader from "@mui/material/CardHeader";
 
 export default function LoginResetPassword(props: PageProps<Extract<KcContext, { pageId: "login-reset-password.ftl" }>, I18n>) {
     const { kcContext, i18n, doUseDefaultCss, Template, classes } = props;
