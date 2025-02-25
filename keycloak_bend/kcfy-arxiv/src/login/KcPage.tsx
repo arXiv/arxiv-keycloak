@@ -4,11 +4,12 @@ import type { KcContext } from "./KcContext";
 import { useI18n } from "./i18n";
 import DefaultPage from "keycloakify/login/DefaultPage";
 import Template from "./Template";
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { createTheme, ThemeProvider } from "@mui/material/styles";
 
 const theme = createTheme({
     typography: {
-        fontFamily: '"Open Sans", "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif',
+        fontFamily:
+            '"Open Sans", "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif',
         h1: {
             fontWeight: 600,
             fontSize: "2rem"
@@ -21,17 +22,20 @@ const theme = createTheme({
             fontWeight: 600,
             fontSize: "1.1rem"
         },
-    },
+        h6: {
+            fontWeight: 600,
+            fontSize: "1rem"
+        }
+    }
 });
 
-
-const UserProfileFormFields = lazy(
-    () => import("keycloakify/login/UserProfileFormFields")
-);
+const UserProfileFormFields = lazy(() => import("./UserProfileFormFields"));
 
 const doMakeUserConfirmPassword = true;
 
 const Login = lazy(() => import("./pages/ArxivLogin.tsx"));
+const Register = lazy(() => import("./pages/Register"));
+const LoginResetPassword = lazy(() => import("./pages/LoginResetPassword"));
 
 export default function KcPage(props: { kcContext: KcContext }) {
     const { kcContext } = props;
@@ -51,6 +55,25 @@ export default function KcPage(props: { kcContext: KcContext }) {
                                     doUseDefaultCss={false}
                                 />
                             );
+                        case "register.ftl":
+                            return (
+                                <Register
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                    UserProfileFormFields={UserProfileFormFields}
+                                    doMakeUserConfirmPassword={doMakeUserConfirmPassword}
+                                />
+                            );
+
+                        case "login-reset-password.ftl":
+                            return (
+                                <LoginResetPassword
+                                    {...{ kcContext, i18n, classes }}
+                                    Template={Template}
+                                    doUseDefaultCss={false}
+                                />
+                            );
                         default:
                             return (
                                 <DefaultPage
@@ -58,7 +81,7 @@ export default function KcPage(props: { kcContext: KcContext }) {
                                     i18n={i18n}
                                     classes={classes}
                                     Template={Template}
-                                    doUseDefaultCss={true}
+                                    doUseDefaultCss={false}
                                     UserProfileFormFields={UserProfileFormFields}
                                     doMakeUserConfirmPassword={doMakeUserConfirmPassword}
                                 />

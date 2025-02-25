@@ -8,7 +8,7 @@ export default defineConfig({
         react(),
         keycloakify({
             themeName: "kc-arXiv-react",
-            accountThemeImplementation: "none",
+            accountThemeImplementation: "Single-Page",
             environmentVariables: [
                 { name: "ARXIV_USER_LOGIN_URL", default: "https://arxiv.org/login" },
                 { name: "ARXIV_USER_REGISTRATION_URL", default: "https://arxiv.org/user-account/register" },

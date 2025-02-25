@@ -25,7 +25,6 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 export default function ArxivLogin(props: PageProps<Extract<KcContext, { pageId: "login.ftl" }>, I18n>) {
     const { kcContext, i18n, doUseDefaultCss, Template, classes } = props;
 
-    // @ts-expect-error from environment variable in vite.config.ts
     const registrationUrl = kcContext.properties.ARXIV_USER_REGISTRATION_URL;
 
     const { kcClsx } = getKcClsx({
