@@ -28,6 +28,17 @@ if [ -z $KC_DB_PASS ] ; then
   exit 1
 fi
 
+if [ -z $KC_PORT ] ; then
+   echo "KC_PORT needs to be set"
+  exit 1
+fi
+
+if [ ! -r /etc/keycloak/keycloak.p12 ] ; then
+    echo "/etc/keycloak/keycloak.p12 is not readable"
+    exit 1
+fi
+
+
 if [ -r /secrets/authdb-certs/db-certs-expand.sh ] ; then
   echo "Expand db certs"
   cd /home/keycloak/certs && sh /secrets/authdb-certs/db-certs-expand.sh
@@ -84,12 +95,26 @@ echo "GCP_PROJECT_ID=$GCP_PROJECT_ID"
 echo "GCP_EVENT_TOPIC_ID=$GCP_EVENT_TOPIC_ID"
 
 # -------------------------------------------------------------------------------------------
+# NETWORK
+#
+
+echo "KC_PORT=$KC_PORT"
+echo "KC_SSL_PORT=$KC_SSL_PORT"
+
+# -------------------------------------------------------------------------------------------
 # start / start-dev
 #
 KEYCLOAK_START="${KEYCLOAK_START:-start-dev}"
 
+# -verbose --http-port ${KC_PORT} --https-port ${KC_SSL_PORT} --config-keystore=/path/to/keystore.p12 --config-keystore-password=keystorepass --config-keystore-type=PKCS12
+
 /opt/keycloak/bin/kc.sh $KEYCLOAK_START \
   --log-level=$LOG_LEVEL \
+  --http-port=$KC_PORT \
+  --https-port=$KC_SSL_PORT \
+  --config-keystore=/etc/keycloak/keycloak.p12 \
+  --config-keystore-password=kcpassword \
+  --config-keystore-type=PKCS12 \
   --transaction-xa-enabled=true \
   --db=$DB_VENDOR \
   --db-url="jdbc:$JDBC_DRIVER://$DB_ADDR/$DB_DATABASE$JDBC_CONNECTION" \

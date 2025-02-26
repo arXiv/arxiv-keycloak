@@ -169,6 +169,10 @@ class KeycloakSetup:
             "quickLoginCheckMilliSeconds",
             "maxDeltaTimeSeconds",
             "failureFactor",
+            "loginTheme",
+            "accountTheme",
+            "adminTheme",
+            "emailTheme",
         }
         for key in self.realm.keys():
             if key not in transfers:
