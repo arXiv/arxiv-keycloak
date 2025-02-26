@@ -18,6 +18,14 @@ import Checkbox from "@mui/material/Checkbox";
 import PasswordWrapper from "./PasswordWrapper.tsx";
 
 // import  CardHeader from "@mui/material/CardHeader";
+import ProviderIcon from "@mui/icons-material/InputRounded";
+import GoogleIcon from "@mui/icons-material/Google";
+import MicrosoftIcon from "@mui/icons-material/Microsoft";
+import FacebookIcon from "@mui/icons-material/Facebook";
+import TwitterIcon from "@mui/icons-material/Twitter";
+import InstagramIcon from "@mui/icons-material/Instagram";
+import GitHubIcon from "@mui/icons-material/GitHub";
+import SSOIcon from "@mui/icons-material/CloudDone"
 
 export default function ArxivLogin(props: PageProps<Extract<KcContext, { pageId: "login.ftl" }>, I18n>) {
     const { kcContext, i18n, doUseDefaultCss, Template, classes } = props;
@@ -39,36 +47,53 @@ export default function ArxivLogin(props: PageProps<Extract<KcContext, { pageId:
     const userNameLabelText = !realm.loginWithEmailAllowed
         ? msg("username")
         : !realm.registrationEmailAsUsername
-            ? msg("usernameOrEmail")
-            : msg("email");
+          ? msg("usernameOrEmail")
+          : msg("email");
 
     // Check if there's an error for the username field
-    const errorHtml = userNameHasError
-        ? kcSanitize(messagesPerField.getFirstError("username", "password"))
-        : '';
+    const errorHtml = userNameHasError ? kcSanitize(messagesPerField.getFirstError("username", "password")) : "";
 
     const newUserPanel = (
-        <Container  maxWidth="sm" sx={{ p: 3, mt: 2 }}>
-            <Typography variant="h2"  gutterBottom>
+        <Container maxWidth="sm" sx={{ p: 3, mt: 2 }}>
+            <Typography variant="h2" gutterBottom>
                 {"If you've never logged in to arXiv.org"}
             </Typography>
-        <Box id="kc-registration-container">
-            <div id="kc-registration">
-                <Button tabIndex={8}  variant="contained" color="primary" onClick={() => {
-                    window.location.href = url.registrationUrl
-                }}
-                >
-                    {"Register for the first time"}
-                </Button>
+            <Box id="kc-registration-container">
+                <div id="kc-registration">
+                    <Button
+                        tabIndex={8}
+                        variant="contained"
+                        color="primary"
+                        onClick={() => {
+                            window.location.href = url.registrationUrl;
+                        }}
+                    >
+                        {"Register for the first time"}
+                    </Button>
 
-                <Typography variant="h6" component="div" maxWidth={"30rem"}>
-                    Registration is required to submit or update papers, but is not necessary to view them.
-                </Typography>
-            </div>
-        </Box>
+                    <Typography variant="h6" component="div" maxWidth={"30rem"}>
+                        Registration is required to submit or update papers, but is not necessary to view them.
+                    </Typography>
+                </div>
+            </Box>
         </Container>
-
     );
+
+    function specificProviderIcon(providerId: string) {
+        const specificProviderIcons = {
+            "google": <GoogleIcon />,
+            "facebook": <FacebookIcon />,
+            "microsoft": <MicrosoftIcon />,
+            "github": <GitHubIcon />,
+            "twitter": <TwitterIcon />,
+            "instagram": <InstagramIcon />,
+            "sso": <SSOIcon />,
+        };
+        if (providerId in specificProviderIcons) {
+            return specificProviderIcons[providerId as unknown as keyof typeof specificProviderIcons];
+        }
+        return (<ProviderIcon />);
+    }
 
     return (
         <>
@@ -83,91 +108,108 @@ export default function ArxivLogin(props: PageProps<Extract<KcContext, { pageId:
                 infoNode={newUserPanel}
                 socialProvidersNode={
                     <>
-                        {realm.password && social?.providers !== undefined && social.providers.length !== 0 && (
-                            <div id="kc-social-providers" >
-                                <hr />
-                                <h2>{msg("identity-provider-login-label")}</h2>
-                                <ul className={kcClsx("kcFormSocialAccountListClass", social.providers.length > 3 && "kcFormSocialAccountListGridClass")}>
+                        {realm.password && social?.providers && social?.providers?.length > 0 && (
+                            <Box id="kc-social-providers" mt={3}>
+                                <Typography variant="h6">{msg("identity-provider-login-label")}</Typography>
+                                <Box
+                                    component="ul"
+                                    sx={{
+                                        listStyle: "none",
+                                        padding: 0,
+                                        display: "flex",
+                                        flexWrap: "wrap",
+                                        gap: 2,
+                                        ...(social.providers.length > 3 && { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))" }),
+                                    }}
+                                >
                                     {social.providers.map((...[p, , providers]) => (
-                                        <li key={p.alias}>
-                                            <a
+                                        <Box component="li" key={p.alias}>
+                                            <Button
                                                 id={`social-${p.alias}`}
-                                                className={kcClsx(
-                                                    "kcFormSocialAccountListButtonClass",
-                                                    providers.length > 3 && "kcFormSocialAccountGridItem"
-                                                )}
-                                                type="button"
+                                                variant="text"
                                                 href={p.loginUrl}
+                                                startIcon={specificProviderIcon(p.providerId)}
+                                                sx={{
+                                                    textTransform: "none",
+                                                    width: "100%",
+                                                    display: "flex",
+                                                    justifyContent: "center",
+                                                    alignItems: "center",
+                                                    gap: 1,
+                                                    ...(providers.length > 3 && { display: "grid" }),
+                                                }}
                                             >
-                                                {p.iconClasses && <i className={clsx(kcClsx("kcCommonLogoIdP"), p.iconClasses)} aria-hidden="true"></i>}
-                                                <span
+                                                <Box
+                                                    component="span"
                                                     className={clsx(kcClsx("kcFormSocialAccountNameClass"), p.iconClasses && "kc-social-icon-text")}
                                                     dangerouslySetInnerHTML={{ __html: kcSanitize(p.displayName) }}
-                                                ></span>
-                                            </a>
-                                        </li>
+                                                />
+                                            </Button>
+                                        </Box>
                                     ))}
-                                </ul>
-                            </div>
+                                </Box>
+                            </Box>
                         )}
+
                     </>
                 }
             >
                 <Container id="kc-form" maxWidth="sm" sx={{ mt: 2 }}>
-
-                    <Typography variant={"h1"} sx={{p: 2}}>Login to arXiv.org </Typography>
+                    <Typography variant={"h1"} sx={{ p: 2 }}>
+                        Login to arXiv.org{" "}
+                    </Typography>
 
                     {/* Privacy Policy Notice */}
                     <Card elevation={3} sx={{ p: 3, mb: 3, backgroundColor: "#eeeef8" }}>
                         <Typography variant="body1" fontWeight={"bold"} color="textSecondary" align="left">
                             {"The "}
-                            <Link href={registrationUrl}
-                                  target="_blank" rel="noopener" underline="hover">
+                            <Link href={registrationUrl} target="_blank" rel="noopener" underline="hover">
                                 arXiv Privacy Policy
                             </Link>
                             {" has changed. By continuing to use arxiv.org, you are agreeing to the privacy policy."}
                         </Typography>
                     </Card>
 
-                    <Card elevation={0}
-                          sx={{
-                              p: 3,
-                              position: 'relative',
-                              paddingTop: '48px', // Add padding to push content down
-                              marginTop: '24px', // Add margin to shift the entire card (including shadow)
+                    <Card
+                        elevation={0}
+                        sx={{
+                            p: 3,
+                            position: "relative",
+                            paddingTop: "48px", // Add padding to push content down
+                            marginTop: "24px", // Add margin to shift the entire card (including shadow)
 
-                              '&::before': {
-                                  content: '""',
-                                  position: 'absolute',
-                                  top: '16px', // Push the border down by 24px
-                                  left: 0,
-                                  right: 0,
-                                  height: '90%',
-                                  backgroundColor: 'transparent',
-                                  borderTop: '2px solid #ddd', // Add the border
-                                  borderLeft: '2px solid #ddd', // Add the border
-                                  borderRight: '2px solid #ddd', // Add the border
-                                  borderBottom: '2px solid #ddd', // Add the border
-                              },
-                          }}>
-
+                            "&::before": {
+                                content: '""',
+                                position: "absolute",
+                                top: "16px", // Push the border down by 24px
+                                left: 0,
+                                right: 0,
+                                height: "90%",
+                                backgroundColor: "transparent",
+                                borderTop: "2px solid #ddd", // Add the border
+                                borderLeft: "2px solid #ddd", // Add the border
+                                borderRight: "2px solid #ddd", // Add the border
+                                borderBottom: "2px solid #ddd" // Add the border
+                            }
+                        }}
+                    >
                         <Box
                             sx={{
-                                display: 'flex',
-                                justifyContent: 'left',
-                                alignItems: 'left',
-                                width: '100%',
-                                position: 'relative',
-                                marginTop: '-44px', // Adjust this to move the title up
-                                marginBottom: '16px',
+                                display: "flex",
+                                justifyContent: "left",
+                                alignItems: "left",
+                                width: "100%",
+                                position: "relative",
+                                marginTop: "-44px", // Adjust this to move the title up
+                                marginBottom: "16px"
                             }}
                         >
                             <Typography
                                 variant="h2"
                                 sx={{
-                                    backgroundColor: 'white',
+                                    backgroundColor: "white",
                                     px: 2,
-                                    zIndex: 1, // Ensure the text is above the border
+                                    zIndex: 1 // Ensure the text is above the border
                                 }}
                             >
                                 {"If you're already registered"}
@@ -175,97 +217,97 @@ export default function ArxivLogin(props: PageProps<Extract<KcContext, { pageId:
                         </Box>
 
                         <div id="kc-form-wrapper">
-                        {realm.password && (
-                            <form
-                                id="kc-form-login"
-                                onSubmit={() => {
-                                    setIsLoginButtonDisabled(true);
-                                    return true;
-                                }}
-                                action={url.loginAction}
-                                method="post"
-                            >
-                                {!usernameHidden && (
-                                    <React.Fragment>
-                                        <Typography variant={"h5"} sx={{p: 1}}>
-                                            {userNameLabelText}
-                                        </Typography>
+                            {realm.password && (
+                                <form
+                                    id="kc-form-login"
+                                    onSubmit={() => {
+                                        setIsLoginButtonDisabled(true);
+                                        return true;
+                                    }}
+                                    action={url.loginAction}
+                                    method="post"
+                                >
+                                    {!usernameHidden && (
+                                        <React.Fragment>
+                                            <Typography variant={"h5"} sx={{ p: 1 }}>
+                                                {userNameLabelText}
+                                            </Typography>
+                                            <TextField
+                                                id="username"
+                                                name="username"
+                                                defaultValue={login.username ?? ""}
+                                                label={userNameLabelText}
+                                                type="text"
+                                                variant="outlined"
+                                                autoFocus
+                                                autoComplete="username"
+                                                error={userNameHasError}
+                                                helperText={userNameHasError ? <span dangerouslySetInnerHTML={{ __html: errorHtml }} /> : ""}
+                                                tabIndex={2}
+                                                aria-invalid={userNameHasError}
+                                                fullWidth
+                                            />
+                                        </React.Fragment>
+                                    )}
+
+                                    <Typography variant={"h5"} sx={{ p: 1 }}>
+                                        {msg("password")}
+                                    </Typography>
+                                    <PasswordWrapper i18n={i18n} passwordInputId="password">
                                         <TextField
-                                            id="username"
-                                            name="username"
-                                            defaultValue={login.username ?? ""}
-                                            label={userNameLabelText}
-                                            type="text"
+                                            id="password"
+                                            name="password"
+                                            type="password"
+                                            label={msg("password")}
                                             variant="outlined"
-                                            autoFocus
-                                            autoComplete="username"
+                                            autoComplete="current-password"
+                                            tabIndex={3}
+                                            aria-invalid={userNameHasError}
                                             error={userNameHasError}
                                             helperText={
-                                                userNameHasError ? <span dangerouslySetInnerHTML={{ __html: errorHtml }} /> : ""
+                                                usernameHidden && userNameHasError ? <span dangerouslySetInnerHTML={{ __html: errorHtml }} /> : ""
                                             }
-                                            tabIndex={2}
-                                            aria-invalid={userNameHasError}
                                             fullWidth
                                         />
-                                    </React.Fragment>
-                                )}
+                                    </PasswordWrapper>
 
-                                <Typography variant={"h5"} sx={{p: 1}}>{msg("password")}</Typography>
-                                <PasswordWrapper i18n={i18n} passwordInputId="password">
-                                    <TextField
-                                        id="password"
-                                        name="password"
-                                        type="password"
-                                        label={msg("password")}
-                                        variant="outlined"
-                                        autoComplete="current-password"
-                                        tabIndex={3}
-                                        aria-invalid={userNameHasError}
-                                        error={userNameHasError}
-                                        helperText={
-                                            usernameHidden && userNameHasError ? (
-                                                <span dangerouslySetInnerHTML={{ __html: errorHtml }} />
-                                            ) : (
-                                                ""
-                                            )
-                                        }
-                                        fullWidth
-                                    />
-                                </PasswordWrapper>
-
-                                <CardActions id="kc-form-buttons">
+                                    <CardActions id="kc-form-buttons">
                                         <input type="hidden" id="id-hidden-input" name="credentialId" value={auth.selectedCredential} />
-                                        <Button name="login" id="kc-login" tabIndex={7} type="submit" variant={"contained"} disabled={isLoginButtonDisabled} >
+                                        <Button
+                                            name="login"
+                                            id="kc-login"
+                                            tabIndex={7}
+                                            type="submit"
+                                            variant={"contained"}
+                                            disabled={isLoginButtonDisabled}
+                                        >
                                             {msgStr("doLogIn")}
                                         </Button>
 
-                                    <div id="kc-form-options">
-                                        {realm.rememberMe && !usernameHidden && (
-                                            <FormControlLabel
-                                                control={
-                                                    <Checkbox
-                                                        tabIndex={8}
-                                                        id="rememberMe"
-                                                        name="rememberMe"
-                                                        defaultChecked={!!login.rememberMe}
-                                                    />
-                                                }
-                                                label={msg("rememberMe")}
-                                            />
-                                        )}
+                                        <div id="kc-form-options">
+                                            {realm.rememberMe && !usernameHidden && (
+                                                <FormControlLabel
+                                                    control={
+                                                        <Checkbox
+                                                            tabIndex={8}
+                                                            id="rememberMe"
+                                                            name="rememberMe"
+                                                            defaultChecked={!!login.rememberMe}
+                                                        />
+                                                    }
+                                                    label={msg("rememberMe")}
+                                                />
+                                            )}
 
-                                        {
-                                            realm.resetPasswordAllowed && (
+                                            {realm.resetPasswordAllowed && (
                                                 <Button tabIndex={6} href={url.loginResetCredentialsUrl}>
                                                     {msg("doForgotPassword")}
                                                 </Button>
-                                            )
-                                        }
-                                    </div>
-
-                                </CardActions>
-                            </form>
-                        )}
+                                            )}
+                                        </div>
+                                    </CardActions>
+                                </form>
+                            )}
                         </div>
                     </Card>
                 </Container>
@@ -273,4 +315,3 @@ export default function ArxivLogin(props: PageProps<Extract<KcContext, { pageId:
         </>
     );
 }
-

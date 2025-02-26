@@ -1,6 +1,8 @@
 # This file is managed by Keycloakify, do not edit it manually.
 
 # === Owned files start ===
+# account/root/Header.tsx
+# shared/keycloak-ui-shared/masthead/Masthead.tsx
 # === Owned files end =====
 
 # === @keycloakify/keycloak-account-ui v260007.0.3 ===
@@ -49,7 +51,6 @@
 /account/i18n/index.ts
 /account/root/ErrorPage.tsx
 /account/root/PageNav.tsx
-/account/root/Header.tsx
 /account/root/Root.tsx
 /account/account-security/AccountRow.tsx
 /account/applications/Applications.tsx
@@ -110,7 +111,6 @@
 /shared/keycloak-ui-shared/context/HelpContext.tsx
 /shared/keycloak-ui-shared/context/KeycloakContext.tsx
 /shared/keycloak-ui-shared/masthead/KeycloakDropdown.tsx
-/shared/keycloak-ui-shared/masthead/Masthead.tsx
 /shared/keycloak-ui-shared/controls/HelpItem.tsx
 /shared/keycloak-ui-shared/controls/NumberControl.tsx
 /shared/keycloak-ui-shared/controls/KeycloakSpinner.tsx

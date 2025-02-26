@@ -47,6 +47,10 @@ services:
       LOG_OUTPUT_FORMAT: "--log-console-output=default"
       PUBSUB_EMULATOR_HOST: 127.0.0.1:${PUBSUB_EMULATOR_PORT}
       KC_HTTP_PORT: ${KC_PORT}
+      # ssl cert
+      KC_HTTPS_KEY_STORE_FILE: /etc/keycloak/keycloak.jks
+      KC_HTTPS_KEY_STORE_PASSWORD: kcpassword
+      KC_HOSTNAME: localhost.arxiv.org
       #
       # These are used for troubleshooting of audit event not going into pubsub.
       # (not sure this works with te pubsub emulator)
@@ -55,10 +59,11 @@ services:
       #
       ARXIV_USER_REGISTRATION_URL: ${ARXIV_USER_REGISTRATION_URL}
     command:
-      - start-dev --verbose --http-port ${KC_PORT}
-    # This is needed when you connect to DB on GCP
-    # volumes:
-    #   - ${PWD}/keycloak_bend/cert:/secrets/authdb-certs:ro
+      - start-dev --verbose --http-port ${KC_PORT} -https-port 8443
+    volumes:
+      - ${PWD}/keycloak_bend/keycloak-cert/keycloak-self-signed.jks:/etc/keycloak/keycloak.jks:ro
+      # This is needed when you connect to DB on GCP
+      # - ${PWD}/keycloak_bend/cert:/secrets/authdb-certs:ro
 
     ports:
       - "${KC_PORT}:${KC_PORT}"
