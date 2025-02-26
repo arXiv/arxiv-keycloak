@@ -18,7 +18,7 @@ all: .env.localdb
 #-#   bootstraps the environment
 bootstrap: .bootstrap
 
-.bootstrap: ./cert/dev-authdb-client-cert.pem
+.bootstrap: ./cert/dev-authdb-client-cert.pem ./keycloak-cert/keycloak-self-signed.jks
 	pyenv install -s 3.12
 	if ! dpkg -l | grep -q docker-compose-plugin; then sudo apt install -y docker-compose-plugin; fi
 	${MAKE} venv/bin/poetry
@@ -26,6 +26,10 @@ bootstrap: .bootstrap
 
 ./cert/dev-authdb-client-cert.pem:
 	cd ./cert/ && ${MAKE} 
+
+./keycloak-cert/keycloak-self-signed.jks:
+	cd ./keycloak-cert/ && ${MAKE} 
+
 
 venv:
 	python3.12 -m venv venv

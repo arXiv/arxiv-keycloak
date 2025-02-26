@@ -1,6 +1,6 @@
 import React from 'react';
 import { useEffect } from "react";
-import { clsx } from "keycloakify/tools/clsx";
+// import { clsx } from "keycloakify/tools/clsx";
 import { kcSanitize } from "keycloakify/lib/kcSanitize";
 import type { TemplateProps } from "keycloakify/login/TemplateProps";
 import { getKcClsx } from "keycloakify/login/lib/kcClsx";
@@ -14,6 +14,14 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import ArxivFooter from "../components/ArxivFooter.tsx";
 import Box from '@mui/material/Box';
+// import Card from '@mui/material/Card';
+import Alert from '@mui/material/Alert';
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import Tooltip from '@mui/material/Tooltip';
+import Link from '@mui/material/Link';
+import IconButton from '@mui/material/IconButton';
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 
 
 interface LocaleDropdownProps {
@@ -112,70 +120,53 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
         return null;
     }
 
+
     return (
         <Box sx={{minHeight: '100vh', backgroundColor: 'white', display: 'flex', flexDirection: 'column'}}>
             <ArxivHeader />
             <div className={kcClsx("kcFormCardClass")}>
-                <header className={kcClsx("kcFormHeaderClass")}>
-                    {enabledLanguages.length > 1 && (
-                        <LocaleDropdown i18n={i18n} />
+                <header>
+                    {enabledLanguages.length > 1 && <LocaleDropdown i18n={i18n} />}
+
+                    {auth?.showUsername && !auth?.showResetCredentials ? (
+                        <Container maxWidth="sm" >
+                            <Box display="flex" alignItems="center" gap={1}>
+                            <Typography id="kc-attempted-username" variant="subtitle1">
+                                {auth.attemptedUsername}
+                            </Typography>
+                            <Tooltip title={msgStr("restartLoginTooltip")}>
+                                <Link id="reset-login" href={url.loginRestartFlowUrl} aria-label={msgStr("restartLoginTooltip")}>
+                                    <IconButton size="small">
+                                        <RestartAltIcon />
+                                        {msgStr("restartLoginTooltip")}
+                                    </IconButton>
+                                </Link>
+                            </Tooltip>
+                        </Box>
+                        </Container>
+                    ) : (
+                        <Typography id="kc-page-title" variant="h5">
+                            {headerNode}
+                        </Typography>
                     )}
-                    {(() => {
-                        const node = !(auth !== undefined && auth.showUsername && !auth.showResetCredentials) ? (
-                            <h1 id="kc-page-title">{headerNode}</h1>
-                        ) : (
-                            <div id="kc-username" className={kcClsx("kcFormGroupClass")}>
-                                <label id="kc-attempted-username">{auth.attemptedUsername}</label>
-                                <a id="reset-login" href={url.loginRestartFlowUrl} aria-label={msgStr("restartLoginTooltip")}>
-                                    <div className="kc-login-tooltip">
-                                        <i className={kcClsx("kcResetFlowIcon")}></i>
-                                        <span className="kc-tooltip-text">{msg("restartLoginTooltip")}</span>
-                                    </div>
-                                </a>
-                            </div>
-                        );
 
-                        if (displayRequiredFields) {
-                            return (
-                                <div className={kcClsx("kcContentWrapperClass")}>
-                                    <div className={clsx(kcClsx("kcLabelWrapperClass"), "subtitle")}>
-                                        <span className="subtitle">
-                                            <span className="required">*</span>
-                                            {msg("requiredFields")}
-                                        </span>
-                                    </div>
-                                    <div className="col-md-10">{node}</div>
-                                </div>
-                            );
-                        }
-
-                        return node;
-                    })()}
+                    {displayRequiredFields && (
+                        <Box mt={2}>
+                            <Typography variant="subtitle2" color="textSecondary">
+                                <span className="required">*</span> {msg("requiredFields")}
+                            </Typography>
+                        </Box>
+                    )}
                 </header>
                 <div id="kc-content">
                     <div id="kc-content-wrapper">
                         {/* App-initiated actions should not see warning messages about the need to complete the action during login. */}
                         {displayMessage && message !== undefined && (message.type !== "warning" || !isAppInitiatedAction) && (
-                            <div
-                                className={clsx(
-                                    `alert-${message.type}`,
-                                    kcClsx("kcAlertClass"),
-                                    `pf-m-${message?.type === "error" ? "danger" : message.type}`
-                                )}
-                            >
-                                <div className="pf-c-alert__icon">
-                                    {message.type === "success" && <span className={kcClsx("kcFeedbackSuccessIcon")}></span>}
-                                    {message.type === "warning" && <span className={kcClsx("kcFeedbackWarningIcon")}></span>}
-                                    {message.type === "error" && <span className={kcClsx("kcFeedbackErrorIcon")}></span>}
-                                    {message.type === "info" && <span className={kcClsx("kcFeedbackInfoIcon")}></span>}
-                                </div>
-                                <span
-                                    className={kcClsx("kcAlertTitleClass")}
-                                    dangerouslySetInnerHTML={{
-                                        __html: kcSanitize(message.summary)
-                                    }}
-                                />
-                            </div>
+                            <Container maxWidth="sm" sx={{ p: 3, mt: 2 }}>
+                                <Alert security={message.type}>
+                                    {kcSanitize(message.summary)}
+                                </Alert>
+                            </Container>
                         )}
                         {children}
                         {auth !== undefined && auth.showTryAnotherWayLink && (
@@ -195,7 +186,9 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
                                 </div>
                             </form>
                         )}
-                        {socialProvidersNode}
+                        <Container maxWidth="sm" >
+                            {socialProvidersNode}
+                        </Container>
                         {displayInfo && (
                             <div id="kc-info" className={kcClsx("kcSignUpClass")}>
                                 <div id="kc-info-wrapper" className={kcClsx("kcInfoAreaWrapperClass")}>
@@ -206,6 +199,7 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
                     </div>
                 </div>
             </div>
+
             <Box sx={{flex: 1}}/>
             <ArxivFooter />
         </Box>
