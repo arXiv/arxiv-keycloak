@@ -33,21 +33,23 @@ if [ ! -r .env.localdb ] ; then
 
     # keycloak and its database
     KC_PORT=21501
-    KC_HOST_PUBLIC=$SERVER_HOST
+    KC_SSL_PORT=21520
+    KC_HOST_PUBLIC=https://$SERVER_HOST:$KC_SSL_PORT
 
     # would be "keycloak" if the network is NOT host network
-    KC_HOST_PRIVATE=localhost
+    KC_HOST_PRIVATE=localhost.arxiv.org
     KC_AUTH_DB_1P_ITEM=bcoicp62oiepvqggwpj5f7lury
 
     echo KC_PORT=$KC_PORT >> .env.localdb
+    echo KC_SSL_PORT=$KC_SSL_PORT >> .env.localdb
     echo KC_HOST_PUBLIC=$KC_HOST_PUBLIC >> .env.localdb
     echo KC_HOST_PRIVATE=$KC_HOST_PRIVATE >> .env.localdb
-    echo KC_URL_PUBLIC=http://$KC_HOST_PUBLIC:$KC_PORT >> .env.localdb
+    echo KC_URL_PUBLIC=https://$KC_HOST_PUBLIC:$KC_PORT >> .env.localdb
     echo KC_URL_PRIVATE=http://$KC_HOST_PRIVATE:$KC_PORT >> .env.localdb
 
     echo KC_DOCKER_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/keycloak >> .env.localdb
     # kc db
-    echo KC_DB_HOST_PUBLIC=$SERVER_HOST.arxiv.org >> .env.localdb
+    echo KC_DB_HOST_PUBLIC=$SERVER_HOST >> .env.localdb
     echo KC_DB_HOST_PRIVATE=auth-db >> .env.localdb
     echo KC_DB_PORT=21502 >> .env.localdb
     echo KC_DB_USER=keycloak >> .env.localdb

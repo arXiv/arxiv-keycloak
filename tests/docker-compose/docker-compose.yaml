@@ -33,6 +33,8 @@ services:
     image: ${KC_DOCKER_TAG}:latest
     container_name: keycloak
     environment:
+      KC_PORT: ${KC_PORT}
+      KC_SSL_PORT: ${KC_SSL_PORT}
       DB_ADDR: 127.0.0.1:${KC_DB_PORT}
       DB_DATABASE: keycloak
       DB_VENDOR: postgres
@@ -58,15 +60,16 @@ services:
       GRPC_TRACE: tcp,http,api
       #
       ARXIV_USER_REGISTRATION_URL: ${ARXIV_USER_REGISTRATION_URL}
-    command:
-      - start-dev --verbose --http-port ${KC_PORT} -https-port 8443
     volumes:
       - ${PWD}/keycloak_bend/keycloak-cert/keycloak-self-signed.jks:/etc/keycloak/keycloak.jks:ro
+      - ${PWD}/keycloak_bend/keycloak-cert/keycloak-self-signed.p12:/etc/keycloak/keycloak.p12:ro
       # This is needed when you connect to DB on GCP
       # - ${PWD}/keycloak_bend/cert:/secrets/authdb-certs:ro
 
     ports:
       - "${KC_PORT}:${KC_PORT}"
+      - "${KC_SSL_PORT}:${KC_SSL_PORT}"
+      - 9000:9000
     depends_on:
       - auth-db
       - pubsub-emulator
@@ -99,7 +102,8 @@ services:
       SECURE: "false"
       PORT: ${ARXIV_OAUTH2_APP_PORT}
       # hostname keycloak for non-host network
-      KEYCLOAK_SERVER_URL: http://localhost:${KC_PORT}
+      # KEYCLOAK_SERVER_URL: http://localhost:${KC_PORT}
+      KEYCLOAK_SERVER_URL: ${KC_URL_PUBLIC}
       OAUTH2_CALLBACK_URL: ${AAA_CALLBACK_URL}
       ARXIV_USER_SECRET: ${KEYCLOAK_TEST_CLIENT_SECRET}
       CLASSIC_DB_URI: ${CLASSIC_DB_URI}
@@ -107,6 +111,8 @@ services:
       CLASSIC_COOKIE_NAME: tapir_session
       CLASSIC_SESSION_HASH: ${CLASSIC_SESSION_HASH}
       JWT_SECRET: ${JWT_SECRET}
+      # Keycloak SSL is running with self-signed cert
+      OIDC_SERVER_SSL_VERIFY: "false"
       #
       # This is the almighty admin client (admin-cli) secret
       #

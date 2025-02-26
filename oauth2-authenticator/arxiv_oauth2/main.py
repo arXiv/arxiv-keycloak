@@ -67,6 +67,9 @@ AUTH_SESSION_COOKIE_NAME = os.environ.get(COOKIE_ENV_NAMES.auth_session_cookie_e
 # arXiv's Keycloak access token names
 ARXIV_KEYCLOAK_COOKIE_NAME = os.environ.get(COOKIE_ENV_NAMES.arxiv_keycloak_cookie_env, "arxiv_keycloak_token")
 
+# OIDC server SSL verify - this should be always true except when you are running locally and with self-signed cert
+OIDC_SERVER_SSL_VERIFY = os.environ.get('OIDC_SERVER_SSL_VERIFY', 'true') != "false"
+
 # More cors origins
 CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "")
 
@@ -74,8 +77,10 @@ _idp_ = ArxivOidcIdpClient(CALLBACK_URL,
                            scope=["openid"],
                            server_url=KEYCLOAK_SERVER_URL,
                            client_secret=ARXIV_USER_SECRET,
-                           logger=getLogger(__name__)
+                           logger=getLogger(__name__),
+                           ssl_verify=OIDC_SERVER_SSL_VERIFY,
                            )
+
 
 origins = ["http://localhost",
            "http://localhost:5000",
