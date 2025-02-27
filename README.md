@@ -59,6 +59,14 @@ The audit events includes the user's demographic such as names, emails, URLs.
 
 # Development
 
+## Quick start
+
+    cd ~/arxiv/arxiv-keycloak
+    ./config.sh
+    make bootstrap
+    make docker-image
+    make up
+
 - Bootstrap
 - Build Docker Images
 - Run Dockers with docker compose
