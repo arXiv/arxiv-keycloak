@@ -1,7 +1,6 @@
-import type { JSX } from "keycloakify/tools/JSX";
+// import type { JSX } from "keycloakify/tools/JSX";
 import { useEffect, Fragment } from "react";
 import { assert } from "keycloakify/tools/assert";
-import { useIsPasswordRevealed } from "keycloakify/tools/useIsPasswordRevealed";
 import type { KcClsx } from "keycloakify/login/lib/kcClsx";
 import {
     useUserProfileForm,
@@ -13,6 +12,19 @@ import type { UserProfileFormFieldsProps } from "keycloakify/login/UserProfileFo
 import type { Attribute } from "keycloakify/login/KcContext";
 import type { KcContext } from "./KcContext";
 import type { I18n } from "./i18n";
+import PasswordWrapper from "./PasswordWrapper.tsx";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+/*
+import Container from "@mui/material/Container";
+import Card from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
+import Button from "@mui/material/Button";
+import CardHeader from "@mui/material/CardHeader";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+*/
 
 export default function UserProfileFormFields(props: UserProfileFormFieldsProps<KcContext, I18n>) {
     const { kcContext, i18n, kcClsx, onIsFormSubmittableValueChange, doMakeUserConfirmPassword, BeforeField, AfterField } = props;
@@ -130,6 +142,9 @@ function GroupLabel(props: {
             assert(attribute.group !== undefined);
 
             return (
+                <>
+                {
+                    /*
                 <div
                     className={kcClsx("kcFormGroupClass")}
                     {...Object.fromEntries(Object.entries(attribute.group.html5DataAnnotations).map(([key, value]) => [`data-${key}`, value]))}
@@ -164,6 +179,46 @@ function GroupLabel(props: {
                         return null;
                     })()}
                 </div>
+
+                    */
+                }
+                    <Box
+                        className={kcClsx("kcFormGroupClass")}
+                        {...Object.fromEntries(Object.entries(attribute.group.html5DataAnnotations).map(([key, value]) => [`data-${key}`, value]))}
+                    >
+                        {(() => {
+                            const groupDisplayHeader = attribute.group.displayHeader ?? "";
+                            const groupHeaderText = groupDisplayHeader ? advancedMsg(groupDisplayHeader) : attribute.group.name;
+
+                            return (
+                                <Box className={kcClsx("kcContentWrapperClass")} mb={1}>
+                                    <Typography id={`header-${attribute.group.name}`} variant="h6">
+                                        {groupHeaderText}
+                                    </Typography>
+                                </Box>
+                            );
+                        })()}
+
+                        {(() => {
+                            const groupDisplayDescription = attribute.group.displayDescription ?? "";
+
+                            if (groupDisplayDescription) {
+                                const groupDescriptionText = advancedMsg(groupDisplayDescription);
+
+                                return (
+                                    <Box className={kcClsx("kcLabelWrapperClass")} mb={2}>
+                                        <Typography id={`description-${attribute.group.name}`} variant="body1" color="textSecondary">
+                                            {groupDescriptionText}
+                                        </Typography>
+                                    </Box>
+                                );
+                            }
+
+                            return null;
+                        })()}
+                    </Box>
+
+                </>
             );
         }
     }
@@ -234,7 +289,7 @@ function InputFieldByType(props: InputFieldByTypeProps) {
 
             if (attribute.name === "password" || attribute.name === "password-confirm") {
                 return (
-                    <PasswordWrapper kcClsx={props.kcClsx} i18n={props.i18n} passwordInputId={attribute.name}>
+                    <PasswordWrapper i18n={props.i18n} passwordInputId={attribute.name}>
                         {inputNode}
                     </PasswordWrapper>
                 );
@@ -243,29 +298,6 @@ function InputFieldByType(props: InputFieldByTypeProps) {
             return inputNode;
         }
     }
-}
-
-function PasswordWrapper(props: { kcClsx: KcClsx; i18n: I18n; passwordInputId: string; children: JSX.Element }) {
-    const { kcClsx, i18n, passwordInputId, children } = props;
-
-    const { msgStr } = i18n;
-
-    const { isPasswordRevealed, toggleIsPasswordRevealed } = useIsPasswordRevealed({ passwordInputId });
-
-    return (
-        <div className={kcClsx("kcInputGroup")}>
-            {children}
-            <button
-                type="button"
-                className={kcClsx("kcFormPasswordVisibilityButtonClass")}
-                aria-label={msgStr(isPasswordRevealed ? "hidePassword" : "showPassword")}
-                aria-controls={passwordInputId}
-                onClick={toggleIsPasswordRevealed}
-            >
-                <i className={kcClsx(isPasswordRevealed ? "kcFormPasswordVisibilityIconHide" : "kcFormPasswordVisibilityIconShow")} aria-hidden />
-            </button>
-        </div>
-    );
 }
 
 function InputTag(props: InputFieldByTypeProps & { fieldIndex: number | undefined }) {
@@ -534,38 +566,67 @@ function InputTagSelects(props: InputFieldByTypeProps) {
 }
 
 function TextareaTag(props: InputFieldByTypeProps) {
-    const { attribute, dispatchFormAction, kcClsx, displayableErrors, valueOrValues } = props;
+    const { attribute, dispatchFormAction, displayableErrors, valueOrValues } = props;
 
     assert(typeof valueOrValues === "string");
 
     const value = valueOrValues;
 
+    /*
+<textarea
+    id={attribute.name}
+    name={attribute.name}
+    className={kcClsx("kcInputClass")}
+    aria-invalid={displayableErrors.length !== 0}
+    disabled={attribute.readOnly}
+    cols={attribute.annotations.inputTypeCols === undefined ? undefined : parseInt(`${attribute.annotations.inputTypeCols}`)}
+    rows={attribute.annotations.inputTypeRows === undefined ? undefined : parseInt(`${attribute.annotations.inputTypeRows}`)}
+    maxLength={attribute.annotations.inputTypeMaxlength === undefined ? undefined : parseInt(`${attribute.annotations.inputTypeMaxlength}`)}
+    value={value}
+    onChange={event =>
+        dispatchFormAction({
+            action: "update",
+            name: attribute.name,
+            valueOrValues: event.target.value
+        })
+    }
+    onBlur={() =>
+        dispatchFormAction({
+            action: "focus lost",
+            name: attribute.name,
+            fieldIndex: undefined
+        })
+    }
+/>
+
+     */
+
+
     return (
-        <textarea
-            id={attribute.name}
-            name={attribute.name}
-            className={kcClsx("kcInputClass")}
-            aria-invalid={displayableErrors.length !== 0}
-            disabled={attribute.readOnly}
-            cols={attribute.annotations.inputTypeCols === undefined ? undefined : parseInt(`${attribute.annotations.inputTypeCols}`)}
-            rows={attribute.annotations.inputTypeRows === undefined ? undefined : parseInt(`${attribute.annotations.inputTypeRows}`)}
-            maxLength={attribute.annotations.inputTypeMaxlength === undefined ? undefined : parseInt(`${attribute.annotations.inputTypeMaxlength}`)}
-            value={value}
-            onChange={event =>
-                dispatchFormAction({
-                    action: "update",
-                    name: attribute.name,
-                    valueOrValues: event.target.value
-                })
-            }
-            onBlur={() =>
-                dispatchFormAction({
-                    action: "focus lost",
-                    name: attribute.name,
-                    fieldIndex: undefined
-                })
-            }
+        <TextField id={attribute.name}
+                   name={attribute.name}
+                   aria-invalid={displayableErrors.length !== 0}
+                   disabled={attribute.readOnly}
+                   cols={attribute.annotations.inputTypeCols === undefined ? undefined : parseInt(`${attribute.annotations.inputTypeCols}`)}
+                   rows={attribute.annotations.inputTypeRows === undefined ? undefined : parseInt(`${attribute.annotations.inputTypeRows}`)}
+                   maxLength={attribute.annotations.inputTypeMaxlength === undefined ? undefined : parseInt(`${attribute.annotations.inputTypeMaxlength}`)}
+                   value={value}
+                   onChange={event =>
+                       dispatchFormAction({
+                           action: "update",
+                           name: attribute.name,
+                           valueOrValues: event.target.value
+                       })
+                   }
+                   onBlur={() =>
+                       dispatchFormAction({
+                           action: "focus lost",
+                           name: attribute.name,
+                           fieldIndex: undefined
+                       })
+                   }
         />
+
     );
 }
 

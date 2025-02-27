@@ -63,6 +63,8 @@ export const Header = () => {
                 className: style.brand
             }}
             toolbarItems={[<ReferrerLink key="link" />]}
-        />
+        >
+            <p>Account UI is under construction.</p>
+        </KeycloakMasthead>
     );
 };

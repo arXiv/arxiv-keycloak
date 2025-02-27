@@ -15,7 +15,7 @@ import TextField from "@mui/material/TextField";
 import CardActions from "@mui/material/CardActions";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
-import PasswordWrapper from "./PasswordWrapper.tsx";
+import PasswordWrapper from "../PasswordWrapper.tsx";
 
 // import  CardHeader from "@mui/material/CardHeader";
 import ProviderIcon from "@mui/icons-material/InputRounded";
