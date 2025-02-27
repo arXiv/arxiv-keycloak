@@ -21,8 +21,9 @@ import {RuntimeContext, RuntimeProps} from "../RuntimeContext.tsx";
 import PreflightChecklist from "../bits/PreflightChecklist.tsx";
 import Authorship from "../bits/Authorship.tsx";
 import YesNoDialog from "../bits/YesNoDialog.tsx";
-import SubmissionsTable from "../bits/SubmissionsTable.tsx";
+// import SubmissionsTable from "../bits/SubmissionsTable.tsx";
 import Switch from "@mui/material/Switch";
+import YourSubmissions from "../components/YourSubmissions.tsx";
 
 
 const VerifyEmailButton: React.FC<{ runtimeProps: RuntimeProps }> = ({ runtimeProps }) => {
@@ -146,7 +147,7 @@ const AccountSettings = () => {
                             } label={(
                                 <div>
                                     {"Enable MathJax "}
-                                    <Link href={"https://info.arxiv.org/help/mathjax.html"}><LinkIcon/>Help</Link>
+                                    <Link href={runtimeProps.URLS.mathJaxHelp}><LinkIcon/>Help</Link>
                                 </div>
                             )} />
                         </Tooltip>
@@ -154,31 +155,10 @@ const AccountSettings = () => {
                 </Box>
             </Paper>
 
-            <Paper elevation={3} sx={{ p: 3, mt: 4, width: "95%" }}>
-                <Typography variant="h5" gutterBottom>
-                    Your Submissions
-                </Typography>
-                <SubmissionsTable runtimeProps={runtimeProps} />
-                <Box sx={{ mt: 2 }}>
-                    <Button
-                        disabled={runtimeProps.currentUser === null}
-                        variant="contained"
-                        startIcon={<Edit />}
-                        href="/submissions/"
-                        sx={{
-                            color: "white", // Default text color
-                            "&:hover": {
-                                color: "white", // Keep text white on hover
-                            },
-                        }}
-                    >
-                        Open Submission management
-                    </Button>
-                </Box>
-            </Paper>
+            <YourSubmissions runtimeProps={runtimeProps} />
 
-            <PreflightChecklist />
-            <Authorship />
+            <PreflightChecklist runtimeProps={runtimeProps} />
+            <Authorship props={runtimeProps} />
         </Container>
     );
 };

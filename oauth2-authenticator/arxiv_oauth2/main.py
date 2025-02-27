@@ -68,7 +68,7 @@ AUTH_SESSION_COOKIE_NAME = os.environ.get(COOKIE_ENV_NAMES.auth_session_cookie_e
 ARXIV_KEYCLOAK_COOKIE_NAME = os.environ.get(COOKIE_ENV_NAMES.arxiv_keycloak_cookie_env, "arxiv_keycloak_token")
 
 # OIDC server SSL verify - this should be always true except when you are running locally and with self-signed cert
-OIDC_SERVER_SSL_VERIFY = os.environ.get('OIDC_SERVER_SSL_VERIFY', 'true') != "false"
+OIDC_SERVER_SSL_VERIFY = os.environ.get('OIDC_SERVER_SSL_VERIFY', os.environ.get('SECURE', 'true')) != "false"
 
 # More cors origins
 CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "")

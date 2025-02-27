@@ -12,7 +12,8 @@ const theme = createTheme({
             "\"Open Sans\", \"Lucida Grande\", \"Helvetica Neue\", Helvetica, Arial, sans-serif",
         h1: {
             fontWeight: 600,
-            fontSize: "2rem"
+            fontSize: "1.75rem",
+            marginBottom: "0.8rem"
         },
         h2: {
             fontWeight: 600,
@@ -25,7 +26,8 @@ const theme = createTheme({
         h6: {
             fontWeight: 600,
             fontSize: "1rem"
-        }
+        },
+
     }
 });
 
