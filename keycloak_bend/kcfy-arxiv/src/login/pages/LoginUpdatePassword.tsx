@@ -5,7 +5,7 @@ import type { KcContext } from "../KcContext";
 import type { I18n } from "../i18n";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
-import PasswordWrapper from "./PasswordWrapper.tsx";
+import PasswordWrapper from "../PasswordWrapper.tsx";
 import TextField from "@mui/material/TextField";
 import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
