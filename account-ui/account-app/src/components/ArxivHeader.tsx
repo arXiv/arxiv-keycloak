@@ -1,4 +1,4 @@
-import React, {useContext} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {RuntimeContext} from "../RuntimeContext";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -9,8 +9,37 @@ import {
 } from '@mui/material';
 import ArxivAppBar from "./ArxivAppBar.tsx";
 
+
+
 const ArxivBanner = () => {
     const runtimeProps = useContext(RuntimeContext);
+    const [ackText, setAckText] = useState<string>("We gratefully acknowledge support from the Simons Foundation, " +
+        "<a href=\"https://info.arxiv.org/about/ourmembers.html\" color=\"inherit\"> " +
+        "member institutions </a>, and all contributors.");
+
+    useEffect(() => {
+        // Load the external script dynamically
+        const script = document.createElement("script");
+        script.src = "/static/js/member_acknowledgement.js";
+        script.async = true;
+        script.onload = () => {
+            // Wait for script execution, then fetch the text
+            setTimeout(() => {
+                const supportElem = document.getElementById("support-ack-url");
+                if (supportElem) {
+                    setAckText(supportElem.innerHTML);
+                }
+            }, 500); // Give it some time to execute
+        };
+
+        document.body.appendChild(script);
+
+        return () => {
+            document.body.removeChild(script);
+        };
+    }, []);
+
+
     return (
     <Box sx={{
         width: "100vw",
@@ -40,19 +69,15 @@ const ArxivBanner = () => {
                 px: 2, // Add some padding
             }}
         >
-            {/* Left-aligned text */}
-            <Typography variant={"caption"} sx={{textAlign: "right", flex: 1, fontSize: "12px", fontWeight: "bold"}}>
-                We gratefully acknowledge support from the Simons Foundation,{" "}
-                <Link href="https://info.arxiv.org/about/ourmembers.html" color="inherit">
-                    member institutions
-                </Link>
-                , and all contributors.
-            </Typography>
+
+            <Typography variant={"caption"} sx={{textAlign: "right", flex: 1, fontSize: "12px", fontWeight: "bold"}}
+                        dangerouslySetInnerHTML={{ __html: ackText }}
+            />
 
             {/* Right-aligned button */}
             <Button
                 variant={"outlined"}
-                href="https://info.arxiv.org/about/donate.html"
+                href={runtimeProps.URLS.donate}
                 color="inherit"
                 sx={{
                     fontSize: "12px", padding: "2px 4px", minWidth: "auto",

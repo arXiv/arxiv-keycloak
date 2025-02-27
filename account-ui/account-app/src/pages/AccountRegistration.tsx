@@ -255,7 +255,7 @@ const AccountRegistration = () => {
                     title: "Registration Success",
                     message: "Account is registered successfully! Please go to home page, and login.",
                     onConfirm: () => {
-                        window.location.href="/";
+                        window.location.href=runtimeContext.POST_USER_REGISTRATION_URL;
                     },
                 })
             }
@@ -306,7 +306,7 @@ const AccountRegistration = () => {
             <Card elevation={3} sx={{ px: 3, py: 2, mb: 2, backgroundColor: "#eeeef8" }}>
                 <Typography variant="body1" fontWeight={"bold"} color="textPrimary" align="left" >
                     {"By registering with arXiv you are agreeing to the "}
-                    <Link href="https://arxiv.org/help/policies/privacy_policy" target="_blank" rel="noopener" underline="hover">
+                    <Link href={runtimeContext.URLS.privacyPolicy} target="_blank" rel="noopener" underline="hover">
                         arXiv Privacy Policy
                     </Link>
                     {"."}
@@ -380,7 +380,7 @@ const AccountRegistration = () => {
                             <Typography sx={{paddingLeft: 3, mb: 1}}>{"You "}
                                 <Typography component="span" fontWeight="bold">{"must"}</Typography>
                                 {" able to receive mail at this address to register. We take "}
-                                <Link href="https://info.arxiv.org/help/email-protection" target="_blank" rel="noopener" underline="hover">strong measure</Link>
+                                <Link href={runtimeContext.URLS.emailProtection} target="_blank" rel="noopener" underline="hover">strong measure</Link>
                                 {" to protect your email address from viruses and spam. Do not register with an e-mail address that belongs to someone else: if we discover that you've done so, we will suspend your account."}
                             </Typography>
                             <TextField label="Email *" sx={{ flex: 2 }}

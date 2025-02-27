@@ -1,5 +1,5 @@
-import React from 'react';
-// import {RuntimeContext} from "../RuntimeContext";
+import React, {useContext} from 'react';
+import {RuntimeContext} from "../RuntimeContext";
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import EmailIcon from "@mui/icons-material/Email";
@@ -9,7 +9,8 @@ import SlackIcon from "../assets/SlackIcon";
 
 
 const ArxivFooter: React.FC = () => {
-    // const runtimeProps = useContext(RuntimeContext);
+    const runtimeProps = useContext(RuntimeContext);
+    const urls = runtimeProps.URLS;
 
     const emailTitle = (title: string) => (<Box sx={{
         display: "flex",
@@ -51,28 +52,28 @@ const ArxivFooter: React.FC = () => {
                 <Box sx={{flex: 1}}/>
 
                 <Box sx={{flex: 4,}}>
-                    <HoverLink label={"About"} href="/about"/>
+                    <HoverLink label={"About"} href={urls.about} />
                     <Box sx={{flex: 1}}/>
-                    <HoverLink label={"Help"} href="/help"/>
+                    <HoverLink label={"Help"} href={urls.help} />
                 </Box>
 
                 <Box sx={{flex: 4}}>
-                    <HoverLink label={emailTitle("Contact")} href="/help/contact"/>
+                    <HoverLink label={emailTitle("Contact")} href={urls.contact}/>
                     <Box sx={{flex: 1}}/>
-                    <HoverLink label={subscribeTitle} href="/help/subscribe"/>
+                    <HoverLink label={subscribeTitle} href={urls.subscribe}/>
                 </Box>
 
                 <Box sx={{flex: 4}}>
-                    <HoverLink label={"Copyright"} href="/help/license"/>
+                    <HoverLink label={"Copyright"} href={urls.license}/>
                     <Box sx={{flex: 1}}/>
-                    <HoverLink label={"Privacy Policy"} href="/help/policies/privacy_policy"/>
+                    <HoverLink label={"Privacy Policy"} href={urls.privacyPolicy}/>
                 </Box>
                 <Box sx={{flex: 6}}>
                     <Box sx={{display: "flex", width: "100%"}}>
                         {/* Left side: Two HoverLinks stacked in a column */}
                         <Box sx={{flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between"}}>
-                            <HoverLink label={"Web Accessibility Assistance"} href="/help/web_accessibility"/>
-                            <HoverLink label={"arXiv Operation Status"} href="https://status.arxiv.org"/>
+                            <HoverLink label={"Web Accessibility Assistance"} href={urls.webAccessibility}/>
+                            <HoverLink label={"arXiv Operation Status"} href={urls.arxivStatus}/>
                         </Box>
 
                         {/* Right side: Status notifications */}
@@ -82,8 +83,8 @@ const ArxivFooter: React.FC = () => {
                             </Typography>
                             <Box sx={{display: "flex", alignItems: "center", gap: 1}}>
                                 <HoverLink label={emailTitle("email")}
-                                           href="https://subscribe.sorryapp.com/24846f03/email/new"/>
-                                <HoverLink label={slackTitle} href="https://subscribe.sorryapp.com/24846f03/slack/new"/>
+                                           href={urls.arxivStatusEmail}/>
+                                <HoverLink label={slackTitle} href={urls.arxivSlack}/>
                             </Box>
                         </Box>
                     </Box>

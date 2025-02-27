@@ -4,6 +4,36 @@ import {Box} from '@mui/material';
 import {paths} from "./types/aaa-api";
 type User = paths["/account/info/id:str"]["get"]["responses"]["200"]["content"]["application/json"];
 
+export interface ArxivSiteURLs {
+    privacyPolicy: string;
+    authorityRecord: string;
+    submissionManagementURL: string;
+    newSubmissionURL: string;
+    authorIdentifier: string;
+    whyTex: string;
+    cleanUpload: string;
+    commonMistakes: string;
+    submissionChecklist: string;
+    moreTips: string;
+    webAccessibility: string;
+    arxivStatus: string;
+    arxivStatusEmail: string;
+    arxivSlack: string;
+    emailProtection: string;
+    mathJaxHelp: string;
+    passwordRecovery: string;
+    needPaperPassword: string;
+    requestOwnership: string;
+    orcidOrg: string;
+    ourMemberships: string;
+    about: string;
+    help: string;
+    donate: string;
+    contact: string;
+    subscribe: string;
+    license: string;
+}
+
 export interface RuntimeProps
 {
     AAA_URL: string,
@@ -13,7 +43,9 @@ export interface RuntimeProps
     ARXIV_COOKIE_NAME: string,
     TAPIR_COOKIE_NAME: string,
     UNIVERSITY: string,
+    POST_USER_REGISTRATION_URL: string,
     HOME: string,
+    URLS: ArxivSiteURLs,
     currentUser: User | null,
 }
 
@@ -26,6 +58,36 @@ const defaultRuntimeProps : RuntimeProps = {
     TAPIR_COOKIE_NAME: "tapir_session",
     UNIVERSITY: "https://cornell.edu",
     HOME: "https://cornell.edu",
+    POST_USER_REGISTRATION_URL: "/",
+    URLS: {
+        privacyPolicy: "https://arxiv.org/help/policies/privacy_policy",
+        authorityRecord: "https://info.arxiv.org/help/authority",
+        submissionManagementURL: "https://arxiv.org/user/submissions",
+        newSubmissionURL: "https://arxiv.org/user/submissions/new",
+        authorIdentifier: "https://info.arxiv.org/help/author_identifiers",
+        whyTex: "https://info.arxiv.org/help/faq/whytex.html",
+        cleanUpload: "https://trevorcampbell.me/html/arxiv.html",
+        commonMistakes: "https://info.arxiv.org/help/faq/mistakes.html",
+        submissionChecklist: "https://www.ianhuston.net/2011/03/checklist-for-arxiv-submission/",
+        moreTips: "https://www.ianhuston.net/2011/03/checklist-for-arxiv-submission/",
+        webAccessibility: "/help/web_accessibility",
+        arxivStatus: "https://status.arxiv.org",
+        arxivStatusEmail: "https://subscribe.sorryapp.com/24846f03/email/new",
+        arxivSlack: "https://subscribe.sorryapp.com/24846f03/slack/new",
+        emailProtection: "https://info.arxiv.org/help/email-protection",
+        mathJaxHelp: "https://info.arxiv.org/help/mathjax.html",
+        passwordRecovery: "/password-recovery",
+        needPaperPassword: "/auth/need-paper-password",
+        requestOwnership: "/auth/request-ownership",
+        orcidOrg: "http://orcid.org/",
+        ourMemberships: "https://info.arxiv.org/about/ourmembers.html",
+        about: "/about",
+        help: "/help",
+        donate: "https://info.arxiv.org/about/donate.html",
+        contact: "/help/contact",
+        subscribe: "help/subscribe",
+        license: "/help/license",
+    },
     currentUser: null
 };
 

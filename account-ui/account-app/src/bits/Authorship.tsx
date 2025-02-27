@@ -6,10 +6,12 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
+import {RuntimeProps} from "../RuntimeContext.tsx";
 
-const Authorship: React.FC = () => {
+const Authorship: React.FC<{props: RuntimeProps}> = ({props}) => {
+    const urls = props.URLS;
     return (
-        <Card sx={{ width: "90vw", maxWidth: "800px", mb: 1 }}>
+        <Card sx={{ width: "90vw", maxWidth: "80vw", mb: 1 }}>
             <CardContent>
                 <Typography variant="h5" gutterBottom>
                     Authorship
@@ -22,15 +24,36 @@ const Authorship: React.FC = () => {
                     </ListItem>
                         <ListItem >
                 If you have the paper password, use
-                <Link href="/auth/need-paper-password"> the Claim Ownership with a password form</Link>.
+                <Link href={urls.needPaperPassword}> the Claim Ownership with a password form</Link>.
                         </ListItem>
                         <ListItem >
                 If you do not have the paper password or are claiming multiple papers, use
-                <Link href="/auth/request-ownership"> the Claim Authorship form</Link>.
+                <Link href={urls.requestOwnership}> the Claim Authorship form</Link>.
                         </ListItem>
                         <ListItem >
-                For more information, see the help page on <Link href="https://info.arxiv.org/help/authority"> authority records</Link>.
+                For more information, see the help page on <Link href={urls.authorityRecord}> authority records</Link>.
                             </ListItem>
+                        <ListItem >
+
+                            <Typography component="span">
+                                You are encouraged to associate your{" "}
+                                <Link href={urls.authorIdentifier}>ORCID</Link>{" "}
+                                <Link href={urls.orcidOrg}>
+                                    <img
+                                        src="/static/images/icons/orcid_16x16.png"
+                                        alt="ORCID logo"
+                                        style={{ position: "relative", bottom: "-3px" }}
+                                    />
+                                </Link>{" "}
+                                with your arXiv account. ORCID iDs are standard, persistent identifiers for
+                                research authors. ORCID iDs will gradually supersede the role of the arXiv{" "}
+                                <Link href={urls.authorIdentifier}>
+                                    author identifier
+                                </Link>
+                                . To associate your ORCID iD with your arXiv account, please confirm your
+                                ORCID iD.
+                            </Typography>
+                        </ListItem>
                     </Typography>
 
                 </List>
