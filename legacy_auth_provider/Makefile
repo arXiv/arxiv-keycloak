@@ -39,8 +39,12 @@ venv/lib/python3.12/site-packages/fastapi: venv/bin/poetry
 
 venv/bin/pytest: venv/lib/python3.12/site-packages/fastapi
 
-bootstrap: venv/lib/python3.12/site-packages/fastapi
+bootstrap: setup-$(OS)
 	@echo "nothing to be done"
+
+setup-debian: venv/lib/python3.12/site-packages/fastapi
+
+setup-arch:
 
 docker-image:
 	docker build --progress=plain --platform=linux/amd64 -t ${tag}:latest .

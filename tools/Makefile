@@ -20,8 +20,20 @@ help:
 #-# bootstrap:
 #-#   sets up the tools.
 bootstrap: .bootstrap
-	bash ./install_firefox_esr.sh
+
+.bootstrap: setup-$(OS)
 	touch .bootstrap
+
+setup-debian: .setup-debian
+
+.setup-debian: venv/bin/poetry
+	bash ./install_firefox_esr.sh
+	touch .setup-debian
+
+setup-arch: .setup-arch
+
+.setup-arch:
+	touch .setup-arch
 
 venv:
 	python3.12 -m venv venv
@@ -29,9 +41,6 @@ venv:
 venv/bin/poetry: venv
 	. venv/bin/activate && pip install poetry
 	. venv/bin/activate && poetry install
-
-.bootstrap: venv/bin/poetry
-	touch .bootstrap
 
 #-#
 #-# load-arxiv-test-db-schema:
