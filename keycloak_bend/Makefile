@@ -18,17 +18,28 @@ all: .env.localdb
 #-#   bootstraps the environment
 bootstrap: .bootstrap
 
-.bootstrap: ./cert/dev-authdb-client-cert.pem ./keycloak-cert/keycloak-self-signed.jks
+.bootstrap: ./cert/dev-authdb-client-cert.pem ./keycloak-cert/keycloak-self-signed.jks setup-$(OS)
+	touch .bootstrap
+
+setup-debian: .setup-debian
+
+.setup-debian:
 	pyenv install -s 3.12
 	if ! dpkg -l | grep -q docker-compose-plugin; then sudo apt install -y docker-compose-plugin; fi
 	${MAKE} venv/bin/poetry
-	touch .bootstrap
+	touch .setup-debian
+
+setup-arch: .setup-arch
+
+.setup-arch:
+	touch .setup-arch
 
 ./cert/dev-authdb-client-cert.pem:
 	cd ./cert/ && ${MAKE} 
 
 ./keycloak-cert/keycloak-self-signed.jks:
-	cd ./keycloak-cert/ && ${MAKE} 
+	echo "THIS DIRECTORY IS MISSING: keycloak-cert/"
+	# cd ./keycloak-cert/ && ${MAKE} 
 
 
 venv:
@@ -82,7 +93,7 @@ pubsub-listener/keycloak-to-pubsub-jar-with-dependencies.jar:
 #-# proxy:
 #-#  Starts proxy connection to dev auth db using port 3030
 proxy:
-	/usr/local/bin/cloud-sql-proxy --address 0.0.0.0 --port 3030 arxiv-development:us-central1:authdb > /dev/null 2>&1 &
+	cloud-sql-proxy --address 0.0.0.0 --port 3030 arxiv-development:us-central1:authdb > /dev/null 2>&1 &
 
 #-#
 #-# sql:

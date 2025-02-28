@@ -178,7 +178,10 @@ cython_debug/
 
 \#*
 
+.python-version
 .bootstrap
+.setup-arch
+.setup-debian
 foo.txt
 *~
 /tools/geckodriver-v0.35.0-linux64.tar.gz

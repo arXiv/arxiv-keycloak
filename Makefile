@@ -49,15 +49,22 @@ help:
 #-#   bootstraps the environment
 bootstrap: .bootstrap
 
-.bootstrap: tests/data/sanitized-test-db.sql
-	# To non-Debian Linux user - You may have to do something about this.
-	# libmysqlclient-dev (or equivalent) is required to build the mysql clint
-	# and other mysql client is known to not work with arxiv-base.
-	sudo apt install -y libmysqlclient-dev build-essential python3.12-dev
-	#
-	pyenv install -s 3.12
+.bootstrap: tests/data/sanitized-test-db.sql setup-$(OS)
 	$(call run_in_all_subdirs,bootstrap)
 	touch .bootstrap
+
+setup-debian: .setup-debian
+
+.setup-debian:
+	sudo apt install -y libmysqlclient-dev build-essential python3.12-dev
+	pyenv install -s 3.12
+	$(call run_in_all_subdirs,setup-debian)
+	touch .setup-debian
+
+setup-arch: .setup-arch
+
+.setup-arch:
+	touch .setup-arch
 
 #-#
 #-# docker-image:
