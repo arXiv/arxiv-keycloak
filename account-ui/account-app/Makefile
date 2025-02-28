@@ -46,7 +46,7 @@ help:
 #-# Command: bootstrap
 #-#   installs packages
 
-boostsrap: .bootstrap
+bootstrap: .bootstrap
 
 .bootstrap:
 	npm install
