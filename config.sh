@@ -156,7 +156,21 @@ if [ ! -r .env.localdb ] ; then
     echo ACCOUNT_PORTAL_APP_PORT=21514 >>  .env.localdb
     echo ACCOUNT_PORTAL_APP_TAG=gcr.io/arxiv-development/arxiv-keycloak/account-portal  >>  .env.localdb
     echo ACCOUNT_PORTAL_APP_NAME=account-portal >> .env.localdb
+
     #
+    # Do OS detection so that we can have automatic setup / install on Debian (at least)
+    #
+    OS=${OS:-unknown}
+    if [[ $OSTYPE == 'linux'* ]] ; then
+        if [ -r /etc/debian_version ] ; then
+            OS=debian
+        elif [ -r /etc/arch-release ] ; then
+            OS=arch
+        fi
+    elif [[ $OSTYPE == 'darwin'* ]] ; then
+        OS=macos
+    fi
+    echo OS=$OS >> .env.localdb
 
 fi
 

@@ -7,8 +7,18 @@ tag := ${KC_TAPIR_BRIDGE_DOCKER_TAG}
 
 bootstrap: .bootstrap
 
-.bootstrap: venv/lib/python3.12/site-packages/google
+.bootstrap: setup-$(OS)
 	touch $@
+
+setup-debian: .setup-debian
+
+.setup-debian: venv/lib/python3.12/site-packages/google
+	touch .setup-debian
+
+setup-arch: .setup-arch
+
+.setup-arch:
+	touch .setup-arch
 
 venv:
 	python3.12 -m venv venv
