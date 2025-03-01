@@ -166,7 +166,7 @@ const ChangeEmail = () => {
                     <Box component="form" sx={{ display: "flex", flexDirection: "column", gap: 2 }} onSubmit={handleSubmit}>
                         <input name="user_id" id="user_id" type="text" disabled={true} value={formData.user_id} hidden={true}/>
                         <Typography>
-                            Your current e-mail address is nt385@cornell.edu. Enter your new e-mail address into the following form; we'll send a verification code to your new e-mail address which you can use to make the change.
+                            Your current e-mail address is {emailAddress}. Enter your new e-mail address into the following form; we'll send a verification code to your new e-mail address which you can use to make the change.
                         </Typography>
                         <Box>
                             <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Old Email"}</Typography>
