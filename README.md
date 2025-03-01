@@ -67,6 +67,12 @@ The audit events includes the user's demographic such as names, emails, URLs.
     make docker-image
     make up
 
+    cd ~/arxiv/arxiv-admin-console
+    ln -s ../arxiv-keycloak/.env .env
+    make bootstrap
+    make docker-image
+    make up
+
 - Bootstrap
 - Build Docker Images
 - Run Dockers with docker compose
@@ -75,6 +81,9 @@ Before you start, you need 1password CLI. The config.sh gets a few values from
 1P and populates the values in .env.localdb.
 
 At the root (arxiv-keycloak) directory, `make bootstrap`. See .env below.
+
+
+
 
 ## .env
 

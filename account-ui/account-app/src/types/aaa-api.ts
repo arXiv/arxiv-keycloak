@@ -133,6 +133,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/well-known": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Token Names */
+        get: operations["get_token_names_well_known_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/check-db": {
         parameters: {
             query?: never;
@@ -158,10 +175,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Info
+         * Get Current User Info
          * @description Hit the db and get user info
          */
-        get: operations["info_account_info_current_get"];
+        get: operations["get_current_user_info_account_info_current_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -170,19 +187,36 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/account/info/id:str": {
+    "/account/profile/{user_id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * Info
-         * @description Hit the db and get user info
-         */
-        get: operations["info_account_info_id_str_get"];
+        /** Get User Profile */
+        get: operations["get_user_profile_account_profile__user_id__get"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/account/profile/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Account Profile
+         * @description Update the user account profile for both Keycloak and user in db
+         */
+        put: operations["update_account_profile_account_profile__put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -201,10 +235,10 @@ export interface paths {
         get: operations["get_register_account_register__get"];
         put?: never;
         /**
-         * Register
+         * Register Account
          * @description Create a new user
          */
-        post: operations["register_account_register__post"];
+        post: operations["register_account_account_register__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -220,8 +254,51 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Email Verify Requset */
+        /**
+         * Email Verify Requset
+         * @description Request to send verify email
+         */
         post: operations["email_verify_requset_account_email_verify__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/account/email/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change Email
+         * @description Request to change email
+         */
+        put: operations["change_email_account_email__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/account/password/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change User Password
+         * @description Update user password
+         */
+        put: operations["change_user_password_account_password__put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -305,7 +382,7 @@ export interface components {
             /** Username */
             username: string;
             /** Email */
-            email: string;
+            email: string | null;
             /** First Name */
             first_name: string;
             /** Last Name */
@@ -325,12 +402,11 @@ export interface components {
             joined_date: number | null;
             /** Oidc Id */
             oidc_id: string | null;
-            /** Career Status */
-            career_status: string;
+            career_status: components["schemas"]["CAREER_STATUS"] | null;
             /** Id */
             id: string;
             /** Email Verified */
-            email_verified: boolean;
+            email_verified: boolean | null;
             /** Scopes */
             scopes: string[] | null;
         };
@@ -338,13 +414,15 @@ export interface components {
         AccountRegistrationError: {
             /** Message */
             message: string;
+            /** Field Name */
+            field_name?: string | null;
         };
         /** AccountRegistrationModel */
         AccountRegistrationModel: {
             /** Username */
             username: string;
             /** Email */
-            email: string;
+            email: string | null;
             /** First Name */
             first_name: string;
             /** Last Name */
@@ -364,8 +442,7 @@ export interface components {
             joined_date: number | null;
             /** Oidc Id */
             oidc_id: string | null;
-            /** Career Status */
-            career_status: string;
+            career_status: components["schemas"]["CAREER_STATUS"] | null;
             /** Password */
             password: string;
             /** Origin Ip */
@@ -382,6 +459,11 @@ export interface components {
              */
             keycloak_migration: boolean;
         };
+        /**
+         * CAREER_STATUS
+         * @enum {string}
+         */
+        CAREER_STATUS: "Unknown" | "Staff" | "Professor" | "Post Doc" | "Grad Student" | "Other";
         /** CaptchaTokenReplyModel */
         CaptchaTokenReplyModel: {
             /** Token */
@@ -394,10 +476,30 @@ export interface components {
             /** Subject Class */
             subject_class: string;
         };
+        /** ChangePasswordModel */
+        ChangePasswordModel: {
+            /** User Id */
+            user_id: string;
+            /** Old Password */
+            old_password: string;
+            /** New Password */
+            new_password: string;
+        };
         /** EmailModel */
         EmailModel: {
+            /** User Id */
+            user_id: string;
             /** Email */
             email: string;
+        };
+        /** EmailUpdateModel */
+        EmailUpdateModel: {
+            /** User Id */
+            user_id: string;
+            /** Email */
+            email: string;
+            /** New Email */
+            new_email: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -440,6 +542,25 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** WellKnownServices */
+        WellKnownServices: {
+            /** Arxiv Base Url */
+            arxiv_base_url: string;
+            /** Account */
+            account: string;
+            /** Login */
+            login: string;
+            /** Logout */
+            logout: string;
+            /** Account Registration */
+            account_registration: string;
+            /** Change Password */
+            change_password: string;
+            /** Password Recovery */
+            password_recovery: string;
+            /** Oidc Url */
+            oidc_url: string;
         };
     };
     responses: never;
@@ -623,6 +744,26 @@ export interface operations {
             };
         };
     };
+    get_token_names_well_known_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WellKnownServices"];
+                };
+            };
+        };
+    };
     check_db_check_db_get: {
         parameters: {
             query?: never;
@@ -643,7 +784,7 @@ export interface operations {
             };
         };
     };
-    info_account_info_current_get: {
+    get_current_user_info_account_info_current_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -663,16 +804,49 @@ export interface operations {
             };
         };
     };
-    info_account_info_id_str_get: {
+    get_user_profile_account_profile__user_id__get: {
         parameters: {
-            query: {
-                id: string;
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
             };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountInfoModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_account_profile_account_profile__put: {
+        parameters: {
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountInfoModel"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -714,7 +888,7 @@ export interface operations {
             };
         };
     };
-    register_account_register__post: {
+    register_account_account_register__post: {
         parameters: {
             query?: never;
             header?: never;
@@ -775,6 +949,72 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["EmailModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_email_account_email__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailUpdateModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_user_password_account_password__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordModel"];
             };
         };
         responses: {
