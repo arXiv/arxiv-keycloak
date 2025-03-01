@@ -11,7 +11,7 @@ import {RuntimeProps} from "../RuntimeContext.tsx";
 const Authorship: React.FC<{props: RuntimeProps}> = ({props}) => {
     const urls = props.URLS;
     return (
-        <Card sx={{ width: "90vw", maxWidth: "80vw", mb: 1 }}>
+        <Card sx={{ maxWidth: "lg", mb: 1 }}>
             <CardContent>
                 <Typography variant="h5" gutterBottom>
                     Authorship
