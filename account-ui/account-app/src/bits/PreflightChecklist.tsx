@@ -38,7 +38,7 @@ const PreflightChecklist: React.FC<{runtimeProps: RuntimeProps}> = ({runtimeProp
     const urls = runtimeProps.URLS;
 
     return (
-        <Card sx={{ mb: 3, mt: 3, width: "80vw" }}>
+        <Card sx={{ mb: 2, mt: 2, width: "md" }}>
             <CardContent>
                 <Typography variant="h5" gutterBottom>
                     Preflight Checklist for New Submissions
