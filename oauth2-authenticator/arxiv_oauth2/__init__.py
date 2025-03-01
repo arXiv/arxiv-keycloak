@@ -86,6 +86,12 @@ async def get_current_user(request: Request) -> ArxivUserClaims | None:
     return user
 
 
+def get_current_user_access_token(request: Request) -> str | None:
+    logger = getLogger(__name__)
+    kc_cookie_key = request.app.extra[COOKIE_ENV_NAMES.arxiv_keycloak_cookie_env]
+    return request.cookies.get(kc_cookie_key)
+
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False)
 def get_db():
     """Dependency for fastapi routes"""

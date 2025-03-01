@@ -11,6 +11,7 @@ import Button from '@mui/material/Button';
 import { useNavigate } from "react-router-dom";
 import {useContext} from "react"; // Ensure this is correct
 import {RuntimeContext} from "../RuntimeContext";
+import Link from "@mui/material/Link";
 
 
 const pages = [
@@ -61,8 +62,10 @@ const ArxivAppBar = () => {
     <AppBar position="sticky" sx={{backgroundColor: '#B31B1B'}}>
         <Container maxWidth="xl">
             <Toolbar disableGutters>
+                <Link href={runtimeProps.URLS.arXiv}>
                 <img src="/user-account/static/images/arxiv-logo-one-color-white.svg?react" width="85"
                      alt="arXiv Logo" aria-label="arxiv-logo" />
+                </Link>
                 <Box sx={{width: 20}}/>
                 <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
                     {pages.map((page) => (

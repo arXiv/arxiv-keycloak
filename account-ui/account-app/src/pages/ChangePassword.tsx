@@ -1,17 +1,116 @@
+import {useContext, useEffect, useState} from "react";
 import Typography from "@mui/material/Typography";
 import Button  from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
-import Link from "@mui/material/Link";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Container from "@mui/material/Container";
-
-import {Link as RouterLink} from "react-router-dom";
 import Tooltip from "@mui/material/Tooltip";
 import PasswordRequirements from "../bits/PasswordRequirements.tsx";
 
+import {RuntimeContext} from "../RuntimeContext";
+import {useNotification} from "../NotificationContext";
+
+import {paths} from "../types/aaa-api.ts";
+import {passwordValidator} from "../bits/validators.ts";
+
+// type AccountProfileRequest = paths["/account/profile/{user_id}"]['get']['responses']['200']['content']['application/json'];
+type ChangePasswordRequest = paths["/account/password/"]['put']['requestBody']['content']['application/json'];
+
 const ChangePassword = () => {
+    const runtimeProps = useContext(RuntimeContext);
+    const user = runtimeProps.currentUser;
+    const {showNotification} = useNotification();
+    const [inProgress, setInProgress] = useState(false);
+
+    const [formData, setFormData] = useState<ChangePasswordRequest>({
+        user_id: "",
+        old_password: "",
+        new_password: "",
+    });
+
+    const [errors, setErrors] = useState<{
+        old_password?: string,
+        new_password?: string,
+        secondPassword?: string,
+    }>({old_password: "Not provided", new_password: "Not provided", secondPassword: "Not provided", });
+
+    useEffect(() => {
+        async function doSetCurrentUserID() {
+            if (!user)
+                return;
+            setFormData({...formData, user_id: user.id });
+        }
+        doSetCurrentUserID();
+    }, [user])
+
+
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        console.log("change password");
+        setInProgress(true);
+        event.preventDefault();
+
+        try {
+            const response = await fetch(runtimeProps.AAA_URL + "/account/password/", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(formData),
+            });
+
+            if (!response.ok) {
+                const errorReply =await response.json();
+                console.error(response.statusText);
+                showNotification(errorReply.detail, "warning");
+                return;
+            }
+
+            showNotification("Password updated successfully", "success");
+        } catch (error) {
+            console.error("Error:", error);
+            showNotification(JSON.stringify(error), "warning");
+        }
+        finally {
+            setInProgress(false);
+        }
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const {name, value} = e.target;
+        console.log("change: " + name + " = " + value)
+
+        if (name === "secondPassword") {
+
+        } else {
+            setFormData({
+                ...formData,
+                [name]: value,
+            });
+        }
+
+        if (name === "old_password") {
+            const tip = value ? "" : "Invalid password";
+            setErrors({...errors, old_password: tip});
+        }
+
+        if (name === "new_password") {
+            const tip = passwordValidator(value) ? "" : "Invalid password";
+            setErrors({...errors, new_password: tip});
+        }
+
+        if (name === "secondPassword") {
+            const tip = value === formData.new_password ? "" : "Passwords do not match password";
+            setErrors({...errors, secondPassword: tip});
+        }
+    };
+
+    const invalidFormData = Object.values(errors).some(value =>
+        Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && value !== ''
+    );
+
+
     return (
         <Container maxWidth="sm" sx={{ mt: 2 }}>
             <Typography variant={"h5"}>Login to arXiv.org </Typography>
@@ -64,29 +163,37 @@ const ChangePassword = () => {
                 </Box>
 
                 <CardContent>
-                    <Box component="form" sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <Box component="form" sx={{ display: "flex", flexDirection: "column", gap: 2 }} onSubmit={handleSubmit}>
+                        <PasswordRequirements />
+                        <input name="user_id" id="user_id" type="text" disabled={true} value={formData.user_id} hidden={true}/>
                         <Box>
                             <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Old Password"}</Typography>
-                            <TextField id="old-password" label="Old Password" type="password" variant="outlined" fullWidth />
+                            <TextField name="old_password" id="old_password" label="Old Password" type="password"
+                                       variant="outlined" fullWidth onChange={handleChange} value={formData.old_password}
+                                       error={Boolean(errors.old_password)} helperText={errors.old_password} />
                         </Box>
                         <Box>
                             <Typography fontWeight={"bold"} sx={{mb: 1}}>{"New Password"}</Typography>
                             <Tooltip title={<PasswordRequirements />}>
-                                <TextField id="new-password" label="New Password" type="password" variant="outlined" fullWidth />
+                                <TextField name="new_password" id="new_password" label="New Password" type="password"
+                                           variant="outlined" fullWidth onChange={handleChange} value={formData.new_password}
+                                           error={Boolean(errors.new_password)} helperText={errors.new_password} />
                             </Tooltip>
                         </Box>
                         <Box>
                             <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Retype Password"}</Typography>
                             <Tooltip title={<PasswordRequirements />}>
-                                <TextField id="password-new" label="Retype Password" type="password" variant="outlined" fullWidth />
+                                <TextField name="secondPassword" label="Retype Password" type="password" variant="outlined" fullWidth onChange={handleChange}
+                                           error={Boolean(errors.secondPassword)} helperText={errors.secondPassword}
+                                />
                             </Tooltip>
                         </Box>
 
                         <Box display="flex" justifyContent="space-between" alignItems="center">
-                            <Button variant="contained" sx={{
+                            <Button type="submit" variant="contained" sx={{
                                 backgroundColor: "#1976d2",
                                 "&:hover": { backgroundColor: "#1420c0"
-                                } }}>
+                                } }} disabled={invalidFormData || inProgress}>
                                 Submit
                             </Button>
                         </Box>

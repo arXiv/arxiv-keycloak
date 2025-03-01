@@ -1,4 +1,4 @@
-import React, {useCallback, useContext, useState} from "react";
+import React, {useCallback, useContext, useEffect, useState} from "react";
 import Container from '@mui/material/Container'
 import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
@@ -24,6 +24,7 @@ import YesNoDialog from "../bits/YesNoDialog.tsx";
 // import SubmissionsTable from "../bits/SubmissionsTable.tsx";
 import Switch from "@mui/material/Switch";
 import YourSubmissions from "../components/YourSubmissions.tsx";
+import {useNotification} from "../NotificationContext.tsx";
 
 
 const VerifyEmailButton: React.FC<{ runtimeProps: RuntimeProps }> = ({ runtimeProps }) => {
@@ -81,6 +82,8 @@ const VerifyEmailButton: React.FC<{ runtimeProps: RuntimeProps }> = ({ runtimePr
 const AccountSettings = () => {
     const runtimeProps = useContext(RuntimeContext);
     const user = runtimeProps.currentUser;
+    const {showMessageDialog} = useNotification();
+
     let url = user?.url || "https://arxiv.org";
 
     console.log(JSON.stringify(user));
@@ -96,6 +99,11 @@ const AccountSettings = () => {
             <NofificationIcon />
         </Tooltip>
     );
+
+    useEffect(() => {
+        if (!runtimeProps.currentUser)
+            showMessageDialog("You are not logged in to use see your account.", "Please log in");
+    }, [runtimeProps.currentUser]);
 
 
     return (

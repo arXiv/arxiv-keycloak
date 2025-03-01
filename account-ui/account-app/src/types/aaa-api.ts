@@ -167,7 +167,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/account/info/current": {
+    "/account/current": {
         parameters: {
             query?: never;
             header?: never;
@@ -178,7 +178,7 @@ export interface paths {
          * Get Current User Info
          * @description Hit the db and get user info
          */
-        get: operations["get_current_user_info_account_info_current_get"];
+        get: operations["get_current_user_info_account_current_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -784,7 +784,7 @@ export interface operations {
             };
         };
     };
-    get_current_user_info_account_info_current_get: {
+    get_current_user_info_account_current_get: {
         parameters: {
             query?: never;
             header?: never;

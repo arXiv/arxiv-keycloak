@@ -27,7 +27,7 @@ from arxiv.auth.legacy.exceptions import RegistrationFailed
 from arxiv.auth.legacy import accounts, passwords
 
 from . import get_current_user_or_none, get_db, get_keycloak_admin, stateless_captcha, \
-    get_client_host, sha256_base64_encode  # , get_client_host
+    get_client_host, sha256_base64_encode, get_current_user_access_token  # , get_client_host
 # from . import stateless_captcha
 from .captcha import CaptchaTokenReplyModel, get_captcha_token
 from .stateless_captcha import InvalidCaptchaToken, InvalidCaptchaValue
@@ -198,7 +198,7 @@ def reply_account_info(session: Session, id: str) -> AccountInfoModel:
     return account
 
 
-@router.get('/info/current', description="")
+@router.get('/current', description="")
 async def get_current_user_info(current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
                session: Session = Depends(get_db)
           ) -> AccountInfoModel:
@@ -337,15 +337,15 @@ async def register_account(
     except InvalidCaptchaToken:
         logger.warning(f"Registration: captcha token is invalid {registration.token!r} {host!r}")
         detail = AccountRegistrationError(message="Captcha token is invalid. Restart the registration")
-        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail.model_dump())
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail.model_dump())
 
     except InvalidCaptchaValue:
         logger.info(f"Registration: wrong captcha value {registration.token!r} {host!r} {registration.captcha_value!r}")
         detail = AccountRegistrationError(message="Captcha answer is incorrect.")
-        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail.model_dump())
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail.model_dump())
 
     if not validate_password(registration.password):
-        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password is invalid")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password is invalid")
 
     client_secret = request.app.extra['ARXIV_USER_SECRET']
 
@@ -353,7 +353,7 @@ async def register_account(
         data: Optional[TapirNickname] = session.query(TapirNickname).filter(TapirNickname.nickname == registration.username).one_or_none()
         if not data:
             error_response = AccountRegistrationError(message="Username is not found", field_name="username")
-            return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_response.model_dump())
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_response.model_dump())
         account = get_account_info(session, str(data.user_id))
         # Rather than creating user, let the legacy user migration create the account.
         _migrate_to_keycloak(kc_admin, account, registration.password, client_secret)
@@ -405,7 +405,7 @@ async def register_account(
                 where = {"nickname": "User name", "email": "Email"}.get(field, field)
                 message = f"'{match.group(1)}' for '{where}' belongs to an existing user."
             error_response = AccountRegistrationError(message=message, field_name=where)
-            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_response.model_dump())
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_response.model_dump())
         logger.info("Tapir user account created successfully. Next is Keycloak.")
         account = get_account_info(session, user.user_id)
         # _register_to_keycloak(kc_admin, account)
@@ -413,7 +413,7 @@ async def register_account(
 
     if not account:
         error_response = AccountRegistrationError(message="The account not found.")
-        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_response.model_dump())
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_response.model_dump())
 
     logger.info("User account created successfully")
     return account
@@ -551,18 +551,18 @@ def change_email(
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
         ):
     if current_user is None:
-        return HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     user: TapirUser|None = session.query(TapirUser).filter(TapirUser.email == body.email).one_or_none()
     if not user:
-        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Old email does not exist")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Old email does not exist")
 
     other_user: TapirUser|None = session.query(TapirUser).filter(TapirUser.email == body.new_email).one_or_none()
     if other_user:
-        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New email already exists")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New email already exists")
 
     if current_user.user_id != user.user_id and not current_user.is_admin:
-        return HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     user.email = body.new_email
     user.flag_email_verified = False
@@ -592,8 +592,10 @@ class ChangePasswordModel(BaseModel):
 
 
 def kc_check_old_password(kc_admin: KeycloakAdmin, idp: ArxivOidcIdpClient,
-                          username: str, old_password: str, ssl_verify: bool) -> bool:
-    """Check if the given old password is correct."""
+                          username: str, old_password: str) -> bool:
+    """Check if the given old password is correct. However, this requires the direct access (username/password)
+    grant and thus avoid.
+    """
     keycloak_openid = KeycloakOpenID(
         server_url=kc_admin.connection.server_url,
         client_id=idp.client_id,
@@ -609,11 +611,31 @@ def kc_check_old_password(kc_admin: KeycloakAdmin, idp: ArxivOidcIdpClient,
         return False
 
 
+async def kc_validate_access_token(kc_admin: KeycloakAdmin, idp: ArxivOidcIdpClient, access_token: str) -> bool:
+    """Validate an access token using Keycloak's introspection endpoint."""
+    introspect_url = f"{kc_admin.connection.server_url}/realms/{idp.realm}/protocol/openid-connect/token/introspect"
+    data = {
+        "token": access_token,
+        "client_id": idp.client_id,
+        "client_secret": idp.client_secret,
+    }
+
+    async with httpx.AsyncClient(verify=idp._ssl_cert_verify) as client:
+        response = await client.post(introspect_url, data=data)
+
+    if response.status_code == 200:
+        token_info = response.json()
+        return token_info.get("active", False)  # 'active' tells whether the token is valid
+
+    return False
+
+
 @router.put('/password/', description="Update user password")
 async def change_user_password(
     request: Request,
     data: ChangePasswordModel,
     current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
+    access_token: Optional[str] = Depends(get_current_user_access_token),
     session: Session = Depends(get_db),
     kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ):
@@ -625,24 +647,24 @@ async def change_user_password(
                 sha256_base64_encode(data.old_password), sha256_base64_encode(data.new_password))
 
     if not current_user:
-        return HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
-    if not validate_password(data.old_password):
-        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Old password is invalid")
+    if len(data.old_password) < 8:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Old password is invalid")
 
     if not validate_password(data.new_password):
-        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New password is invalid")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New password is invalid")
 
-    if not current_user.is_admin or current_user.user_id != data.user_id:
-        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Not allowed")
+    if (current_user.user_id != data.user_id) and (not current_user.is_admin):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Not allowed. User ID: %s" % data.user_id)
 
     user: TapirUser|None = session.query(TapirUser).filter(TapirUser.user_id == data.user_id).one_or_none()
     if not user:
-        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user id")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user id")
 
     nick: TapirNickname | None = session.query(TapirNickname).filter(TapirNickname.user_id == data.user_id).one_or_none()
     if nick is None:
-        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user id")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user id")
 
     pwd: TapirUsersPassword | None = session.query(TapirUsersPassword).filter(TapirUsersPassword.user_id == data.user_id).one_or_none()
     if pwd is None:
@@ -657,25 +679,26 @@ async def change_user_password(
     # try:
     #     domain_user, domain_auth = authenticate.authenticate(user.email, data.old_password)
     # except AuthenticationFailed:
-    #     return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password")
+    #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password")
 
     idp = request.app.extra["idp"]
 
-    if not kc_check_old_password(kc_admin, idp, data.old_password):
+    # if not kc_check_old_password(kc_admin, idp, nick.nickname, data.old_password, idp._ssl_cert_verify):
+    if not await kc_validate_access_token(kc_admin, idp, access_token):
         if current_user.user_id == data.user_id:
-            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid old password")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Stale access. Please log out/login again.")
         if not current_user.is_admin:
-            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid old password")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Stale access. Please log out/login again.")
 
     kc_user = kc_admin.get_user(data.user_id)
     if not kc_user:
         # The user has not migrated to KC? Trying to log in should have done the migration
-        return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="The user has not been migrated")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="The user has not been migrated")
 
     try:
         kc_admin.set_user_password(kc_user["id"], data.new_password, temporary=False)
     except Exception as exc:
-        return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Changing password failed")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Changing password failed")
 
     pwd.password_enc = passwords.hash_password(data.new_password)
     session.add(pwd)
