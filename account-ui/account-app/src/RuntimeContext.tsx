@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, } from 'react';
 import CircularProgress from '@mui/material/CircularProgress';
 import {Box} from '@mui/material';
 import {paths} from "./types/aaa-api";
-type User = paths["/account/info/id:str"]["get"]["responses"]["200"]["content"]["application/json"];
+type User = paths["/account/profile/{user_id}"]["get"]["responses"]["200"]["content"]["application/json"];
 
 export interface ArxivSiteURLs {
     privacyPolicy: string;
@@ -21,7 +21,6 @@ export interface ArxivSiteURLs {
     arxivSlack: string;
     emailProtection: string;
     mathJaxHelp: string;
-    passwordRecovery: string;
     needPaperPassword: string;
     requestOwnership: string;
     orcidOrg: string;
@@ -32,6 +31,13 @@ export interface ArxivSiteURLs {
     contact: string;
     subscribe: string;
     license: string;
+
+    // These are user actions. Not really belongs to the site URLs
+    userChangeProfile: string;
+    userPasswordRecovery: string;
+    userChangePassword: string;
+    userChangeEmail: string;
+    userSendEmailVerification: string;
 }
 
 export interface RuntimeProps
@@ -76,7 +82,6 @@ const defaultRuntimeProps : RuntimeProps = {
         arxivSlack: "https://subscribe.sorryapp.com/24846f03/slack/new",
         emailProtection: "https://info.arxiv.org/help/email-protection",
         mathJaxHelp: "https://info.arxiv.org/help/mathjax.html",
-        passwordRecovery: "/password-recovery",
         needPaperPassword: "/auth/need-paper-password",
         requestOwnership: "/auth/request-ownership",
         orcidOrg: "http://orcid.org/",
@@ -87,6 +92,12 @@ const defaultRuntimeProps : RuntimeProps = {
         contact: "/help/contact",
         subscribe: "help/subscribe",
         license: "/help/license",
+
+        userChangeProfile: "/user-account/update-profile",
+        userPasswordRecovery: "/password-recovery",
+        userChangePassword: "/user-account/change-password",
+        userChangeEmail: "/user-account/change-email",
+        userSendEmailVerification: "/send-email-verification",
     },
     currentUser: null
 };

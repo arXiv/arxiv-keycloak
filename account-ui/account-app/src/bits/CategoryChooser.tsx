@@ -5,8 +5,11 @@ import TextField from "@mui/material/TextField";
 import { paths as adminApi } from "../types/admin-api";
 import {RuntimeContext} from "../RuntimeContext";
 import arxivCategories from "./arxivCategories"
+import {paths} from "../types/aaa-api.ts";
 
 export type CategoryType = adminApi["/v1/categories/{id}"]["get"]["responses"]["200"]["content"]["application/json"];
+export type SubmitRequestType = paths["/account/register/"]['post']['requestBody']['content']['application/json'];
+export type SelectedCategoryType = SubmitRequestType["default_category"] | null;
 
 
 type CategoryGroupType = {
@@ -15,13 +18,13 @@ type CategoryGroupType = {
 };
 
 interface CategoryChooserProps {
-    onSelect?: (category: CategoryType | null) => void;
+    onSelect: (category: SelectedCategoryType | null) => void;
+    selectedCategory: SelectedCategoryType;
 }
 
 
-const CategoryChooser: React.FC<CategoryChooserProps> = ({onSelect}) => {
+const CategoryChooser: React.FC<CategoryChooserProps> = ({onSelect, selectedCategory}) => {
     const runtimeContext = useContext(RuntimeContext);
-    const [selectedCategory, setSelectedCategory] = useState<CategoryType | null>(null);
     const [categoryList, setCategoryList] = useState<CategoryType[]>(arxivCategories);
     const [categories, setCategories] = useState<CategoryGroupType[]>([]);
 
@@ -58,13 +61,15 @@ const CategoryChooser: React.FC<CategoryChooserProps> = ({onSelect}) => {
         .sort((a, b) => a.group.localeCompare(b.group));
 
     const selectedOption = categoryOptions.find(
-        (option) => !option.isHeader && option.value.id === selectedCategory?.id
+        (option) => !option.isHeader && option.value.archive === selectedCategory?.archive && option.value.subject_class === selectedCategory.subject_class
     ) ?? null;
 
     const setSelection = (selected: CategoryType | null) => {
-        setSelectedCategory(selected);
-        if (onSelect) {
-            onSelect(selected);
+        if (selected) {
+            onSelect({archive: selected.archive, subject_class: selected.subject_class || ""});
+        }
+        else {
+            onSelect(null);
         }
     }
 

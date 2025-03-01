@@ -7,7 +7,7 @@ import FormGroup from "@mui/material/FormGroup";
 
 // import BolderToggleButton from "./BolderToggleButton.tsx";
 
-export type CategoryGroupType = "flag_group_cs" | "flag_group_econ" | "flag_group_eess" | "flag_group_math" | "flag_group_physics" | "flag_group_q_bio" | "flag_group_q_fin" | "flag_group_stat";
+export type CategoryGroupType = "grp_physics" | "grp_math" | "grp_cs" | "grp_q-econ" | "grp_q-bio" | "grp_q-fin" | "grp_q-stat" | "grp_eess";
 
 const CategoryOption : React.FC<{ value: string, checked: boolean, label: string, callback: (event: React.ChangeEvent<HTMLInputElement>) => void }> = ({value, checked, label, callback}) => {
     return (
@@ -32,14 +32,14 @@ const CategoryGroupSelection : React.FC<{
     };
 
     const choices: {value: CategoryGroupType, label: string}[] = [
-            {value: "flag_group_cs", label: "CS"},
-            {value: "flag_group_econ", label: "Econ"},
-            {value: "flag_group_eess", label: "EESS"},
-            {value: "flag_group_math", label: "Math"},
-            {value: "flag_group_physics", label: "Physics"},
-            {value: "flag_group_q_bio", label: "Q_Bio"},
-            {value: "flag_group_q_fin", label: "Q_Fin"},
-            {value: "flag_group_stat", label: "Stat"}
+            {value: "grp_cs", label: "CS"},
+            {value: "grp_q-econ", label: "Econ"},
+            {value: "grp_eess", label: "EESS"},
+            {value: "grp_math", label: "Math"},
+            {value: "grp_physics", label: "Physics"},
+            {value: "grp_q-bio", label: "Q_Bio"},
+            {value: "grp_q-fin", label: "Q_Fin"},
+            {value: "grp_q-stat", label: "Stat"}
         ];
 
     const prompt = selectedGroups.length == 0 ? (<Typography variant="caption"> Please select at least one </Typography>) : null;

@@ -2,6 +2,8 @@
 from logging import getLogger
 from typing import Optional
 from dataclasses import dataclass
+import hashlib
+import base64
 
 from fastapi import Request, HTTPException, status
 
@@ -163,3 +165,9 @@ async def is_any_user(request: Request) -> bool:
     if user:
         return True
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+
+
+def sha256_base64_encode(input_string: str) -> str:
+    """Hash a string with SHA-256 and return the Base64-encoded result."""
+    sha256_hash = hashlib.sha256(input_string.encode()).digest()
+    return base64.b64encode(sha256_hash).decode()

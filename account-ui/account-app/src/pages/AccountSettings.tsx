@@ -129,12 +129,12 @@ const AccountSettings = () => {
                     </Box>
                 </Box>
                 <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                    <Button component="a" disabled={user === null}
+                            variant="outlined" startIcon={<Edit />} href={runtimeProps.URLS.userChangeProfile}>Change User Information</Button>
                     <Button disabled={user === null}
-                            variant="outlined" startIcon={<Edit />} href="/user-account/edit">Change User Information</Button>
+                            variant="outlined" startIcon={<Lock />} href={runtimeProps.URLS.userChangePassword}>Change Password</Button>
                     <Button disabled={user === null}
-                            variant="outlined" startIcon={<Lock />} href="/user-account/change_own_password">Change Password</Button>
-                    <Button disabled={user === null}
-                            variant="outlined" startIcon={<Email />} href="/user-account/change_email">Change Email</Button>
+                            variant="outlined" startIcon={<Email />} href={runtimeProps.URLS.userChangeEmail}>Change Email</Button>
                     <VerifyEmailButton runtimeProps={runtimeProps} />
                 </Box>
                 <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>

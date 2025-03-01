@@ -1,5 +1,5 @@
 import Box from "@mui/material/Box";
-import Button  from "@mui/material/Button";
+import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -14,12 +14,15 @@ import DialogActions from '@mui/material/DialogActions';
 
 import React, {useCallback, useContext, useEffect, useState} from "react";
 import CategoryGroupSelection, {CategoryGroupType} from "../bits/CategoryGroupSelection.tsx";
-import CategoryChooser, {CategoryType} from "../bits/CategoryChooser.tsx";
+import CategoryChooser, {SelectedCategoryType} from "../bits/CategoryChooser.tsx";
 import CountrySelector from "../bits/CountrySelector.tsx";
-import CareerStatusSelect from "../bits/CareerStatus.tsx";
+import CareerStatusSelect, {CareerStatusType} from "../bits/CareerStatus.tsx";
 import {RuntimeContext} from "../RuntimeContext.tsx";
 import {paths} from "../types/aaa-api.ts";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import {emailValidator, passwordValidator} from "../bits/validators.ts";
+import Tooltip from "@mui/material/Tooltip";
+import PasswordRequirements from "../bits/PasswordRequirements.tsx";
 
 type TokenResponse = paths["/account/register/"]['get']['responses']['200']['content']['application/json'];
 type SubmitRequest = paths["/account/register/"]['post']['requestBody']['content']['application/json'];
@@ -34,7 +37,7 @@ interface PostSubmitDialogProps {
     onConfirm?: () => void;
 }
 
-const PostSubmitActionDialog: React.FC<PostSubmitDialogProps> = ({ title, message, open, onClose, onConfirm }) => {
+const PostSubmitActionDialog: React.FC<PostSubmitDialogProps> = ({title, message, open, onClose, onConfirm}) => {
     return (
         <Dialog open={open} onClose={onClose}>
             <DialogTitle>{title}</DialogTitle>
@@ -65,7 +68,7 @@ const AccountRegistration = () => {
         suffix_name: "",
         affiliation: "",
         country: "",
-        career_status: "",
+        career_status: "Unknown",
         groups: [],
         url: "",
         default_category: {archive: "", subject_class: ""},
@@ -96,23 +99,24 @@ const AccountRegistration = () => {
         captcha_value?: string
     }>({groups: "Please select at least one group", captcha_value: "Please fill"});
 
-    const [captchaImage, setCaptchaImage] = useState<React.ReactNode|null>(null);
+    const [captchaImage, setCaptchaImage] = useState<React.ReactNode | null>(null);
 
     const setSelectedGroups = (groups: CategoryGroupType[]) => {
         setFormData({...formData, groups: groups});
         if (groups.length > 0) {
-            setErrors({ ...errors, groups: "" });
-        }
-        else {
-            setErrors({ ...errors, groups: "Please select at least one group" });
+            setErrors({...errors, groups: ""});
+        } else {
+            setErrors({...errors, groups: "Please select at least one group"});
         }
     }
 
     const [postSubmitDialog, setPostSubmitDialog] = useState<PostSubmitDialogProps>(
         {
             open: false,
-            onClose: () => {},
-            onConfirm: () => {},
+            onClose: () => {
+            },
+            onConfirm: () => {
+            },
             message: "",
             title: ""
         }
@@ -124,8 +128,7 @@ const AccountRegistration = () => {
             setCaptchaImage(
                 <img alt={"captcha"} src={runtimeContext.AAA_URL + `/captcha/image?token=${formData.token}`}/>
             )
-        }
-        else {
+        } else {
             fetch(runtimeContext.AAA_URL + "/account/register/")
                 .then(response => response.json()
                     .then((data: TokenResponse) => setFormData(
@@ -141,11 +144,6 @@ const AccountRegistration = () => {
     }, []);
 
 
-    const validateEmail = (email: string) => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    };
-
     const validateCaptcha = (value: string) => {
         return value.length > 4;
     };
@@ -154,50 +152,59 @@ const AccountRegistration = () => {
         "username": (value: string) => {
             const minUsernameLength = 3;
             if (value.length < minUsernameLength) {
-                setErrors((prev) => ({ ...prev, username: `User name must be minimum of ${minUsernameLength} characters` }));
+                setErrors((prev) => ({
+                    ...prev,
+                    username: `User name must be minimum of ${minUsernameLength} characters`
+                }));
             } else {
-                setErrors((prev) => ({ ...prev, username: undefined }));
+                setErrors((prev) => ({...prev, username: undefined}));
             }
         },
         "password": (value: string) => {
-            if (value.length < 10) {
-                setErrors((prev) => ({ ...prev, password: "Password must be at least 10 characters" }));
+            if (!passwordValidator(value)) {
+                setErrors((prev) => ({
+                    ...prev,
+                    password: `Password is invalid.`
+                }));
             } else {
-                setErrors((prev) => ({ ...prev, password: undefined }));
+                setErrors((prev) => ({...prev, password: undefined}));
             }
         },
         "email": (value: string) => {
-            if (!validateEmail(value)) {
-                setErrors((prev) => ({ ...prev, email: "Invalid email format" }));
+            if (!passwordValidator(value)) {
+                setErrors((prev) => ({
+                    ...prev,
+                    email: `Email is invalid`
+                }));
             } else {
-                setErrors((prev) => ({ ...prev, email: "" }));
+                setErrors((prev) => ({...prev, email: undefined}));
             }
+
         },
         "captcha_value": (value: string) => {
             if (!validateCaptcha(value)) {
                 console.log("X captcha_value = " + value);
-                setErrors((prev) => ({ ...prev, captcha_value: "Not provided" }));
+                setErrors((prev) => ({...prev, captcha_value: "Not provided"}));
             } else {
                 console.log("O captcha_value = " + value);
-                setErrors((prev) => ({ ...prev, captcha_value: undefined }));
+                setErrors((prev) => ({...prev, captcha_value: undefined}));
             }
         }
     }
 
     // Handle text field changes
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
+        const {name, value} = e.target;
         console.log("change: " + name + " = " + value)
 
         if (name === "secondPassword") {
             setSecondPassword(value);
             if (value !== formData.password) {
-                setErrors((prev) => ({ ...prev, secondPassword: "Reentered password does not match" }));
+                setErrors((prev) => ({...prev, secondPassword: "Reentered password does not match"}));
             } else {
-                setErrors((prev) => ({ ...prev, secondPassword: undefined }));
+                setErrors((prev) => ({...prev, secondPassword: undefined}));
             }
-        }
-        else {
+        } else {
             setFormData({
                 ...formData,
                 [name]: value,
@@ -210,7 +217,7 @@ const AccountRegistration = () => {
         }
     };
 
-    const setCarrerStatus = (value: string | null) => {
+    const setCarrerStatus = (value: CareerStatusType | null) => {
         if (value) {
             setFormData({...formData, career_status: value})
         }
@@ -222,12 +229,14 @@ const AccountRegistration = () => {
         }
     };
 
-    const setDefaultCategory = (cat: CategoryType | null) => {
+    const setDefaultCategory = (cat: SelectedCategoryType | null) => {
         if (cat) {
-            setFormData({...formData, default_category: {archive: cat.archive, subject_class: cat.subject_class || "*"}});
+            setFormData({
+                ...formData,
+                default_category: {archive: cat.archive, subject_class: cat.subject_class || "*"}
+            });
         }
     }
-
 
     // Handle form submission
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -255,11 +264,10 @@ const AccountRegistration = () => {
                     title: "Registration Success",
                     message: "Account is registered successfully! Please go to home page, and login.",
                     onConfirm: () => {
-                        window.location.href=runtimeContext.POST_USER_REGISTRATION_URL;
+                        window.location.href = runtimeContext.POST_USER_REGISTRATION_URL;
                     },
                 })
-            }
-            else if (response.status === 400) {
+            } else if (response.status === 400) {
                 const reply: RegistrationErrorReply = data as any;
                 setPostSubmitDialog({
                     open: true,
@@ -300,11 +308,11 @@ const AccountRegistration = () => {
     const invalidFormData = hasErrors || formData.username.length < 2 || formData.password.length < 10 || formData.password !== secondPassword;
 
     return (
-        <Container maxWidth="md" sx={{ mt: 2 }} >
+        <Container maxWidth="md" sx={{mt: 2}}>
             <Typography variant={"h5"}>Register for the first time</Typography>
             {/* Privacy Policy Notice */}
-            <Card elevation={3} sx={{ px: 3, py: 2, mb: 2, backgroundColor: "#eeeef8" }}>
-                <Typography variant="body1" fontWeight={"bold"} color="textPrimary" align="left" >
+            <Card elevation={3} sx={{px: 3, py: 2, mb: 2, backgroundColor: "#eeeef8"}}>
+                <Typography variant="body1" fontWeight={"bold"} color="textPrimary" align="left">
                     {"By registering with arXiv you are agreeing to the "}
                     <Link href={runtimeContext.URLS.privacyPolicy} target="_blank" rel="noopener" underline="hover">
                         arXiv Privacy Policy
@@ -314,10 +322,14 @@ const AccountRegistration = () => {
             </Card>
 
             {/* Register once */}
-            <Card elevation={3} sx={{ px: 3, py: 1, mb: 2, backgroundColor: "#F8F8F8" }}>
+            <Card elevation={3} sx={{px: 3, py: 1, mb: 2, backgroundColor: "#F8F8F8"}}>
                 <Typography variant="body1" color="black" align="left">
-                    <Typography fontWeight={"bold"} component="span">{"You should only register with arXiv once: "}</Typography>
-                    arXiv associates papers that you have submitted with your user account. We must retain the information you submit for registration indefinitely in order to preserve the scholarly record, support academic integrity, and prevent abuse of our systems. If you register twice, with different accounts, your submission history will be inaccurate.
+                    <Typography fontWeight={"bold"}
+                                component="span">{"You should only register with arXiv once: "}</Typography>
+                    arXiv associates papers that you have submitted with your user account. We must retain the
+                    information you submit for registration indefinitely in order to preserve the scholarly record,
+                    support academic integrity, and prevent abuse of our systems. If you register twice, with different
+                    accounts, your submission history will be inaccurate.
                 </Typography>
             </Card>
 
@@ -365,72 +377,82 @@ const AccountRegistration = () => {
                     </Typography>
                 </Box>
 
-                <CardContent sx={{py: 0}} >
+                <CardContent sx={{py: 0}}>
                     <Box
                         component="form"
                         onSubmit={handleSubmit}
-                        sx={{ display: "flex", flexDirection: "column", gap: 1 }}
+                        sx={{display: "flex", flexDirection: "column", gap: 1}}
                     >
-                        <Typography variant={"body2"} fontWeight={"bold"} >
+                        <Typography variant={"body2"} fontWeight={"bold"}>
                             Fields with * are required.
                         </Typography>
 
-                        <Box >
+                        <Box>
                             <Typography fontWeight={"bold"}>{"Email: "}</Typography>
                             <Typography sx={{paddingLeft: 3, mb: 1}}>{"You "}
                                 <Typography component="span" fontWeight="bold">{"must"}</Typography>
                                 {" able to receive mail at this address to register. We take "}
-                                <Link href={runtimeContext.URLS.emailProtection} target="_blank" rel="noopener" underline="hover">strong measure</Link>
+                                <Link href={runtimeContext.URLS.emailProtection} target="_blank" rel="noopener"
+                                      underline="hover">strong measure</Link>
                                 {" to protect your email address from viruses and spam. Do not register with an e-mail address that belongs to someone else: if we discover that you've done so, we will suspend your account."}
                             </Typography>
-                            <TextField label="Email *" sx={{ flex: 2 }}
+                            <TextField label="Email *" sx={{flex: 2}}
                                        error={Boolean(errors.email)}
                                        helperText={errors.email}
-                                       name="email" value={formData.email} variant="outlined" fullWidth  onChange={handleChange} />
+                                       name="email" value={formData.email} variant="outlined" fullWidth
+                                       onChange={handleChange}/>
                         </Box>
                         <Box>
                             <Typography fontWeight={"bold"} sx={{mb: 1}}>{"User name: "}</Typography>
-                        <Box sx={{ display: "flex", gap: 2 }}>
-                            <TextField label="Username *" sx={{ flex: 1 }}
-                                   error={Boolean(errors.username)}
-                                   helperText={errors.username}
-                                   name="username" value={formData.username} variant="outlined" fullWidth  onChange={handleChange} />
-                        </Box>
+                            <Box sx={{display: "flex", gap: 2}}>
+                                <TextField label="Username *" sx={{flex: 1}}
+                                           error={Boolean(errors.username)}
+                                           helperText={errors.username}
+                                           name="username" value={formData.username} variant="outlined" fullWidth
+                                           onChange={handleChange}/>
+                            </Box>
                         </Box>
                         <Box>
-                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Password and reenter password:  "}</Typography>
-                        <Box sx={{ display: "flex", gap: 2 }}>
-                            <TextField
-                                label="Password *"
-                                error={Boolean(errors.password)}
-                                helperText={errors.password}
-                                name="password"
-                                value={formData.password}
-                                type="password"
-                                variant="outlined"
-                                fullWidth
-                                onChange={handleChange}
-                                sx={{ flex: 1 }} // Ensures both fields take equal width
-                            />
+                            <Typography fontWeight={"bold"}
+                                        sx={{mb: 1}}>{"Password and reenter password:  "}</Typography>
+                            <Box sx={{display: "flex", gap: 2}}>
+                                <Tooltip title={<PasswordRequirements />} >
+                                <TextField
+                                    label="Password *"
+                                    error={Boolean(errors.password)}
+                                    helperText={errors.password}
+                                    name="password"
+                                    value={formData.password}
+                                    type="password"
+                                    variant="outlined"
+                                    fullWidth
+                                    onChange={handleChange}
+                                    sx={{flex: 1}} // Ensures both fields take equal width
+                                />
+                                </Tooltip>
 
-                            <TextField
-                                label="Reenter Password *"
-                                error={Boolean(errors.secondPassword)}
-                                helperText={errors.secondPassword}
-                                name="secondPassword"
-                                value={secondPassword}
-                                type="password"
-                                variant="outlined"
-                                fullWidth
-                                onChange={handleChange}
-                                sx={{ flex: 1 }} // Ensures both fields take equal width
-                            />
+                                <TextField
+                                    label="Reenter Password *"
+                                    error={Boolean(errors.secondPassword)}
+                                    helperText={errors.secondPassword}
+                                    name="secondPassword"
+                                    value={secondPassword}
+                                    type="password"
+                                    variant="outlined"
+                                    fullWidth
+                                    onChange={handleChange}
+                                    sx={{flex: 1}} // Ensures both fields take equal width
+                                />
+                            </Box>
                         </Box>
-                        </Box>
-                        <Box  sx={{ display: "flex", gap: 2 }}>
+                        <Box sx={{display: "flex", gap: 2}}>
                             <Typography variant={"body2"}>
                                 Please supply your correct name and affiliation.
-                                It is a violation of our policies to misrepresent your identity or institutional affiliation. Claimed affiliation should be current in the conventional sense: e.g., physical presence, funding, e-mail address, mention on institutional web pages, etc. Misrepresentation of identity or affiliation, for any reason, is possible grounds for immediate and permanent suspension.
+                                It is a violation of our policies to misrepresent your identity or institutional
+                                affiliation. Claimed affiliation should be current in the conventional sense: e.g.,
+                                physical presence, funding, e-mail address, mention on institutional web pages, etc.
+                                Misrepresentation of identity or affiliation, for any reason, is possible grounds for
+                                immediate and permanent suspension.
                                 <Typography variant={"inherit"} sx={{fontWeight: "bold"}}>
                                     Names and Organization fields accept pidgin TeX (\'o) for foreign characters.
                                 </Typography>
@@ -438,104 +460,108 @@ const AccountRegistration = () => {
                         </Box>
                         <Box>
                             <Typography fontWeight={"bold"} sx={{mb: 1}}>{"First, Last and Sur name:  "}</Typography>
-                        <Box sx={{ display: "flex", gap: 2 }}>
-                            <TextField
-                                label="First name *"
-                                error={Boolean(errors.first_name)}
-                                helperText={errors.first_name}
-                                name="first_name"
-                                value={formData.first_name}
-                                variant="outlined"
-                                fullWidth
-                                onChange={handleChange}
-                                sx={{ flex: 3 }} // Ensures both fields take equal width
-                            />
-                            <TextField
-                                label="Last name *"
-                                error={Boolean(errors.last_name)}
-                                helperText={errors.last_name}
-                                name="last_name"
-                                value={formData.last_name}
-                                variant="outlined"
-                                fullWidth
-                                onChange={handleChange}
-                                sx={{ flex: 3 }} // Ensures both fields take equal width
-                            />
-                            <TextField
-                                label="Sur name"
-                                error={Boolean(errors.suffix_name)}
-                                helperText={errors.suffix_name}
-                                name="suffix_name"
-                                value={formData.suffix_name}
-                                variant="outlined"
-                                fullWidth
-                                onChange={handleChange}
-                                sx={{ flex: 1 }} // Ensures both fields take equal width
-                            />
-                        </Box>
+                            <Box sx={{display: "flex", gap: 2}}>
+                                <TextField
+                                    label="First name *"
+                                    error={Boolean(errors.first_name)}
+                                    helperText={errors.first_name}
+                                    name="first_name"
+                                    value={formData.first_name}
+                                    variant="outlined"
+                                    fullWidth
+                                    onChange={handleChange}
+                                    sx={{flex: 3}} // Ensures both fields take equal width
+                                />
+                                <TextField
+                                    label="Last name *"
+                                    error={Boolean(errors.last_name)}
+                                    helperText={errors.last_name}
+                                    name="last_name"
+                                    value={formData.last_name}
+                                    variant="outlined"
+                                    fullWidth
+                                    onChange={handleChange}
+                                    sx={{flex: 3}} // Ensures both fields take equal width
+                                />
+                                <TextField
+                                    label="Sur name"
+                                    error={Boolean(errors.suffix_name)}
+                                    helperText={errors.suffix_name}
+                                    name="suffix_name"
+                                    value={formData.suffix_name}
+                                    variant="outlined"
+                                    fullWidth
+                                    onChange={handleChange}
+                                    sx={{flex: 1}} // Ensures both fields take equal width
+                                />
+                            </Box>
                         </Box>
 
                         <Box>
-                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Organization, Country and Career Status:  "}</Typography>
-                        <Box sx={{ display: "flex", gap: 2 }}>
+                            <Typography fontWeight={"bold"}
+                                        sx={{mb: 1}}>{"Organization, Country and Career Status:  "}</Typography>
+                            <Box sx={{display: "flex", gap: 2}}>
+                                <TextField
+                                    label="Organization *"
+                                    error={Boolean(errors.affiliation)}
+                                    helperText={errors.affiliation}
+                                    name="affiliation"
+                                    value={formData.affiliation}
+                                    variant="outlined"
+                                    fullWidth
+                                    onChange={handleChange}
+                                    sx={{flex: 3}} // Ensures both fields take equal width
+                                />
+                                <CountrySelector onSelect={setCountry} selectedCountry={formData.country || ""}/>
+                                <CareerStatusSelect onSelect={setCarrerStatus} careereStatus={formData.career_status}/>
+                            </Box>
+                        </Box>
+                        <CategoryGroupSelection selectedGroups={formData.groups as unknown as CategoryGroupType[]}
+                                                setSelectedGroups={setSelectedGroups}/>
+                        <Box>
+                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Your default category:  "}</Typography>
+                            <CategoryChooser onSelect={setDefaultCategory} selectedCategory={formData.default_category}/>
+                        </Box>
+                        <Box>
+                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Home page URL:  "}</Typography>
                             <TextField
-                                label="Organization *"
-                                error={Boolean(errors.affiliation)}
-                                helperText={errors.affiliation}
-                                name="affiliation"
-                                value={formData.affiliation}
+                                label="Your Homepage URL"
+                                name="url"
+                                value={formData.url}
                                 variant="outlined"
                                 fullWidth
                                 onChange={handleChange}
-                                sx={{ flex: 3 }} // Ensures both fields take equal width
+                                sx={{flex: 1}}
                             />
-                            <CountrySelector onSelect={setCountry} />
-                            <CareerStatusSelect onSelect={setCarrerStatus} />
-                        </Box>
-                        </Box>
-                        <CategoryGroupSelection selectedGroups={formData.groups as unknown as CategoryGroupType[]} setSelectedGroups={setSelectedGroups} />
-                    <Box>
-                        <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Your default category:  "}</Typography>
-                        <CategoryChooser onSelect={setDefaultCategory} />
-                    </Box>
-                        <Box>
-                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Home page URL:  "}</Typography>
-                        <TextField
-                            label="Your Homepage URL"
-                            name="url"
-                            value={formData.url}
-                            variant="outlined"
-                            fullWidth
-                            onChange={handleChange}
-                            sx={{ flex: 1 }}
-                        />
                         </Box>
 
                         <Box>
                             <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Verification:  "}</Typography>
-                        <Box display="flex" justifyContent="space-between" alignItems="center">
-                            {captchaImage}
-                            <IconButton onClick={resetCaptcha} > <RefreshIcon /></IconButton>
+                            <Box display="flex" justifyContent="space-between" alignItems="center">
+                                {captchaImage}
+                                <IconButton onClick={resetCaptcha}> <RefreshIcon/></IconButton>
 
-                            <TextField
-                                label="Captcha Respones *"
-                                name="captcha_value"
-                                value={formData.captcha_value}
-                                variant="outlined"
-                                helperText={errors.captcha_value}
-                                fullWidth
-                                onChange={handleChange}
-                                sx={{ width: "12em" }}
-                            />
-                            <Box sx={{flex: 1}} />
+                                <TextField
+                                    label="Captcha Respones *"
+                                    name="captcha_value"
+                                    value={formData.captcha_value}
+                                    variant="outlined"
+                                    helperText={errors.captcha_value}
+                                    fullWidth
+                                    onChange={handleChange}
+                                    sx={{width: "12em"}}
+                                />
+                                <Box sx={{flex: 1}}/>
 
-                            <Button type="submit" variant="contained" disabled={invalidFormData} sx={{
-                                backgroundColor: "#1976d2",
-                                "&:hover": { backgroundColor: "#1420c0"
-                                } }} >
-                                Submit
-                            </Button>
-                        </Box>
+                                <Button type="submit" variant="contained" disabled={invalidFormData} sx={{
+                                    backgroundColor: "#1976d2",
+                                    "&:hover": {
+                                        backgroundColor: "#1420c0"
+                                    }
+                                }}>
+                                    Submit
+                                </Button>
+                            </Box>
                         </Box>
                     </Box>
                 </CardContent>

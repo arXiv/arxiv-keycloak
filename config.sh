@@ -15,7 +15,7 @@ if [ ! -r .env.localdb ] ; then
     echo PUBSUB_PROJECT=$PUBSUB_PROJECT  >> .env.localdb
     echo DOCKER_NETWORK=arxiv-network >> .env.localdb
 
-    echo ARXIV_USER_REGISTRATION_URL=${SERVER_URL}/user/registration
+    echo ARXIV_USER_REGISTRATION_URL=${SERVER_URL}/user-account/registration
 
     # IRL, this is a secure "password" for encrypting JWT token
     JWT_SECRET=jwt-secret
