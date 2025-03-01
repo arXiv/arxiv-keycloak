@@ -20,6 +20,7 @@ const ChangeEmail = () => {
     const runtimeProps = useContext(RuntimeContext);
     const user = runtimeProps.currentUser;
     const emailAddress = user?.email || "";
+    const [inProgress, setInProgress] = useState(false);
     const {showNotification, showMessageDialog} = useNotification();
 
     const [formData, setFormData] = useState<ChangeEmailRequest>({
@@ -37,10 +38,12 @@ const ChangeEmail = () => {
         async function doFetchCurrentUser() {
             if (!user)
                 return;
+            setFormData({...formData, user_id: user.id });
             try {
                 const response = await fetch(runtimeProps.AAA_URL + `/account/profile/${user.id}`);
                 if (!response.ok) {
-                    showNotification("Connection to arXiv failed", "error")
+                    const data = await response.json();
+                    showNotification("Connection to arXiv failed. " + data.detail, "error")
                     return;
                 }
                 const profile: AccountProfileRequest = await response.json();
@@ -58,10 +61,10 @@ const ChangeEmail = () => {
         doFetchCurrentUser();
     }, [user])
 
-
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         console.log("change email");
         event.preventDefault();
+        setInProgress(true);
 
         try {
             const response = await fetch(runtimeProps.AAA_URL + "/account/email/", {
@@ -73,7 +76,8 @@ const ChangeEmail = () => {
             });
             if (!response.ok) {
                 console.error(response.statusText);
-                showNotification(response.statusText, "warning");
+                const errorResponse = await response.json();
+                showNotification(errorResponse.detail, "warning");
                 return;
             }
 
@@ -82,6 +86,8 @@ const ChangeEmail = () => {
         } catch (error) {
             console.error("Error:", error);
             showNotification(JSON.stringify(error), "warning");
+        } finally {
+            setInProgress(false);
         }
     };
 
@@ -100,6 +106,10 @@ const ChangeEmail = () => {
             setErrors({...errors, new_email: tip});
         }
     };
+
+    const invalidFormData = Object.values(errors).some(value =>
+        Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && value !== ''
+    );
 
     return (
         <Container maxWidth="sm" sx={{ mt: 0 }}>
@@ -176,7 +186,7 @@ const ChangeEmail = () => {
                             <Button type="submit" variant="contained" sx={{
                                 backgroundColor: "#1976d2",
                                 "&:hover": { backgroundColor: "#1420c0"
-                                } }}>
+                                } }} disabled={invalidFormData || inProgress}>
                                 Submit
                             </Button>
                         </Box>

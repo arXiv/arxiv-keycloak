@@ -267,21 +267,26 @@ const AccountRegistration = () => {
                         window.location.href = runtimeContext.POST_USER_REGISTRATION_URL;
                     },
                 })
-            } else if (response.status === 400) {
-                const reply: RegistrationErrorReply = data as any;
-                setPostSubmitDialog({
-                    open: true,
-                    title: "Registration Unsuccessful",
-                    message: reply.message,
-                    onClose: () => {
-                        setPostSubmitDialog(
-                            {
-                                ...postSubmitDialog,
-                                open: false,
-                            }
-                        )
-                    },
-                });
+            } else {
+                const errorReply =await response.json();
+                showNotification(errorReply.detail, "warning");
+
+                if (response.status === 400) {
+                    const reply: RegistrationErrorReply = data as any;
+                    setPostSubmitDialog({
+                        open: true,
+                        title: "Registration Unsuccessful",
+                        message: reply.message,
+                        onClose: () => {
+                            setPostSubmitDialog(
+                                {
+                                    ...postSubmitDialog,
+                                    open: false,
+                                }
+                            )
+                        },
+                    });
+                }
             }
 
         } catch (error) {

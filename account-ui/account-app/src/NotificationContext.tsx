@@ -7,6 +7,7 @@ import DialogContent from "@mui/material/DialogContent";
 import Typography from "@mui/material/Typography";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
 
 type NotificationType = "success" | "error" | "info" | "warning";
 
@@ -18,7 +19,9 @@ interface NotificationState {
 
 interface NotificationContextType {
     showNotification: (message: string, type: NotificationType) => void;
-    showMessageDialog: (message: string, title: string) => void;
+    showMessageDialog: (message: string, title: string,
+                        onClose?: () => void, onCloseLabel?: string,
+                        onConfirm?: () => void, onConfirmLabel?: string) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -29,7 +32,9 @@ interface MessageDialogState {
     message: string;
     open: boolean;
     onClose?: () => void;
+    onCloseLabel?: string;
     onConfirm?: () => void;
+    onConfirmLabel?: string;
 }
 
 
@@ -54,13 +59,33 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
         setNotification((prev) => ({ ...prev, open: false }));
     };
 
-    const showMessageDialog = (message: string, title: string) => {
-        setMessageDialog({message: message, title: title, open: true});
+    const showMessageDialog = (message: string, title: string,
+                               onClose?: ()=> void, onCloseLabel?: string,
+                               onConfirm?: () => void, onConfirmLabel?: string) => {
+        setMessageDialog({message: message, title: title, open: true, onClose, onCloseLabel, onConfirm, onConfirmLabel});
     }
 
     const handleMessageDialogClose = () => {
+        if (messageDialog.onClose)
+            messageDialog.onClose();
         setMessageDialog((prev) => ({...prev, open: false}));
     }
+
+    const handleMessageDialogConfirm = () => {
+        if (messageDialog.onConfirm)
+            messageDialog.onConfirm();
+        setMessageDialog((prev) => ({...prev, open: false}));
+    }
+
+    const actions =  messageDialog.onClose  && messageDialog.onConfirm ?
+        (<div>
+            <Button onClick={handleMessageDialogConfirm} color="primary">{messageDialog.onConfirmLabel || "Ckay"}</Button>
+            <Box flexGrow={1} />
+            <Button onClick={handleMessageDialogClose} color="secondary">{messageDialog.onCloseLabel || "Cancel"}</Button>
+        </div>)
+        : (
+            <Button onClick={handleMessageDialogClose} color="primary">{messageDialog.onCloseLabel || "Ckay"}</Button>
+        );
 
     return (
         <NotificationContext.Provider value={{ showNotification, showMessageDialog }}>
@@ -83,7 +108,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
                 </DialogContent>
                 <DialogActions>
                     {
-                        <Button onClick={handleMessageDialogClose} color="primary">Okay</Button>
+                        actions
                     }
                 </DialogActions>
             </Dialog>

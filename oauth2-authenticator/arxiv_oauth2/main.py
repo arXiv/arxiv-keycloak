@@ -255,6 +255,6 @@ def create_app(*args, **kwargs) -> FastAPI:
             return result
 
         except Exception as exc:
-            return HTTPException(status_code=500, detail=str(exc))
+            raise HTTPException(status_code=500, detail=str(exc))
 
     return app

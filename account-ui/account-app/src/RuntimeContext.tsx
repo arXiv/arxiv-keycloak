@@ -5,6 +5,7 @@ import {paths} from "./types/aaa-api";
 type User = paths["/account/profile/{user_id}"]["get"]["responses"]["200"]["content"]["application/json"];
 
 export interface ArxivSiteURLs {
+    arXiv: string,
     privacyPolicy: string;
     authorityRecord: string;
     submissionManagementURL: string;
@@ -66,6 +67,7 @@ const defaultRuntimeProps : RuntimeProps = {
     HOME: "https://cornell.edu",
     POST_USER_REGISTRATION_URL: "/",
     URLS: {
+        arXiv: "/",
         privacyPolicy: "https://arxiv.org/help/policies/privacy_policy",
         authorityRecord: "https://info.arxiv.org/help/authority",
         submissionManagementURL: "https://arxiv.org/user/submissions",
@@ -151,7 +153,7 @@ export const RuntimeContextProvider = ({ children } : RuntimeContextProviderProp
                 updateRuntimeEnv(runtime2);
 
                 try {
-                    const reply = await fetch(runtime2.AAA_URL + "/account/info/current");
+                    const reply = await fetch(runtime2.AAA_URL + "/account/current");
                     if (reply.status === 200) {
                         const data = await reply.json();
                         console.log({currentUser: data});
