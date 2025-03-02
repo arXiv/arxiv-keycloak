@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, } from 'react';
 import CircularProgress from '@mui/material/CircularProgress';
 import {Box} from '@mui/material';
 import {paths} from "./types/aaa-api";
-type User = paths["/account/profile/{user_id}"]["get"]["responses"]["200"]["content"]["application/json"];
+export type User = paths["/account/profile/{user_id}"]["get"]["responses"]["200"]["content"]["application/json"];
 
 export interface ArxivSiteURLs {
     arXiv: string,
