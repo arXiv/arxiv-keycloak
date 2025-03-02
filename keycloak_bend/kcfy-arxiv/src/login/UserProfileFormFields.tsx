@@ -604,12 +604,15 @@ function TextareaTag(props: InputFieldByTypeProps) {
 
     return (
         <TextField id={attribute.name}
+                   slotProps={{
+                       htmlInput: {
+                           maxLength: attribute.annotations.inputTypeMaxlength === undefined ? undefined : parseInt(`${attribute.annotations.inputTypeMaxlength}`),
+                           cols: attribute.annotations.inputTypeCols === undefined ? undefined : parseInt(`${attribute.annotations.inputTypeCols}`),
+                           rows: attribute.annotations.inputTypeRows === undefined ? undefined : parseInt(`${attribute.annotations.inputTypeRows}`)
+                       }}}
                    name={attribute.name}
                    aria-invalid={displayableErrors.length !== 0}
                    disabled={attribute.readOnly}
-                   cols={attribute.annotations.inputTypeCols === undefined ? undefined : parseInt(`${attribute.annotations.inputTypeCols}`)}
-                   rows={attribute.annotations.inputTypeRows === undefined ? undefined : parseInt(`${attribute.annotations.inputTypeRows}`)}
-                   maxLength={attribute.annotations.inputTypeMaxlength === undefined ? undefined : parseInt(`${attribute.annotations.inputTypeMaxlength}`)}
                    value={value}
                    onChange={event =>
                        dispatchFormAction({
