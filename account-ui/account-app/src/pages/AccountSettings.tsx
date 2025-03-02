@@ -105,10 +105,9 @@ const AccountSettings = () => {
             showMessageDialog("You are not logged in to use see your account.", "Please log in");
     }, [runtimeProps.currentUser]);
 
-
     return (
-        <Container maxWidth="md" sx={{ mt: 3 }}>
-            <Paper elevation={3} sx={{ p: 3, width: "95%" }}>
+        <Container maxWidth={"md"} sx={{ mt: 0 }}>
+            <Paper elevation={3} sx={{ p: 3}}>
                 <Typography variant="h4" gutterBottom>
                     Your arXiv.org Account
                 </Typography>

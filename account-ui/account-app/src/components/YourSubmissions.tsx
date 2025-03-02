@@ -185,7 +185,7 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimeProps
     ];
 
     return (
-        <Paper elevation={3} sx={{p: 3, mt: 4, width: "95%"}}>
+        <Paper elevation={3} sx={{p: 3, mt: 4}}>
             <Box display="flex" gap={2} justifyContent="flex-start" mb={1}>
                 <Typography variant="h5" gutterBottom>
                     Your Submissions

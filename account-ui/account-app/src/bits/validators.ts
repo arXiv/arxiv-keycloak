@@ -26,3 +26,7 @@ export function emailValidator(email: string): boolean {
     const emailPattern = /^[\w.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
     return emailPattern.test(email);
 }
+
+export function endorsementCodeValidator(code: string): boolean {
+    return code.length == 6;
+}
