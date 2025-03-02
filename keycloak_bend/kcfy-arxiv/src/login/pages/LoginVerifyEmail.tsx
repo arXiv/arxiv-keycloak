@@ -2,7 +2,8 @@ import type { PageProps } from "keycloakify/login/pages/PageProps";
 import type { KcContext } from "../KcContext";
 import type { I18n } from "../i18n";
 import Container from "@mui/material/Container";
-// import Typography from "@mui/material/Typography";
+import Typography from "@mui/material/Typography";
+import Link from "@mui/material/Link";
 // import PasswordWrapper from "./PasswordWrapper.tsx";
 // import TextField from "@mui/material/TextField";
 import Card from "@mui/material/Card";
@@ -19,6 +20,9 @@ export default function LoginVerifyEmail(props: PageProps<Extract<KcContext, { p
     const { msg } = i18n;
 
     const { url, user } = kcContext;
+    /*
+                        <CardHeader title={msg("emailVerifyTitle")} slotProps={{ title: { fontSize: "1.8rem" } }} />
+     */
 
     return (
         <Template
@@ -30,19 +34,18 @@ export default function LoginVerifyEmail(props: PageProps<Extract<KcContext, { p
             headerNode={null}
             infoNode={null}
         >
-            <Container maxWidth="sm" sx={{ mt: 2 }}>
-                <Card elevation={2} sx={{ p: 1, b: 1 }}>
-                    <CardHeader title={msg("emailVerifyTitle")} slotProps={{ title: { fontSize: "1.8rem" } }} />
-
-                    <p className="instruction">
-                        {msg("emailVerifyInstruction2")}
-                        <br />
-                        <a href={url.loginAction}>{msg("doClickHere")}</a>
-                        &nbsp;
-                        {msg("emailVerifyInstruction3")}
-                    </p>
-
-                    <p className="instruction">{msg("emailVerifyInstruction1", user?.email ?? "")}</p>
+            <Container maxWidth="sm" sx={{ mt: 0 }}>
+                <Card elevation={2} sx={{ py: 0, px: 2 }}>
+                    <CardHeader title={"Please verify your e-mail"} slotProps={{ title: { fontSize: "1.8rem" } }} />
+                    <Typography variant={"body1"} sx={{ fontSize: "1.1em", }}>
+                        <p>{msg("emailVerifyInstruction2")}
+                            <br />
+                            <Link href={url.loginAction} sx={{fontWeight: "700"}}>{msg("doClickHere")}</Link>
+                            {" "}
+                            {msg("emailVerifyInstruction3")}
+                        </p>
+                        <p>{msg("emailVerifyInstruction1", user?.email ?? "")}</p>
+                    </Typography>
                 </Card>
             </Container>
         </Template>
