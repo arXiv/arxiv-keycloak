@@ -21,6 +21,7 @@ import AuthorshipStatus from "./pages/AuthorshipStatus.tsx";
 import UpdateProfile from "./pages/UpdateProfile.tsx";
 import ChangePassword from "./pages/ChangePassword.tsx";
 import ChangeEmail from "./pages/ChangeEmail.tsx";
+import EnterEndorsementCode from "./pages/EnterEndorsementCode.tsx";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,7 @@ const App: React.FC = () => {
                                 <Route path="/user-account/update-profile" element={<UpdateProfile/>}/>
                                 <Route path="/user-account/change-password" element={<ChangePassword/>}/>
                                 <Route path="/user-account/change-email" element={<ChangeEmail/>}/>
+                                <Route path="/user-account/endorse" element={<EnterEndorsementCode/>}/>
                                 <Route path="*" element={<NotFound404/>}/>
                             </Routes>
                         </Container>

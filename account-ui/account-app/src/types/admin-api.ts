@@ -282,7 +282,10 @@ export interface paths {
         /** List Endorsements */
         get: operations["list_endorsements_v1_endorsements__get"];
         put?: never;
-        /** Create Endorsement */
+        /**
+         * Create Endorsement
+         * @description Create a new endorsement by admin
+         */
         post: operations["create_endorsement_v1_endorsements__post"];
         delete?: never;
         options?: never;
@@ -302,6 +305,26 @@ export interface paths {
         /** Update Endorsement */
         put: operations["update_endorsement_v1_endorsements__id__put"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/endorsements/endorse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endorse
+         * @description Create endorsement by a user
+         */
+        post: operations["endorse_v1_endorsements_endorse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1202,6 +1225,19 @@ export interface components {
             updater_first_name: string;
             /** Updater Last Name */
             updater_last_name: string;
+        };
+        /** EndorsementCodeModel */
+        EndorsementCodeModel: {
+            /** Endorser Id */
+            endorser_id: string;
+            /** Endorsement Code */
+            endorsement_code: string;
+            /** Comment */
+            comment: string;
+            /** Knows Personally */
+            knows_personally: boolean;
+            /** Seen Paper */
+            seen_paper: boolean;
         };
         /** EndorsementModel */
         EndorsementModel: {
@@ -2732,6 +2768,39 @@ export interface operations {
             };
         };
     };
+    endorse_v1_endorsements_endorse_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndorsementCodeModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndorsementModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_endorsement_requests_v1_endorsement_requests__get: {
         parameters: {
             query?: {
@@ -3771,6 +3840,8 @@ export interface operations {
                 document_id?: number | null;
                 /** @description Submitter ID */
                 submitter_id?: number | null;
+                /** @description MUI DataGrid Filter */
+                filter?: string | null;
             };
             header?: never;
             path?: never;
