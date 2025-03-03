@@ -38,9 +38,7 @@ setup-arch: .setup-arch
 	cd ./cert/ && ${MAKE} 
 
 ./keycloak-cert/keycloak-self-signed.jks:
-	echo "THIS DIRECTORY IS MISSING: keycloak-cert/"
-	# cd ./keycloak-cert/ && ${MAKE} 
-
+	cd ./keycloak-cert/ && ${MAKE} 
 
 venv:
 	python3.12 -m venv venv
