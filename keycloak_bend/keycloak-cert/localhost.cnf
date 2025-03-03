@@ -1,0 +1,21 @@
+[ req ]
+default_bits       = 2048
+default_keyfile    = keycloak-localhost.key
+distinguished_name = localhost_arxiv_org
+x509_extensions    = v3_ca
+prompt             = no
+
+[ localhost_arxiv_org ]
+C  = US
+ST = NY
+L  = NY
+O  = arxiv.org
+OU = localhost.arxiv.org
+CN = localhost.arxiv.org
+emailAddress = help@localhost.arxiv.org
+
+[ v3_ca ]
+subjectAltName = @alt_names
+
+[ alt_names ]
+DNS.1 = localhost.arxiv.org
