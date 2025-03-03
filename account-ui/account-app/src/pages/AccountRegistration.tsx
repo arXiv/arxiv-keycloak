@@ -23,6 +23,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import {emailValidator, passwordValidator} from "../bits/validators.ts";
 import Tooltip from "@mui/material/Tooltip";
 import PasswordRequirements from "../bits/PasswordRequirements.tsx";
+import {useNotification} from "../NotificationContext.tsx";
 
 type TokenResponse = paths["/account/register/"]['get']['responses']['200']['content']['application/json'];
 type SubmitRequest = paths["/account/register/"]['post']['requestBody']['content']['application/json'];
@@ -58,6 +59,7 @@ const PostSubmitActionDialog: React.FC<PostSubmitDialogProps> = ({title, message
 
 const AccountRegistration = () => {
     const runtimeContext = useContext(RuntimeContext);
+    const {showNotification} = useNotification();
     // State to store input values
     const [formData, setFormData] = useState<SubmitRequest>({
         username: "",
@@ -171,7 +173,7 @@ const AccountRegistration = () => {
             }
         },
         "email": (value: string) => {
-            if (!passwordValidator(value)) {
+            if (!emailValidator(value)) {
                 setErrors((prev) => ({
                     ...prev,
                     email: `Email is invalid`
@@ -272,7 +274,7 @@ const AccountRegistration = () => {
                 showNotification(errorReply.detail, "warning");
 
                 if (response.status === 400) {
-                    const reply: RegistrationErrorReply = data as any;
+                    const reply: RegistrationErrorReply = data as unknown as RegistrationErrorReply;
                     setPostSubmitDialog({
                         open: true,
                         title: "Registration Unsuccessful",

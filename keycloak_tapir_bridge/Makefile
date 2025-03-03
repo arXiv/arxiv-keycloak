@@ -26,7 +26,7 @@ venv:
 venv/bin/poetry: venv
 	. venv/bin/activate && pip install --upgrade pip && pip install poetry
 
-venv/lib/python3.11/site-packages/google: venv/bin/poetry poetry.lock
+venv/lib/python3.12/site-packages/google: venv/bin/poetry poetry.lock
 	. venv/bin/activate && poetry install
 
 docker-image:

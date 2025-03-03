@@ -57,7 +57,7 @@ setup-debian: .setup-debian
 
 .setup-debian:
 	sudo apt install -y libmysqlclient-dev build-essential python3.12-dev
-	pyenv install -s 3.12
+	pyenv update && pyenv install -s 3.12
 	$(call run_in_all_subdirs,bootstrap)
 	touch .setup-debian
 

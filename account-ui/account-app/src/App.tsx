@@ -4,7 +4,6 @@ import {RuntimeContextProvider} from "./RuntimeContext";
 import {BrowserRouter as Router, Routes, Route} from "react-router-dom";
 
 import {NotificationProvider} from "./NotificationContext";
-import NotificationPop from "./NotificationPop";
 
 
 // import Login from "./pages/Login";

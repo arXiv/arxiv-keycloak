@@ -61,7 +61,7 @@ const VerifyEmailButton: React.FC<{ runtimeProps: RuntimeProps }> = ({ runtimePr
             <Button
                 variant="outlined"
                 startIcon={<VerifiedUser />}
-                disabled={user === null || user?.email_verified}
+                disabled={user === undefined || user === null || user.email_verified === true}
                 onClick={() => setDialogOpen(true)} // Open dialog when clicked
             >
                 Send verification email
