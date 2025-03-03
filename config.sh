@@ -15,7 +15,7 @@ if [ ! -r .env.localdb ] ; then
     echo PUBSUB_PROJECT=$PUBSUB_PROJECT  >> .env.localdb
     echo DOCKER_NETWORK=arxiv-network >> .env.localdb
 
-    echo ARXIV_USER_REGISTRATION_URL=${SERVER_URL}/user-account/registration
+    echo ARXIV_USER_REGISTRATION_URL=${SERVER_URL}/user-account/registration >> .env.localdb
 
     # IRL, this is a secure "password" for encrypting JWT token
     JWT_SECRET=jwt-secret
@@ -42,9 +42,10 @@ if [ ! -r .env.localdb ] ; then
 
     echo KC_PORT=$KC_PORT >> .env.localdb
     echo KC_SSL_PORT=$KC_SSL_PORT >> .env.localdb
+    # This is for pedantic prettiness and not really used
     echo KC_HOST_PUBLIC=$KC_HOST_PUBLIC >> .env.localdb
     echo KC_HOST_PRIVATE=$KC_HOST_PRIVATE >> .env.localdb
-    echo KC_URL_PUBLIC=https://$KC_HOST_PUBLIC:$KC_PORT >> .env.localdb
+    echo KC_URL_PUBLIC=$KC_HOST_PUBLIC >> .env.localdb
     echo KC_URL_PRIVATE=http://$KC_HOST_PRIVATE:$KC_PORT >> .env.localdb
 
     echo KC_DOCKER_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/keycloak >> .env.localdb
