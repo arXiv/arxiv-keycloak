@@ -24,7 +24,7 @@ bootstrap: .bootstrap
 setup-debian: .setup-debian
 
 .setup-debian:
-	pyenv install -s 3.12
+	pyenv update && pyenv install -s 3.12
 	if ! dpkg -l | grep -q docker-compose-plugin; then sudo apt install -y docker-compose-plugin; fi
 	${MAKE} venv/bin/poetry
 	touch .setup-debian
@@ -154,7 +154,7 @@ arxiv-realm:
 	-e KC_ADMIN_PASSWORD="${KC_ADMIN_PASSWORD}" \
 	-e ARXIV_USER_SECRET="${KEYCLOAK_TEST_CLIENT_SECRET}" \
 	-e LEGACY_AUTH_TOKEN="${LEGACY_AUTH_API_TOKEN}" \
-	python:3.11 sh /tools/setup-arxiv-realm.sh
+	python:3.12 sh /tools/setup-arxiv-realm.sh
 
 sh-arxiv-realm:
 	docker run -it --rm \
@@ -165,7 +165,7 @@ sh-arxiv-realm:
 	-e KC_ADMIN_PASSWORD="${KC_ADMIN_PASSWORD}" \
 	-e ARXIV_USER_SECRET="${KEYCLOAK_TEST_CLIENT_SECRET}" \
 	-e LEGACY_AUTH_TOKEN="${LEGACY_AUTH_API_TOKEN}" \
-	python:3.11 /bin/bash
+	python:3.12 /bin/bash
 
 local-arxiv-realm:
 	@ echo python3 tools/setup_arxiv_realm.py --server ${KC_URL_PUBLIC} --admin-secret ${KC_ADMIN_PASSWORD} --arxiv-user-secret "${ARXIV_USER_SECRET}" --legacy-auth-token "${LEGACY_AUTH_API_TOKEN}"
