@@ -73,6 +73,19 @@ The audit events includes the user's demographic such as names, emails, URLs.
     make docker-image
     make up
 
+After that, one should be able to log into
+
+    http://localhost.arxiv.org:5100/admin-console/
+
+with user/pass from 1password entry `localhost.arxiv.org for tapir test`
+
+If this does not work, make sure to have the most uptodate sql data:
+    cd ~/arxiv/arxiv-keycloak
+    rm tests/data/sanitized-test-db.sql
+    make tests/data/sanitized-test-db.sql
+    make up
+
+
 - Bootstrap
 - Build Docker Images
 - Run Dockers with docker compose
