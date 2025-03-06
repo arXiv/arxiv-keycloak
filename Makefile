@@ -7,7 +7,7 @@ export $(shell sed 's/=.*//' .env)
 
 ARXIV_BASE_DIR ?= $(HOME)/arxiv/arxiv-base
 
-.PHONY: HELLO all bootstrap docker-image arxiv-db nginx test up down restart
+.PHONY: HELLO all bootstrap docker-image arxiv-db nginx test up down restart images
 
 default: HELLO
 
@@ -18,6 +18,11 @@ define run_in_docker_dirs
 		$(MAKE) -C $$dir $(1) || exit 1; \
 	done
 endef
+
+define parallel_run_in_docker_dirs
+	@echo "Building in parallel..."
+endef
+
 
 define run_in_all_subdirs
 	@for dir in $(ALL_DIRS); do \
@@ -72,6 +77,10 @@ setup-arch: .setup-arch
 #-#   builds docker images
 docker-image:
 	$(call run_in_docker_dirs,docker-image)
+
+images:
+	@echo "Building docker images in parallel..."
+	@echo "$(DOCKER_DIRS)" | tr ' ' '\n' | xargs -P 8 -I {} $(MAKE) -C {} docker-image
 
 #-#
 #-# up:

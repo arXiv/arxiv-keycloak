@@ -52,6 +52,7 @@ export interface RuntimeProps
     UNIVERSITY: string,
     POST_USER_REGISTRATION_URL: string,
     HOME: string,
+    MATHJAX_COOKIE_NAME: string,
     URLS: ArxivSiteURLs,
     currentUser: User | null,
 }
@@ -66,6 +67,7 @@ const defaultRuntimeProps : RuntimeProps = {
     UNIVERSITY: "https://cornell.edu",
     HOME: "https://cornell.edu",
     POST_USER_REGISTRATION_URL: "/",
+    MATHJAX_COOKIE_NAME: "arxiv_mathjax",
     URLS: {
         arXiv: "/",
         privacyPolicy: "https://arxiv.org/help/policies/privacy_policy",
