@@ -331,6 +331,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/endorsements/endorsement-preflight": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endorsement Preflight
+         * @description Create endorsement by a user
+         */
+        post: operations["endorsement_preflight_v1_endorsements_endorsement_preflight_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/endorsement_requests/": {
         parameters: {
             query?: never;
@@ -1022,6 +1042,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/public-users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get One Public User */
+        get: operations["get_one_public_user_v1_public_users__user_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public-users/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get One Public User With Query */
+        get: operations["get_one_public_user_with_query_v1_public_users__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/ping": {
         parameters: {
             query?: never;
@@ -1247,6 +1301,8 @@ export interface components {
         EndorsementCodeModel: {
             /** Endorser Id */
             endorser_id: string;
+            /** Positive */
+            positive: boolean;
             /** Endorsement Code */
             endorsement_code: string;
             /** Comment */
@@ -1261,7 +1317,7 @@ export interface components {
             /** Id */
             id: number;
             /** Endorser Id */
-            endorser_id: number | null;
+            endorser_id?: number | null;
             /** Endorsee Id */
             endorsee_id: number;
             /** Archive */
@@ -1270,8 +1326,7 @@ export interface components {
             subject_class: string;
             /** Flag Valid */
             flag_valid: number;
-            /** Type */
-            type: string | null;
+            type?: components["schemas"]["EndorsementType"] | null;
             /** Point Value */
             point_value: number;
             /**
@@ -1280,34 +1335,48 @@ export interface components {
              */
             issued_when: string;
             /** Request Id */
-            request_id: number | null;
-            arXiv_categories: components["schemas"]["CategoryModel"] | null;
+            request_id?: number | null;
+            arXiv_category?: components["schemas"]["CategoryModel"] | null;
+        };
+        /** EndorsementOutcomeModel */
+        EndorsementOutcomeModel: {
+            /** Accepted */
+            accepted: boolean;
+            /** Reason */
+            reason: string;
+            endorsement: components["schemas"]["EndorsementModel"] | null;
         };
         /** EndorsementRequestModel */
         EndorsementRequestModel: {
             /** Id */
-            id: number;
+            id?: number | null;
             /** Endorsee Id */
-            endorsee_id: number;
+            endorsee_id?: number | null;
+            /** Archive */
+            archive?: string | null;
+            /** Subject Class */
+            subject_class?: string | null;
+            /** Secret */
+            secret?: string | null;
+            /** Flag Valid */
+            flag_valid?: boolean | null;
+            /** Flag Open */
+            flag_open?: boolean | null;
+            /** Issued When */
+            issued_when?: string | null;
+            /** Flag Suspect */
+            flag_suspect?: boolean | null;
+            /** Endorsee Username */
+            endorsee_username?: string | null;
+        };
+        /** EndorsementRequestRequestModel */
+        EndorsementRequestRequestModel: {
+            /** Endorsee Id */
+            endorsee_id: number | null;
             /** Archive */
             archive: string;
             /** Subject Class */
             subject_class: string;
-            /** Secret */
-            secret: string;
-            /** Flag Valid */
-            flag_valid: boolean;
-            /** Flag Open */
-            flag_open: boolean;
-            /**
-             * Issued When
-             * Format: date-time
-             */
-            issued_when: string;
-            /** Point Value */
-            point_value: number;
-            /** Flag Suspect */
-            flag_suspect: boolean;
         };
         /** EndorsementRequestsAuditModel */
         EndorsementRequestsAuditModel: {
@@ -1322,6 +1391,11 @@ export interface components {
             /** Tracking Cookie */
             tracking_cookie: string | null;
         };
+        /**
+         * EndorsementType
+         * @enum {string}
+         */
+        EndorsementType: "user" | "admin" | "auto";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1436,6 +1510,55 @@ export interface components {
             rejected_document_ids: number[];
             /** Accepted Document Ids */
             accepted_document_ids: number[];
+        };
+        /** PublicUserModel */
+        PublicUserModel: {
+            /** Id */
+            id: number;
+            /** Flag Is Mod */
+            flag_is_mod: boolean | null;
+            /** Email */
+            email: string | null;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Suffix Name */
+            suffix_name: string;
+            /** Flag Deleted */
+            flag_deleted: boolean;
+            /** Country */
+            country: string | null;
+            /** Affiliation */
+            affiliation: string | null;
+            /** Url */
+            url: string | null;
+            /** Type */
+            type: number | null;
+            /** Archive */
+            archive: string | null;
+            /** Subject Class */
+            subject_class: string | null;
+            /** Flag Group Physics */
+            flag_group_physics: number | null;
+            /** Flag Group Math */
+            flag_group_math: number | null;
+            /** Flag Group Cs */
+            flag_group_cs: number | null;
+            /** Flag Group Nlin */
+            flag_group_nlin: number | null;
+            /** Flag Group Test */
+            flag_group_test: number | null;
+            /** Flag Group Q Bio */
+            flag_group_q_bio: number | null;
+            /** Flag Group Q Fin */
+            flag_group_q_fin: number | null;
+            /** Flag Group Stat */
+            flag_group_stat: number | null;
+            /** Flag Group Eess */
+            flag_group_eess: number | null;
+            /** Flag Group Econ */
+            flag_group_econ: number | null;
         };
         /** SubmissionCategoryModel */
         SubmissionCategoryModel: {
@@ -2670,6 +2793,8 @@ export interface operations {
                 start_date?: string | null;
                 /** @description End date for filtering */
                 end_date?: string | null;
+                /** @description user, auto, admin */
+                type?: string[] | string | null;
                 flag_valid?: boolean | null;
                 endorsee_id?: number | null;
                 endorser_id?: number | null;
@@ -2798,14 +2923,84 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Successful Response */
+            /** @description Successful endorsement */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EndorsementModel"];
+                    "application/json": components["schemas"]["EndorsementOutcomeModel"];
                 };
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid endorsement code */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Endorsement not allowed */
+            405: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndorsementOutcomeModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endorsement_preflight_v1_endorsements_endorsement_preflight_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndorsementCodeModel"];
+            };
+        };
+        responses: {
+            /** @description Successful endorsement */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndorsementOutcomeModel"];
+                };
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid endorsement code */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -2871,7 +3066,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndorsementRequestRequestModel"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -2880,6 +3079,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EndorsementRequestModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -2924,7 +3132,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndorsementRequestModel"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -4362,6 +4574,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CountryAlpha2Model"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_one_public_user_v1_public_users__user_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicUserModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_one_public_user_with_query_v1_public_users__get: {
+        parameters: {
+            query?: {
+                user_id?: string;
+                email?: string;
+                username?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicUserModel"];
                 };
             };
             /** @description Validation Error */
