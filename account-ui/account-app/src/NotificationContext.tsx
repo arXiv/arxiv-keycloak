@@ -19,7 +19,7 @@ interface NotificationState {
 
 interface NotificationContextType {
     showNotification: (message: string, type: NotificationType) => void;
-    showMessageDialog: (message: string, title: string,
+    showMessageDialog: (message: JSX.Element | string, title: string,
                         onClose?: () => void, onCloseLabel?: string,
                         onConfirm?: () => void, onConfirmLabel?: string) => void;
 }
@@ -29,7 +29,7 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 interface MessageDialogState {
     title: string;
-    message: string;
+    message: JSX.Element | string;
     open: boolean;
     onClose?: () => void;
     onCloseLabel?: string;
@@ -46,7 +46,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     });
 
     const [messageDialog, setMessageDialog] = useState<MessageDialogState>({
-        message: "",
+        message: <span></span>,
         title: "",
         open: false,
     });
@@ -59,7 +59,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
         setNotification((prev) => ({ ...prev, open: false }));
     };
 
-    const showMessageDialog = (message: string, title: string,
+    const showMessageDialog = (message: JSX.Element | string, title: string,
                                onClose?: ()=> void, onCloseLabel?: string,
                                onConfirm?: () => void, onConfirmLabel?: string) => {
         setMessageDialog({message: message, title: title, open: true, onClose, onCloseLabel, onConfirm, onConfirmLabel});

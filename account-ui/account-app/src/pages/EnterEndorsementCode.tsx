@@ -38,7 +38,7 @@ const EnterEndorsementCode = () => {
     const [endorsementCategoryName, setEndorsementCategoryName] = useState<string | null>(null);
     const endorsementRequest = endorsementOutcome?.endorsement_request
     const endorsee = endorsementOutcome?.endorsee;
-
+    const categoryFullName = endorsementRequest ? `${printCategory(endorsementRequest)} - ${endorsementCategoryName}` : "";
     const initialFormData: EndorsementCodeRequest = {
         preflight: true,
         endorser_id: user?.id || "",
@@ -153,6 +153,29 @@ const EnterEndorsementCode = () => {
     }, [endorsementOutcome]);
 
 
+    function printUser(user: PublicUserType | User | null): string {
+        if (!user)
+            return "";
+        const maybe_email = user?.email ? ` <${user?.email}>` : '';
+        return `${user?.first_name} ${user?.last_name}${maybe_email} - ${user?.affiliation || "No affiliation"}`;
+    }
+
+
+    function printUserName(user: PublicUserType | User | null | undefined): string {
+        if (!user)
+            return "";
+        return `${user?.first_name} ${user?.last_name}`;
+    }
+
+    function printCategory(endoresementRequest: EndorsementRequestType | null): string {
+        if (!endoresementRequest)
+            return "";
+        return `${endoresementRequest?.archive}${endoresementRequest?.subject_class ? "." + endoresementRequest.subject_class : ""}`;
+    }
+
+    const endorsee_name = printUserName(endorsee);
+    const endorser_name = printUser(user);
+
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         setInProgress(true);
         event.preventDefault();
@@ -172,7 +195,7 @@ const EnterEndorsementCode = () => {
                 console.log(JSON.stringify(errorReply));
                 if (response.status === 405) {
                     const outcome = errorReply as unknown as Endorsement405Response;
-                    showMessageDialog(outcome?.reason || "Reason not given", "Endorsement failed");
+                    showMessageDialog((<span>{outcome?.reason  || "Reason not given"}</span>), "Endorsement failed");
                 } else {
                     showNotification(errorReply.detail, "warning");
                 }
@@ -180,7 +203,14 @@ const EnterEndorsementCode = () => {
             }
 
             if (response.status === 200) {
-                showMessageDialog("Thank you!", "Endorsement complete", () => setFormData(initialFormData), "Restart");
+                showMessageDialog(
+                    (<>
+                        <p>Your endorsement helps us maintain the quality of arXiv submissions.</p>
+                        <p>{`${endorsee_name} is now authorized to upload articles to ${categoryFullName}.; `}
+                            {`we've informed ${endorsee_name} of this by sending an e-mail. (We did not tell ${endorser_name} that the endorsement came from you.)`}</p>
+                    </>),
+                    `Thank you for endorsind ${endorsee_name}`
+                    , () => setFormData(initialFormData), "Restart");
                 return;
             }
 
@@ -225,29 +255,8 @@ const EnterEndorsementCode = () => {
     );
 
 
-    function printUser(user: PublicUserType | User | null): string {
-        if (!user)
-            return "";
-        const maybe_email = user?.email ? ` <${user?.email}>` : '';
-        return `${user?.first_name} ${user?.last_name}${maybe_email} - ${user?.affiliation || "No affiliation"}`;
-    }
-
-    function printUserName(user: PublicUserType | User | null | undefined): string {
-        if (!user)
-            return "";
-        return `${user?.first_name} ${user?.last_name}`;
-    }
-
-    function printCategory(endoresementRequest: EndorsementRequestType | null): string {
-        if (!endoresementRequest)
-            return "";
-        return `${endoresementRequest?.archive}${endoresementRequest?.subject_class ? "." + endoresementRequest.subject_class : ""}`;
-    }
-
-    const categoryFullName = endorsementRequest ? `${printCategory(endorsementRequest)} - ${endorsementCategoryName}` : "";
-
     const endorsementLabel = endorsementRequest && endorsee ? (
-        <CardHeader title={`Endorsement of ${printUserName(endorsee)} for ${categoryFullName}`} />
+        <CardHeader title={`Endorsement of ${endorsee_name} for ${categoryFullName}`} />
     ) : null;
 
     const endorserInfo = (<Typography >
