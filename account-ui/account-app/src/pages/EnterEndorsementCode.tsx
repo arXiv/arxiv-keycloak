@@ -21,9 +21,11 @@ import Radio from "@mui/material/Radio";
 import CardHeader from "@mui/material/CardHeader";
 
 type EndorsementCodeRequest = adminApi["/v1/endorsements/endorse"]['post']['requestBody']['content']['application/json'];
+
+type EndorsementOutcomeModel = adminApi["/v1/endorsements/endorse"]['post']['responses']['200']['content']['application/json'];
 type Endorsement405Response = adminApi["/v1/endorsements/endorse"]['post']['responses']['405']['content']['application/json'];
 type EndorsementRequestType = adminApi["/v1/endorsement_requests/code"]['get']['responses']['200']['content']['application/json'];
-type PublicUserType = adminApi["/v1/public-users/{user_id}"]['get']['responses']['200']['content']['application/json'];
+type PublicUserType = EndorsementOutcomeModel["endorsee"];
 type CategoryResponse = adminApi["/v1/categories/{archive}/subject-class/{subject_class}"]['get']['responses']['200']['content']['application/json'];
 
 
@@ -32,19 +34,21 @@ const EnterEndorsementCode = () => {
     const user = runtimeProps.currentUser;
     const {showNotification, showMessageDialog} = useNotification();
     const [inProgress, setInProgress] = useState(false);
-    const [endorsementRequest, setEndorsementRequest] = useState<EndorsementRequestType | null>(null);
+    const [endorsementOutcome, setEndorsementOutcome] = useState<EndorsementOutcomeModel | null>(null);
     const [endorsementCategoryName, setEndorsementCategoryName] = useState<string | null>(null);
+    const endorsementRequest = endorsementOutcome?.endorsement_request
+    const endorsee = endorsementOutcome?.endorsee;
 
-    const [endorsee, setEndorsee] = useState<PublicUserType | null>(null);
-
-    const [formData, setFormData] = useState<EndorsementCodeRequest>({
-        endorser_id: "",
+    const initialFormData: EndorsementCodeRequest = {
+        preflight: true,
+        endorser_id: user?.id || "",
         positive: true,
         endorsement_code: "",
         comment: "",
         knows_personally: false,
         seen_paper: false
-    });
+    };
+    const [formData, setFormData] = useState<EndorsementCodeRequest>(initialFormData);
 
     const [errors, setErrors] = useState<{
         endorser_id?: string,
@@ -54,6 +58,7 @@ const EnterEndorsementCode = () => {
         knows_personally?: string,
         seen_paper?: string,
         endorsee?: string,
+        reason?: string
     }>({endorser_id: "No current user", endorsement_code: "Empty"});
 
     useEffect(() => {
@@ -70,22 +75,31 @@ const EnterEndorsementCode = () => {
 
     useEffect(() => {
         async function findEndorsementRequest() {
-            if (formData?.endorsement_code) {
+            if (formData?.endorsement_code && formData?.preflight) {
                 const query = new URLSearchParams();
                 query.set("secret", formData.endorsement_code);
                 try {
-                    const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + `/endorsement_requests/code?${query.toString()}`);
+                    const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + '/endorsements/endorse',
+                        {
+                            method: "POST",
+                            body: JSON.stringify(formData),
+                            headers: new Headers({"Content-Type": "application/json",
+                            })},);
                     if (response.ok) {
                         setErrors({...errors, endorsement_code: ""});
-                        const body = await response.json();
-                        setEndorsee(null);
-                        setEndorsementRequest(body);
+                        const body: EndorsementOutcomeModel = await response.json();
+                        setEndorsementOutcome(body);
+                        if (body.submit_acceptable && body.request_acceptable) {
+                            setErrors({...errors, reason: ""});
+                        } else {
+                            setErrors({...errors, reason: body?.reason || "Reason is not given."});
+                        }
                     } else {
-                        setEndorsementRequest(null);
-                        setEndorsee(null);
+                        setEndorsementOutcome(null);
                         if (response.status === 404) {
                             setErrors({...errors, endorsement_code: "Not Found"});
-                        } else if (response.status === 401) {
+                        }
+                        else if (response.status === 401) {
                             setErrors({...errors, endorsement_code: "Please login"});
                             showMessageDialog("Please re-login first.", "No User Information",
                                 () => {
@@ -101,8 +115,7 @@ const EnterEndorsementCode = () => {
                         }
                     }
                 } catch (error) {
-                    setEndorsementRequest(null);
-                    setEndorsee(null);
+                    setEndorsementOutcome(null);
                     showNotification(JSON.stringify(error), "error");
                 }
             }
@@ -111,63 +124,33 @@ const EnterEndorsementCode = () => {
         findEndorsementRequest();
 
         if (!endorsementCodeValidator(formData?.endorsement_code)) {
-            setEndorsementRequest(null);
-            setEndorsee(null);
+            setEndorsementOutcome(null);
         }
     }, [formData.endorsement_code]);
 
 
     useEffect(() => {
-        if (endorsementRequest) {
-            async function findEndorsee() {
-                if (endorsementRequest) {
-                    try {
-                        const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + `/public-users/?user_id=${endorsementRequest?.endorsee_id}`);
-                        if (response.ok) {
-                            const body: PublicUserType = await response.json();
-                            setErrors({...errors, endorsee: ""});
-                            setEndorsee(body);
-                        } else {
-                            if (response.status === 404) {
-                                setErrors({...errors, endorsee: "Cannot find endorsee"});
-                            }
-                            const body = await response.json();
-                            showNotification(body.detail, "error");
-                            setEndorsee(null);
-                        }
-                    } catch (error) {
-                        showNotification(String(error) || "Cannot find endorsee", "error");
-                        setEndorsee(null);
-                    }
-                }
-            }
-
-            findEndorsee();
-        }
-    }, [endorsementRequest]);
-
-
-    useEffect(() => {
-        if (endorsementRequest) {
-            async function getCategoryName() {
-                if (endorsementRequest) {
-                    try {
-                        const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + `/categories/${endorsementRequest?.archive}/subject-class/${endorsementRequest?.subject_class}`);
-                        if (response.ok) {
-                            const body: CategoryResponse = await response.json();
-                            setEndorsementCategoryName(body.category_name);
-                        } else {
-                            setEndorsementCategoryName(null);
-                        }
-                    } catch (error) {
+        async function getCategoryName() {
+            const er = endorsementOutcome?.endorsement_request;
+            if (er) {
+                try {
+                    const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + `/categories/${er.archive}/subject-class/${er.subject_class}`);
+                    if (response.ok) {
+                        const body: CategoryResponse = await response.json();
+                        setEndorsementCategoryName(body.category_name);
+                    } else {
                         setEndorsementCategoryName(null);
                     }
+                } catch (error) {
+                    setEndorsementCategoryName(null);
                 }
             }
+        }
 
+        if (endorsementOutcome?.endorsement_request) {
             getCategoryName();
         }
-    }, [endorsementRequest]);
+    }, [endorsementOutcome]);
 
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -180,7 +163,7 @@ const EnterEndorsementCode = () => {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({...formData, preflight: false}),
             });
 
             if (!response.ok) {
@@ -189,7 +172,7 @@ const EnterEndorsementCode = () => {
                 console.log(JSON.stringify(errorReply));
                 if (response.status === 405) {
                     const outcome = errorReply as unknown as Endorsement405Response;
-                    showMessageDialog(outcome.reason, "Endorsement failed");
+                    showMessageDialog(outcome?.reason || "Reason not given", "Endorsement failed");
                 } else {
                     showNotification(errorReply.detail, "warning");
                 }
@@ -197,9 +180,10 @@ const EnterEndorsementCode = () => {
             }
 
             if (response.status === 200) {
-                showNotification("Endorsement complete", "success");
+                showMessageDialog("Thank you!", "Endorsement complete", () => setFormData(initialFormData), "Restart");
                 return;
             }
+
             const body = await response.json();
             showNotification(`Unexpected respones ${response.statusText} -  ${body.detail}`, "warning");
         } catch (error) {
@@ -248,7 +232,7 @@ const EnterEndorsementCode = () => {
         return `${user?.first_name} ${user?.last_name}${maybe_email} - ${user?.affiliation || "No affiliation"}`;
     }
 
-    function printUserName(user: PublicUserType | User | null): string {
+    function printUserName(user: PublicUserType | User | null | undefined): string {
         if (!user)
             return "";
         return `${user?.first_name} ${user?.last_name}`;
@@ -262,22 +246,31 @@ const EnterEndorsementCode = () => {
 
     const categoryFullName = endorsementRequest ? `${printCategory(endorsementRequest)} - ${endorsementCategoryName}` : "";
 
-    const endorsementLabel = endorsementRequest ? (
+    const endorsementLabel = endorsementRequest && endorsee ? (
         <CardHeader title={`Endorsement of ${printUserName(endorsee)} for ${categoryFullName}`} />
     ) : null;
 
-    const endorserInfo = endorsementRequest ? (<Typography >
+    const endorserInfo = (<Typography >
             <Typography component={"span"} fontWeight={"bold"}> {"Endorser (You): "}</Typography>
             <Typography component={"span"}
                         sx={{textDecoration: "underline"}}>{printUser(user)}</Typography>
         </Typography>
-    ) : null;
+    );
 
-    const endorseeInfo = endorsee ? (
+    const endorseeInfo = endorsee && endorsementRequest ? (
         <Typography >
             <Typography>
                 The following has requested your endorsement to submit papers to {printCategory(endorsementRequest)}
-                {" ("}{endorsementCategoryName}). Your publication history is sufficient to endorse this user.
+                {" ("}{endorsementCategoryName}).
+                { endorsementOutcome?.request_acceptable ?
+                    (
+                        <Typography>{endorsementOutcome?.reason || "Endorsement request is valid."}</Typography>
+                    )
+                    :
+                    (
+                        <Typography sx={{fontStyle: "italic"}}>{endorsementOutcome.reason || "Endorsee cannot receive any endorsement."}</Typography>
+                    )
+                }
             </Typography>
             <Box sx={{height: "8px"}} />
             <Typography component={"span"} fontWeight={"bold"}>{"Endorsement: "}</Typography>
@@ -289,7 +282,7 @@ const EnterEndorsementCode = () => {
         </Typography>
     ) : null;
 
-    const endorsementSelection = endorsementRequest ? (
+    const endorsementSelection = endorsementRequest && endorsementOutcome?.request_acceptable && endorsementOutcome.submit_acceptable ? (
         <Box>
             <Typography component={"li"}>
                 You can endorse {printUserName(endorsee)}.
@@ -298,7 +291,7 @@ const EnterEndorsementCode = () => {
                 You can tell us that you don't want to endorse {printUserName(endorsee)}.
             </Typography>
             <Typography component={"li"}>
-                Do nothing.
+                Do nothing by leaving this page.
             </Typography>
 
             <FormControl component="fieldset"
@@ -328,7 +321,7 @@ const EnterEndorsementCode = () => {
         </Box>
     ) : null;
 
-    const choices = endorsementRequest ? (
+    const choices = endorsementRequest && endorsementOutcome?.request_acceptable && endorsementOutcome.submit_acceptable ? (
         <>
             <Box sx={{display: "flex", flexDirection: "row", gap: 2, alignItems: "center"}}>
                 <FormControlLabel tabIndex={5}
@@ -439,8 +432,9 @@ const EnterEndorsementCode = () => {
                             </Box>
                         </Box>
 
-                        {endorserInfo}
                         {endorseeInfo}
+
+                        {endorserInfo}
 
                         {endorsementSelection}
                         {choices}

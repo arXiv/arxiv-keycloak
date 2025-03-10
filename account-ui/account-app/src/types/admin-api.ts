@@ -1299,6 +1299,8 @@ export interface components {
         };
         /** EndorsementCodeModel */
         EndorsementCodeModel: {
+            /** Preflight */
+            preflight: boolean;
             /** Endorser Id */
             endorser_id: string;
             /** Positive */
@@ -1340,10 +1342,18 @@ export interface components {
         };
         /** EndorsementOutcomeModel */
         EndorsementOutcomeModel: {
+            /** Submitted */
+            submitted: boolean;
             /** Accepted */
             accepted: boolean;
+            /** Request Acceptable */
+            request_acceptable: boolean;
+            /** Submit Acceptable */
+            submit_acceptable: boolean;
             /** Reason */
             reason: string;
+            endorsement_request: components["schemas"]["EndorsementRequestModel"];
+            endorsee: components["schemas"]["PublicUserModel"] | null;
             endorsement: components["schemas"]["EndorsementModel"] | null;
         };
         /** EndorsementRequestModel */
