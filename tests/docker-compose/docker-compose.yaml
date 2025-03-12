@@ -107,9 +107,9 @@ services:
       OAUTH2_CALLBACK_URL: ${AAA_CALLBACK_URL}
       ARXIV_USER_SECRET: ${KEYCLOAK_TEST_CLIENT_SECRET}
       CLASSIC_DB_URI: ${CLASSIC_DB_URI}
-      SESSION_DURATION: 36000
       CLASSIC_COOKIE_NAME: tapir_session
       CLASSIC_SESSION_HASH: ${CLASSIC_SESSION_HASH}
+      SESSION_DURATION: ${CLASSIC_SESSION_DURATION}
       JWT_SECRET: ${JWT_SECRET}
       # Keycloak SSL is running with self-signed cert
       OIDC_SERVER_SSL_VERIFY: "false"
@@ -278,7 +278,7 @@ services:
       MYSQL_TCP_PORT: ${ARXIV_DB_PORT}
     volumes:
       - ./:/arxiv-keycloak/:ro
-    entrypoint: bash /arxiv-keycloak/tools/restore-arxiv-db.sh /arxiv-keycloak/tests/data/sanitized-test-db.sql
+    entrypoint: bash /arxiv-keycloak/tools/restore-arxiv-db.sh /arxiv-keycloak/tests/data/test-arxiv-db-data.sql.gz
 
     
 # volumes:

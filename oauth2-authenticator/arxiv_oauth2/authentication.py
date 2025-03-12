@@ -60,6 +60,7 @@ async def login(request: Request,
 
 @router.get('/callback')
 async def oauth2_callback(request: Request,
+
                           _db = Depends(get_db)
                           ) -> Response:
     """User can log in with username and password, or permanent token."""

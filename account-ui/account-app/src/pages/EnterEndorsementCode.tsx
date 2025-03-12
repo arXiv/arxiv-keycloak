@@ -19,6 +19,7 @@ import FormControl from "@mui/material/FormControl";
 import RadioGroup from "@mui/material/RadioGroup";
 import Radio from "@mui/material/Radio";
 import CardHeader from "@mui/material/CardHeader";
+import Link from "@mui/material/Link";
 
 type EndorsementCodeRequest = adminApi["/v1/endorsements/endorse"]['post']['requestBody']['content']['application/json'];
 
@@ -38,6 +39,7 @@ const EnterEndorsementCode = () => {
     const [endorsementCategoryName, setEndorsementCategoryName] = useState<string | null>(null);
     const endorsementRequest = endorsementOutcome?.endorsement_request
     const endorsee = endorsementOutcome?.endorsee;
+    const categoryName = endorsementRequest ? `${printCategory(endorsementRequest)}` : "";
     const categoryFullName = endorsementRequest ? `${printCategory(endorsementRequest)} - ${endorsementCategoryName}` : "";
     const initialFormData: EndorsementCodeRequest = {
         preflight: true,
@@ -89,11 +91,6 @@ const EnterEndorsementCode = () => {
                         setErrors({...errors, endorsement_code: ""});
                         const body: EndorsementOutcomeModel = await response.json();
                         setEndorsementOutcome(body);
-                        if (body.submit_acceptable && body.request_acceptable) {
-                            setErrors({...errors, reason: ""});
-                        } else {
-                            setErrors({...errors, reason: body?.reason || "Reason is not given."});
-                        }
                     } else {
                         setEndorsementOutcome(null);
                         if (response.status === 404) {
@@ -152,6 +149,65 @@ const EnterEndorsementCode = () => {
         }
     }, [endorsementOutcome]);
 
+    // When the outcome shows up, do something
+    useEffect(() => {
+        if (!endorsementOutcome) return;
+        const endorseeName = printUserName(endorsee);
+        const email = runtimeProps.URLS.arxivAdminContactEmail;
+        const emailLink = (<Link href={`email:${email}`}>{email}</Link>);
+
+        if (endorsementOutcome.submitted) {
+            const feedback = endorsementOutcome.endorsement?.point_value ? "endorse" : "not endorse";
+            const title = `You've already decided to ${feedback} ${endorseeName}`;
+            const msg = (<div>
+                <p>You've already decided to {feedback} {endorseeName} for the
+                    {categoryFullName}</p>
+                <p>arXiv users are
+                    allowed to endorse (or not endorse) a user for a particular archive or
+                    subject class only once.
+                </p>
+                <p>Thank you for helping us maintain the quality of arXiv submissions.
+                    If you've made a terrible mistake or if you have any questions or comments,
+                    contact {emailLink}.</p>
+            </div>);
+            showMessageDialog(msg, title);
+        }
+        else if (endorsementOutcome.endorser_capability === "credited" && endorsementOutcome.request_acceptable) {
+            setErrors({...errors, reason: ""});
+        } else if (endorsementOutcome.endorser_capability === "prohibited") {
+            setErrors({...errors, reason: endorsementOutcome?.reason || "You may not endorse."});
+            const not_ok = (<p>Your ability to endorse other arXiv users has been suspended
+                by administrative action. If you believe this is a mistake, please
+                contact {emailLink}.</p>);
+            showMessageDialog(not_ok, "You are not allowed to endorse");
+        } else if (endorsementOutcome.endorser_capability === "uncredited") {
+            setErrors({...errors, reason: endorsementOutcome?.reason || "You are not qualified to endorse."});
+
+            const title = `You are not allowed to endorse for ${categoryName}`;
+            const msg = (<div>
+                <p>You are not allowed to endorse arXiv users for category {categoryFullName}
+                    {endorsementOutcome?.reason ? ` for the following reason: ${endorsementOutcome.reason}` : ""}.
+                </p>
+                <p>Please advise {endorseeName} to find another endorser. Please contact {emailLink} if you have any questions or comments.</p>
+            </div>);
+            showMessageDialog(msg, title);
+        } else if (endorsementOutcome.endorser_capability === "oneself") {
+            setErrors({...errors, reason: endorsementOutcome?.reason || "You cannot endorse yourself."});
+
+            const title = "You cannot endorse yourself";
+            const msg = (<div>
+                <p>People cannot endorse themselves. You must find somebody else to
+                    give you an endorsement. If you think that you have received this
+                    message in error or need help, please contact {emailLink}.</p>
+            </div>);
+            showMessageDialog(msg, title,
+                () => setFormData(initialFormData), "Understood");
+        } else {
+            setErrors({...errors, reason: endorsementOutcome?.reason || "Reason is not given."});
+        }
+
+    }, [endorsementOutcome]);
+
 
     function printUser(user: PublicUserType | User | null): string {
         if (!user)
@@ -203,19 +259,42 @@ const EnterEndorsementCode = () => {
             }
 
             if (response.status === 200) {
-                showMessageDialog(
-                    (<>
-                        <p>Your endorsement helps us maintain the quality of arXiv submissions.</p>
-                        <p>{`${endorsee_name} is now authorized to upload articles to ${categoryFullName}.; `}
-                            {`we've informed ${endorsee_name} of this by sending an e-mail. (We did not tell ${endorser_name} that the endorsement came from you.)`}</p>
-                    </>),
-                    `Thank you for endorsind ${endorsee_name}`
-                    , () => setFormData(initialFormData), "Restart");
+                const body: EndorsementOutcomeModel = await response.json();
+                if (body.endorsement?.point_value) {
+                    showMessageDialog(
+                        (<>
+                            <p>Your endorsement helps us maintain the quality of arXiv submissions.</p>
+                            <p>{`${endorsee_name} is now authorized to upload articles to ${categoryFullName}.; `}
+                                {`we've informed ${endorsee_name} of this by sending an e-mail. (We did not tell ${endorser_name} that the endorsement came from you.)`}</p>
+                        </>),
+                        `Thank you for endorsind ${endorsee_name}`
+                        , () => setFormData(initialFormData), "Restart");
+                }
+                else {
+                    showMessageDialog(
+                        (<>
+                            <p>Your vigilance helps us maintain the quality of arXiv submissions.</p>
+
+                            <p>Your vote of no confidence will not result in any automatic action against {endorsee_name};
+                                {endorsee_name} will still be able to submit to the {categoryName} if they can find another
+                                endorser.  However, your feedback may help us detect massive abuse (users
+                                who contact hundreds of arXiv users in the hope of finding someone who'll
+                                endorse them without thinking) and will direct our attention to possible
+                                problem submissions.</p>
+
+                            <p>{endorsee_name} will not be informed of your feedback.  It is your
+                                responsibility to tell (or not tell) {endorsee_name} of your decision.</p>
+                        </>),
+                        `Thank you for your feedback on ${endorsee_name}`
+                        , () => setFormData(initialFormData), "Restart");
+
+                }
                 return;
             }
-
-            const body = await response.json();
-            showNotification(`Unexpected respones ${response.statusText} -  ${body.detail}`, "warning");
+            else {
+                const body = await response.json();
+                showNotification(`Unexpected respones ${response.statusText} -  ${body.detail}`, "warning");
+            }
         } catch (error) {
             console.error("Error:", error);
             showNotification(JSON.stringify(error), "warning");
@@ -254,7 +333,6 @@ const EnterEndorsementCode = () => {
         Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && value !== ''
     );
 
-
     const endorsementLabel = endorsementRequest && endorsee ? (
         <CardHeader title={`Endorsement of ${endorsee_name} for ${categoryFullName}`} />
     ) : null;
@@ -291,7 +369,9 @@ const EnterEndorsementCode = () => {
         </Typography>
     ) : null;
 
-    const endorsementSelection = endorsementRequest && endorsementOutcome?.request_acceptable && endorsementOutcome.submit_acceptable ? (
+    const ok_to_submit = endorsementRequest && endorsementOutcome?.request_acceptable && endorsementOutcome.endorser_capability === "credited";
+
+    const endorsementSelection = ok_to_submit ? (
         <Box>
             <Typography component={"li"}>
                 You can endorse {printUserName(endorsee)}.
@@ -304,7 +384,7 @@ const EnterEndorsementCode = () => {
             </Typography>
 
             <FormControl component="fieldset"
-                         disabled={errors?.endorsement_code ? true : false}>
+                         disabled={errors?.endorsement_code?.length ? true : false}>
                 <RadioGroup
                     tabIndex={2}
                     name="positive"
@@ -330,7 +410,7 @@ const EnterEndorsementCode = () => {
         </Box>
     ) : null;
 
-    const choices = endorsementRequest && endorsementOutcome?.request_acceptable && endorsementOutcome.submit_acceptable ? (
+    const choices = ok_to_submit ? (
         <>
             <Box sx={{display: "flex", flexDirection: "row", gap: 2, alignItems: "center"}}>
                 <FormControlLabel tabIndex={5}

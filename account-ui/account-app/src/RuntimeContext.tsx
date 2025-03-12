@@ -33,6 +33,9 @@ export interface ArxivSiteURLs {
     subscribe: string;
     license: string;
 
+    // arXiv admin email address. I probably stop calling this URLs...
+    arxivAdminContactEmail: string;
+
     // These are user actions. Not really belongs to the site URLs
     userChangeProfile: string;
     userPasswordRecovery: string;
@@ -96,6 +99,8 @@ const defaultRuntimeProps : RuntimeProps = {
         contact: "/help/contact",
         subscribe: "help/subscribe",
         license: "/help/license",
+
+        arxivAdminContactEmail: "help@arxiv.org",
 
         userChangeProfile: "/user-account/update-profile",
         userPasswordRecovery: "/password-recovery",

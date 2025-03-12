@@ -24,6 +24,7 @@ if [ ! -r .env.localdb ] ; then
     # IRL, this is a secure "password" for encrypting tapir cookie
     CLASSIC_SESSION_HASH=classic-secret
     echo CLASSIC_SESSION_HASH=$CLASSIC_SESSION_HASH >> .env.localdb
+    echo CLASSIC_SESSION_DURATION=36000 >> .env.localdb
     
     echo DOCKER_PLATFORM=$PLATFORM >> .env.localdb
     

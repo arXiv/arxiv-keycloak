@@ -141,6 +141,10 @@ def get_client_host(request: Request) -> Optional[str]:
     return host
 
 
+async def get_client_host_name(request: Request) -> Optional[str]:
+    return await get_hostname(get_client_host(request))
+
+
 def datetime_to_epoch(timestamp: datetime.datetime | datetime.date | None,
                       default: datetime.date | datetime.datetime,
                       hour=0, minute=0, second=0) -> int:

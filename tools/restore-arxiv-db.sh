@@ -21,7 +21,7 @@ wait_for_mysql
 
 while [ $COUNTER -lt $MAX_RETRIES ]; do
   echo "Attempting to load SQL file: $SQL_FILE"
-  mysql -h "$MYSQL_HOST" -P "$MYSQL_TCP_PORT" -u root -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" < "$SQL_FILE" && break
+  (zcat "$SQL_FILE" | mysql -h "$MYSQL_HOST" -P "$MYSQL_TCP_PORT" -u root -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE") && break
   echo "Failed to load SQL file, retrying in $RETRY_DELAY seconds..."
   COUNTER=$((COUNTER + 1))
   sleep $RETRY_DELAY
@@ -33,4 +33,3 @@ if [ $COUNTER -eq $MAX_RETRIES ]; then
 else
   echo "SQL file loaded successfully."
 fi
-
