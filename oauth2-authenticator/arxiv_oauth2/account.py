@@ -10,13 +10,14 @@ import httpx
 # from PIL.EpsImagePlugin import field
 from arxiv.auth.domain import UserFullName, UserProfile, OTHER
 from arxiv.auth.openid.oidc_idp import ArxivOidcIdpClient
-from fastapi import APIRouter, Depends, status, HTTPException, Request
+from fastapi import APIRouter, Depends, status, HTTPException, Request, Response
 # from mypyc.irbuild.expression import transform_bytes_expr
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
 from enum import Enum
 from pydantic import BaseModel
 from keycloak import KeycloakAdmin, KeycloakError, KeycloakAuthenticationError, KeycloakOpenID
+from urllib.parse import urlparse
 
 from arxiv.base import logging
 from arxiv.auth.user_claims import ArxivUserClaims
@@ -311,19 +312,19 @@ async def update_account_profile(
 
 # See profile update comment.
 @router.post('/register/',
-             response_model=AccountInfoModel,
-             status_code=status.HTTP_201_CREATED,
              responses={
+                 status.HTTP_201_CREATED: {"model": AccountInfoModel, "description": "Successfully created account"},
                  status.HTTP_400_BAD_REQUEST: {"model": AccountRegistrationError, "description": "Invalid registration data"},
                  status.HTTP_404_NOT_FOUND: {"model": AccountRegistrationError, "description": "User not found"},
              }
              )
 async def register_account(
         request: Request,
+        response: Response,
         registration: AccountRegistrationModel,
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
-        ) -> HTTPException | AccountInfoModel:
+        ) -> AccountInfoModel | AccountRegistrationError:
     """
     Create a new user
     """
@@ -336,16 +337,20 @@ async def register_account(
 
     except InvalidCaptchaToken:
         logger.warning(f"Registration: captcha token is invalid {registration.token!r} {host!r}")
-        detail = AccountRegistrationError(message="Captcha token is invalid. Restart the registration")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail.model_dump())
+        detail = AccountRegistrationError(message="Captcha token is invalid. Restart the registration", field_name="Captcha token")
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return detail
 
     except InvalidCaptchaValue:
         logger.info(f"Registration: wrong captcha value {registration.token!r} {host!r} {registration.captcha_value!r}")
-        detail = AccountRegistrationError(message="Captcha answer is incorrect.")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail.model_dump())
+        detail = AccountRegistrationError(message="Captcha answer is incorrect.", field_name="Captcha answer")
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return detail
 
     if not validate_password(registration.password):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password is invalid")
+        detail = AccountRegistrationError(message="Captcha answer is incorrect.", field_name="Password")
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return detail
 
     client_secret = request.app.extra['ARXIV_USER_SECRET']
 
@@ -353,7 +358,9 @@ async def register_account(
         data: Optional[TapirNickname] = session.query(TapirNickname).filter(TapirNickname.nickname == registration.username).one_or_none()
         if not data:
             error_response = AccountRegistrationError(message="Username is not found", field_name="username")
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_response.model_dump())
+            response.status_code = status.HTTP_404_NOT_FOUND
+            return error_response
+
         account = get_account_info(session, str(data.user_id))
         # Rather than creating user, let the legacy user migration create the account.
         _migrate_to_keycloak(kc_admin, account, registration.password, client_secret)
@@ -369,7 +376,10 @@ async def register_account(
         )
 
         if not registration.email:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is required")
+            error_response = AccountRegistrationError(message="Email is required", field_name="email")
+            response.status_code = status.HTTP_400_BAD_REQUEST
+            return error_response
+
 
         user = domain.User(
             username=registration.username,
@@ -405,7 +415,9 @@ async def register_account(
                 where = {"nickname": "User name", "email": "Email"}.get(field, field)
                 message = f"'{match.group(1)}' for '{where}' belongs to an existing user."
             error_response = AccountRegistrationError(message=message, field_name=where)
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_response.model_dump())
+            response.status_code = status.HTTP_400_BAD_REQUEST
+            return error_response
+
         logger.info("Tapir user account created successfully. Next is Keycloak.")
         account = get_account_info(session, user.user_id)
         # _register_to_keycloak(kc_admin, account)
@@ -413,7 +425,9 @@ async def register_account(
 
     if not account:
         error_response = AccountRegistrationError(message="The account not found.")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_response.model_dump())
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return error_response
+
 
     logger.info("User account created successfully")
     return account
@@ -455,7 +469,10 @@ def _migrate_to_keycloak(kc_admin: KeycloakAdmin, account: AccountInfoModel, pas
         "password": password,
     }
 
-    with httpx.Client() as client:
+    parsed_url = urlparse(token_url)
+    is_local = parsed_url.hostname.lower() in ("127.0.0.1", "localhost", "localhost.arxiv.org")
+
+    with httpx.Client(verify=not is_local) as client:
         response = client.post(token_url, data=payload)
         if response.status_code == 200:
             logger.info("Migration successful")

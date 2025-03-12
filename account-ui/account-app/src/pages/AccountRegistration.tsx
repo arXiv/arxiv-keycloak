@@ -20,6 +20,7 @@ import CareerStatusSelect, {CareerStatusType} from "../bits/CareerStatus.tsx";
 import {RuntimeContext} from "../RuntimeContext.tsx";
 import {paths} from "../types/aaa-api.ts";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import HearingIcon from "@mui/icons-material/Hearing";
 import {emailValidator, passwordValidator} from "../bits/validators.ts";
 import Tooltip from "@mui/material/Tooltip";
 import PasswordRequirements from "../bits/PasswordRequirements.tsx";
@@ -145,6 +146,10 @@ const AccountRegistration = () => {
         setFormData({...formData, token: ""});
     }, []);
 
+    const speakCaptcha = () => {
+        const audio = new Audio(runtimeContext.AAA_URL + `/captcha/audio?token=${formData.token}`);
+        audio.play().catch((error) => console.error("Playback failed:", error));
+    };
 
     const validateCaptcha = (value: string) => {
         return value.length > 4;
@@ -270,15 +275,15 @@ const AccountRegistration = () => {
                     },
                 })
             } else {
-                const errorReply =await response.json();
-                showNotification(errorReply.detail, "warning");
+                const errorReply: RegistrationErrorReply = data as unknown as RegistrationErrorReply;
+                const message = errorReply.field_name ? `${errorReply.message} (error in ${errorReply.field_name})` : errorReply.message;
+                showNotification(message, "warning");
 
                 if (response.status === 400) {
-                    const reply: RegistrationErrorReply = data as unknown as RegistrationErrorReply;
                     setPostSubmitDialog({
                         open: true,
                         title: "Registration Unsuccessful",
-                        message: reply.message,
+                        message: message,
                         onClose: () => {
                             setPostSubmitDialog(
                                 {
@@ -547,6 +552,7 @@ const AccountRegistration = () => {
                             <Box display="flex" justifyContent="space-between" alignItems="center">
                                 {captchaImage}
                                 <IconButton onClick={resetCaptcha}> <RefreshIcon/></IconButton>
+                                <IconButton onClick={speakCaptcha} aria-label="Listen to captcha value"> <HearingIcon/></IconButton>
 
                                 <TextField
                                     label="Captcha Respones *"

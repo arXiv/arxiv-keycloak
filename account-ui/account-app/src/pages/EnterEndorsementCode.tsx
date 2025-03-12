@@ -149,10 +149,33 @@ const EnterEndorsementCode = () => {
         }
     }, [endorsementOutcome]);
 
+    function printUser(user: PublicUserType | User | null): string {
+        if (!user)
+            return "";
+        const maybe_email = user?.email ? ` <${user?.email}>` : '';
+        return `${user?.first_name} ${user?.last_name}${maybe_email} - ${user?.affiliation || "No affiliation"}`;
+    }
+
+
+    function printUserName(user: PublicUserType | User | null | undefined): string {
+        if (!user)
+            return "";
+        return `${user?.first_name} ${user?.last_name}`;
+    }
+
+    function printCategory(endoresementRequest: EndorsementRequestType | null): string {
+        if (!endoresementRequest)
+            return "";
+        return `${endoresementRequest?.archive}${endoresementRequest?.subject_class ? "." + endoresementRequest.subject_class : ""}`;
+    }
+
+
+    const endorseeName = printUserName(endorsee);
+    const endorser_name = printUser(user);
+
     // When the outcome shows up, do something
     useEffect(() => {
         if (!endorsementOutcome) return;
-        const endorseeName = printUserName(endorsee);
         const email = runtimeProps.URLS.arxivAdminContactEmail;
         const emailLink = (<Link href={`email:${email}`}>{email}</Link>);
 
@@ -209,29 +232,6 @@ const EnterEndorsementCode = () => {
     }, [endorsementOutcome]);
 
 
-    function printUser(user: PublicUserType | User | null): string {
-        if (!user)
-            return "";
-        const maybe_email = user?.email ? ` <${user?.email}>` : '';
-        return `${user?.first_name} ${user?.last_name}${maybe_email} - ${user?.affiliation || "No affiliation"}`;
-    }
-
-
-    function printUserName(user: PublicUserType | User | null | undefined): string {
-        if (!user)
-            return "";
-        return `${user?.first_name} ${user?.last_name}`;
-    }
-
-    function printCategory(endoresementRequest: EndorsementRequestType | null): string {
-        if (!endoresementRequest)
-            return "";
-        return `${endoresementRequest?.archive}${endoresementRequest?.subject_class ? "." + endoresementRequest.subject_class : ""}`;
-    }
-
-    const endorsee_name = printUserName(endorsee);
-    const endorser_name = printUser(user);
-
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         setInProgress(true);
         event.preventDefault();
@@ -264,10 +264,10 @@ const EnterEndorsementCode = () => {
                     showMessageDialog(
                         (<>
                             <p>Your endorsement helps us maintain the quality of arXiv submissions.</p>
-                            <p>{`${endorsee_name} is now authorized to upload articles to ${categoryFullName}.; `}
-                                {`we've informed ${endorsee_name} of this by sending an e-mail. (We did not tell ${endorser_name} that the endorsement came from you.)`}</p>
+                            <p>{`${endorseeName} is now authorized to upload articles to ${categoryFullName}.; `}
+                                {`we've informed ${endorseeName} of this by sending an e-mail. (We did not tell ${endorseeName} that the endorsement came from you.)`}</p>
                         </>),
-                        `Thank you for endorsind ${endorsee_name}`
+                        `Thank you for endorsing ${endorseeName}`
                         , () => setFormData(initialFormData), "Restart");
                 }
                 else {
@@ -275,17 +275,17 @@ const EnterEndorsementCode = () => {
                         (<>
                             <p>Your vigilance helps us maintain the quality of arXiv submissions.</p>
 
-                            <p>Your vote of no confidence will not result in any automatic action against {endorsee_name};
-                                {endorsee_name} will still be able to submit to the {categoryName} if they can find another
+                            <p>Your vote of no confidence will not result in any automatic action against {endorseeName};
+                                {endorseeName} will still be able to submit to the {categoryName} if they can find another
                                 endorser.  However, your feedback may help us detect massive abuse (users
                                 who contact hundreds of arXiv users in the hope of finding someone who'll
                                 endorse them without thinking) and will direct our attention to possible
                                 problem submissions.</p>
 
-                            <p>{endorsee_name} will not be informed of your feedback.  It is your
-                                responsibility to tell (or not tell) {endorsee_name} of your decision.</p>
+                            <p>{endorseeName} will not be informed of your feedback.  It is your
+                                responsibility to tell (or not tell) {endorseeName} of your decision.</p>
                         </>),
-                        `Thank you for your feedback on ${endorsee_name}`
+                        `Thank you for your feedback on ${endorseeName}`
                         , () => setFormData(initialFormData), "Restart");
 
                 }
@@ -312,10 +312,18 @@ const EnterEndorsementCode = () => {
                 [name]: !Boolean(checked),
             })
         } else if (type === "radio") {
-            setFormData({
-                ...formData,
-                [name]: value === "true",
-            })
+            if (value === "undefined") {
+                setFormData({
+                    ...formData,
+                    [name]: undefined,
+                })
+            }
+            else {
+                setFormData({
+                    ...formData,
+                    [name]: value === "true",
+                })
+            }
         } else {
             setFormData({
                 ...formData,
@@ -334,13 +342,13 @@ const EnterEndorsementCode = () => {
     );
 
     const endorsementLabel = endorsementRequest && endorsee ? (
-        <CardHeader title={`Endorsement of ${endorsee_name} for ${categoryFullName}`} />
+        <CardHeader title={`Endorsement of ${endorseeName} for ${categoryFullName}`} />
     ) : null;
 
     const endorserInfo = (<Typography >
             <Typography component={"span"} fontWeight={"bold"}> {"Endorser (You): "}</Typography>
             <Typography component={"span"}
-                        sx={{textDecoration: "underline"}}>{printUser(user)}</Typography>
+                        sx={{textDecoration: "underline"}}>{endorser_name}</Typography>
         </Typography>
     );
 
@@ -373,15 +381,6 @@ const EnterEndorsementCode = () => {
 
     const endorsementSelection = ok_to_submit ? (
         <Box>
-            <Typography component={"li"}>
-                You can endorse {printUserName(endorsee)}.
-            </Typography>
-            <Typography component={"li"}>
-                You can tell us that you don't want to endorse {printUserName(endorsee)}.
-            </Typography>
-            <Typography component={"li"}>
-                Do nothing by leaving this page.
-            </Typography>
 
             <FormControl component="fieldset"
                          disabled={errors?.endorsement_code?.length ? true : false}>
@@ -392,19 +391,13 @@ const EnterEndorsementCode = () => {
                     value={formData.positive ? "true" : "false"}
                     onChange={handleChange}
                 >
-                    <Box sx={{
-                        display: "flex",
-                        flexDirection: "row",
-                        gap: 2,
-                        alignItems: "center",
-                        ml: 3,
-                        mt: 1
-                    }}>
                         <FormControlLabel tabIndex={3} value="true" control={<Radio/>}
-                                          label={`Endorse ${printUserName(endorsee)}`}/>
+                                          label={`Endorse ${endorseeName} (Allow submitting to category)`}/>
                         <FormControlLabel tabIndex={4} value="false" control={<Radio/>}
-                                          label={`Wish to not endorse ${printUserName(endorsee)}`}/>
-                    </Box>
+                                          label={`Deny ${endorseeName} (Vote of no confidence, do not allow submitting to category)`}/>
+                        <FormControlLabel tabIndex={5} value="undefined" control={<Radio/>}
+                                          label={"I don't know."}/>
+
                 </RadioGroup>
             </FormControl>
         </Box>
@@ -413,10 +406,10 @@ const EnterEndorsementCode = () => {
     const choices = ok_to_submit ? (
         <>
             <Box sx={{display: "flex", flexDirection: "row", gap: 2, alignItems: "center"}}>
-                <FormControlLabel tabIndex={5}
+                <FormControlLabel tabIndex={6}
                                   control={<Checkbox name="seen_paper" id="seen_paper" key={"seen_paper"}
                                                      onChange={handleChange}/>} label={"Seen paper"}/>
-                <FormControlLabel tabIndex={6}
+                <FormControlLabel tabIndex={7}
                                   control={<Checkbox name="knows_personally" id="knows_personally"
                                                      key={"knows_personally"} onChange={handleChange}/>}
                                   label={"Knows personally"}/>
@@ -424,18 +417,27 @@ const EnterEndorsementCode = () => {
         <Box>
             <Typography component="span"  >
                 <Typography fontWeight={"bold"}>{"Comment: "}</Typography>
-                <Typography >{" (Optional) Enter any comments on why you would or would not endorse "}{printUserName(endorsee)}</Typography>
+                <Typography >{" (Optional) Enter any comments on why you would or would not endorse "}{endorseeName}</Typography>
             </Typography>
             <TextField name="comment" id="comment" label="Comment" multiline
                        variant="outlined" fullWidth onChange={handleChange}
                        error={Boolean(errors.comment)} helperText={errors.comment}
                        sx={{mt: 1}}
-                       minRows={4} tabIndex={7}
+                       minRows={4} tabIndex={8}
             />
         </Box>
 
     <Box display="flex" justifyContent="space-between" alignItems="center">
         <Button type="submit" variant="contained" tabIndex={8} sx={{
+            backgroundColor: "#1976d2",
+            "&:hover": {
+                backgroundColor: "#1420c0"
+            }
+        }} disabled={inProgress}>
+            Cancel
+        </Button>
+
+        <Button type="submit" variant="contained" tabIndex={9} sx={{
             backgroundColor: "#1976d2",
             "&:hover": {
                 backgroundColor: "#1420c0"

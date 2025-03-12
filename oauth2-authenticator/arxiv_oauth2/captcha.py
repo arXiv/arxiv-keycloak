@@ -1,10 +1,10 @@
 """arXiv category routes."""
-from http import HTTPStatus
-from typing import Optional, List
+from typing import Optional
 import io
 from fastapi import APIRouter, Request, HTTPException, status
 from pydantic import BaseModel
 import logging
+from .alnum_voice.alnum2mp3 import alnum_to_mp3
 
 from starlette.responses import StreamingResponse
 
@@ -19,13 +19,13 @@ class CaptchaTokenReplyModel(BaseModel):
 
 
 
-def generate_captcha_image(token: str, secret: str, ip_address: str, font: Optional[str] = None) -> io.BytesIO:
+def generate_captcha_image(token: str, secret: str, ip_address: str, font: Optional[str] = None) -> io.BytesIO | None:
     """Provide the image for stateless captcha."""
     if not token:
         return None
     try:
         image = stateless_captcha.render(token, secret, ip_address, font=font)
-    except stateless_captcha.InvalidCaptchaToken as e:
+    except stateless_captcha.InvalidCaptchaToken as _e:
         return None
     return image
 
@@ -58,3 +58,24 @@ def get_captcha_token(request: Request) -> CaptchaTokenReplyModel:
     captcha_token = stateless_captcha.new(captcha_secret, host)
     return CaptchaTokenReplyModel(token=captcha_token)
 
+
+@router.get('/audio', responses = {
+    200: { "content": {"audio/mpeg": {}}}
+})
+async def get_captcha_audio(
+        request: Request,
+        token: str,
+    ) -> StreamingResponse:
+    if not token:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No token")
+    app = request.app
+    secret = app.extra['CAPTCHA_SECRET']
+    host = get_client_host(request)
+    value = stateless_captcha.unpack(token, secret, host)
+    voice = alnum_to_mp3(value)
+    return StreamingResponse(voice,
+        media_type="audio/mpeg",
+        headers={
+            "X-Captcha-Token": token,
+            "Cache-Control": "no-store, must-revalidate",
+        })

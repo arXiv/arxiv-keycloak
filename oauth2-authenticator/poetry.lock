@@ -1318,6 +1318,76 @@ cryptography = ">=3.4"
 typing-extensions = ">=4.5.0"
 
 [[package]]
+name = "lameenc"
+version = "1.8.1"
+description = "LAME encoding bindings"
+optional = false
+python-versions = "*"
+files = [
+    {file = "lameenc-1.8.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:66d3a64f21ed73d23c9c50347173222a36da2397180e28b07b3a7b253f05a6e8"},
+    {file = "lameenc-1.8.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:ad79509328fa22bac66d92a85dbfa5afb88edb69cebb79f7fee8b77d6cdd1b67"},
+    {file = "lameenc-1.8.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_24_aarch64.whl", hash = "sha256:9d8be69c3e5fd98ce4f16ed1d76705178bae2eac25749e1d825e9aa7193f05bb"},
+    {file = "lameenc-1.8.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:495dda9848601492b7fb25ef41027bc3358b9b3f6d302346ebf9570f44188f63"},
+    {file = "lameenc-1.8.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl", hash = "sha256:f199c12b84614bb1edf5dca4aee15920148fe6a9187045f8db66b97afd401157"},
+    {file = "lameenc-1.8.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:23ad864875269b0b7210f9cddcbfd0b2521108f0c1ca537a39a6697347713138"},
+    {file = "lameenc-1.8.1-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_24_i686.whl", hash = "sha256:17476cc2df4a7cb4fe0ab849a9f40ff5f07565fa6701dbd464240b3f384b5a0e"},
+    {file = "lameenc-1.8.1-cp310-cp310-win32.whl", hash = "sha256:a3a5b09f073ef0814e74a3de30b0b1056b4eeb92d8ec73cde822d32c5d7e1cf4"},
+    {file = "lameenc-1.8.1-cp310-cp310-win_amd64.whl", hash = "sha256:a875751e6b52db71ed248f34d4c447161519f4c463ab6b42a81b7eaecd5f37b1"},
+    {file = "lameenc-1.8.1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:40973c2195b8ff8d20c0bed0f491e39e491661849d003c918d19eea2234f7af7"},
+    {file = "lameenc-1.8.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:83e8d1195074e36647082ae5b062b40a7433a7d840a543d70e2fd7c62e877d65"},
+    {file = "lameenc-1.8.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_24_aarch64.whl", hash = "sha256:8a3ebb5806bdaf0cdf8a6a3b7ef0a5fb8a0eb4113192d73edce034f430d86663"},
+    {file = "lameenc-1.8.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:a70c8199ad47016c466b6c784924f9a2b87a3379e194345b01158e8b320a76fc"},
+    {file = "lameenc-1.8.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl", hash = "sha256:12d6331c7b80c1e51a215f8d516ded90d79e3e95e7578b34268ac1b143ecf29d"},
+    {file = "lameenc-1.8.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:5b8464e4ce61126fffc4e15b08daea2f9dda4853bcb5e5ead9e59030cbce996b"},
+    {file = "lameenc-1.8.1-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_24_i686.whl", hash = "sha256:510bcd1cb28fad751a8a85c41fc5af8c1babbe6c8bf58b1db31d4f82389ea79e"},
+    {file = "lameenc-1.8.1-cp311-cp311-win32.whl", hash = "sha256:884b8c50cccd6ab8f853bb73c45c7d4196415990c77f5d65bcc78034e19dda67"},
+    {file = "lameenc-1.8.1-cp311-cp311-win_amd64.whl", hash = "sha256:e21ec614d758b29e042a484e44318725543c3fcd4e4afeb685295efd97aa9a1f"},
+    {file = "lameenc-1.8.1-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:ef7d7ccad32f5febd812fb078fe63e46b4ec411d2ef612a79fd0391ef9f65b35"},
+    {file = "lameenc-1.8.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:c980a676314d3c344f080be8ef05c98d60d201da6a492c3658c6bf5a733a1e11"},
+    {file = "lameenc-1.8.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:a86f51bc50421db8e122c627bc2d0e7526da4505ebb6699c20c8b7352cb8df19"},
+    {file = "lameenc-1.8.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:693a6cb42494dde1ae78756f1323b07dea041a152a1f4805639490bfea0e9ba3"},
+    {file = "lameenc-1.8.1-cp312-cp312-win32.whl", hash = "sha256:26720094ed7cb9f3364f79fdc7ad3459aabb71b94f30936dfe0ad7430078af07"},
+    {file = "lameenc-1.8.1-cp312-cp312-win_amd64.whl", hash = "sha256:715e0e72ed5429f00042379e48a7903e54ee5dc01069db34338536f3595059c3"},
+    {file = "lameenc-1.8.1-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:1ef8f8ad8de7a038aa0624efc6c585ad600c7e6d34acc2583631883027bd6752"},
+    {file = "lameenc-1.8.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:e4bf9c20e41a66964ff5c2f0ab3072cd39df9fc19ecc419ad8ef0c9bb1e80ac1"},
+    {file = "lameenc-1.8.1-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:b6b4f4318e43314da20caad14c0d884546e90abdd4c7fe884c6558db355c8efb"},
+    {file = "lameenc-1.8.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:0399f7dec7c8d626c913023a3c7cbd89314dab6f0e67ac4a335a4a4cb8c23de3"},
+    {file = "lameenc-1.8.1-cp313-cp313-win32.whl", hash = "sha256:d765b3b20baedc87286e199554975074f9f9799a13b6bddb88baae0f3aeb8904"},
+    {file = "lameenc-1.8.1-cp313-cp313-win_amd64.whl", hash = "sha256:c5fa96b300d27785c3110f566961bd97487c98023ee88d0822ca7c9af0fd9b89"},
+    {file = "lameenc-1.8.1-cp313-cp313t-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:3ca88a3ac5848b3ade75777288c309b2db18fa0788c140811b3852533d9dc291"},
+    {file = "lameenc-1.8.1-cp313-cp313t-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:68dbacf39fc049dae22b08614d363d3293822d7255908b1bfe50d51c1a0fd6a1"},
+    {file = "lameenc-1.8.1-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:30a9d7aa41b685d7be0c9a39a5ecf734381be8c42c31cdc5aa3764755e11b0a8"},
+    {file = "lameenc-1.8.1-cp38-cp38-macosx_11_0_universal2.whl", hash = "sha256:8d2714678e5d9647d03aa40fb5f400409e3d017f48c4d88b65c5cc0a4664d914"},
+    {file = "lameenc-1.8.1-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_24_aarch64.whl", hash = "sha256:8f64e0486e2081029bbc1477a1c619519ca3ff89270cf6e2802d9a3466c367a7"},
+    {file = "lameenc-1.8.1-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:c2b28e135a056b5ac37ed9acb8dbfcbf71cc4f0d192f5a794ad5101522a5320f"},
+    {file = "lameenc-1.8.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl", hash = "sha256:b7f24f1a40196a4b3e9b675f2bf047566e1b60649754b28e8fb0b48b1011b1c9"},
+    {file = "lameenc-1.8.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:a9787640264f05a58d1f6f876604cdf8d0f1bb7a7dc267a0c97b575149a1b95c"},
+    {file = "lameenc-1.8.1-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.manylinux_2_24_i686.whl", hash = "sha256:ed71b804c113a80030dca87e24d7ecb2f9299cc8e62721a5ce56955b59436c90"},
+    {file = "lameenc-1.8.1-cp38-cp38-win32.whl", hash = "sha256:fb2b225deb124888a1b64a8be8f016347292cde91339d3c20aa79650542a353e"},
+    {file = "lameenc-1.8.1-cp38-cp38-win_amd64.whl", hash = "sha256:566d51e2a30b61744341d62200a8fb92aa7c5c4dc358a0d9f367f87b2485c949"},
+    {file = "lameenc-1.8.1-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:70fdbc3e5bc39185c4a893f4e856bdfc20f8713f8f34450107dec9411c8d9863"},
+    {file = "lameenc-1.8.1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:be24fb87390cd9464d30eef2c8a6251fec766d00922fd30bd76e531b6ecfdf12"},
+    {file = "lameenc-1.8.1-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_24_aarch64.whl", hash = "sha256:431b3db73e0b3b182398526fd7d8491fda5798638bb9e5978e54781a544042ad"},
+    {file = "lameenc-1.8.1-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:a76e524abc648e10f6793dc101dd2d58665fe4608f7c612ea1548b7e2b9bae3c"},
+    {file = "lameenc-1.8.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl", hash = "sha256:9614c0624311cc61c26d86be385c96127a5c86e7a616b020975d672f3bbd766e"},
+    {file = "lameenc-1.8.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:c939957a0537cc3a131dd2c2bbdd6f5c818c6b99f446367a9d4f6eb0061e637a"},
+    {file = "lameenc-1.8.1-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_24_i686.whl", hash = "sha256:f44482d6ea834358f381d904ba8cac7b2af060c1fcc7227ec46d38a16f6741fa"},
+    {file = "lameenc-1.8.1-cp39-cp39-win32.whl", hash = "sha256:7972e7b1373fcbbf601efc3916f79b9da2bbe56835de86bc67a4fdb62e7a481c"},
+    {file = "lameenc-1.8.1-cp39-cp39-win_amd64.whl", hash = "sha256:5bdf253e50a853e7f2df31e174b669ee861ed045b1de99cf07adf650ea2610f8"},
+    {file = "lameenc-1.8.1-pp310-pypy310_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:911feec52f7af6aee6d93fb2741bb745987df88b14e82383c6f801bb6fa2833f"},
+    {file = "lameenc-1.8.1-pp310-pypy310_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:479a391885921549b80fd25144fd2651abb6a22b18654bc2ba7cc302e53a9ce4"},
+    {file = "lameenc-1.8.1-pp37-pypy37_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_24_aarch64.whl", hash = "sha256:8d974f1a9abb80c289fed02bc965833a07b5f9c9973d696b247e35951357ac7a"},
+    {file = "lameenc-1.8.1-pp37-pypy37_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl", hash = "sha256:9a5ef0cc37481fce4c9178155ce6c33f70f5bae81a33677805f5e5a4ab69de71"},
+    {file = "lameenc-1.8.1-pp37-pypy37_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_24_i686.whl", hash = "sha256:60a3b4713f382e84b095fa525c59af2c456efb0bea54f2cd920c12174ba9b3f2"},
+    {file = "lameenc-1.8.1-pp38-pypy38_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_24_aarch64.whl", hash = "sha256:abdf7e03b16a34c7fe7c1ab0cc1f9ea78a088b0cd5e8628273bf110de2a8ea49"},
+    {file = "lameenc-1.8.1-pp38-pypy38_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl", hash = "sha256:693811c7e73309f052a665910f9eceb667d4486315c3f5827a0eb59205373466"},
+    {file = "lameenc-1.8.1-pp38-pypy38_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_24_i686.whl", hash = "sha256:01899b612e4c8638cab3285b37c3e512f672333342a94d4ff71577b2f707dc48"},
+    {file = "lameenc-1.8.1-pp39-pypy39_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_24_aarch64.whl", hash = "sha256:8f3d5cf40bf14feae0342d914b8e234ed6adde43c7c867c28a61dce5961fb8d3"},
+    {file = "lameenc-1.8.1-pp39-pypy39_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl", hash = "sha256:9dd0b6bb05cea672abb942e159b2afebc1dfee1f2b0e5150164a970dd0904bc4"},
+    {file = "lameenc-1.8.1-pp39-pypy39_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_24_i686.whl", hash = "sha256:9cd6a545652d5bdc9a55483f50d153844d0ee790f9b45997717a0be578ad4db1"},
+]
+
+[[package]]
 name = "markdown-it-py"
 version = "3.0.0"
 description = "Python port of markdown-it. Markdown parsing, done right!"
@@ -2867,4 +2937,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<4.0"
-content-hash = "74a15f2bc37593a411fe352e6a00f973f173dc664ffc175bb5ad96084afe37be"
+content-hash = "3fd39e018cfb35f4b38ee1c65f97bfbe1058b74594fdd812104a5a437184d7e7"
