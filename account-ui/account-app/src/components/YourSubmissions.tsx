@@ -18,7 +18,6 @@ import Paper from "@mui/material/Paper";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 // import Checkbox from "@mui/material/Checkbox";
-import OpenIcon from "@mui/icons-material/OpenWith";
 import EditIcon from "@mui/icons-material/Edit";
 
 
@@ -248,24 +247,8 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimeProps
             </Box>
 
             <Box display="flex" gap={2} justifyContent="flex-start" mt={1}>
-                <Button
-                    disabled={runtimeProps.currentUser === null}
-                    variant="contained"
-                    startIcon={<OpenIcon/>}
-                    href={runtimeProps.URLS.submissionManagementURL}
-                    sx={{
-                        color: "white", // Default text color
-                        "&:hover": {
-                            color: "white", // Keep text white on hover
-                        },
-                    }}
-                    aria-label="Open Submissions"
-                >
-                    Open Submission management
-                </Button>
                 <Box flexGrow={1}/>
-
-                            <Button
+                <Button
                     disabled={runtimeProps.currentUser === null}
                     variant="contained"
                     startIcon={<EditIcon/>}
