@@ -30,7 +30,7 @@ const SubmitRequest: React.FC<{ runtimeProps: RuntimeProps }> = ({ runtimeProps 
     const verifyEmailRequest = useCallback(() => {
         async function requestEmail() {
             try {
-                const reply = await fetch(`${runtimeProps.UP_API_URL}/account/email/verify/`, {
+                const reply = await fetch(`${runtimeProps.ADMIN_API_BACKEND_URL}/account/email/verify/`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email: user?.email }), // Convert object to JSON string
@@ -47,7 +47,7 @@ const SubmitRequest: React.FC<{ runtimeProps: RuntimeProps }> = ({ runtimeProps 
         }
         requestEmail();
         setDialogOpen(false); // Close dialog after sending request
-    }, [user?.email, runtimeProps.UP_API_URL]);
+    }, [user?.email, runtimeProps.ADMIN_API_BACKEND_URL]);
 
     //          <Button variant="outlined" startIcon={<VerifiedUser />} href="/user-account/verify-email" disabled={user?.email_verified}>Send verification email</Button>
 
@@ -85,7 +85,7 @@ interface TableRowData {
 async function fetchData(id: string, runtimeProps: RuntimeProps) : Promise<TableRowData> {
     if (!id) return {id: "", middle : "", right: "" };
     try {
-        const response = await fetch(runtimeProps.UP_API_URL + "/documents/paper_id/" + id);
+        const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/documents/paper_id/" + id);
         const doc: ArxivDocument = await response.json();
         return {id: doc.paper_id, middle: doc.title, right: doc.authors || ""};
     }
@@ -162,7 +162,7 @@ function EditableTable({runtimeProps} : {runtimeProps: RuntimeProps}) : React.Re
         }
 
         try {
-            const response = await fetch(runtimeProps.UP_API_URL + "/ownership/requests/", {
+            const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/ownership/requests/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

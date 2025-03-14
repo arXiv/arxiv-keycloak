@@ -354,20 +354,27 @@ const EnterEndorsementCode = () => {
 
     const endorseeInfo = endorsee && endorsementRequest ? (
         <Typography >
-            <Typography>
-                The following has requested your endorsement to submit papers to {printCategory(endorsementRequest)}
+            <Typography component="p" >
+                {endorseeName} has requested your endorsement to submit papers to {printCategory(endorsementRequest)}
                 {" ("}{endorsementCategoryName}).
+            </Typography>
+            <Typography component="p" sx={{p:2}}>
                 { endorsementOutcome?.request_acceptable ?
                     (
-                        <Typography>{endorsementOutcome?.reason || "Endorsement request is valid."}</Typography>
+                        <Typography>
+                            Acceptance reason:
+                            <Typography>{endorsementOutcome?.reason || "Endorsement request is valid."}</Typography>
+                        </Typography>
                     )
                     :
                     (
-                        <Typography sx={{fontStyle: "italic"}}>{endorsementOutcome.reason || "Endorsee cannot receive any endorsement."}</Typography>
+                        <Typography>
+                            Reject reason:
+                            <Typography sx={{fontStyle: "italic"}}>{endorsementOutcome.reason || "Endorsee cannot receive any endorsement."}</Typography>
+                        </Typography>
                     )
                 }
             </Typography>
-            <Box sx={{height: "8px"}} />
             <Typography component={"span"} fontWeight={"bold"}>{"Endorsement: "}</Typography>
             <Typography component={"span"}
                         sx={{textDecoration: "underline"}}> {printUser(endorsee)}</Typography>
@@ -381,7 +388,9 @@ const EnterEndorsementCode = () => {
 
     const endorsementSelection = ok_to_submit ? (
         <Box>
-
+            <Typography sx={{fontWeight: "bold"}}>
+                arXiv will only inform {endorseeName} if you choose to endorse.
+            </Typography>
             <FormControl component="fieldset"
                          disabled={errors?.endorsement_code?.length ? true : false}>
                 <RadioGroup

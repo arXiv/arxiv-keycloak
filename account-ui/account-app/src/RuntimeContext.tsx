@@ -47,7 +47,6 @@ export interface ArxivSiteURLs {
 export interface RuntimeProps
 {
     AAA_URL: string,
-    UP_API_URL: string,
     ADMIN_API_BACKEND_URL: string,
     ADMIN_APP_ROOT: string,
     ARXIV_COOKIE_NAME: string,
@@ -62,7 +61,6 @@ export interface RuntimeProps
 
 const defaultRuntimeProps : RuntimeProps = {
     AAA_URL: 'http://localhost.arxiv.org:5000/aaa',
-    UP_API_URL: 'http://localhost.arxiv.org:5000/up-api',
     ADMIN_API_BACKEND_URL: 'http://localhost.arxiv.org:5000/admin-api/v1',
     ADMIN_APP_ROOT: 'http://localhost.arxiv.org:5000/admin-console/',
     ARXIV_COOKIE_NAME: "arxiv_oidc_session",
@@ -136,7 +134,6 @@ export const RuntimeContextProvider = ({ children } : RuntimeContextProviderProp
                 baseUrl = baseUrl + "/";
                 const runtime1: Partial<RuntimeProps> = {
                     AAA_URL: baseUrl + "aaa",
-                    UP_API_URL: baseUrl + "admin-api/v1",
                     ADMIN_API_BACKEND_URL: baseUrl + "admin-api/v1",
                     ADMIN_APP_ROOT: baseUrl + "admin-console/",
                     ARXIV_COOKIE_NAME: defaultRuntimeProps.ARXIV_COOKIE_NAME,

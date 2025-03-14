@@ -472,6 +472,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/paper-pw/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Paper Pw */
+        get: operations["get_paper_pw_v1_paper_pw__id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/ownership_requests/": {
         parameters: {
             query?: never;
@@ -744,6 +761,63 @@ export interface paths {
          * @description Display a paper.
          */
         get: operations["get_document_v1_documents__id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/metadatas/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Metadatas */
+        get: operations["list_metadatas_v1_metadatas__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/metadatas/paper_id/{paper_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Metadata
+         * @description Display a paper.
+         */
+        get: operations["get_metadata_v1_metadatas_paper_id__paper_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/metadatas/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Metadata
+         * @description Display a paper.
+         */
+        get: operations["get_metadata_v1_metadatas__id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1215,8 +1289,11 @@ export interface components {
             flag_group_eess: number;
             /** Flag Group Econ */
             flag_group_econ: number;
-            /** Veto Status */
-            veto_status: string;
+            veto_status: components["schemas"]["UserVetoStatus"];
+            /** Orcid */
+            orcid?: string | null;
+            /** Author Id */
+            author_id?: string | null;
         };
         /** DocumentModel */
         DocumentModel: {
@@ -1243,6 +1320,8 @@ export interface components {
             created?: string | null;
             /** Last Submission Id */
             last_submission_id?: number | null;
+            /** Abs Categories */
+            abs_categories?: string | null;
         };
         /** EmailTemplateModel */
         EmailTemplateModel: {
@@ -1349,10 +1428,15 @@ export interface components {
             secret?: string | null;
             /** Flag Valid */
             flag_valid?: boolean | null;
-            /** Flag Open */
-            flag_open?: boolean | null;
             /** Issued When */
             issued_when?: string | null;
+            /**
+             * Point Value
+             * @default 0
+             */
+            point_value: number;
+            /** Flag Open */
+            flag_open?: boolean | null;
             /** Flag Suspect */
             flag_suspect?: boolean | null;
             /** Endorsee Username */
@@ -1415,6 +1499,69 @@ export interface components {
             email?: string | null;
             /** Contact Name */
             contact_name?: string | null;
+        };
+        /** MetadataModel */
+        MetadataModel: {
+            /** Id */
+            id: number;
+            /** Document Id */
+            document_id: number;
+            /** Paper Id */
+            paper_id: string;
+            /**
+             * Created
+             * Format: date-time
+             */
+            created: string;
+            /**
+             * Updated
+             * Format: date-time
+             */
+            updated: string;
+            /** Submitter Id */
+            submitter_id: number;
+            /** Submitter Name */
+            submitter_name: string;
+            /** Submitter Email */
+            submitter_email: string;
+            /** Source Size */
+            source_size?: number | null;
+            /** Source Format */
+            source_format: ("tex" | "ps" | "html" | "pdf" | "withdrawn" | "pdftex" | "docx") | null;
+            /** Source Flags */
+            source_flags: string | null;
+            /** Title */
+            title?: string | null;
+            /** Authors */
+            authors?: string | null;
+            /** Abs Categories */
+            abs_categories?: string | null;
+            /** Comments */
+            comments?: string | null;
+            /** Proxy */
+            proxy?: string | null;
+            /** Report Num */
+            report_num?: string | null;
+            /** Msc Class */
+            msc_class?: string | null;
+            /** Acm Class */
+            acm_class?: string | null;
+            /** Journal Ref */
+            journal_ref?: string | null;
+            /** Doi */
+            doi?: string | null;
+            /** Abstract */
+            abstract?: string | null;
+            /** License */
+            license?: string | null;
+            /** Version */
+            version: number;
+            /** Modtime */
+            modtime?: number | null;
+            /** Is Current */
+            is_current?: number | null;
+            /** Is Withdrawn */
+            is_withdrawn: number;
         };
         /** ModeratorModel */
         ModeratorModel: {
@@ -1504,6 +1651,13 @@ export interface components {
             rejected_document_ids: number[];
             /** Accepted Document Ids */
             accepted_document_ids: number[];
+        };
+        /** PaperPwModel */
+        PaperPwModel: {
+            /** Id */
+            id: number;
+            /** Password Enc */
+            password_enc: string;
         };
         /** PublicUserModel */
         PublicUserModel: {
@@ -1913,6 +2067,11 @@ export interface components {
             /** Veto Status */
             veto_status: string | null;
         };
+        /**
+         * UserVetoStatus
+         * @enum {string}
+         */
+        UserVetoStatus: "ok" | "no-endorse" | "no-upload" | "no-replace";
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -2979,6 +3138,14 @@ export interface operations {
                 not_positive?: boolean | null;
                 /** @description Suspected user */
                 suspected?: boolean | null;
+                /** @description Endorsement request secret */
+                secret_code?: string | null;
+                /** @description Endorsement request endorsee first_name */
+                endorsee_first_name?: string | null;
+                /** @description Endorsement request endorsee last_name */
+                endorsee_last_name?: string | null;
+                /** @description Endorsement request endorsee email */
+                endorsee_email?: string | null;
             };
             header?: never;
             path?: never;
@@ -3395,6 +3562,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OwnershipModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_paper_pw_v1_paper_pw__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperPwModel"];
                 };
             };
             /** @description Validation Error */
@@ -3924,6 +4122,10 @@ export interface operations {
                 _end?: number | null;
                 /** @description List of document IDs to filter by */
                 id?: number[] | null;
+                /** @description Submitter ID */
+                submitter_id?: string | null;
+                /** @description MUI datagrid filter */
+                filter?: string | null;
                 preset?: string | null;
                 /** @description Start date for filtering */
                 start_date?: string | null;
@@ -4007,6 +4209,113 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DocumentModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_metadatas_v1_metadatas__get: {
+        parameters: {
+            query?: {
+                /** @description sort by */
+                _sort?: string | null;
+                /** @description sort order */
+                _order?: string | null;
+                _start?: number | null;
+                _end?: number | null;
+                /** @description List of metadata IDs to filter by */
+                id?: number[] | null;
+                preset?: string | null;
+                /** @description Start date for filtering */
+                start_date?: string | null;
+                /** @description End date for filtering */
+                end_date?: string | null;
+                /** @description arXiv ID */
+                paper_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetadataModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_metadata_v1_metadatas_paper_id__paper_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetadataModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_metadata_v1_metadatas__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetadataModel"];
                 };
             };
             /** @description Validation Error */

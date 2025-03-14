@@ -34,6 +34,7 @@ type SubmissionStatusRecordType = Record<SubmissionStatusIdType, SubmissionsStat
 const PAGE_SIZES = [5, 20, 100];
 
 const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimeProps}) => {
+    const [isLoading, setIsLoading] = useState(false);
     const [submissions, setSubmissions] = useState<SubmissionsType>([]);
     const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
         page: 0, // starts at page 0
@@ -52,7 +53,8 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimeProps
         async function doSubmissionStatusList() {
             if (submissinStatusList === noSSRT) {
                 try {
-                    const response = await fetch(runtimeProps.UP_API_URL + "/submissions/metadata/status-list");
+                    setIsLoading(true);
+                    const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/submissions/metadata/status-list");
                     const data: SubmissionsStatusListType = await response.json();
                     const record: SubmissionStatusRecordType =
                         data.reduce((acc: SubmissionStatusRecordType,
@@ -64,6 +66,9 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimeProps
                     setSubmissinStatusList(record);
                 } catch (e) {
                     console.error("doSubmissionStatusList: " + e);
+                }
+                finally {
+                    setIsLoading(false);
                 }
             }
         }
@@ -101,7 +106,8 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimeProps
         });
 
         try {
-            const response = await fetch(runtimeProps.UP_API_URL + `/submissions/?${query.toString()}`);
+            setIsLoading(true);
+            const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + `/submissions/?${query.toString()}`);
             const data: SubmissionType[] = await response.json();
             const total = parseInt(response.headers.get("X-Total-Count") || "0", 10);
             setTotalCount(total);
@@ -115,6 +121,9 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimeProps
             );
         } catch (err) {
             console.error("Error fetching submissions:", err);
+        }
+        finally {
+            setIsLoading(false);
         }
     }, [paginationModel, filterModel, submissinStatusList]);
 
@@ -216,6 +225,7 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimeProps
             <Box display="flex" gap={0} mb={0}>
 
                 <DataGrid
+                    loading={isLoading}
                     filterModel={filterModel}
                     filterMode="server"
                     filterDebounceMs={1000}

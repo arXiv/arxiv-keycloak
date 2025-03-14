@@ -96,6 +96,19 @@ down:
 
 
 #-#
+#-# up:
+#-#   runs docker compose up with .env.
+devup: .env
+	docker compose -f ./docker-compose-devdb.yaml --env-file=.env.devdb up -d
+
+#-#
+#-# down:
+#-#   runs docker compose down
+devdown:
+	docker compose -f ./docker-compose-devdb.yaml --env-file=.env.devdb down
+
+
+#-#
 #-# test:
 #-#   runs test in all of subdirectories
 test:

@@ -29,7 +29,7 @@ const CategoryChooser: React.FC<CategoryChooserProps> = ({onSelect, selectedCate
     const [categories, setCategories] = useState<CategoryGroupType[]>([]);
 
     useEffect(() => {
-        fetch(runtimeContext.UP_API_URL +  "/categories/")
+        fetch(runtimeContext.ADMIN_API_BACKEND_URL +  "/categories/")
             .then(response => response.json())
             .then(data => setCategoryList(data))
             .catch(error => console.log(error));

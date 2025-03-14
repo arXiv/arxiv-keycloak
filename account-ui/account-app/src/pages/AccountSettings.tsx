@@ -18,7 +18,6 @@ import NofificationIcon from "@mui/icons-material/Notifications";
 
 import {RuntimeContext, RuntimeProps} from "../RuntimeContext.tsx";
 import PreflightChecklist from "../bits/PreflightChecklist.tsx";
-import Authorship from "../bits/Authorship.tsx";
 import YesNoDialog from "../bits/YesNoDialog.tsx";
 // import SubmissionsTable from "../bits/SubmissionsTable.tsx";
 import YourSubmissions from "../components/YourSubmissions.tsx";
@@ -178,7 +177,6 @@ const AccountSettings = () => {
             <YourSubmissions runtimeProps={runtimeProps} />
 
             <PreflightChecklist runtimeProps={runtimeProps} />
-            <Authorship props={runtimeProps} />
         </Container>
     );
 };

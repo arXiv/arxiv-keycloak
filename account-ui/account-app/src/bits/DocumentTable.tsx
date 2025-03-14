@@ -66,7 +66,7 @@ const DocumentTable: React.FC<{runtimeProps: RuntimeProps}> = ({runtimeProps}) =
             if (statusFilter) query.append("status", statusFilter);
             if (titleFilter) query.append("title_like", titleFilter);
 
-            const response = await fetch(runtimeProps.UP_API_URL  + `/documents/?${query.toString()}`);
+            const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL  + `/documents/?${query.toString()}`);
             const data: DocumentType[] = await response.json();
             const total = parseInt(response.headers.get("X-Total-Count") || "0", 10);
 

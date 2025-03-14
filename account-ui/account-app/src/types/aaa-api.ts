@@ -339,6 +339,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/captcha/audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Captcha Audio */
+        get: operations["get_captcha_audio_captcha_audio_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/": {
         parameters: {
             query?: never;
@@ -902,6 +919,15 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountInfoModel"] | components["schemas"]["AccountRegistrationError"];
+                };
+            };
+            /** @description Successfully created account */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -1086,6 +1112,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CaptchaTokenReplyModel"];
+                };
+            };
+        };
+    };
+    get_captcha_audio_captcha_audio_get: {
+        parameters: {
+            query: {
+                token: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                    "audio/mpeg": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

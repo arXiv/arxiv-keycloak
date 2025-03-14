@@ -41,7 +41,12 @@ async def get_captcha_image(
     secret = app.extra['CAPTCHA_SECRET']
     font = app.extra.get('CAPTCHA_FONT')
     host = get_client_host(request)
-    image = generate_captcha_image(token, secret, host, font=font)
+    logger.info("Image captcha: host %s %s", host, token)
+    try:
+        image = generate_captcha_image(token, secret, host, font=font)
+    except stateless_captcha.InvalidCaptchaToken as _e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(_e))
+
     if image is None:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
     return StreamingResponse(image,
@@ -56,6 +61,7 @@ def get_captcha_token(request: Request) -> CaptchaTokenReplyModel:
     captcha_secret = request.app.extra['CAPTCHA_SECRET']
     host = get_client_host(request)
     captcha_token = stateless_captcha.new(captcha_secret, host)
+    logger.info("Captcha: host %s %s", host, captcha_token)
     return CaptchaTokenReplyModel(token=captcha_token)
 
 
@@ -71,7 +77,11 @@ async def get_captcha_audio(
     app = request.app
     secret = app.extra['CAPTCHA_SECRET']
     host = get_client_host(request)
-    value = stateless_captcha.unpack(token, secret, host)
+    logger.info("Audio captcha: host %s %s", host, token)
+    try:
+        value = stateless_captcha.unpack(token, secret, host)
+    except stateless_captcha.InvalidCaptchaToken as _e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(_e))
     voice = alnum_to_mp3(value)
     return StreamingResponse(voice,
         media_type="audio/mpeg",
