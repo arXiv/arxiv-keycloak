@@ -19,6 +19,7 @@ import { useQuery } from "@tanstack/react-query";
 import {RuntimeContext, RuntimeProps} from "../RuntimeContext.tsx";
 // import YesNoDialog from "../bits/YesNoDialog.tsx";
 import { paths as adminApi } from "../types/admin-api";
+import {useNotification} from "../NotificationContext.tsx";
 
 type ArxivDocument = adminApi['/v1/documents/paper_id/{paper_id}']['get']['responses']['200']['content']['application/json'];
 
@@ -77,20 +78,25 @@ const SubmitRequest: React.FC<{ runtimeProps: RuntimeProps }> = ({ runtimeProps 
 // Define the shape of a row
 interface TableRowData {
     id: string;
-    middle: string;
-    right: string;
+    dated: string;
+    title: string;
+    authors: string;
 }
+
+const null_row = { id: "", dated: "", title: "", authors: "" };
+
+
 
 // Function to fetch data based on ID
 async function fetchData(id: string, runtimeProps: RuntimeProps) : Promise<TableRowData> {
-    if (!id) return {id: "", middle : "", right: "" };
+    if (!id) return null_row;
     try {
         const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/documents/paper_id/" + id);
         const doc: ArxivDocument = await response.json();
-        return {id: doc.paper_id, middle: doc.title, right: doc.authors || ""};
+        return {id: doc.paper_id, dated: doc.dated, title: doc.title, authors: doc.authors || ""};
     }
     catch (error) {
-        return {id: "", middle : "", right: "" };
+        return null_row;
     }
 }
 
@@ -117,8 +123,8 @@ const TableRowComponent: React.FC<{
                     sx={{width: "12em"}}
                 />
             </TableCell>
-            <TableCell>{data?.middle || ""}</TableCell>
-            <TableCell>{data?.right || ""}</TableCell>
+            <TableCell>{data?.title || ""}</TableCell>
+            <TableCell>{data?.authors || ""}</TableCell>
             <TableCell>
                 <IconButton onClick={onRemove} color="error">
                     <Delete />
@@ -128,9 +134,9 @@ const TableRowComponent: React.FC<{
     );
 };
 
-
 function EditableTable({runtimeProps} : {runtimeProps: RuntimeProps}) : React.ReactNode {
-    const [rows, setRows] = useState<TableRowData[]>([{ id: "", middle: "", right: "" }]);
+    const {showNotification, showMessageDialog} = useNotification();
+    const [rows, setRows] = useState<TableRowData[]>([null_row]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -142,7 +148,7 @@ function EditableTable({runtimeProps} : {runtimeProps: RuntimeProps}) : React.Re
     };
 
     const addRow = () => {
-        setRows([...rows, { id: "", middle: "", right: "" }]);
+        setRows([...rows, null_row]);
     };
 
     const removeRow = (index: number) => {
@@ -171,13 +177,14 @@ function EditableTable({runtimeProps} : {runtimeProps: RuntimeProps}) : React.Re
             });
 
             if (!response.ok) {
-                throw new Error(`Error: ${response.statusText}`);
+                showNotification(`Error: ${response.statusText}`, "error");
+                return;
             }
 
-            const result = await response.json();
-            console.log("Success:", result);
-            alert("Data submitted successfully!");
+            // const result = await response.json();
+            showMessageDialog("", "Request submitted successfully!")
         } catch (error) {
+            showNotification("Failed to submit data. Please try again.", "error");
             setError("Failed to submit data. Please try again.");
             console.error(error);
         } finally {
@@ -194,6 +201,7 @@ function EditableTable({runtimeProps} : {runtimeProps: RuntimeProps}) : React.Re
                 <TableHead>
                     <TableRow>
                         <TableCell>Paper ID</TableCell>
+                        <TableCell>Date</TableCell>
                         <TableCell>Title</TableCell>
                         <TableCell>Authors</TableCell>
                         <TableCell>Actions</TableCell>
@@ -238,6 +246,9 @@ const OwnershipRequest = () => {
             <Paper elevation={3} sx={{ p: 3, mt: 4, width: "95%" }}>
                 <Typography variant="h5" gutterBottom>
                     Ownership Request
+                </Typography>
+                <Typography>
+                    To process an ownership request, enter either the numeric request id.
                 </Typography>
                 <EditableTable runtimeProps={runtimeProps} />
             </Paper>

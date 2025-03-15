@@ -6,12 +6,14 @@ import {
     GridFilterModel,
     GridPaginationModel,
     GridRenderCellParams,
-    GridSortModel,
+    GridSortModel, GridRowSelectionModel,
 } from '@mui/x-data-grid';
 import { GridFilterOperator } from "@mui/x-data-grid/models/gridFilterOperator";
 import {RuntimeContext} from "../RuntimeContext.tsx";
 import {paths as adminApi} from "../types/admin-api";
 import UnlockIcon from "@mui/icons-material/LockOpen";
+import AuthorIcon from "@mui/icons-material/Attribution";
+import NonAuthorIcon from "@mui/icons-material/LocalShipping";
 // import UndoIcon from "@mui/icons-material/Undo";
 // import Container from '@mui/material/Container'
 import Typography from "@mui/material/Typography";
@@ -38,16 +40,13 @@ import CrossListIcon from "../assets/images/cross.png";
 import JournalReferenceIcon from "../assets/images/journalref.png";
 import LinkCodeDataIcon from "../assets/images/pwc_logo.png";
 import DatagridPaginationMaker from "../bits/DataGridPagination.tsx";
+import Button from "@mui/material/Button";
 
 
 type DocumentType = adminApi['/v1/documents/{id}']['get']['responses']['200']['content']['application/json'];
-// type MetadataType = adminApi['/v1/metadatas/{id}']['get']['responses']['200']['content']['application/json'];
-
 type DocumentsType = adminApi['/v1/documents/']['get']['responses']['200']['content']['application/json'];
-
-// SubmissionsType = adminApi['/v1/submissions/']['get']['responses']['200']['content']['application/json'];
-
 type DemographicType = adminApi['/v1/demographics/{id}']['get']['responses']['200']['content']['application/json'];
+type PaperPasswordResponseType = adminApi['/v1/paper-pw/{id}']['get']['responses']['200']['content']['application/json'];
 
 
 const PAGE_SIZES = [5, 20, 100];
@@ -125,6 +124,11 @@ const dateFilterOperators: GridFilterOperator[] = [
     },
 ];
 
+const Author: React.FC<{ authors?: number[], uid?: string }> = ({authors, uid}) => {
+    const user_id = Number(uid);
+    const yes = authors && uid && authors.includes(user_id);
+    return yes ? <AuthorIcon /> : <NonAuthorIcon />;
+};
 
 const YourDocuments: React.FC = () => {
     const runtimeProps = useContext(RuntimeContext);
@@ -147,6 +151,7 @@ const YourDocuments: React.FC = () => {
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
     const [menuPosition, setMenuPosition] = useState<{ mouseX: number, mouseY: number } | null>(null);
     const [selectedRowId, setSelectedRowId] = useState<number | null>(null);
+    const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>([]);
 
     useEffect(() => {
         async function fetchSubmissions() {
@@ -237,7 +242,7 @@ const YourDocuments: React.FC = () => {
             const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL  + `/documents/?${query.toString()}`);
             if (!response.ok) {
                 if (response.status >= 500) {
-                    showNotification("Data service is not operating");
+                    showNotification("Data service is not responding", "warning");
                 }
                 return;
             }
@@ -287,16 +292,47 @@ const YourDocuments: React.FC = () => {
         };
     */
 
-    const handleMenuClose = (_rowId: number, action: string) => {
+    const handleMenuClose = (rowId: number, action: string) => {
         setMenuAnchor(null);
         setMenuPosition(null);
 
         if (action === "Paper Password") {
-            showMessageDialog("FOO", "BAR");
+            async function showPaperPassword() {
+                try {
+                    setIsLoading(true);
+                    const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/paper-pw/" + rowId );
+                    if (response.ok) {
+                        const body: PaperPasswordResponseType = await response.json();
+                        showMessageDialog(body.password_enc, "Paper Password");
+                    }
+                    else {
+                        const body = await response.json();
+                        showMessageDialog(body.detail, "Paper Password Not Found");
+                    }
+                }
+                catch (error) {
+                    console.error("Error fetching user:", error);
+                }
+                finally {
+                    setIsLoading(false);
+                }
+            }
+            showPaperPassword();
+        }
+        else if (action !== "") {
+            showMessageDialog(`Action: ${action} of document ID ${rowId}`, `${action} not implemented yet`);
         }
     };
 
+
     const columns: GridColDef<DocumentType>[] = [
+        {
+            field: 'author_ids',
+            headerName: 'Author',
+            width: 40,
+            sortable: true,
+            renderCell: (cell: GridRenderCellParams) => <Author authors={cell.row.author_ids} uid={runtimeProps.currentUser?.id} />
+        },
         {
             field: 'paper_id',
             headerName: 'Identifier',
@@ -384,6 +420,12 @@ const YourDocuments: React.FC = () => {
                     Articles You Own
                 </Typography>
                 <Box flexGrow={1}/>
+                <Button variant="outlined" disabled={selectedRows.length === 0}>
+                    I'm an author.
+                </Button>
+                <Button variant="outlined" disabled={selectedRows.length === 0}>
+                    I am not an author.
+                </Button>
             </Box>
 
             <Box display="flex" gap={0} mb={0}>
@@ -405,6 +447,11 @@ const YourDocuments: React.FC = () => {
                     columns={columns}
                     rows={documents}
                     rowCount={totalCount}
+
+                    checkboxSelection
+                    disableRowSelectionOnClick
+                    onRowSelectionModelChange={(newSelection) => setSelectedRows(newSelection)}
+
 
                     getDetailPanelContent={({row}: GridRowParams<DocumentType>) => (
                         <Box sx={{p: 2, backgroundColor: "#f9f9f9", b: 2}}>

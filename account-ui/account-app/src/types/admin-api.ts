@@ -428,7 +428,8 @@ export interface paths {
         };
         /** List Ownerships */
         get: operations["list_ownerships_v1_paper_owners__get"];
-        put?: never;
+        /** Register Paper Owner */
+        put: operations["register_paper_owner_v1_paper_owners__put"];
         /** Create Ownership */
         post: operations["create_ownership_v1_paper_owners__post"];
         delete?: never;
@@ -481,6 +482,40 @@ export interface paths {
         };
         /** Get Paper Pw */
         get: operations["get_paper_pw_v1_paper_pw__id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/paper-pw/paper/{arxiv_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Paper Pw From Arxiv Id */
+        get: operations["get_paper_pw_from_arxiv_id_v1_paper_pw_paper__arxiv_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/paper-pw/paper/{category}/{subject_class}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Paper Pw From Arxiv Id */
+        get: operations["get_paper_pw_from_arxiv_id_v1_paper_pw_paper__category___subject_class__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -741,6 +776,26 @@ export interface paths {
          * @description Display a paper.
          */
         get: operations["get_document_v1_documents_paper_id__paper_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/documents/paper_id/{category}/{paper_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Old Style Document
+         * @description Display a paper.
+         */
+        get: operations["get_old_style_document_v1_documents_paper_id__category___paper_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1643,6 +1698,17 @@ export interface components {
              * Format: date-time
              */
             date: string;
+        };
+        /** PaperAuthRequest */
+        PaperAuthRequest: {
+            /** Paper Id */
+            paper_id: string;
+            /** Password */
+            password: string;
+            /** User Id */
+            user_id: string;
+            /** Verify Id */
+            verify_id: boolean;
         };
         /** PaperOwnershipDecisionModel */
         PaperOwnershipDecisionModel: {
@@ -3448,6 +3514,39 @@ export interface operations {
             };
         };
     };
+    register_paper_owner_v1_paper_owners__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaperAuthRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_ownership_v1_paper_owners__post: {
         parameters: {
             query?: never;
@@ -3581,6 +3680,69 @@ export interface operations {
             header?: never;
             path: {
                 id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperPwModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_paper_pw_from_arxiv_id_v1_paper_pw_paper__arxiv_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                arxiv_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperPwModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_paper_pw_from_arxiv_id_v1_paper_pw_paper__category___subject_class__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category: string;
+                subject_class: string;
             };
             cookie?: never;
         };
@@ -4165,6 +4327,38 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_old_style_document_v1_documents_paper_id__category___paper_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category: string;
                 paper_id: string;
             };
             cookie?: never;

@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useState} from "react";
+import React, {ChangeEvent, useContext, useEffect, useState} from "react";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
@@ -18,23 +18,25 @@ import Checkbox from "@mui/material/Checkbox";
 // import Link from "@mui/material/Link";
 import {paths as adminApi} from "../types/admin-api";
 type DocumentType = adminApi['/v1/documents/paper_id/{paper_id}']['get']['responses']['200']['content']['application/json'];
+type PaperOwnerRequestType = adminApi['/v1/paper_owners/']['put']['requestBody']['content']['application/json'];
 
 import {printUserName} from "../bits/printer.ts";
 import {useNotification} from "../NotificationContext.tsx";
+
 
 const ClaimPaperOwnership: React.FC = () => {
     const {showNotification, showMessageDialog} = useNotification();
     const [inProgress, setInProgress] = useState(false);
     const runtimeProps = useContext(RuntimeContext);
-    const [formData, setFormData] = useState<{paperId: string, password: string, verifyId: boolean}>({paperId: "", password: "", verifyId: false});
+    const [formData, setFormData] = useState<PaperOwnerRequestType>({user_id: runtimeProps.currentUser?.id || "", paper_id: "", password: "", verify_id: false});
     const [document, setDocument] = useState<DocumentType|null>(null);
 
     useEffect(() => {
         async function fetchDocument() {
-            if (runtimeProps.currentUser && formData.paperId) {
+            if (runtimeProps.currentUser && formData.paper_id) {
                 try {
                     setInProgress(true);
-                    const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/documents/paper_id/" + formData.paperId);
+                    const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/documents/paper_id/" + formData.paper_id);
                     if (response.ok) {
                         const doc = await response.json();
                         setDocument(doc);
@@ -56,7 +58,7 @@ const ClaimPaperOwnership: React.FC = () => {
         }
 
         fetchDocument();
-    }, [runtimeProps.currentUser, formData.paperId]);
+    }, [runtimeProps.currentUser, formData.paper_id]);
 
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -65,24 +67,56 @@ const ClaimPaperOwnership: React.FC = () => {
         event.preventDefault();
 
         try {
-            const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/document/claim", {
-                method: "POST",
+            const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/paper_owners/", {
+                method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify(formData),
             });
-            if (response.ok) {
-                showMessageDialog(document?.title || formData.paperId, "You claimed successfully!");
+
+            if (response.status === 201) {
+                showMessageDialog(document?.title || formData.paper_id, "You claimed successfully!");
             }
+            else {
+                const reply = await response.json();
+                if (response.status >= 500) {
+                    showNotification("Server is not responding", "error");
+                }
+                else if (response.status === 409) {
+                    showMessageDialog(reply.detail, "You have the ownership");
+                }
+                else if (response.status === 403) {
+                    showMessageDialog(reply.detail, "It is forbidden");
+                }
+                else if (response.status === 400) {
+                    showMessageDialog(reply.detail, "Incorrect input");
+                }
+                else {
+                    showMessageDialog(reply.detail, `Unexpected error (${response.status})`);
+                }
+            }
+
         }
         catch (error) {
-
+            console.log(error);
+            showNotification(String(error), "error");
         }
         finally {
             setInProgress(false);
         }
     };
+
+    const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+        if (!runtimeProps.currentUser) {
+            showNotification("Please log in.", "warning");
+            return;
+        }
+
+        const value = event.target.value;
+        const name = event.target.name;
+        setFormData({...formData, [name]: value});
+    }
 
     return (
         <Container maxWidth="sm">
@@ -100,11 +134,8 @@ const ClaimPaperOwnership: React.FC = () => {
                         name="paper_id"
                         label="Paper ID"
                         variant="outlined"
-                        value={formData.paperId}
-                        onChange={(e) => setFormData({
-                            ...formData,
-                            paperId: e.target.value,
-                        })}
+                        value={formData.paper_id}
+                        onChange={handleChange}
                         sx={{width: "120px", flexShrink: 0}}
                         helperText={document ? "Valid ID" : "Invalid ID"}
                     />
@@ -112,31 +143,27 @@ const ClaimPaperOwnership: React.FC = () => {
                 </Box>
                 <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 1 }}>
                 <TextField
-                    id="paper_password"
-                    name="paper_password"
+                    id="password"
+                    name="password"
                     label="Paper Password"
                     variant="outlined"
-                    type="password"
                     value={formData.password}
-                    onChange={(e) => setFormData({
-                        ...formData,
-                        password: e.target.value,
-                    })}
+                    onChange={handleChange}
                     sx={{width: "120px", flexShrink: 0}}
                     helperText=""
                 />
                     <Typography sx={{flex: 1}} variant="body2">e.g. juq87"</Typography>
                 </Box>
                 <FormControlLabel
-                    control={<Checkbox checked={formData.verifyId} onChange={(e) => setFormData(
-                        {...formData, verifyId: e.target.checked})} />}
+                    control={<Checkbox checked={formData.verify_id} onChange={(e) => setFormData(
+                        {...formData, verify_id: e.target.checked})} />}
                     label={
                         <span>
               I certify that my name is <b>{printUserName(runtimeProps.currentUser)}</b>, my username is <b>{runtimeProps.currentUser?.username}</b> (<a href="#">Click here</a> if you are not), and my email address is <b>{runtimeProps.currentUser?.email}</b> (<a href="#">Click here</a> if your email address has changed.)
             </span>
                     }
                 />
-                <Button type="submit" variant="contained" color="primary" disabled={inProgress || !formData.verifyId}>
+                <Button type="submit" variant="contained" color="primary" disabled={inProgress || !formData.verify_id || !runtimeProps.currentUser}>
                     Submit
                 </Button>
             </Box>
