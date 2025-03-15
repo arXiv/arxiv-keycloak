@@ -20,6 +20,7 @@ import RadioGroup from "@mui/material/RadioGroup";
 import Radio from "@mui/material/Radio";
 import CardHeader from "@mui/material/CardHeader";
 import Link from "@mui/material/Link";
+import {printUserName} from "../bits/printer.ts";
 
 type EndorsementCodeRequest = adminApi["/v1/endorsements/endorse"]['post']['requestBody']['content']['application/json'];
 
@@ -154,13 +155,6 @@ const EnterEndorsementCode = () => {
             return "";
         const maybe_email = user?.email ? ` <${user?.email}>` : '';
         return `${user?.first_name} ${user?.last_name}${maybe_email} - ${user?.affiliation || "No affiliation"}`;
-    }
-
-
-    function printUserName(user: PublicUserType | User | null | undefined): string {
-        if (!user)
-            return "";
-        return `${user?.first_name} ${user?.last_name}`;
     }
 
     function printCategory(endoresementRequest: EndorsementRequestType | null): string {

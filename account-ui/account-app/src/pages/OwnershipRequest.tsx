@@ -102,7 +102,7 @@ const TableRowComponent: React.FC<{
     onRemove: () => void;
 }> = ({ runtimeProps, row, index, onIdChange, onRemove }) => {
     const { data } = useQuery({
-        queryKey: ["data", row.id],
+        queryKey: ["/documents/paper_id/", row.id],
         queryFn: () => fetchData(row.id, runtimeProps),
         enabled: !!row.id, // Fetch only when ID is entered
     });

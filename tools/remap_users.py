@@ -57,11 +57,11 @@ def random_3k():
 def main(load_schema: bool = False, load_data: bool = True) -> None:
     db_engine, tables = instantiate_db_engine()
     #make_user_remap_data(db_engine)
-    #smash_passwords(db_engine)
+    smash_passwords(db_engine)
     #remap_user(db_engine)
     #seek_and_destroy(db_engine, tables)
 
-    change_user_names(db_engine)
+    # change_user_names(db_engine)
 
 
 # One time use code for fixing up the names/emails

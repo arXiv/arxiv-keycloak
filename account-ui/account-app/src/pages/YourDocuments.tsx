@@ -27,7 +27,7 @@ import MenuItem from "@mui/material/MenuItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import TablePagination, { TablePaginationProps } from "@mui/material/TablePagination";
+// import TablePagination, { TablePaginationProps } from "@mui/material/TablePagination";
 import DataGridDateRangeFilter from "../bits/DataGridDateRangeFilter.tsx";
 import ArticleInfo from "../bits/ArticleInfo.tsx";
 import {useNotification} from "../NotificationContext";
@@ -37,6 +37,7 @@ import WithdrawIcon from "../assets/images/withdraw.png";
 import CrossListIcon from "../assets/images/cross.png";
 import JournalReferenceIcon from "../assets/images/journalref.png";
 import LinkCodeDataIcon from "../assets/images/pwc_logo.png";
+import DatagridPaginationMaker from "../bits/DataGridPagination.tsx";
 
 
 type DocumentType = adminApi['/v1/documents/{id}']['get']['responses']['200']['content']['application/json'];
@@ -127,7 +128,7 @@ const dateFilterOperators: GridFilterOperator[] = [
 
 const YourDocuments: React.FC = () => {
     const runtimeProps = useContext(RuntimeContext);
-    const {showMessageDialog} = useNotification();
+    const {showMessageDialog, showNotification} = useNotification();
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [demographic, setDemographic] = useState<DemographicType | null>(null);
     const [documents, setDocuments] = useState<DocumentsType>([]);
@@ -234,6 +235,12 @@ const YourDocuments: React.FC = () => {
         try {
             setIsLoading(true);
             const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL  + `/documents/?${query.toString()}`);
+            if (!response.ok) {
+                if (response.status >= 500) {
+                    showNotification("Data service is not operating");
+                }
+                return;
+            }
             const data: DocumentType[] = await response.json();
             const total = parseInt(response.headers.get("X-Total-Count") || "0", 10);
             setTotalCount(total);
@@ -280,7 +287,7 @@ const YourDocuments: React.FC = () => {
         };
     */
 
-    const handleMenuClose = (rowId: number, action: string) => {
+    const handleMenuClose = (_rowId: number, action: string) => {
         setMenuAnchor(null);
         setMenuPosition(null);
 
@@ -337,7 +344,13 @@ const YourDocuments: React.FC = () => {
         },
     ];
 
-    const CustomPagination = (props: Partial<TablePaginationProps>) => {
+    const CustomPagination = DatagridPaginationMaker(
+        () => totalCount,
+        () => paginationModel,
+        setPaginationModel,
+        () => PAGE_SIZES
+    );
+    /* = (props: Partial<TablePaginationProps>) => {
         return (
             <TablePagination
                 {...props}
@@ -356,6 +369,7 @@ const YourDocuments: React.FC = () => {
             />
         );
     };
+    */
 
 
     return (<>

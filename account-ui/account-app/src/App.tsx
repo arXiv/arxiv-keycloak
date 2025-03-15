@@ -24,6 +24,7 @@ import EnterEndorsementCode from "./pages/EnterEndorsementCode.tsx";
 import YourDocuments from "./pages/YourDocuments.tsx";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import ClaimPaperOwnership from "./pages/ClaimPaperOwnership.tsx";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const App: React.FC = () => {
                                 <Route path="/user-account/change-email" element={<ChangeEmail/>}/>
                                 <Route path="/user-account/endorse" element={<EnterEndorsementCode/>}/>
                                 <Route path="/user-account/owned-documents" element={<YourDocuments/>}/>
+                                <Route path="/user-account/claim-paper-ownership" element={<ClaimPaperOwnership/>}/>
                                 <Route path="*" element={<NotFound404/>}/>
                             </Routes>
                         </Container>

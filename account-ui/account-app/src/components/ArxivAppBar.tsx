@@ -18,7 +18,7 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 
 const ownershipOptions = [
     { label: "Your Articles", link: "/user-account/owned-documents" },
-    { label: "Claim Ownership", link: "/user-account/claim-document-ownership" },
+    { label: "Claim Ownership", link: "/user-account/claim-paper-ownership" },
     { label: "Request Ownership", link: "/user-account/request-document-ownership" },
 ];
 
