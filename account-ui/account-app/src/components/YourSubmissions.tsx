@@ -19,6 +19,7 @@ import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 // import Checkbox from "@mui/material/Checkbox";
 import EditIcon from "@mui/icons-material/Edit";
+import DatagridPaginationMaker from "../bits/DataGridPagination.tsx";
 
 
 type SubmissionType = adminApi['/v1/submissions/{id}']['get']['responses']['200']['content']['application/json'];
@@ -192,6 +193,14 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimeProps
         },
     ];
 
+    const CustomPagination = DatagridPaginationMaker(
+        () => totalCount,
+        () => paginationModel,
+        setPaginationModel,
+        () => PAGE_SIZES
+    );
+
+
     return (
         <Paper elevation={3} sx={{p: 3, mt: 4}}>
             <Box display="flex" gap={2} justifyContent="flex-start" mb={1}>
@@ -253,6 +262,7 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimeProps
                         </Box>
                     )}
 
+                    slots={{pagination: CustomPagination}}
                 />
             </Box>
 

@@ -428,8 +428,7 @@ export interface paths {
         };
         /** List Ownerships */
         get: operations["list_ownerships_v1_paper_owners__get"];
-        /** Register Paper Owner */
-        put: operations["register_paper_owner_v1_paper_owners__put"];
+        put?: never;
         /** Create Ownership */
         post: operations["create_ownership_v1_paper_owners__post"];
         delete?: never;
@@ -467,6 +466,23 @@ export interface paths {
         /** Update Ownership */
         put: operations["update_ownership_v1_paper_owners__id__put"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/paper_owners/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register Paper Owner */
+        post: operations["register_paper_owner_v1_paper_owners_authorize_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1377,6 +1393,8 @@ export interface components {
             last_submission_id?: number | null;
             /** Abs Categories */
             abs_categories?: string | null;
+            /** Author Ids */
+            author_ids?: number[] | null;
         };
         /** EmailTemplateModel */
         EmailTemplateModel: {
@@ -3514,39 +3532,6 @@ export interface operations {
             };
         };
     };
-    register_paper_owner_v1_paper_owners__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PaperAuthRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_ownership_v1_paper_owners__post: {
         parameters: {
             query?: never;
@@ -3661,6 +3646,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OwnershipModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_paper_owner_v1_paper_owners_authorize_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaperAuthRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

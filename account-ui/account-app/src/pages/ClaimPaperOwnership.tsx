@@ -18,7 +18,7 @@ import Checkbox from "@mui/material/Checkbox";
 // import Link from "@mui/material/Link";
 import {paths as adminApi} from "../types/admin-api";
 type DocumentType = adminApi['/v1/documents/paper_id/{paper_id}']['get']['responses']['200']['content']['application/json'];
-type PaperOwnerRequestType = adminApi['/v1/paper_owners/']['put']['requestBody']['content']['application/json'];
+type PaperOwnerRequestType = adminApi['/v1/paper_owners/authorize']['post']['requestBody']['content']['application/json'];
 
 import {printUserName} from "../bits/printer.ts";
 import {useNotification} from "../NotificationContext.tsx";
@@ -67,8 +67,8 @@ const ClaimPaperOwnership: React.FC = () => {
         event.preventDefault();
 
         try {
-            const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/paper_owners/", {
-                method: "PUT",
+            const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/paper_owners/authorize/", {
+                method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },

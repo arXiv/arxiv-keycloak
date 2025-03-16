@@ -1,6 +1,5 @@
 import os
 from datetime import datetime
-from token import TILDE
 
 from arxiv.config import settings
 from fastapi import FastAPI, HTTPException, Depends
@@ -14,7 +13,9 @@ from sqlalchemy.orm import Session
 from arxiv.db import configure_db, Session as DatabaseSession
 from arxiv.db.models import TapirUser, TapirUsersPassword, TapirNickname, Demographic, State, TapirPolicyClass
 from arxiv.auth.legacy.passwords import check_password
-from arxiv.auth.legacy.exceptions import PasswordAuthenticationFailed, NoSuchUser
+from arxiv.auth.legacy.exceptions import PasswordAuthenticationFailed
+
+from .user_model import UserModel
 
 UserProfile = Tuple[TapirUser, TapirUsersPassword, TapirNickname, Demographic]
 
@@ -35,52 +36,7 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
     return token
 
 
-def get_user_profile(session: Session, tapir_user: TapirUser) -> UserProfile:
-    """
-    Retrieve password, nickname and profile data.
-
-    Parameters
-    ----------
-    session: DB session
-    tapir_user : TapirUser
-
-    Returns
-    -------
-    :class:`.TapirUser`
-    :class:`.TapirUsersPassword`
-    :class:`.TapirNickname`
-    :class:`.Demographic`
-
-    Raises
-    ------
-    :class:`NoSuchUser`
-        Raised when the user cannot be found.
-    :class:`RuntimeError`
-        Raised when other problems arise.
-
-    """
-    if not tapir_user:
-        raise NoSuchUser('User does not exist')
-
-    tapir_nick = session.query(TapirNickname) \
-            .filter(TapirNickname.user_id == tapir_user.user_id) \
-            .first()
-    if not tapir_nick:
-        raise NoSuchUser('User lacks a nickname')
-
-    tapir_password: TapirUsersPassword = session.query(TapirUsersPassword) \
-        .filter(TapirUsersPassword.user_id == tapir_user.user_id) \
-        .first()
-    if not tapir_password:
-        raise RuntimeError(f'Missing password')
-
-    tapir_profile: Demographic = session.query(Demographic) \
-        .filter(Demographic.user_id == tapir_user.user_id) \
-        .first()
-    return tapir_user, tapir_password, tapir_nick, tapir_profile
-
-
-def authenticate_password(session: Session, user: TapirUser, password: str) -> UserProfile | None:
+def authenticate_password(session: Session, user: TapirUser, password: str) -> bool:
     """
     Authenticate using username/email and password.
 
@@ -92,10 +48,7 @@ def authenticate_password(session: Session, user: TapirUser, password: str) -> U
 
     Returns
     -------
-    :class:`.TapirUser`
-    :class:`.TapirUsersPassword`
-    :class:`.TapirNickname`
-    :class:`.TapirUserProfile`
+    :bool:
 
     Raises
     ------
@@ -106,11 +59,14 @@ def authenticate_password(session: Session, user: TapirUser, password: str) -> U
 
     """
     logger.debug(f'Authenticate with password, user: {user.user_id}')
-    user_profile = get_user_profile(session, user)
-    _db_user, db_pass, _db_nick, _db_profile = user_profile
+    tapir_password: TapirUsersPassword = session.query(TapirUsersPassword) \
+        .filter(TapirUsersPassword.user_id == user.user_id) \
+        .one_or_none()
+    if not tapir_password:
+        return False
     try:
-        if check_password(password, db_pass.password_enc):
-            return user_profile
+        if check_password(password, tapir_password.password_enc):
+            return True
     except PasswordAuthenticationFailed:
         pass
     return None
@@ -180,8 +136,7 @@ class AuthResponse(BaseModel):
 class PasswordData(BaseModel):
     password: str
 
-
-def tapir_user_to_auth_response(tapir_user: TapirUser) -> AuthResponse:
+def user_model_to_auth_response(um: UserModel, tapir_user: TapirUser) -> AuthResponse:
     """Turns the tapir user to the user migration record"""
     # Keycloak's realm "arxiv" should have the roles beforehand.
     # Internal
@@ -194,67 +149,67 @@ def tapir_user_to_auth_response(tapir_user: TapirUser) -> AuthResponse:
 
     roles = []
     # not used - Only Pole Houle has this role apparently
-    if tapir_user.flag_internal or tapir_user.flag_edit_system:
+    if um.flag_internal or um.flag_edit_system:
         roles.append('Owner')
 
     # admin flag
-    if tapir_user.flag_allow_tex_produced:
+    if um.flag_allow_tex_produced:
         roles.append('AllowTexProduced')
 
     # admin flag
-    if tapir_user.flag_edit_users:
+    if um.flag_edit_users:
         roles.append('Administrator')
 
     # not used
-    if tapir_user.flag_approved:
+    if um.flag_approved:
         roles.append('Approved')
 
     # ?
-    if tapir_user.flag_banned:
+    if um.flag_banned:
         roles.append('Banned')
 
     # user is able to lock submissions from further changes (ARXIVNG-2605)
-    if tapir_user.flag_can_lock:
+    if um.flag_can_lock:
         roles.append('CanLock')
 
     attributes = {}
 
     # Important to have this. Otherwise, Keycloak does not pick up the email
-    attributes["email"] = [tapir_user.email]
+    attributes["email"] = [um.email]
 
     # not used
     email_preferences = "email_preferences"
     attributes[email_preferences] = []
-    if tapir_user.flag_wants_email:
+    if um.flag_wants_email:
         attributes[email_preferences].append('WantsEmail')
-    if tapir_user.flag_html_email:
+    if um.flag_html_email:
         attributes[email_preferences].append('HtmlEmail')
 
     # not used
     attributes["share"] = []
-    if tapir_user.share_first_name:
+    if um.share_first_name:
         attributes["share"].append('FirstName')
-    if tapir_user.share_last_name:
+    if um.share_last_name:
         attributes["share"].append('LastName')
-    if tapir_user.share_email:
+    if um.share_email:
         attributes["share"].append('Email')
 
     # seems to exist in DB
-    if tapir_user.joined_date:
-        attributes["joined_date"] = [datetime.utcfromtimestamp(tapir_user.joined_date).isoformat() + "Z"]
-    if tapir_user.joined_ip_num:
-        attributes["joined_ip_num"] = [str(tapir_user.joined_ip_num)]
-    if tapir_user.joined_remote_host:
-        attributes["joined_remote_host"] = [tapir_user.joined_remote_host]
+    if um.joined_date:
+        attributes["joined_date"] = [datetime.utcfromtimestamp(um.joined_date).isoformat() + "Z"]
+    if um.joined_ip_num:
+        attributes["joined_ip_num"] = [str(um.joined_ip_num)]
+    if um.joined_remote_host:
+        attributes["joined_remote_host"] = [um.joined_remote_host]
 
-    if tapir_user.tracking_cookie:
-        attributes["tracking_cookie"] = [tapir_user.tracking_cookie]
+    if um.tracking_cookie:
+        attributes["tracking_cookie"] = [um.tracking_cookie]
 
-    if tapir_user.suffix_name:
-        attributes["suffix_name"] = [tapir_user.suffix_name]
+    if um.suffix_name:
+        attributes["suffix_name"] = [um.suffix_name]
 
-    if tapir_user.email_bouncing:
-        attributes["email_bouncing"] = [str(tapir_user.email_bouncing)]
+    if um.email_bouncing:
+        attributes["email_bouncing"] = [str(um.email_bouncing)]
 
     groups = []
 
@@ -263,26 +218,19 @@ def tapir_user_to_auth_response(tapir_user: TapirUser) -> AuthResponse:
         groups.append(tpc.name)
         roles.append(tpc.name)
 
-    username = ""
-    if tapir_user.tapir_nicknames:
-        if isinstance(tapir_user.tapir_nicknames, TapirNickname):
-            username = tapir_user.tapir_nicknames.nickname
-        elif isinstance(tapir_user.tapir_nicknames.nickname, list):
-            username = tapir_user.tapir_nicknames[0].nickname
-        else:
-            raise Exception(f"Unexpected value type: {tapir_user.tapir_nicknames!r}")
+    username = um.username
 
     if os.environ.get("NORMALIZE_USERNAME", "true") == "true":
         username = username.lower()
 
     return AuthResponse(
-        id=str(tapir_user.user_id),
+        id=str(um.id),
         username=username,
-        email=tapir_user.email,
-        firstName=tapir_user.first_name,
-        lastName=tapir_user.last_name,
-        enabled=not tapir_user.flag_deleted,
-        emailVerified=tapir_user.flag_email_verified != 0,
+        email=um.email,
+        firstName=um.first_name,
+        lastName=um.last_name,
+        enabled=not um.flag_deleted,
+        emailVerified=um.flag_email_verified != 0,
         attributes=attributes,
         roles=roles,
         groups=groups,
@@ -298,7 +246,8 @@ async def get_auth_name(name: str, _token: str=Depends(verify_token)) -> AuthRes
         if not tapir_user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        return tapir_user_to_auth_response(tapir_user)
+        um = UserModel.one_user(session, tapir_user.user_id)
+        return user_model_to_auth_response(um, tapir_user)
 
 
 @app.post("/auth/{name}")
@@ -343,10 +292,11 @@ def on_startup():
         with DatabaseSession() as session:
             tapir_user = get_tapir_user(session, "ph18@cornell.edu")
             if tapir_user:
-                logger.info(f"TapirUser: {str(tapir_user_to_auth_response(tapir_user))}")
+                um = UserModel.one_user(session, tapir_user.user_id)
+                logger.info(f"TapirUser: {str(user_model_to_auth_response(um, tapir_user))}")
 
 
-    except Exception as e:
+    except Exception as _exc:
         logger.error("Database connection error")
 
     pass

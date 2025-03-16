@@ -339,7 +339,7 @@ const YourDocuments: React.FC = () => {
             width: 120,
             sortable: true,
             renderCell: (cell: GridRenderCellParams) => {
-                return <Link href={`https://arxiv.org/abs/${cell.value}`}>{cell.value}</Link>;
+                return <Link href={`https://arxiv.org/abs/${cell.value}`} target="_">{cell.value}</Link>;
             }
         },
         {
