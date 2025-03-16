@@ -32,6 +32,7 @@ from . import get_current_user_or_none, get_db, get_keycloak_admin, stateless_ca
 # from . import stateless_captcha
 from .captcha import CaptchaTokenReplyModel, get_captcha_token
 from .stateless_captcha import InvalidCaptchaToken, InvalidCaptchaValue
+from .user_model import UserModel
 
 logger = logging.getLogger(__name__)
 
@@ -142,51 +143,42 @@ class AccountRegistrationError(BaseModel):
     field_name: Optional[str] = None
 
 
-def to_group_name(group_flag, demographic: Demographic) -> Optional[str]:
+def um_to_group_name(group_flag, um: UserModel) -> Optional[str]:
     group_name, flag_name = group_flag
-    return group_name if hasattr(demographic, flag_name) and getattr(demographic, flag_name) else None
+    return group_name if hasattr(um, flag_name) and getattr(um, flag_name) else None
 
 
 def get_account_info(session: Session, user_id: str) -> Optional[AccountInfoModel]:
-    user_data: (TapirUser, TapirNickname, Demographic) = session.query(TapirUser, TapirNickname, Demographic) \
-        .join(TapirNickname).join(Demographic) \
-        .filter(TapirUser.user_id == user_id) \
-        .first()
-
-    if user_data:
-        tapir_user: TapirUser
-        tapir_nickname: TapirNickname
-        demographic: Demographic
-        tapir_user, tapir_nickname, demographic = user_data
-
-        groups = [to_group_name(group_flag, demographic) for group_flag in Demographic.GROUP_FLAGS]
+    um = UserModel.one_user(session, user_id)
+    if um:
+        groups = [um_to_group_name(group_flag, um) for group_flag in Demographic.GROUP_FLAGS]
 
         category: Optional[Category] = session.query(Category).filter(
             and_(
-                Category.archive == demographic.archive,
-                Category.subject_class == demographic.subject_class
+                Category.archive == um.archive,
+                Category.subject_class == um.subject_class
             )
         ).one_or_none()
 
         category_model = CategoryIdModel.model_validate(category) if category else None
 
         account = AccountInfoModel(
-            id = str(tapir_user.user_id),
-            username = tapir_nickname.nickname,
-            email = tapir_user.email,
-            email_verified = True if tapir_user.flag_email_verified else False,
+            id = str(um.id),
+            username = um.username,
+            email = um.email,
+            email_verified = True if um.flag_email_verified else False,
             scopes = None,
             oidc_id = None,
-            first_name = tapir_user.first_name,
-            last_name = tapir_user.last_name,
-            suffix_name = tapir_user.suffix_name,
-            country = demographic.country,
-            affiliation = demographic.affiliation,
-            url = demographic.url,
+            first_name = um.first_name,
+            last_name = um.last_name,
+            suffix_name = um.suffix_name,
+            country = um.country,
+            affiliation = um.affiliation,
+            url = um.url,
             default_category = category_model,
             groups = [group for group in groups if group],
-            joined_date = tapir_user.joined_date,
-            career_status = get_career_status(demographic.type),
+            joined_date = um.joined_date,
+            career_status = get_career_status(um.type),
         )
         return account
     return None
