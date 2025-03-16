@@ -9,7 +9,7 @@ ENV VIRTUAL_ENV=/opt/arxiv/venv
 RUN python3 -m venv $VIRTUAL_ENV
 
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-ADD pyproject.toml poetry.lock src/legacy_auth_provider.py src/logging.conf README.md ./
+ADD pyproject.toml poetry.lock src/legacy_auth_provider.py src/__init__.py src/user_model.py  src/logging.conf README.md ./
 
 RUN $VIRTUAL_ENV/bin/pip install -U pip
 RUN $VIRTUAL_ENV/bin/pip install poetry
