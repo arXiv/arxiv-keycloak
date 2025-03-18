@@ -155,7 +155,7 @@ class UserModel(BaseModel):
     def to_model(user: UserModel | dict) -> UserModel:
         # If the incoming is already a dict, to_model is equivalet of calling model_validate
         if isinstance(user, dict):
-            return UserModel.model_validate(row)
+            return UserModel.model_validate(user)
 
         if hasattr(user, "_asdict"):
             row = user._asdict()
