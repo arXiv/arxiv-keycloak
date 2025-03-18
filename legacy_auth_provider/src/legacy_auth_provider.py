@@ -15,7 +15,7 @@ from arxiv.db.models import TapirUser, TapirUsersPassword, TapirNickname, Demogr
 from arxiv.auth.legacy.passwords import check_password
 from arxiv.auth.legacy.exceptions import PasswordAuthenticationFailed
 
-from user_model import UserModel
+from arxiv_bizlogic.bizmodels.user_model import UserModel
 
 UserProfile = Tuple[TapirUser, TapirUsersPassword, TapirNickname, Demographic]
 
