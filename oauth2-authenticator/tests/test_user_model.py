@@ -29,7 +29,7 @@ class TestUserModel(unittest.TestCase):
             joined_date=0,
         )
         data = registration_data.to_user_model_data()
-        um = UserModel.model_validate(data)
+        um = UserModel.to_model(data)
         self.assertIsNotNone(um)
 
         from_fields = set(um.__class__.model_fields.keys())

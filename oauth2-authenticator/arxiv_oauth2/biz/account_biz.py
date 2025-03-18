@@ -381,7 +381,7 @@ def register_arxiv_account(kc_admin: KeycloakAdmin, client_secret: str,
 
 def register_tapir_account(session: Session, registration: AccountRegistrationModel) -> AccountRegistrationError | TapirUser :
     data = registration.to_user_model_data()
-    um = UserModel.model_validate(data)
+    um = UserModel.to_model(data)
 
     try:
         tapir_user = UserModel.create_user(session, um)
