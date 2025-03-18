@@ -2,6 +2,7 @@
 
 This is more abstract than using raw SQLAlchemy table based models
 """
+from __future__ import annotations
 from typing import Optional, List
 
 from sqlalchemy import select, case, exists, cast, LargeBinary
@@ -151,7 +152,7 @@ class UserModel(BaseModel):
 
 
     @staticmethod
-    def to_model(user: "UserModel" | dict) -> "UserModel":
+    def to_model(user: UserModel | dict) -> UserModel:
         if not isinstance(user, dict):
             if hasattr(user, "_asdict"):
                 row = user._asdict()
@@ -168,14 +169,14 @@ class UserModel(BaseModel):
     pass
 
     @staticmethod
-    def one_user(db: Session, user_id: str) -> "UserModel":
+    def one_user(db: Session, user_id: str) -> UserModel:
         user = UserModel.base_select(db).filter(TapirUser.user_id == user_id).one_or_none()
         if user is None:
             return None
         return UserModel.to_model(user)
 
     @staticmethod
-    def create_user(session: Session, user_model: "UserModel") -> TapirUser | None:
+    def create_user(session: Session, user_model: UserModel) -> TapirUser | None:
         if not user_model.first_name:
             raise ValueError("Must have forename to create user")
         if not user_model.last_name:
