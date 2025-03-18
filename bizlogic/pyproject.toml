@@ -12,7 +12,7 @@ python = "^3.11"
 pydantic = "^2.8.2"
 pydantic-settings = "^2.5.2"
 sqlalchemy = "~=2.0.27"
-fastapi = "^0.115.11"
+fastapi = "^0.115"
 
 [tool.poetry.dev-dependencies]
 mypy = "*"
