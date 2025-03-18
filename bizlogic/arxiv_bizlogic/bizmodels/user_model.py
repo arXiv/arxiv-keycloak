@@ -153,13 +153,15 @@ class UserModel(BaseModel):
 
     @staticmethod
     def to_model(user: UserModel | dict) -> UserModel:
-        if not isinstance(user, dict):
-            if hasattr(user, "_asdict"):
-                row = user._asdict()
-            else:
-                raise ValueError("Not UserModel or dict")
+        # If the incoming is already a dict, to_model is equivalet of calling model_validate
+        if isinstance(user, dict):
+            return UserModel.model_validate(row)
+
+        if hasattr(user, "_asdict"):
+            row = user._asdict()
         else:
-            row = user
+            raise ValueError("Not UserModel or dict")
+
         for field in _tapir_user_utf8_fields_ + _demographic_user_utf8_fields_:
             if isinstance(row[field], bytes):
                 row[field] = row[field].decode("utf-8") if row[field] is not None else None
