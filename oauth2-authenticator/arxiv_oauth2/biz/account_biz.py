@@ -153,10 +153,10 @@ class AccountRegistrationModel(AccountInfoBaseModel):
 
                 case "groups":
                     del result[key]
-                    group: CategoryGroup
-                    groups = [group.value for group in value]
+                    value: List[str]
+                    # groups = [CategoryGroup(elem) for elem in value]
                     for group in list(CategoryGroup):
-                        result[CategoryGroupToCategoryFlags[group.value]] = group.value in groups
+                        result[CategoryGroupToCategoryFlags[group.value]] = group.value in value
 
         for key, value in USER_MODEL_DEFAULTS.items():
             if key not in result:

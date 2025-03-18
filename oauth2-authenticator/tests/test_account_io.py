@@ -110,7 +110,7 @@ class TestRegisterUser(unittest.TestCase):
             self.assertEqual(registration.url, info.url)
             self.assertEqual(registration.country, info.country)
             self.assertEqual(registration.default_category, info.default_category)
-            self.assertEqual(registration.groups, info.groups)
+            self.assertEqual(set(registration.groups), set(info.groups))
 
 
     @unittest.expectedFailure
