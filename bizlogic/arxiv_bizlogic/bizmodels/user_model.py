@@ -1,4 +1,7 @@
-"""arXiv user routes."""
+"""arXiv user model
+
+This is more abstract than using raw SQLAlchemy table based models
+"""
 from typing import Optional, List
 
 from sqlalchemy import select, case, exists, cast, LargeBinary
@@ -7,35 +10,37 @@ from pydantic import BaseModel
 
 from arxiv.db.models import (TapirUser, TapirNickname, t_arXiv_moderators, Demographic)
 
+_tapir_user_utf8_fields_ = ["first_name", "last_name", "suffix_name", "email"]
+_demographic_user_utf8_fields_ = ["url", "affiliation", ]
 
 class UserModel(BaseModel):
     class Config:
         from_attributes = True
 
-    id: int
+    id: Optional[int] = None
     email: str
     first_name: str
     last_name: str
     suffix_name: str
-    share_first_name: int
-    share_last_name: int
+    share_first_name: bool = True
+    share_last_name: bool = True
     username: str
-    share_email: int
-    email_bouncing: bool
+    share_email: int = 8
+    email_bouncing: bool = False
     policy_class: int
     joined_date: int
     joined_ip_num: Optional[str] = None
     joined_remote_host: str
-    flag_internal: bool
-    flag_edit_users: bool
-    flag_edit_system: bool
-    flag_email_verified: bool
-    flag_approved: bool
-    flag_deleted: bool
-    flag_banned: bool
+    flag_internal: bool = False
+    flag_edit_users: bool = False
+    flag_edit_system: bool = False
+    flag_email_verified: bool = False
+    flag_approved: bool = True
+    flag_deleted: bool = False
+    flag_banned: bool = False
     flag_wants_email: Optional[bool] = None
     flag_html_email: Optional[bool] = None
-    tracking_cookie: str
+    tracking_cookie: Optional[str] = None
     flag_allow_tex_produced: Optional[bool] = None
     flag_can_lock: Optional[bool] = None
 
@@ -71,7 +76,7 @@ class UserModel(BaseModel):
     tapir_policy_classes: Optional[List[int]] = None
 
     @staticmethod
-    def base_select(db: Session):
+    def base_select(session: Session):
         is_mod_subquery = exists().where(t_arXiv_moderators.c.user_id == TapirUser.user_id).correlate(TapirUser)
         nick_subquery = select(TapirNickname.nickname).where(TapirUser.user_id == TapirNickname.user_id).correlate(TapirUser).limit(1).scalar_subquery()
         """
@@ -82,9 +87,9 @@ class UserModel(BaseModel):
         ).where(t_arXiv_moderators.c.user_id == TapirUser.user_id).correlate(TapirUser)
         """
 
-        return (db.query(
+        return (session.query(
             TapirUser.user_id.label("id"),
-            TapirUser.email,
+            cast(TapirUser.email, LargeBinary).label("email"),
             cast(TapirUser.first_name, LargeBinary).label("first_name"),
             cast(TapirUser.last_name, LargeBinary).label("last_name"),
             cast(TapirUser.suffix_name, LargeBinary).label("suffix_name"),
@@ -116,7 +121,7 @@ class UserModel(BaseModel):
             # mod_subquery.label("moderator_id"),
             Demographic.country,
             cast(Demographic.affiliation, LargeBinary).label("affiliation"),
-            Demographic.url,
+            cast(Demographic.url, LargeBinary).label("url"),
             Demographic.type,
             Demographic.archive,
             Demographic.subject_class,
@@ -138,7 +143,7 @@ class UserModel(BaseModel):
             Demographic.flag_group_econ,
             Demographic.veto_status
         ).outerjoin(Demographic, TapirUser.user_id == Demographic.user_id)
-        )
+                )
 
     @property
     def is_admin(self) -> bool:
@@ -148,8 +153,11 @@ class UserModel(BaseModel):
     @staticmethod
     def to_model(user: "UserModel") -> "UserModel":
         row = user._asdict()
-        for field in ["first_name", "last_name", "suffix_name", "affiliation"]:
-            row[field] = row[field].decode("utf-8") if row[field] is not None else None
+        for field in _tapir_user_utf8_fields_ + _demographic_user_utf8_fields_:
+            if isinstance(row[field], bytes):
+                row[field] = row[field].decode("utf-8") if row[field] is not None else None
+            else:
+                raise ValueError(f"Field {field} needs to be BLOB access")
         return UserModel.model_validate(row)
     pass
 
@@ -159,3 +167,74 @@ class UserModel(BaseModel):
         if user is None:
             return None
         return UserModel.to_model(user)
+
+    @staticmethod
+    def create_user(session: Session, user_model: "UserModel") -> TapirUser | None:
+        if not user_model.first_name:
+            raise ValueError("Must have forename to create user")
+        if not user_model.last_name:
+            raise ValueError("Must have surname to create user")
+
+        from_fields = set(user_model.__class__.model_fields.keys())
+        to_fields = set([column.key for column in TapirUser.__mapper__.column_attrs])
+        data = {}
+        for field in to_fields:
+            from_field = "id" if field == "user_id" else field
+            if from_field in from_fields:
+                data[field] = getattr(user_model, from_field)
+
+        # unfilled_fields = to_fields - set(data.keys())
+        # self.assertEqual(0, len(unfilled_fields))
+
+        for field in _tapir_user_utf8_fields_:
+            data[field] = data[field].encode("utf-8").decode('iso-8859-1')
+
+        db_user = TapirUser(**data)
+        session.add(db_user)
+        session.flush()
+        session.refresh(db_user)
+
+        to_demographics_fields = set([column.key for column in Demographic.__mapper__.column_attrs])
+
+        demographic = {}
+        for field in to_demographics_fields:
+            from_field = "id" if field == "user_id" else field
+            if from_field in from_fields:
+                demographic[field] = getattr(user_model, from_field)
+        demographic["user_id"] = db_user.user_id
+        demographic["dirty"] = 0
+
+        for field in _demographic_user_utf8_fields_:
+            demographic[field] = demographic[field].encode("utf-8").decode('iso-8859-1')
+
+        db_demographic = Demographic(**demographic)
+        session.add(db_demographic)
+
+        # from sqlalchemy import select
+        # print(Session.execute(select(TapirUser.email)).all())
+        return db_user
+
+
+USER_MODEL_DEFAULTS = {
+    "policy_class": 2,
+    "joined_remote_host": "",
+    "tracking_cookie": "",
+    "share_first_name": True,
+    "share_last_name": True,
+    "share_email": 8,
+    "email_bouncing": False,
+    "flag_internal": False,
+    "flag_edit_users": False,
+    "flag_edit_system": False,
+    "flag_email_verified": False,
+    "flag_approved": True,
+    "flag_deleted": False,
+    "flag_banned": False,
+    "flag_wants_email": False,
+    "flag_html_email": False,
+    "flag_allow_tex_produced": False,
+    "flag_can_lock": False,
+    "dirty": False,
+    "veto-status": "ok",
+    "flag_proxy": False,
+}

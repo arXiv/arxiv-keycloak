@@ -105,7 +105,16 @@ origins = ["http://localhost",
 
 def create_app(*args, **kwargs) -> FastAPI:
     setup_logger()
-    from arxiv.config import settings
+    from arxiv.config import Settings
+
+    settings = Settings(
+        CLASSIC_DB_URI = os.environ.get('CLASSIC_DB_URI'),
+        LATEXML_DB_URI = None
+    )
+    from .database import Database
+    database = Database(settings)
+    database.set_to_global()
+
 
     # Doubly check we agree with get_application_config
     for key in missing_configs(get_application_config()):

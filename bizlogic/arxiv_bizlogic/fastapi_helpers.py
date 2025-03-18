@@ -16,13 +16,8 @@ import datetime
 import time
 
 from arxiv.auth.user_claims import ArxivUserClaims
-from keycloak import KeycloakAdmin
-from sqlalchemy.orm import sessionmaker
 
 from .database import Database
-
-
-ALGORITHM = "HS256"
 
 
 @dataclass(frozen=True)
@@ -108,12 +103,6 @@ def get_db():
         session.rollback()
     finally:
         session.close()
-
-
-KEYCLOAK_ADMIN = 'KEYCLOAK_ADMIN'
-
-def get_keycloak_admin(request: Request) -> KeycloakAdmin:
-    return request.app.extra[KEYCLOAK_ADMIN]
 
 
 def get_client_host(request: Request) -> Optional[str]:

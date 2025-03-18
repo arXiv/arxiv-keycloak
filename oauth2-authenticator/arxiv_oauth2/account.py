@@ -1,187 +1,30 @@
 """Account management,
 
 """
-import re
-import traceback
-from traceback import TracebackException
 from typing import Optional, List
 
-import httpx
-# from PIL.EpsImagePlugin import field
-from arxiv.auth.domain import UserFullName, UserProfile, OTHER
-from arxiv.auth.openid.oidc_idp import ArxivOidcIdpClient
 from fastapi import APIRouter, Depends, status, HTTPException, Request, Response
-# from mypyc.irbuild.expression import transform_bytes_expr
-from sqlalchemy import and_
 from sqlalchemy.orm import Session
-from enum import Enum
 from pydantic import BaseModel
-from keycloak import KeycloakAdmin, KeycloakError, KeycloakAuthenticationError, KeycloakOpenID
-from urllib.parse import urlparse
+from keycloak import KeycloakAdmin, KeycloakError
 
 from arxiv.base import logging
 from arxiv.auth.user_claims import ArxivUserClaims
-from arxiv.db.models import TapirUser, Demographic, Category, TapirNickname, TapirUsersPassword
-from arxiv.db import Session as BaseDbSession
-from arxiv.auth import domain
-from arxiv.auth.legacy.exceptions import RegistrationFailed
-from arxiv.auth.legacy import accounts, passwords
+from arxiv.db.models import TapirUser, Demographic, TapirNickname, TapirUsersPassword
+from arxiv.auth.legacy import passwords
 
 from . import get_current_user_or_none, get_db, get_keycloak_admin, stateless_captcha, \
     get_client_host, sha256_base64_encode, get_current_user_access_token  # , get_client_host
+from .biz.account_biz import AccountInfoModel, get_account_info, to_kc_user_profile, get_career_status_index, \
+    CategoryGroup, AccountRegistrationError, AccountRegistrationModel, validate_password, migrate_to_keycloak, \
+    kc_validate_access_token, kc_send_verify_email, register_arxiv_account
 # from . import stateless_captcha
 from .captcha import CaptchaTokenReplyModel, get_captcha_token
 from .stateless_captcha import InvalidCaptchaToken, InvalidCaptchaValue
-from .user_model import UserModel
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/account", tags=["account"])
-
-
-# arxiv-submit/lib/arXiv/Controller/Admin/User.pm
-
-# CAREER_STATUS = ["Unknown", "Staff", "Professor", "Post Doc", "Grad Student", "Other"]
-
-class CAREER_STATUS(str, Enum):
-    Unknown = "Unknown"
-    Staff = "Staff"
-    Professor = "Professor"
-    PostDoc = "Post Doc"
-    GradStudent = "Grad Student"
-    Other = "Other"
-
-CAREER_STATUS_LIST = [CAREER_STATUS.Unknown, CAREER_STATUS.Staff, CAREER_STATUS.Professor, CAREER_STATUS.PostDoc, CAREER_STATUS.GradStudent]
-
-def get_career_status(index: int) -> CAREER_STATUS:
-    """map an integer to a CAREER_STATUS"""
-    if 0 <= index < len(CAREER_STATUS_LIST):
-        return CAREER_STATUS_LIST[index]
-    return CAREER_STATUS.Unknown  # Default fallback
-
-
-def get_career_status_index(status: CAREER_STATUS) -> int:
-    if status in CAREER_STATUS_LIST:
-        return CAREER_STATUS_LIST.index(status)
-    return 0
-
-
-allowed_pattern = re.compile(r"^[A-Za-z0-9_.+#\-=/:;(){}\[\]%^]+$")
-
-def validate_password(pwd: str) -> bool:
-    if len(pwd) < 8 or (not "_" in pwd) or not allowed_pattern.match(pwd):
-        return False
-    return True
-
-
-class CategoryGroup(str, Enum):
-    PHYSICS = "grp_physics"  # Physics
-    MATH = "grp_math"        # Mathematics
-    CS = "grp_cs"            # Computer Science
-    Q_BIO = "grp_q-bio"      # Quantitative Biology
-    Q_FIN = "grp_q-fin"      # Quantitative Finance
-    STAT = "grp_q-stat"      # Statistics
-    ECON = "grp_q-econ"      # Economics
-    EESS = "grp_eess"        # Electrical Engineering and Systems Science
-    NLIN = "grp_nlin"        # Natual Linguistics
-    TEST = "grp_test"        # Test
-
-
-class CategoryIdModel(BaseModel):
-    class Config:
-        from_attributes = True
-    archive: str
-    subject_class: str
-
-
-class CategoryModel(CategoryIdModel):
-    class Config:
-        from_attributes = True
-    definitive: bool
-    active: bool
-    category_name: str
-    endorse_all: str # Mapped[Literal["y", "n", "d"]] = mapped_column(Enum("y", "n", "d"), nullable=False, server_default=text("'d'"))
-    endorse_email: str # Mapped[Literal["y", "n", "d"]] = mapped_column(Enum("y", "n", "d"), nullable=False, server_default=text("'d'"))
-    papers_to_endorse: bool # Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("'0'"))
-    endorsement_domain: Optional[str] # Mapped[Optional[str]] = mapped_column(ForeignKey("arXiv_endorsement_domains.endorsement_domain"), index=True)
-
-
-class AccountInfoBaseModel(BaseModel):
-    username: str  # aka nickname in Tapir
-    email: Optional[str]
-    first_name: str
-    last_name: str
-    suffix_name: Optional[str]
-    country: Optional[str]
-    affiliation: Optional[str]
-    default_category: Optional[CategoryIdModel]
-    groups: Optional[List[CategoryGroup]]
-    url: Optional[str]
-    joined_date: Optional[int]
-    oidc_id: Optional[str]
-    groups: Optional[List[str]]
-    career_status: Optional[CAREER_STATUS]
-
-
-class AccountInfoModel(AccountInfoBaseModel):
-    id: str
-    email_verified: Optional[bool]
-    scopes: Optional[List[str]]
-
-
-class AccountRegistrationModel(AccountInfoBaseModel):
-    password: str
-    origin_ip: Optional[str]
-    origin_host: Optional[str]
-    token: str
-    captcha_value: str
-    keycloak_migration: bool = False
-
-
-class AccountRegistrationError(BaseModel):
-    message: str
-    field_name: Optional[str] = None
-
-
-def um_to_group_name(group_flag, um: UserModel) -> Optional[str]:
-    group_name, flag_name = group_flag
-    return group_name if hasattr(um, flag_name) and getattr(um, flag_name) else None
-
-
-def get_account_info(session: Session, user_id: str) -> Optional[AccountInfoModel]:
-    um = UserModel.one_user(session, user_id)
-    if um:
-        groups = [um_to_group_name(group_flag, um) for group_flag in Demographic.GROUP_FLAGS]
-
-        category: Optional[Category] = session.query(Category).filter(
-            and_(
-                Category.archive == um.archive,
-                Category.subject_class == um.subject_class
-            )
-        ).one_or_none()
-
-        category_model = CategoryIdModel.model_validate(category) if category else None
-
-        account = AccountInfoModel(
-            id = str(um.id),
-            username = um.username,
-            email = um.email,
-            email_verified = True if um.flag_email_verified else False,
-            scopes = None,
-            oidc_id = None,
-            first_name = um.first_name,
-            last_name = um.last_name,
-            suffix_name = um.suffix_name,
-            country = um.country,
-            affiliation = um.affiliation,
-            url = um.url,
-            default_category = category_model,
-            groups = [group for group in groups if group],
-            joined_date = um.joined_date,
-            career_status = get_career_status(um.type),
-        )
-        return account
-    return None
 
 
 def reply_account_info(session: Session, id: str) -> AccountInfoModel:
@@ -323,6 +166,11 @@ async def register_account(
     captcha_secret = request.app.extra['CAPTCHA_SECRET']
     host = get_client_host(request)
 
+    if not registration.email:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="email is required")
+    if not registration.username:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="username is required")
+
     # Check the captcha value against the captcha token.
     try:
         stateless_captcha.check(registration.token, registration.captcha_value, captcha_secret, host)
@@ -355,180 +203,25 @@ async def register_account(
 
         account = get_account_info(session, str(data.user_id))
         # Rather than creating user, let the legacy user migration create the account.
-        _migrate_to_keycloak(kc_admin, account, registration.password, client_secret)
-
+        migrate_to_keycloak(kc_admin, account, registration.password, client_secret)
+        result = account
     else:
-        full_name = UserFullName(forename=registration.first_name, surname=registration.last_name, suffix=registration.suffix_name)
+        result = register_arxiv_account(kc_admin, client_secret, session, registration)
 
-        user_profile = UserProfile(
-            affiliation=registration.affiliation,
-            country=registration.country,
-            rank=OTHER[0],
-            submission_groups=[]
-        )
+    if isinstance(result, TapirUser):
+        logger.info("User account created successfully")
 
-        if not registration.email:
-            error_response = AccountRegistrationError(message="Email is required", field_name="email")
-            response.status_code = status.HTTP_400_BAD_REQUEST
-            return error_response
-
-
-        user = domain.User(
-            username=registration.username,
-            email=registration.email,
-            name=full_name,
-            profile=user_profile,
-        )
-
-        # Purge the base's db session
-        try:
-            BaseDbSession.reset()
-        except:
-            pass
-
-        try:
-            user, auth = accounts.register(user, registration.password, registration.origin_ip, registration.origin_host)
-        except RegistrationFailed as this_e:
-            # PITA - this is the only place I have to use arxiv base's db session
-            BaseDbSession.rollback()
-
-            tb_exception = traceback.TracebackException.from_exception(this_e)
-            messages = []
-            cause = tb_exception.__cause__
-            if isinstance(cause, TracebackException):
-                messages.append(str(cause.exc_type))
-                messages.append(str(cause))
-            flattened_error = "\n".join(messages)
-            message = flattened_error
-            match = re.search(r"Duplicate entry '([^']+)' for key '([^']+)'", flattened_error, flags=re.MULTILINE)
-            where = None
-            if match:
-                field = match.group(2)
-                where = {"nickname": "User name", "email": "Email"}.get(field, field)
-                message = f"'{match.group(1)}' for '{where}' belongs to an existing user."
-            error_response = AccountRegistrationError(message=message, field_name=where)
-            response.status_code = status.HTTP_400_BAD_REQUEST
-            return error_response
-
-        logger.info("Tapir user account created successfully. Next is Keycloak.")
-        account = get_account_info(session, user.user_id)
-        # _register_to_keycloak(kc_admin, account)
-        _migrate_to_keycloak(kc_admin, account, registration.password, client_secret)
-
-    if not account:
-        error_response = AccountRegistrationError(message="The account not found.")
+    if isinstance(result, AccountRegistrationError):
         response.status_code = status.HTTP_404_NOT_FOUND
-        return error_response
+        logger.error("Failed to create user account")
 
-
-    logger.info("User account created successfully")
-    return account
+    return result
 
 
 @router.get("/register/")
 def get_register(request: Request) -> CaptchaTokenReplyModel:
     return get_captcha_token(request)
 
-
-def _set_user_password(kc_admin: KeycloakAdmin, account: AccountInfoModel, password: str):
-    try:
-        kc_admin.set_user_password(account.id, password, temporary=False)
-
-    except KeycloakAuthenticationError as e:
-        message = "Setting Keycloak user password failed, and kc_admin has the wrong secret"
-        logger.error(message, exc_info=e)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message) from e
-
-    except KeycloakError as e:
-        logger.error("Setting Keycloak user password failed.", exc_info=e)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR) from e
-
-
-def _migrate_to_keycloak(kc_admin: KeycloakAdmin, account: AccountInfoModel, password: str, client_secret: str):
-    # Configuration
-    keycloak_url = kc_admin.connection.server_url
-    realm = kc_admin.connection.realm_name
-    client_id = "arxiv-user-migration"
-    client_secret = client_secret
-
-    # Token request to simulate login
-    token_url = f"{keycloak_url}/realms/{realm}/protocol/openid-connect/token"
-    payload = {
-        "client_id": client_id,
-        "client_secret": client_secret,
-        "grant_type": "password",
-        "username": account.username,
-        "password": password,
-    }
-
-    parsed_url = urlparse(token_url)
-    is_local = parsed_url.hostname.lower() in ("127.0.0.1", "localhost", "localhost.arxiv.org")
-
-    with httpx.Client(verify=not is_local) as client:
-        response = client.post(token_url, data=payload)
-        if response.status_code == 200:
-            logger.info("Migration successful")
-        else:
-            logger.warning(
-                "Migration failed. status: %d. Migration is likely to fail", response.status_code,
-                extra={
-                    "status_code": response.status_code,
-                    "client_id": client_id,
-                    "username": account.username,
-                })
-
-    _set_user_password(kc_admin, account, password)
-    _send_verify_email(kc_admin, account.id)
-
-
-def to_kc_user_profile(account: AccountInfoModel, email_verified: bool = False, attributes: dict = {}) -> dict:
-    """
-    https://www.keycloak.org/docs-api/latest/rest-api/index.html#UserProfileMetadata
-
-Name 	Type 	Format
-
-id        optional String
-username  optional String
-firstName optional String
-lastName  optional String
-email     optional String
-emailVerified optional Boolean
-    """
-    return {
-        "attributes": attributes,
-        "email": account.email,
-        "emailVerified": email_verified,
-        "firstName": account.first_name,
-        "id": str(account.id),
-        "lastName": account.last_name,
-        "username": account.username,
-        #
-        "createdTimestamp": account.joined_date,
-    }
-
-
-def _register_to_keycloak(kc_admin: KeycloakAdmin, account: AccountInfoModel, password: str):
-    payload = to_kc_user_profile(account)
-
-    try:
-        kc_admin.create_user(payload=payload)
-    except KeycloakError as e:
-        logger.error("Creating Keycloak user failed.", exc_info=e)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR) from e
-
-    _set_user_password(kc_admin, account, password)
-
-
-def _send_verify_email(kc_admin: KeycloakAdmin, account_id: str, force_verify: bool = False):
-    """
-    """
-    user = kc_admin.get_user(account_id)
-    if force_verify or not user.get("emailVerified", False):
-        try:
-            kc_admin.send_verify_email(account_id)
-        except KeycloakError as e:
-            logger.error("Creating Keycloak user failed.", exc_info=e)
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR) from e
 
 class EmailModel(BaseModel):
     user_id: str
@@ -544,7 +237,7 @@ def email_verify_requset(
     user: TapirUser|None = session.query(TapirUser).filter(TapirUser.email == body.email).one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    _send_verify_email(kc_admin, user.user_id, force_verify=True)
+    kc_send_verify_email(kc_admin, user.user_id, force_verify=True)
     return
 
 class EmailUpdateModel(EmailModel):
@@ -589,7 +282,7 @@ def change_email(
     session.add(user)
     session.commit()
     if kc_user:
-        _send_verify_email(kc_admin, kc_user["id"], force_verify=True)
+        kc_send_verify_email(kc_admin, kc_user["id"], force_verify=True)
     return
 
 
@@ -598,45 +291,6 @@ class ChangePasswordModel(BaseModel):
     old_password: str
     new_password: str
 
-
-
-def kc_check_old_password(kc_admin: KeycloakAdmin, idp: ArxivOidcIdpClient,
-                          username: str, old_password: str) -> bool:
-    """Check if the given old password is correct. However, this requires the direct access (username/password)
-    grant and thus avoid.
-    """
-    keycloak_openid = KeycloakOpenID(
-        server_url=kc_admin.connection.server_url,
-        client_id=idp.client_id,
-        realm_name=idp.realm,
-        client_secret_key=idp.client_secret,
-        verify=idp._ssl_cert_verify,
-    )
-
-    try:
-        keycloak_openid.token(username, old_password)
-        return True
-    except KeycloakAuthenticationError:
-        return False
-
-
-async def kc_validate_access_token(kc_admin: KeycloakAdmin, idp: ArxivOidcIdpClient, access_token: str) -> bool:
-    """Validate an access token using Keycloak's introspection endpoint."""
-    introspect_url = f"{kc_admin.connection.server_url}/realms/{idp.realm}/protocol/openid-connect/token/introspect"
-    data = {
-        "token": access_token,
-        "client_id": idp.client_id,
-        "client_secret": idp.client_secret,
-    }
-
-    async with httpx.AsyncClient(verify=idp._ssl_cert_verify) as client:
-        response = await client.post(introspect_url, data=data)
-
-    if response.status_code == 200:
-        token_info = response.json()
-        return token_info.get("active", False)  # 'active' tells whether the token is valid
-
-    return False
 
 
 @router.put('/password/', description="Update user password")

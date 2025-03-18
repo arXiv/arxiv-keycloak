@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "arxiv_bizlogic"
+version = "0.0.1"
+description = "Common code for arXiv business logic"
+authors = ["arxiv.org"]
+packages = [
+   { include = "arxiv_bizlogic" },
+   ]
+   
+[tool.poetry.dependencies]
+python = "^3.11"
+pydantic = "^2.8.2"
+pydantic-settings = "^2.5.2"
+sqlalchemy = "~=2.0.27"
+fastapi = "^0.115.11"
+
+[tool.poetry.dev-dependencies]
+mypy = "*"
+pytest = "*"
+pytest-mock = "^3.8.2"
+pytest-cov = "*"
+
+[tool.poetry.extras]
+postgres = ["psycopg2-binary"]
+
+[tool.poetry.group.dev.dependencies]
+types-requests = "^2.32.0.20240712"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

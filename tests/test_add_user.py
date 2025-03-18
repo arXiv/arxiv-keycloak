@@ -16,7 +16,7 @@ from . import ROOT_DIR
 
 def get_dom_user(filename: str) -> domain.User:
 
-    test_data = from_file_to_dict(os.path.join(ROOT_DIR, "tests", "data", filename))
+    test_data = from_file_to_dict(os.path.join(ROOT_DIR, "tests", "small-data", filename))
     user = test_data['tapir_users'][0]
     user_email = user['email']
     nick = test_data['tapir_nicknames'][0]
