@@ -3,7 +3,7 @@ import unittest
 from arxiv.db.models import TapirUser, Demographic
 
 from arxiv_oauth2.biz.account_biz import AccountRegistrationModel, CategoryIdModel, CAREER_STATUS
-from arxiv_oauth2.db_models.user_model import UserModel, _tapir_user_utf8_fields_, _demographic_user_utf8_fields_
+from arxiv_bizlogic.bizmodels.user_model import UserModel, _tapir_user_utf8_fields_, _demographic_user_utf8_fields_
 
 
 class TestUserModel(unittest.TestCase):
@@ -27,6 +27,7 @@ class TestUserModel(unittest.TestCase):
             captcha_value="bar",
             career_status=CAREER_STATUS.Other,
             joined_date=0,
+            tracking_cookie="test-tracking-cookie",
         )
         data = registration_data.to_user_model_data()
         um = UserModel.to_model(data)

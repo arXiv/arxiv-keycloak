@@ -7,7 +7,7 @@ from pathlib import Path
 # from typing import List
 
 from arxiv.db.models import TapirUser
-from pygments.lexer import default
+#from pygments.lexer import default
 
 from arxiv_oauth2 import datetime_to_epoch
 from arxiv_oauth2.biz.account_biz import register_tapir_account, AccountRegistrationModel, get_account_info, \
@@ -47,7 +47,7 @@ class TestRegisterUser(unittest.TestCase):
             CLASSIC_DB_URI = db_uri,
             LATEXML_DB_URI = None
         )
-        from arxiv_oauth2.database import Database, DatabaseSession
+        from arxiv_bizlogic.database import Database, DatabaseSession
         database = Database(settings)
         database.set_to_global()
 
@@ -64,7 +64,7 @@ class TestRegisterUser(unittest.TestCase):
 
 
     def test_register_user_0(self):
-        from arxiv_oauth2.database import DatabaseSession
+        from arxiv_bizlogic.database import DatabaseSession
 
         registration = AccountRegistrationModel(
             username="test-user-0",
@@ -116,7 +116,7 @@ class TestRegisterUser(unittest.TestCase):
     @unittest.expectedFailure
     def test_register_user_1(self):
         """Insert Japanese letters violates Latin-1 code points and causes sqlalckemy.exc.OpesationalError"""
-        from arxiv_oauth2.database import DatabaseSession
+        from arxiv_bizlogic.database import DatabaseSession
 
         registration = AccountRegistrationModel(
             username="atest-user#1",
@@ -136,7 +136,8 @@ class TestRegisterUser(unittest.TestCase):
             origin_host=None,
             token="foo",
             captcha_value="bar",
-            career_status=CAREER_STATUS.Other
+            career_status=CAREER_STATUS.Other,
+            tracking_cookie="test-tracking-cookie",
         )
 
         user_id = None
