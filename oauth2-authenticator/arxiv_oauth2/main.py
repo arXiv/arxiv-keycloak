@@ -1,5 +1,5 @@
 import os
-from typing import Callable
+from typing import Callable, List
 
 from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.responses import Response
@@ -111,7 +111,7 @@ def create_app(*args, **kwargs) -> FastAPI:
         CLASSIC_DB_URI = os.environ.get('CLASSIC_DB_URI'),
         LATEXML_DB_URI = None
     )
-    from .database import Database
+    from arxiv_bizlogic.database import Database
     database = Database(settings)
     database.set_to_global()
 
@@ -259,7 +259,7 @@ def create_app(*args, **kwargs) -> FastAPI:
             pass
 
         try:
-            states: State = session.query(State).all()
+            states: List[State] = session.query(State).all()
             result.update({state.name: str(state.value) for state in states})
             return result
 

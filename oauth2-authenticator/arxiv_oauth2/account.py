@@ -1,7 +1,7 @@
 """Account management,
 
 """
-from typing import Optional, List
+from typing import Optional
 
 from fastapi import APIRouter, Depends, status, HTTPException, Request, Response
 from sqlalchemy.orm import Session

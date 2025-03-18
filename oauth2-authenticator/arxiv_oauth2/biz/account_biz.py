@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session
 from .. import datetime_to_epoch
 # from ..account import AccountRegistrationModel, AccountRegistrationError, AccountInfoModel
 
-from ..db_models.user_model import UserModel, USER_MODEL_DEFAULTS
+from arxiv_bizlogic.bizmodels.user_model import UserModel, USER_MODEL_DEFAULTS
 
 logger = logging.getLogger(__name__)
 
@@ -357,6 +357,7 @@ def get_account_info(session: Session, user_id: str) -> Optional[AccountInfoMode
             groups = [group for group in groups if group],
             joined_date = um.joined_date,
             career_status = get_career_status(um.type),
+            tracking_cookie=um.tracking_cookie,
         )
         return account
     return None

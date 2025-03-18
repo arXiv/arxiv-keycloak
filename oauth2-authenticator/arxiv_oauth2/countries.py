@@ -2,10 +2,9 @@
 """arXiv category routes."""
 import pycountry
 from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
+from fastapi import APIRouter, HTTPException, status, Query, Response
 from pydantic import BaseModel
 from arxiv.base import logging
-from arxiv.db.models import Category
 
 logger = logging.getLogger(__name__)
 
