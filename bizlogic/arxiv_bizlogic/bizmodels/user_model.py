@@ -14,6 +14,14 @@ from arxiv.db.models import (TapirUser, TapirNickname, t_arXiv_moderators, Demog
 _tapir_user_utf8_fields_ = ["first_name", "last_name", "suffix_name", "email"]
 _demographic_user_utf8_fields_ = ["url", "affiliation", ]
 
+
+def dict_merge(dict1: dict, dict2: dict) -> dict:
+    for key, value in dict2.items():
+        if key in dict1 and value is not None:
+            dict1[key] = value
+    return dict1
+
+
 class UserModel(BaseModel):
     class Config:
         from_attributes = True
@@ -152,13 +160,27 @@ class UserModel(BaseModel):
 
 
     @staticmethod
+    def map_to_row_data(from_fields: dict, to_fields: List[str] | dict, utf8_fields: List[str]) -> dict:
+        data = {}
+        for field in to_fields:
+            from_field = "id" if field == "user_id" else field
+            if from_field in from_fields:
+                data[field] = from_fields[from_field]
+            elif from_field in USER_MODEL_DEFAULTS:
+                data[field] = USER_MODEL_DEFAULTS[from_field]
+        for field in utf8_fields:
+            data[field] = data[field].encode("utf-8").decode('iso-8859-1')
+        return data
+
+
+    @staticmethod
     def to_model(user: UserModel | dict) -> UserModel:
         # If the incoming is already a dict, to_model is equivalet of calling model_validate
         if isinstance(user, dict):
             return UserModel.model_validate(user)
 
-        if hasattr(user, "_asdict"):
-            row = user._asdict()
+        if hasattr(user, "model_dump"):
+            row = user.model_dump()
         else:
             raise ValueError("Not UserModel or dict")
 
@@ -177,51 +199,47 @@ class UserModel(BaseModel):
             return None
         return UserModel.to_model(user)
 
+
     @staticmethod
-    def create_user(session: Session, user_model: UserModel) -> TapirUser | None:
-        if not user_model.first_name:
-            raise ValueError("Must have forename to create user")
-        if not user_model.last_name:
-            raise ValueError("Must have surname to create user")
+    def _upsert_user(session: Session, user: dict) -> TapirUser | None:
 
-        from_fields = set(user_model.__class__.model_fields.keys())
-        to_fields = set([column.key for column in TapirUser.__mapper__.column_attrs])
-        data = {}
-        for field in to_fields:
-            from_field = "id" if field == "user_id" else field
-            if from_field in from_fields:
-                data[field] = getattr(user_model, from_field)
-
-        # unfilled_fields = to_fields - set(data.keys())
-        # self.assertEqual(0, len(unfilled_fields))
-
-        for field in _tapir_user_utf8_fields_:
-            data[field] = data[field].encode("utf-8").decode('iso-8859-1')
-
+        tapir_user_fields = set([column.key for column in TapirUser.__mapper__.column_attrs])
+        data = UserModel.map_to_row_data(user, tapir_user_fields, _tapir_user_utf8_fields_)
         db_user = TapirUser(**data)
         session.add(db_user)
         session.flush()
         session.refresh(db_user)
 
         to_demographics_fields = set([column.key for column in Demographic.__mapper__.column_attrs])
-
-        demographic = {}
-        for field in to_demographics_fields:
-            from_field = "id" if field == "user_id" else field
-            if from_field in from_fields:
-                demographic[field] = getattr(user_model, from_field)
+        demographic = UserModel.map_to_row_data(user, to_demographics_fields, _demographic_user_utf8_fields_)
         demographic["user_id"] = db_user.user_id
-        demographic["dirty"] = 0
-
-        for field in _demographic_user_utf8_fields_:
-            demographic[field] = demographic[field].encode("utf-8").decode('iso-8859-1')
 
         db_demographic = Demographic(**demographic)
         session.add(db_demographic)
-
-        # from sqlalchemy import select
-        # print(Session.execute(select(TapirUser.email)).all())
         return db_user
+
+
+    @staticmethod
+    def create_user(session: Session, user_model: UserModel) -> TapirUser | None:
+        if not user_model.first_name:
+            raise ValueError("Must have first_name to create user")
+        if not user_model.last_name:
+            raise ValueError("Must have last_name to create user")
+        return UserModel._upsert_user(session, user_model.model_dump())
+
+
+    @staticmethod
+    def update_user(session: Session, user_model: UserModel) -> TapirUser | None:
+        if user_model.id is not None:
+            existing = UserModel.one_user(session, user_model.id)
+            if existing is None:
+                raise ValueError("User not found")
+        else:
+            raise ValueError("Must have first_name to update")
+        data = existing.model_dump()
+        for key, value in user_model.model_dump(exclude_unset=True, exclude_defaults=True).items():
+            data[key] = value
+        return UserModel._upsert_user(session, data)
 
 
 USER_MODEL_DEFAULTS = {
