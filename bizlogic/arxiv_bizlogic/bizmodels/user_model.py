@@ -7,6 +7,7 @@ from typing import Optional, List
 
 from sqlalchemy import select, case, exists, cast, LargeBinary
 from sqlalchemy.orm import Session
+from sqlalchemy.engine.row import Row
 from pydantic import BaseModel
 
 from arxiv.db.models import (TapirUser, TapirNickname, t_arXiv_moderators, Demographic)
