@@ -162,6 +162,9 @@ class UserModel(BaseModel):
 
     @staticmethod
     def map_to_row_data(from_fields: dict, to_fields: List[str] | dict, utf8_fields: List[str]) -> dict:
+        """Convert given thing ready for database data.
+        utf8_fields turns the data into UTF-8, and pretend to be latin-1.
+        """
         data = {}
         for field in to_fields:
             from_field = "id" if field == "user_id" else field
@@ -176,6 +179,11 @@ class UserModel(BaseModel):
 
     @staticmethod
     def to_model(user: UserModel | Row | dict) -> UserModel:
+        """
+        Given data to user model data.
+        :param user:  DB row, dict or UserModel.
+        :return:
+        """
         # If the incoming is already a dict, to_model is equivalet of calling model_validate
         if isinstance(user, dict):
             return UserModel.model_validate(user)
@@ -194,15 +202,40 @@ class UserModel(BaseModel):
         return UserModel.model_validate(row)
 
     @staticmethod
-    def one_user(db: Session, user_id: str) -> UserModel:
+    def one_user(db: Session, user_id: str) -> UserModel | None:
+        """
+        Get one user model data from user id (aka int primary key)
+        :param db: DB session
+        :param user_id:
+        :return:
+        """
         user = UserModel.base_select(db).filter(TapirUser.user_id == user_id).one_or_none()
         if user is None:
             return None
         return UserModel.to_model(user)
 
+    @staticmethod
+    def one_user_from_username(db: Session, username: str) -> UserModel | None:
+        """
+        Get one user model data from username via TapirNickname.
+        :param db:
+        :param username:
+        :return:
+        """
+        nick:TapirNickname | None = db.query(TapirNickname).filter(TapirNickname.nickname == username).one_or_none()
+        if nick is None:
+            return None
+        return UserModel.one_user(nick.user_id)
 
     @staticmethod
     def _upsert_user(session: Session, user: dict) -> TapirUser | None:
+        """
+        Insert or update user data (TapirUser and Demographic)
+        NOTE: No password or TapirNickname created/updated
+        :param session: DB session
+        :param user: DB ready data
+        :return:
+        """
 
         tapir_user_fields = set([column.key for column in TapirUser.__mapper__.column_attrs])
         data = UserModel.map_to_row_data(user, tapir_user_fields, _tapir_user_utf8_fields_)
@@ -222,6 +255,12 @@ class UserModel(BaseModel):
 
     @staticmethod
     def create_user(session: Session, user_model: UserModel) -> TapirUser | None:
+        """
+        Creates a user model data on DB. No password or TapirNickname created/updated
+        :param session:
+        :param user_model:
+        :return:
+        """
         if not user_model.first_name:
             raise ValueError("Must have first_name to create user")
         if not user_model.last_name:
@@ -231,6 +270,12 @@ class UserModel(BaseModel):
 
     @staticmethod
     def update_user(session: Session, user_model: UserModel) -> TapirUser | None:
+        """
+        Updates a user model data on DB.
+        :param session:
+        :param user_model:
+        :return:
+        """
         if user_model.id is not None:
             existing = UserModel.one_user(session, user_model.id)
             if existing is None:
