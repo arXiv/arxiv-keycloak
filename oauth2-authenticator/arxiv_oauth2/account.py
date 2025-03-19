@@ -13,11 +13,11 @@ from arxiv.auth.user_claims import ArxivUserClaims
 from arxiv.db.models import TapirUser, Demographic, TapirNickname, TapirUsersPassword
 from arxiv.auth.legacy import passwords
 
-from . import get_current_user_or_none, get_db, get_keycloak_admin, stateless_captcha, \
-    get_client_host, sha256_base64_encode, get_current_user_access_token  # , get_client_host
-from .biz.account_biz import AccountInfoModel, get_account_info, to_kc_user_profile, get_career_status_index, \
-    CategoryGroup, AccountRegistrationError, AccountRegistrationModel, validate_password, migrate_to_keycloak, \
-    kc_validate_access_token, kc_send_verify_email, register_arxiv_account
+from . import (get_current_user_or_none, get_db, get_keycloak_admin, stateless_captcha,
+    get_client_host, sha256_base64_encode, get_current_user_access_token)  # , get_client_host
+from .biz.account_biz import (AccountInfoModel, get_account_info,
+    AccountRegistrationError, AccountRegistrationModel, validate_password, migrate_to_keycloak,
+    kc_validate_access_token, kc_send_verify_email, register_arxiv_account, update_tapir_account)
 # from . import stateless_captcha
 from .captcha import CaptchaTokenReplyModel, get_captcha_token
 from .stateless_captcha import InvalidCaptchaToken, InvalidCaptchaValue
@@ -76,73 +76,10 @@ async def update_account_profile(
     if not current_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
-    user_id = data.id
-    user = session.get(TapirUser, user_id)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-    demographic = session.query(Demographic).filter(Demographic.user_id == user_id).one_or_none()
-
-    # Authorization check
-    if not (current_user.is_admin or current_user.user_id == user_id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-
-    user.first_name = data.first_name
-    user.last_name = data.last_name
-    if data.suffix_name:
-        user.suffix_name = data.suffix_name
-
-    # email verified is unchanged when the email is unchanged. If changed, reset
-    email_verified = data.email_verified
-    if email_verified is None:
-        if data.email and user.email != data.email:
-            email_verified = False
-            user.email_verified = False
-            pass
-        pass
-    else:
-        user.email_verified = email_verified
-
-    # At some point, I should get off using kc_admin and use the access token to do the update?
-    # If this is done by admin, I still need to use the kc_admin.
-    try:
-        kc_admin.update_user(data.id, to_kc_user_profile(data, email_verified=email_verified))
-
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-    session.add(user)
-
-    if demographic:
-        demographic.affiliation = data.affiliation
-        demographic.country = data.country
-        demographic.url = data.url
-        demographic.type = get_career_status_index(data.career_status)
-        if data.default_category:
-            demographic.archive = data.default_category.archive
-            demographic.subject_class = data.default_category.subject_class
-
-        in_group_count = 0
-        attr_names = {gr[0]: gr[1] for gr in Demographic.GROUP_FLAGS}
-
-        for group in CategoryGroup:
-            if group.value not in attr_names:
-                continue
-            attr_name = attr_names.get(group.value)
-            on_off = 1 if group.value.lower() in data.groups else 0
-
-            if attr_name and hasattr(demographic, attr_name):
-                setattr(demographic, attr_name, on_off)
-                in_group_count += on_off
-
-        if in_group_count == 0:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
-
-        session.add(demographic)
-
-    session.commit()
-
-    return reply_account_info(session, user_id)
+    tapir_user = update_tapir_account(session, data)
+    if not isinstance(tapir_user, TapirUser):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Tapir User")
+    return reply_account_info(session, tapir_user.user_id)
 
 
 # See profile update comment.

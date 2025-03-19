@@ -120,6 +120,14 @@ const UpdateProfile = () => {
                 setErrors((prev) => ({ ...prev, email: "" }));
             }
         },
+        "last_name": (value: string) => {
+            if (value) {
+                setErrors((prev) => ({ ...prev, last_name: "" }));
+            }
+            else {
+                setErrors((prev) => ({ ...prev, last_name: "Last name is required" }));
+            }
+        }
     }
 
     // Handle text field changes
@@ -180,10 +188,14 @@ const UpdateProfile = () => {
                 const reply: RegistrationErrorReply = data as any;
                 showMessageDialog(reply.message, "Profile update Unsuccessful");
             }
+            else if (response.status === 422) {
+                const reply: RegistrationErrorReply = data as any;
+                showMessageDialog(reply.message, "Failed to update your profile");
+            }
 
         } catch (error) {
             console.error("Error:", error);
-            showMessageDialog(JSON.stringify(error), "Registration Unsuccessful");
+            showMessageDialog(JSON.stringify(error) , "Registration Unsuccessful");
         }
     };
 

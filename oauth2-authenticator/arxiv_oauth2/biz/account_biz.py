@@ -1,3 +1,7 @@
+"""
+Account Management DAO to backend UserModel mapping
+"""
+from __future__ import annotations
 import re
 import traceback
 from datetime import datetime
@@ -111,58 +115,46 @@ class CategoryModel(CategoryIdModel):
 
 class AccountInfoBaseModel(BaseModel):
     username: str  # aka nickname in Tapir
-    email: Optional[str]
+    email: Optional[str] = None
     first_name: str
     last_name: str
-    suffix_name: Optional[str]
-    country: Optional[str]
-    affiliation: Optional[str]
-    default_category: Optional[CategoryIdModel]
-    groups: Optional[List[CategoryGroup]]
-    url: Optional[str]
-    joined_date: Optional[int]
-    oidc_id: Optional[str]
-    groups: Optional[List[str]]
-    career_status: Optional[CAREER_STATUS]
-    tracking_cookie: Optional[str]
+    suffix_name: Optional[str] = None
+    country: Optional[str] = None
+    affiliation: Optional[str] = None
+    default_category: Optional[CategoryIdModel] = None
+    groups: Optional[List[CategoryGroup]] = None
+    url: Optional[str] = None
+    joined_date: Optional[int] = None
+    oidc_id: Optional[str] = None
+    groups: Optional[List[str]] = None
+    career_status: Optional[CAREER_STATUS] = None
+    tracking_cookie: Optional[str] = None
 
-
-class AccountInfoModel(AccountInfoBaseModel):
-    id: str
-    email_verified: Optional[bool]
-    scopes: Optional[List[str]]
-
-
-class AccountRegistrationModel(AccountInfoBaseModel):
-    password: str
-    origin_ip: Optional[str]
-    origin_host: Optional[str]
-    token: str
-    captcha_value: str
-    keycloak_migration: bool = False
-
-    def to_user_model_data(self) -> dict[str, Any]:
-        data = self.dict()
+    def to_user_model_data(self, **kwargs) -> dict[str, Any]:
+        data = self.model_dump(**kwargs)
         result = data.copy()
         for key, value in data.items():
             match key:
                 case "default_category":
                     del result[key]
-                    result.update(value)
+                    if value:
+                        result.update(value)
                     pass
 
                 case "groups":
                     del result[key]
-                    value: List[str]
-                    # groups = [CategoryGroup(elem) for elem in value]
-                    for group in list(CategoryGroup):
-                        result[CategoryGroupToCategoryFlags[group.value]] = group.value in value
+                    if value:
+                        value: List[str]
+                        # groups = [CategoryGroup(elem) for elem in value]
+                        for group in list(CategoryGroup):
+                            result[CategoryGroupToCategoryFlags[group.value]] = group.value in value
 
-        for key, value in USER_MODEL_DEFAULTS.items():
-            if key not in result:
-                result[key] = value
+        if not kwargs.get("exclude_defaults", False):
+            for key, value in USER_MODEL_DEFAULTS.items():
+                if key not in result:
+                    result[key] = value
 
-        if "original_subject_classes" not in result:
+        if "archive" in result and "subject_class" in result and "original_subject_classes" not in result:
             result["original_subject_classes"] = f'{result["archive"]}.{result["subject_class"]}'
 
         if "joined_date" in result and isinstance(result["joined_date"], datetime):
@@ -171,6 +163,25 @@ class AccountRegistrationModel(AccountInfoBaseModel):
         return result
 
 
+class AccountInfoModel(AccountInfoBaseModel):
+    id: str
+    email_verified: Optional[bool] = None
+    scopes: Optional[List[str]] = None
+
+    def to_user_model_data(self, **kwargs) -> dict[str, Any]:
+        return super().to_user_model_data(**kwargs)
+
+
+class AccountRegistrationModel(AccountInfoBaseModel):
+    password: str
+    origin_ip: Optional[str] = None
+    origin_host: Optional[str] = None
+    token: str
+    captcha_value: str
+    keycloak_migration: bool = False
+
+    def to_user_model_data(self, **kwargs) -> dict[str, Any]:
+        return super().to_user_model_data(**kwargs)
 
 
 class AccountRegistrationError(BaseModel):
@@ -413,4 +424,42 @@ def register_tapir_account(session: Session, registration: AccountRegistrationMo
     session.add(db_pass)
 
     logger.info("Tapir user account created successfully.")
+    return tapir_user
+
+
+def update_tapir_account(session: Session, profile: AccountInfoModel) -> AccountRegistrationError | TapirUser :
+    """
+    updates TapirUser and arXiv_demographics tables but not username or password
+    """
+    updates = profile.to_user_model_data(exclude_defaults=True, exclude_unset=True)
+    um0 = UserModel.one_user(session, profile.id)
+    if um0 is None:
+        return AccountRegistrationError(message="The account not found.")
+    user = um0.model_dump()
+    user.update(updates)
+    um1 = UserModel.to_model(user)
+
+    try:
+        tapir_user = UserModel.update_user(session, um1)
+
+    except RegistrationFailed as this_e:
+        session.rollback()
+
+        tb_exception = traceback.TracebackException.from_exception(this_e)
+        messages = []
+        cause = tb_exception.__cause__
+        if isinstance(cause, TracebackException):
+            messages.append(str(cause.exc_type))
+            messages.append(str(cause))
+        flattened_error = "\n".join(messages)
+        message = flattened_error
+        match = re.search(r"Duplicate entry '([^']+)' for key '([^']+)'", flattened_error, flags=re.MULTILINE)
+        where = None
+        if match:
+            field = match.group(2)
+            where = {"nickname": "User name", "email": "Email"}.get(field, field)
+            message = f"'{match.group(1)}' for '{where}' belongs to an existing user."
+        return AccountRegistrationError(message=message, field_name=where)
+
+    logger.info("Tapir user account updated successfully.")
     return tapir_user

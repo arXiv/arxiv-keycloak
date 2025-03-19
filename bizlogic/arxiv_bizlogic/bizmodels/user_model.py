@@ -239,19 +239,33 @@ class UserModel(BaseModel):
 
         tapir_user_fields = set([column.key for column in TapirUser.__mapper__.column_attrs])
         data = UserModel.map_to_row_data(user, tapir_user_fields, _tapir_user_utf8_fields_)
-        db_user = TapirUser(**data)
-        session.add(db_user)
-        session.flush()
-        session.refresh(db_user)
+        if data.get("user_id") is None:
+            db_user = TapirUser(**data)
+            session.add(db_user)
+            session.flush()
+            session.refresh(db_user)
+        else:
+            db_user = session.query(TapirUser).filter(TapirUser.user_id == data.get("user_id")).one_or_none()
+            if db_user is None:
+                raise ValueError("User not found")
+            for field in tapir_user_fields:
+                # Changing of email needs a special care
+                if field not in ["user_id", "email"]:
+                    setattr(db_user, field, data[field])
 
         to_demographics_fields = set([column.key for column in Demographic.__mapper__.column_attrs])
-        demographic = UserModel.map_to_row_data(user, to_demographics_fields, _demographic_user_utf8_fields_)
-        demographic["user_id"] = db_user.user_id
+        demographic_data = UserModel.map_to_row_data(user, to_demographics_fields, _demographic_user_utf8_fields_)
+        demographic_data["user_id"] = db_user.user_id
 
-        db_demographic = Demographic(**demographic)
-        session.add(db_demographic)
+        db_demographic = session.query(Demographic).filter(Demographic.user_id == db_user.user_id).one_or_none()
+        if db_demographic is None:
+            db_demographic = Demographic(**demographic_data)
+            session.add(db_demographic)
+        else:
+            for field in to_demographics_fields:
+                if field not in ["user_id"]:
+                    setattr(db_demographic, field, demographic_data[field])
         return db_user
-
 
     @staticmethod
     def create_user(session: Session, user_model: UserModel) -> TapirUser | None:

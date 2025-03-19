@@ -6,12 +6,14 @@ from datetime import datetime
 from pathlib import Path
 # from typing import List
 
-from arxiv.db.models import TapirUser
+from arxiv.db.models import TapirUser, TapirNickname
+from arxiv_bizlogic.bizmodels.user_model import UserModel
+
 #from pygments.lexer import default
 
 from arxiv_oauth2 import datetime_to_epoch
 from arxiv_oauth2.biz.account_biz import register_tapir_account, AccountRegistrationModel, get_account_info, \
-    CategoryIdModel, CAREER_STATUS, CategoryGroup
+    CategoryIdModel, CAREER_STATUS, CategoryGroup, AccountInfoModel, update_tapir_account
 
 AAA_TEST_DIR = Path(__file__).parent
 AAA_DIR = AAA_TEST_DIR.parent
@@ -159,6 +161,80 @@ class TestRegisterUser(unittest.TestCase):
             self.assertEqual(registration.affiliation, info.affiliation )
             self.assertEqual(registration.url, info.url)
 
+
+    def test_update_user_0(self):
+        from arxiv_bizlogic.database import DatabaseSession
+        username = "test-user-2"
+
+        registration = AccountRegistrationModel(
+            username=username,
+            first_name="Second",
+            last_name="Last",
+            suffix_name="Jr",
+            email="bar@example.com",
+            password="changeme",
+            affiliation="Example",
+            url="https://example.com",
+            country="US",
+            default_category=CategoryIdModel(archive="cs", subject_class="AI"),
+            groups=[CategoryGroup.ECON, CategoryGroup.PHYSICS, CategoryGroup.MATH, CategoryGroup.CS],
+            joined_date=datetime_to_epoch(None, datetime.now()),
+            oidc_id="fake-oidc-id",
+            origin_ip="4.4.4.4",
+            origin_host="dns.example.com",
+            token="foo",
+            captcha_value="bar",
+            career_status=CAREER_STATUS.Other,
+            tracking_cookie="test-tracking-cookie",
+        )
+
+        user_id = None
+        with DatabaseSession() as session:
+            result = register_tapir_account(session, registration)
+            if isinstance(result, TapirUser):
+                user_id = result.user_id
+
+        with DatabaseSession() as session:
+            user = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
+            self.assertIsNotNone(user)
+
+            info = get_account_info(session, user_id)
+            self.assertEqual(registration.username, info.username)
+            self.assertEqual(registration.first_name, info.first_name)
+            self.assertEqual(registration.last_name, info.last_name)
+            self.assertEqual(registration.suffix_name, info.suffix_name)
+            self.assertEqual(registration.email, info.email)
+            self.assertEqual(registration.affiliation, info.affiliation )
+            self.assertEqual(registration.url, info.url)
+            self.assertEqual(registration.country, info.country)
+            self.assertEqual(registration.default_category, info.default_category)
+            self.assertEqual(set(registration.groups), set(info.groups))
+
+
+        with DatabaseSession() as session:
+            um0 = UserModel.one_user_from_username(session, username)
+
+            new_info = AccountInfoModel(
+                id = str(user_id),
+                username = username,
+                first_name = "FirstName",
+                last_name = "LastName",
+                email_verified = True
+            )
+            update_tapir_account(session, new_info)
+
+        with DatabaseSession() as session:
+            um1 = UserModel.one_user_from_username(session, username)
+            self.assertIsNotNone(um1)
+
+            from_dict = um0.model_dump()
+            to_dict = um1.model_dump()
+
+            diff_dict = from_dict.copy()
+            for key, value in to_dict.items():
+                if from_dict.get(key) == value:
+                    del diff_dict[key]
+            self.assertEqual({'first_name': 'Second', 'last_name': 'Last'}, diff_dict)
 
 
 if __name__ == '__main__':

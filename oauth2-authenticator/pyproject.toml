@@ -25,7 +25,8 @@ captcha = "^0.6.0"
 lameenc = "^1.8.1"
 arxiv-bizlogic = {git = "https://github.com/arXiv/arxiv-keycloak.git", rev = "master", subdirectory = "bizlogic"}
 
-[tools.poetry.group.dev.dependencies]
+[tool.poetry.group.dev.dependencies]
+uvicorn = "*"
 mypy = "^1.11.0"
 pytest = "^8.3.2"
 

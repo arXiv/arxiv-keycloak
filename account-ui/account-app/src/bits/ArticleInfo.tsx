@@ -73,7 +73,7 @@ const ArticleInfo: React.FC<ArticleInfoProps> = ({
 
             {orcidId && orcidAuth ? (
                 <p>
-                    Your <a href="https://info.arxiv.org/help/orcid">ORCID iD</a> is
+                    Your <a href="https://info.arxiv.org/help/orcid">ORCID iD</a>{" is "}
                     <a href={`https://arxiv.org/a/${orcidId}`}>{orcidId}</a>.
                 </p>
             ) : (
