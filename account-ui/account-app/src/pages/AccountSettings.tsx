@@ -143,10 +143,9 @@ const AccountSettings = () => {
                     px: 2, // Add padding to keep spacing
                 }}>
                     <Box sx={{flex:1}}>
-                        <Typography variant="body1"><b>{"E-mail: "}</b>
-                            {user?.email}{need_verify}
-                        </Typography>
                         <Typography variant="body1"><b>{"Name: "}</b>{user?.first_name}{", "}{user?.last_name}</Typography>
+                        <Typography variant="body1"><b>{"User name: "}</b>{user?.username}</Typography>
+                        <Typography variant="body1"><b>{"E-mail: "}</b>{user?.email}{need_verify}</Typography>
                         <Typography variant="body1"><b>{"Default Category: "}</b>{user?.default_category?.archive}.{user?.default_category?.subject_class}</Typography>
                         <Typography variant="body1"><b>{"Groups: "}</b>{user?.groups}</Typography>
                         <Typography variant="body1"><b>{"Endorsed categories: "}</b>{endorsedCategories}</Typography>

@@ -1,12 +1,15 @@
 """Account management,
 
 """
+import base64
+import random
 from typing import Optional
 
 from fastapi import APIRouter, Depends, status, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from keycloak import KeycloakAdmin, KeycloakError
+from keycloak.exceptions import (KeycloakGetError)
 
 from arxiv.base import logging
 from arxiv.auth.user_claims import ArxivUserClaims
@@ -306,3 +309,71 @@ async def change_user_password(
 
     logger.info("User password changed successfully. Old password %s, new password %s",
                 sha256_base64_encode(data.old_password), sha256_base64_encode(data.new_password))
+
+
+class PasswordResetRequest(BaseModel):
+    username_or_email: str
+
+@router.post('/password/reset/', description="Reset user password",
+             status_code=status.HTTP_201_CREATED)
+async def reset_user_password(
+    request: Request,
+    body: PasswordResetRequest,
+    current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
+    session: Session = Depends(get_db),
+    kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
+):
+    """
+    Reset user password
+    """
+    logger.debug("User password reset request. Current %s",
+                 current_user.user_id if current_user else "No User")
+
+    tapir_user: TapirUser | None = None
+    nickname: TapirNickname | None = None
+
+    if '@' in body.username_or_email:
+        tapir_user = session.query(TapirUser).filter(TapirUser.email == body.username_or_email).one_or_none()
+    else:
+        nickname = session.query(TapirNickname).filter(TapirNickname.nickname == body.username_or_email).one_or_none()
+
+    if nickname:
+        tapir_user = session.query(TapirUser).filter(TapirUser.user_id == nickname.user_id).one_or_none()
+    else:
+        nickname = session.query(TapirNickname).filter(TapirNickname.user_id == tapir_user.user_id).one_or_none()
+
+    if tapir_user is None or nickname is None:
+        # raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user id")
+        return
+
+    user_id = tapir_user.user_id
+    email = tapir_user.email
+    username = nickname.nickname
+
+    kc_user = None
+    try:
+        kc_user = kc_admin.get_user(user_id)
+    except KeycloakGetError as exc:
+        pass
+
+    if not kc_user:
+        client_secret = request.app.extra['ARXIV_USER_SECRET']
+        account = AccountInfoModel(
+            id = str(user_id),
+            username = username,
+            email = email,
+            first_name = tapir_user.first_name,
+            last_name = tapir_user.last_name,
+        )
+        password = base64.b85encode(random.randbytes(32)).decode('ascii')
+        migrate_to_keycloak(kc_admin, account, password, client_secret)
+        kc_user = kc_admin.get_user(user_id)
+
+    if not kc_user:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to migrate a user account")
+
+    try:
+        kc_admin.send_update_account(user_id=user_id, payload=["UPDATE_PASSWORD"])
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Password reset request did not succeed") from exc
+    return

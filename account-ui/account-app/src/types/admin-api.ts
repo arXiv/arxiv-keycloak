@@ -472,7 +472,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/paper_owners/authorize": {
+    "/v1/paper_owners/authorize/": {
         parameters: {
             query?: never;
             header?: never;
@@ -482,7 +482,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Register Paper Owner */
-        post: operations["register_paper_owner_v1_paper_owners_authorize_post"];
+        post: operations["register_paper_owner_v1_paper_owners_authorize__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1965,6 +1965,8 @@ export interface components {
         };
         /** UserModel */
         UserModel: {
+            /** Id */
+            id?: number | null;
             /** Email */
             email: string;
             /** First Name */
@@ -1973,94 +1975,136 @@ export interface components {
             last_name: string;
             /** Suffix Name */
             suffix_name: string;
+            /**
+             * Share First Name
+             * @default true
+             */
+            share_first_name: boolean;
+            /**
+             * Share Last Name
+             * @default true
+             */
+            share_last_name: boolean;
             /** Username */
             username: string;
-            /** Email Bouncing */
+            /**
+             * Share Email
+             * @default 8
+             */
+            share_email: number;
+            /**
+             * Email Bouncing
+             * @default false
+             */
             email_bouncing: boolean;
             /** Policy Class */
             policy_class: number;
-            /**
-             * Joined Date
-             * Format: date-time
-             */
-            joined_date: string;
+            /** Joined Date */
+            joined_date: number;
+            /** Joined Ip Num */
+            joined_ip_num?: string | null;
             /** Joined Remote Host */
             joined_remote_host: string;
-            /** Flag Internal */
+            /**
+             * Flag Internal
+             * @default false
+             */
             flag_internal: boolean;
-            /** Flag Edit Users */
+            /**
+             * Flag Edit Users
+             * @default false
+             */
             flag_edit_users: boolean;
-            /** Flag Edit System */
+            /**
+             * Flag Edit System
+             * @default false
+             */
             flag_edit_system: boolean;
-            /** Flag Email Verified */
+            /**
+             * Flag Email Verified
+             * @default false
+             */
             flag_email_verified: boolean;
-            /** Flag Approved */
+            /**
+             * Flag Approved
+             * @default true
+             */
             flag_approved: boolean;
-            /** Flag Deleted */
+            /**
+             * Flag Deleted
+             * @default false
+             */
             flag_deleted: boolean;
-            /** Flag Banned */
+            /**
+             * Flag Banned
+             * @default false
+             */
             flag_banned: boolean;
             /** Flag Wants Email */
-            flag_wants_email: boolean | null;
+            flag_wants_email?: boolean | null;
             /** Flag Html Email */
-            flag_html_email: boolean | null;
+            flag_html_email?: boolean | null;
+            /** Tracking Cookie */
+            tracking_cookie?: string | null;
             /** Flag Allow Tex Produced */
-            flag_allow_tex_produced: boolean | null;
+            flag_allow_tex_produced?: boolean | null;
             /** Flag Can Lock */
-            flag_can_lock: boolean | null;
+            flag_can_lock?: boolean | null;
             /** Country */
-            country: string | null;
+            country?: string | null;
             /** Affiliation */
-            affiliation: string | null;
+            affiliation?: string | null;
             /** Url */
-            url: string | null;
+            url?: string | null;
             /** Type */
-            type: number | null;
+            type?: number | null;
             /** Archive */
-            archive: string | null;
+            archive?: string | null;
             /** Subject Class */
-            subject_class: string | null;
+            subject_class?: string | null;
             /** Original Subject Classes */
             original_subject_classes: string;
             /** Flag Group Physics */
-            flag_group_physics: number | null;
+            flag_group_physics?: number | null;
             /** Flag Group Math */
             flag_group_math: number | null;
             /** Flag Group Cs */
-            flag_group_cs: number | null;
+            flag_group_cs?: number | null;
             /** Flag Group Nlin */
             flag_group_nlin: number | null;
             /** Flag Proxy */
-            flag_proxy: number | null;
+            flag_proxy?: number | null;
             /** Flag Journal */
-            flag_journal: number | null;
+            flag_journal?: number | null;
             /** Flag Xml */
-            flag_xml: number | null;
+            flag_xml?: number | null;
             /** Dirty */
-            dirty: number | null;
+            dirty?: number | null;
             /** Flag Group Test */
-            flag_group_test: number | null;
+            flag_group_test?: number | null;
             /** Flag Suspect */
-            flag_suspect: number | null;
+            flag_suspect?: number | null;
             /** Flag Group Q Bio */
-            flag_group_q_bio: number | null;
+            flag_group_q_bio?: number | null;
             /** Flag Group Q Fin */
-            flag_group_q_fin: number | null;
+            flag_group_q_fin?: number | null;
             /** Flag Group Stat */
-            flag_group_stat: number | null;
+            flag_group_stat?: number | null;
             /** Flag Group Eess */
-            flag_group_eess: number | null;
+            flag_group_eess?: number | null;
             /** Flag Group Econ */
-            flag_group_econ: number | null;
+            flag_group_econ?: number | null;
             /** Veto Status */
-            veto_status: string | null;
-            /** Id */
-            id: number;
+            veto_status?: string | null;
             /** Flag Is Mod */
-            flag_is_mod: boolean | null;
+            flag_is_mod?: boolean | null;
+            /** Tapir Policy Classes */
+            tapir_policy_classes?: number[] | null;
         };
         /** UserUpdateModel */
         UserUpdateModel: {
+            /** Id */
+            id?: number | null;
             /** Email */
             email: string;
             /** First Name */
@@ -2069,87 +2113,131 @@ export interface components {
             last_name: string;
             /** Suffix Name */
             suffix_name: string;
+            /**
+             * Share First Name
+             * @default true
+             */
+            share_first_name: boolean;
+            /**
+             * Share Last Name
+             * @default true
+             */
+            share_last_name: boolean;
             /** Username */
             username: string;
-            /** Email Bouncing */
+            /**
+             * Share Email
+             * @default 8
+             */
+            share_email: number;
+            /**
+             * Email Bouncing
+             * @default false
+             */
             email_bouncing: boolean;
             /** Policy Class */
             policy_class: number;
-            /**
-             * Joined Date
-             * Format: date-time
-             */
-            joined_date: string;
+            /** Joined Date */
+            joined_date: number;
+            /** Joined Ip Num */
+            joined_ip_num?: string | null;
             /** Joined Remote Host */
             joined_remote_host: string;
-            /** Flag Internal */
+            /**
+             * Flag Internal
+             * @default false
+             */
             flag_internal: boolean;
-            /** Flag Edit Users */
+            /**
+             * Flag Edit Users
+             * @default false
+             */
             flag_edit_users: boolean;
-            /** Flag Edit System */
+            /**
+             * Flag Edit System
+             * @default false
+             */
             flag_edit_system: boolean;
-            /** Flag Email Verified */
+            /**
+             * Flag Email Verified
+             * @default false
+             */
             flag_email_verified: boolean;
-            /** Flag Approved */
+            /**
+             * Flag Approved
+             * @default true
+             */
             flag_approved: boolean;
-            /** Flag Deleted */
+            /**
+             * Flag Deleted
+             * @default false
+             */
             flag_deleted: boolean;
-            /** Flag Banned */
+            /**
+             * Flag Banned
+             * @default false
+             */
             flag_banned: boolean;
             /** Flag Wants Email */
-            flag_wants_email: boolean | null;
+            flag_wants_email?: boolean | null;
             /** Flag Html Email */
-            flag_html_email: boolean | null;
+            flag_html_email?: boolean | null;
+            /** Tracking Cookie */
+            tracking_cookie?: string | null;
             /** Flag Allow Tex Produced */
-            flag_allow_tex_produced: boolean | null;
+            flag_allow_tex_produced?: boolean | null;
             /** Flag Can Lock */
-            flag_can_lock: boolean | null;
+            flag_can_lock?: boolean | null;
             /** Country */
-            country: string | null;
+            country?: string | null;
             /** Affiliation */
-            affiliation: string | null;
+            affiliation?: string | null;
             /** Url */
-            url: string | null;
+            url?: string | null;
             /** Type */
-            type: number | null;
+            type?: number | null;
             /** Archive */
-            archive: string | null;
+            archive?: string | null;
             /** Subject Class */
-            subject_class: string | null;
+            subject_class?: string | null;
             /** Original Subject Classes */
             original_subject_classes: string;
             /** Flag Group Physics */
-            flag_group_physics: number | null;
+            flag_group_physics?: number | null;
             /** Flag Group Math */
             flag_group_math: number | null;
             /** Flag Group Cs */
-            flag_group_cs: number | null;
+            flag_group_cs?: number | null;
             /** Flag Group Nlin */
             flag_group_nlin: number | null;
             /** Flag Proxy */
-            flag_proxy: number | null;
+            flag_proxy?: number | null;
             /** Flag Journal */
-            flag_journal: number | null;
+            flag_journal?: number | null;
             /** Flag Xml */
-            flag_xml: number | null;
+            flag_xml?: number | null;
             /** Dirty */
-            dirty: number | null;
+            dirty?: number | null;
             /** Flag Group Test */
-            flag_group_test: number | null;
+            flag_group_test?: number | null;
             /** Flag Suspect */
-            flag_suspect: number | null;
+            flag_suspect?: number | null;
             /** Flag Group Q Bio */
-            flag_group_q_bio: number | null;
+            flag_group_q_bio?: number | null;
             /** Flag Group Q Fin */
-            flag_group_q_fin: number | null;
+            flag_group_q_fin?: number | null;
             /** Flag Group Stat */
-            flag_group_stat: number | null;
+            flag_group_stat?: number | null;
             /** Flag Group Eess */
-            flag_group_eess: number | null;
+            flag_group_eess?: number | null;
             /** Flag Group Econ */
-            flag_group_econ: number | null;
+            flag_group_econ?: number | null;
             /** Veto Status */
-            veto_status: string | null;
+            veto_status?: string | null;
+            /** Flag Is Mod */
+            flag_is_mod?: boolean | null;
+            /** Tapir Policy Classes */
+            tapir_policy_classes?: number[] | null;
         };
         /**
          * UserVetoStatus
@@ -2701,7 +2789,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserModel"];
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -3659,7 +3747,7 @@ export interface operations {
             };
         };
     };
-    register_paper_owner_v1_paper_owners_authorize_post: {
+    register_paper_owner_v1_paper_owners_authorize__post: {
         parameters: {
             query?: never;
             header?: never;

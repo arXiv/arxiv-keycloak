@@ -14,6 +14,8 @@ import {useNotification} from "../NotificationContext";
 
 import {paths} from "../types/aaa-api.ts";
 import {passwordValidator} from "../bits/validators.ts";
+import PasswordWrapper from "../bits/PasswordWrapper.tsx";
+import {useNavigate} from "react-router-dom";
 
 // type AccountProfileRequest = paths["/account/profile/{user_id}"]['get']['responses']['200']['content']['application/json'];
 type ChangePasswordRequest = paths["/account/password/"]['put']['requestBody']['content']['application/json'];
@@ -23,12 +25,15 @@ const ChangePassword = () => {
     const user = runtimeProps.currentUser;
     const {showNotification} = useNotification();
     const [inProgress, setInProgress] = useState(false);
+    const navigate = useNavigate();
 
     const [formData, setFormData] = useState<ChangePasswordRequest>({
         user_id: "",
         old_password: "",
         new_password: "",
     });
+
+    const [password, setPassword] = useState<string>("");
 
     const [errors, setErrors] = useState<{
         old_password?: string,
@@ -79,32 +84,21 @@ const ChangePassword = () => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const {name, value} = e.target;
-        console.log("change: " + name + " = " + value)
-
         if (name === "secondPassword") {
-
+            setPassword(value);
         } else {
-            setFormData({
-                ...formData,
-                [name]: value,
-            });
-        }
-
-        if (name === "old_password") {
-            const tip = value ? "" : "Invalid password";
-            setErrors({...errors, old_password: tip});
-        }
-
-        if (name === "new_password") {
-            const tip = passwordValidator(value) ? "" : "Invalid password";
-            setErrors({...errors, new_password: tip});
-        }
-
-        if (name === "secondPassword") {
-            const tip = value === formData.new_password ? "" : "Passwords do not match password";
-            setErrors({...errors, secondPassword: tip});
+            setFormData({...formData, [name]: value});
         }
     };
+
+    useEffect(() => {
+        const updated ={
+            old_password: formData.old_password ? "" : "Not provided",
+            new_password: passwordValidator(formData.new_password) ? "" : "Invalid password",
+            secondPassword: formData.new_password === password ? "" : "Passwords do not match",
+        };
+        setErrors(updated);
+    }, [formData, password]);
 
     const invalidFormData = Object.values(errors).some(value =>
         Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && value !== ''
@@ -168,17 +162,21 @@ const ChangePassword = () => {
                         <input name="user_id" id="user_id" type="text" disabled={true} value={formData.user_id} hidden={true}/>
                         <Box>
                             <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Old Password"}</Typography>
-                            <TextField name="old_password" id="old_password" label="Old Password" type="password"
-                                       variant="outlined" fullWidth onChange={handleChange} value={formData.old_password}
-                                       error={Boolean(errors.old_password)} helperText={errors.old_password} />
+                            <PasswordWrapper passwordInputId="old_password">
+                                <TextField name="old_password" id="old_password" label="Old Password" type="password"
+                                           variant="outlined" fullWidth onChange={handleChange} value={formData.old_password}
+                                           error={Boolean(errors.old_password)} helperText={errors.old_password} />
+                            </PasswordWrapper>
                         </Box>
                         <Box>
                             <Typography fontWeight={"bold"} sx={{mb: 1}}>{"New Password"}</Typography>
-                            <Tooltip title={<PasswordRequirements />}>
-                                <TextField name="new_password" id="new_password" label="New Password" type="password"
-                                           variant="outlined" fullWidth onChange={handleChange} value={formData.new_password}
-                                           error={Boolean(errors.new_password)} helperText={errors.new_password} />
-                            </Tooltip>
+                                <PasswordWrapper passwordInputId="new_password">
+                                    <Tooltip title={<PasswordRequirements />}>
+                                    <TextField name="new_password" id="new_password" label="New Password" type="password"
+                                               variant="outlined" fullWidth onChange={handleChange} value={formData.new_password}
+                                               error={Boolean(errors.new_password)} helperText={errors.new_password} />
+                                    </Tooltip>
+                                </PasswordWrapper>
                         </Box>
                         <Box>
                             <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Retype Password"}</Typography>
@@ -195,6 +193,10 @@ const ChangePassword = () => {
                                 "&:hover": { backgroundColor: "#1420c0"
                                 } }} disabled={invalidFormData || inProgress}>
                                 Submit
+                            </Button>
+                            <Box flex={1} />
+                            <Button variant="outlined" onClick={() => navigate("/user-account/reset-password")}>
+                                Forgot Password?
                             </Button>
                         </Box>
                     </Box>

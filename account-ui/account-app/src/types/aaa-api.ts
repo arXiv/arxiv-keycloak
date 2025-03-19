@@ -305,6 +305,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/account/password/reset/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset User Password
+         * @description Reset user password
+         */
+        post: operations["reset_user_password_account_password_reset__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/captcha/image": {
         parameters: {
             query?: never;
@@ -399,33 +419,35 @@ export interface components {
             /** Username */
             username: string;
             /** Email */
-            email: string | null;
+            email?: string | null;
             /** First Name */
             first_name: string;
             /** Last Name */
             last_name: string;
             /** Suffix Name */
-            suffix_name: string | null;
+            suffix_name?: string | null;
             /** Country */
-            country: string | null;
+            country?: string | null;
             /** Affiliation */
-            affiliation: string | null;
-            default_category: components["schemas"]["CategoryIdModel"] | null;
+            affiliation?: string | null;
+            default_category?: components["schemas"]["CategoryIdModel"] | null;
             /** Groups */
-            groups: string[] | null;
+            groups?: string[] | null;
             /** Url */
-            url: string | null;
+            url?: string | null;
             /** Joined Date */
-            joined_date: number | null;
+            joined_date?: number | null;
             /** Oidc Id */
-            oidc_id: string | null;
-            career_status: components["schemas"]["CAREER_STATUS"] | null;
+            oidc_id?: string | null;
+            career_status?: components["schemas"]["CAREER_STATUS"] | null;
+            /** Tracking Cookie */
+            tracking_cookie?: string | null;
             /** Id */
             id: string;
             /** Email Verified */
-            email_verified: boolean | null;
+            email_verified?: boolean | null;
             /** Scopes */
-            scopes: string[] | null;
+            scopes?: string[] | null;
         };
         /** AccountRegistrationError */
         AccountRegistrationError: {
@@ -439,33 +461,35 @@ export interface components {
             /** Username */
             username: string;
             /** Email */
-            email: string | null;
+            email?: string | null;
             /** First Name */
             first_name: string;
             /** Last Name */
             last_name: string;
             /** Suffix Name */
-            suffix_name: string | null;
+            suffix_name?: string | null;
             /** Country */
-            country: string | null;
+            country?: string | null;
             /** Affiliation */
-            affiliation: string | null;
-            default_category: components["schemas"]["CategoryIdModel"] | null;
+            affiliation?: string | null;
+            default_category?: components["schemas"]["CategoryIdModel"] | null;
             /** Groups */
-            groups: string[] | null;
+            groups?: string[] | null;
             /** Url */
-            url: string | null;
+            url?: string | null;
             /** Joined Date */
-            joined_date: number | null;
+            joined_date?: number | null;
             /** Oidc Id */
-            oidc_id: string | null;
-            career_status: components["schemas"]["CAREER_STATUS"] | null;
+            oidc_id?: string | null;
+            career_status?: components["schemas"]["CAREER_STATUS"] | null;
+            /** Tracking Cookie */
+            tracking_cookie?: string | null;
             /** Password */
             password: string;
             /** Origin Ip */
-            origin_ip: string | null;
+            origin_ip?: string | null;
             /** Origin Host */
-            origin_host: string | null;
+            origin_host?: string | null;
             /** Token */
             token: string;
             /** Captcha Value */
@@ -522,6 +546,11 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** PasswordResetRequest */
+        PasswordResetRequest: {
+            /** Username Or Email */
+            username_or_email: string;
         };
         /**
          * RefreshedTokens
@@ -1046,6 +1075,39 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_user_password_account_password_reset__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
