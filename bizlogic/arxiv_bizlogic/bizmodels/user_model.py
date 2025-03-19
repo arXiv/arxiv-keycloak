@@ -215,17 +215,17 @@ class UserModel(BaseModel):
         return UserModel.to_model(user)
 
     @staticmethod
-    def one_user_from_username(db: Session, username: str) -> UserModel | None:
+    def one_user_from_username(session: Session, username: str) -> UserModel | None:
         """
         Get one user model data from username via TapirNickname.
-        :param db:
+        :param session:
         :param username:
         :return:
         """
-        nick:TapirNickname | None = db.query(TapirNickname).filter(TapirNickname.nickname == username).one_or_none()
+        nick:TapirNickname | None = session.query(TapirNickname).filter(TapirNickname.nickname == username).one_or_none()
         if nick is None:
             return None
-        return UserModel.one_user(nick.user_id)
+        return UserModel.one_user(session, str(nick.user_id))
 
     @staticmethod
     def _upsert_user(session: Session, user: dict) -> TapirUser | None:
