@@ -94,15 +94,7 @@ def get_current_user_access_token(request: Request) -> str | None:
 
 def get_db():
     db = Database.get_from_global()
-    session = db.get_session()
-    try:
-        yield from session
-    except Exception as e:
-        logger = getLogger(__name__)
-        logger.warning(f'Commit failed, rolling back', exc_info=True)
-        session.rollback()
-    finally:
-        session.close()
+    yield from db.get_session()
 
 
 def get_client_host(request: Request) -> Optional[str]:
