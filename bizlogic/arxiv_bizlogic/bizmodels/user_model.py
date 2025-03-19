@@ -174,15 +174,16 @@ class UserModel(BaseModel):
 
 
     @staticmethod
-    def to_model(user: UserModel | dict) -> UserModel:
+    def to_model(user: UserModel | Row | dict) -> UserModel:
         # If the incoming is already a dict, to_model is equivalet of calling model_validate
         if isinstance(user, dict):
             return UserModel.model_validate(user)
-
-        if hasattr(user, "model_dump"):
-            row = user.model_dump()
+        elif isinstance(user, UserModel):
+            return UserModel.model_validate(user.model_dump())
+        elif isinstance(user, Row):
+            row = user._asdict()
         else:
-            raise ValueError("Not UserModel or dict")
+            raise ValueError("Not Row, UserModel or dict")
 
         for field in _tapir_user_utf8_fields_ + _demographic_user_utf8_fields_:
             if isinstance(row[field], bytes):
@@ -190,7 +191,6 @@ class UserModel(BaseModel):
             else:
                 raise ValueError(f"Field {field} needs to be BLOB access")
         return UserModel.model_validate(row)
-    pass
 
     @staticmethod
     def one_user(db: Session, user_id: str) -> UserModel:
