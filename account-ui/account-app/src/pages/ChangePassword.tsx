@@ -23,7 +23,7 @@ type ChangePasswordRequest = paths["/account/password/"]['put']['requestBody']['
 const ChangePassword = () => {
     const runtimeProps = useContext(RuntimeContext);
     const user = runtimeProps.currentUser;
-    const {showNotification} = useNotification();
+    const {showNotification, showMessageDialog} = useNotification();
     const [inProgress, setInProgress] = useState(false);
     const navigate = useNavigate();
 
@@ -66,10 +66,15 @@ const ChangePassword = () => {
             });
 
             if (!response.ok) {
-                const errorReply =await response.json();
-                console.error(response.statusText);
-                showNotification(errorReply.detail, "warning");
-                return;
+                if (response.status === 401) {
+                    showMessageDialog("Please log-out and re-login before changing the password. Your log-in session has expired.", "Pleas log-in again");
+                }
+                else {
+                    const errorReply =await response.json();
+                    console.error(response.statusText);
+                    showNotification(errorReply.detail, "warning");
+                    return;
+                }
             }
 
             showNotification("Password updated successfully", "success");

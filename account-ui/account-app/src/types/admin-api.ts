@@ -489,6 +489,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/paper_owners/update-authorship": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Authorship */
+        post: operations["update_authorship_v1_paper_owners_update_authorship_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/paper-pw/{id}": {
         parameters: {
             query?: never;
@@ -1735,6 +1752,21 @@ export interface components {
             rejected_document_ids: number[];
             /** Accepted Document Ids */
             accepted_document_ids: number[];
+        };
+        /** PaperOwnershipUpdateRequest */
+        PaperOwnershipUpdateRequest: {
+            /** User Id */
+            user_id: string;
+            /**
+             * Authored
+             * @default []
+             */
+            authored: string[];
+            /**
+             * Not Authored
+             * @default []
+             */
+            not_authored: string[];
         };
         /** PaperPwModel */
         PaperPwModel: {
@@ -3757,6 +3789,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PaperAuthRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_authorship_v1_paper_owners_update_authorship_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaperOwnershipUpdateRequest"];
             };
         };
         responses: {

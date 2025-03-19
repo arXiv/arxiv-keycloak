@@ -12,6 +12,7 @@ import {useNotification} from "../NotificationContext";
 
 import {paths} from "../types/aaa-api.ts";
 import {emailValidator} from "../bits/validators.ts";
+import {printUserName} from "../bits/printer.ts";
 
 type AccountProfileRequest = paths["/account/profile/{user_id}"]['get']['responses']['200']['content']['application/json'];
 type ChangeEmailRequest = paths["/account/email/"]['put']['requestBody']['content']['application/json'];
@@ -22,6 +23,7 @@ const ChangeEmail = () => {
     const emailAddress = user?.email || "";
     const [inProgress, setInProgress] = useState(false);
     const {showNotification, showMessageDialog} = useNotification();
+    const fullName = printUserName(user);
 
     const [formData, setFormData] = useState<ChangeEmailRequest>({
         user_id: "",
@@ -158,7 +160,7 @@ const ChangeEmail = () => {
                             zIndex: 1, // Ensure the text is above the border
                         }}
                     >
-                        {`Change Email for ${emailAddress}`}
+                        {`Change Email for ${fullName}`}
                     </Typography>
                 </Box>
 
@@ -167,7 +169,12 @@ const ChangeEmail = () => {
                         <input name="user_id" id="user_id" type="text" disabled={true} value={formData.user_id} hidden={true}/>
                         <Typography>
                             Your current e-mail address is {emailAddress}. Enter your new e-mail address into the following form; we'll send a verification code to your new e-mail address which you can use to make the change.
+
                         </Typography>
+                        <Typography>
+                            Please check your e-mail and verify the new e-mail address by following the link in the e-mail.
+                        </Typography>
+
                         <Box>
                             <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Old Email"}</Typography>
                             <Typography fontWeight={"bold"} sx={{ml: 2}}>{emailAddress}</Typography>

@@ -203,7 +203,7 @@ def change_email(
     if other_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New email already exists")
 
-    if current_user.user_id != user.user_id and not current_user.is_admin:
+    if str(current_user.user_id) != str(user.user_id) and not current_user.is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     user.email = body.new_email
@@ -219,7 +219,7 @@ def change_email(
             session.rollback()
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
 
-    session.add(user)
+    # session.add(user)
     session.commit()
     if kc_user:
         kc_send_verify_email(kc_admin, kc_user["id"], force_verify=True)
@@ -289,7 +289,7 @@ async def change_user_password(
     # if not kc_check_old_password(kc_admin, idp, nick.nickname, data.old_password, idp._ssl_cert_verify):
     if not await kc_validate_access_token(kc_admin, idp, access_token):
         if current_user.user_id == data.user_id:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Stale access. Please log out/login again.")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Stale access. Please log out/login again.")
         if not current_user.is_admin:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Stale access. Please log out/login again.")
 

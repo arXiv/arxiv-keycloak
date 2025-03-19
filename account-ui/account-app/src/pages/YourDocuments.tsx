@@ -47,6 +47,7 @@ type DocumentType = adminApi['/v1/documents/{id}']['get']['responses']['200']['c
 type DocumentsType = adminApi['/v1/documents/']['get']['responses']['200']['content']['application/json'];
 type DemographicType = adminApi['/v1/demographics/{id}']['get']['responses']['200']['content']['application/json'];
 type PaperPasswordResponseType = adminApi['/v1/paper-pw/{id}']['get']['responses']['200']['content']['application/json'];
+type PaperAuthoredRequestType = adminApi['/v1/paper_owners/update-authorship']['post']['requestBody']['content']['application/json'];
 
 
 const PAGE_SIZES = [5, 20, 100];
@@ -269,9 +270,6 @@ const YourDocuments: React.FC = () => {
         fetchDocuments();
     }, [fetchDocuments]);
 
-    useEffect(() => {
-        console.log("n subs " + documents.length);
-    }, [documents]);
 
     const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, rowId: number) => {
         event.stopPropagation(); // Prevent right-click event from triggering
@@ -323,6 +321,27 @@ const YourDocuments: React.FC = () => {
             showMessageDialog(`Action: ${action} of document ID ${rowId}`, `${action} not implemented yet`);
         }
     };
+
+    const updateAuthored = useCallback( async (authored: boolean) => {
+        if (!runtimeProps?.currentUser)
+            return;
+        const docIds: string[] = selectedRows.map((row) => String(row));
+        console.log("docIds", docIds);
+        const body: PaperAuthoredRequestType = {
+            user_id: String(runtimeProps.currentUser.id),
+            authored: authored ? docIds : [],
+            not_authored: !authored ? docIds : [],
+        }
+
+        const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/paper_owners/update-authorship",
+            {
+                body: JSON.stringify(body),
+                method: "POST",
+            });
+        if (response.ok) {
+
+        }
+    }, [selectedRows, runtimeProps?.currentUser, documents, runtimeProps.ADMIN_API_BACKEND_URL]);
 
 
     const columns: GridColDef<DocumentType>[] = [
@@ -420,10 +439,14 @@ const YourDocuments: React.FC = () => {
                     Articles You Own
                 </Typography>
                 <Box flexGrow={1}/>
-                <Button variant="outlined" disabled={selectedRows.length === 0}>
+                <Button id="authored_all" name="authored_all" variant="outlined" disabled={selectedRows.length === 0}
+                        onClick={() => updateAuthored(true)}
+                >
                     I'm an author.
                 </Button>
-                <Button variant="outlined" disabled={selectedRows.length === 0}>
+                <Button id="authored_none" name="authored_none" variant="outlined" disabled={selectedRows.length === 0}
+                        onClick={() => updateAuthored(false)}
+                >
                     I am not an author.
                 </Button>
             </Box>

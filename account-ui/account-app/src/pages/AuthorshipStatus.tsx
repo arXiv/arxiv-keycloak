@@ -62,10 +62,10 @@ const AuthorshipStatus: React.FC = () => {
                 </TableContainer>
 
                 <Box mt={2} display="flex" flexDirection="row" gap={2}>
-                    <Button type="submit" name="authored_all" variant="contained" color="primary">
+                    <Button type="submit" id="authored_all" name="authored_all" variant="contained" color="primary">
                         I am an author of all of these papers
                     </Button>
-                    <Button type="submit" name="authored_none" variant="contained" color="primary">
+                    <Button type="submit" id="authored_none" name="authored_none" variant="contained" color="primary">
                         I am an author of none of these papers
                     </Button>
                     <Button type="submit" name="submit" variant="contained" color="success">
