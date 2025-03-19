@@ -74,7 +74,7 @@ async def update_account_profile(
     Update the profile name of a user.
     """
     if not current_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
 
     tapir_user = update_tapir_account(session, data)
     if not isinstance(tapir_user, TapirUser):

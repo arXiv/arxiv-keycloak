@@ -178,19 +178,26 @@ const UpdateProfile = () => {
                 },
                 body: JSON.stringify(formData),
             });
-            const data = await response.json();
-            console.log("Response:", data);
 
             if (response.ok) {
-                showNotification("Updated succesfully", "success");
+                const data = await response.json();
+                console.log("Response:", data);
+                showNotification("Updated successfully", "success");
             }
             else if (response.status === 400) {
-                const reply: RegistrationErrorReply = data as any;
-                showMessageDialog(reply.message, "Profile update Unsuccessful");
+                const message: RegistrationErrorReply = await response.json();
+                showMessageDialog(message.message, "Profile update Unsuccessful");
+            }
+            else if (response.status === 401) {
+                showMessageDialog("You are not logged in, or the session has expired.", "Please log-in");
             }
             else if (response.status === 422) {
-                const reply: RegistrationErrorReply = data as any;
-                showMessageDialog(reply.message, "Failed to update your profile");
+                const data = await response.json();
+                showMessageDialog(data.detail, "Failed to update your profile");
+            }
+            else {
+                const message = await response.text();
+                showMessageDialog(message, "Failed to update your profile");
             }
 
         } catch (error) {
