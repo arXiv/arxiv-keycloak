@@ -1701,6 +1701,7 @@ export interface components {
             flag_author: boolean;
             /** Flag Auto */
             flag_auto: boolean;
+            document?: components["schemas"]["DocumentModel"] | null;
         };
         /** OwnershipRequestModel */
         OwnershipRequestModel: {
@@ -1767,6 +1768,12 @@ export interface components {
              * @default []
              */
             not_authored: string[];
+            /** Valid */
+            valid?: boolean | null;
+            /** Auto */
+            auto?: boolean | null;
+            /** Timestamp */
+            timestamp?: string | null;
         };
         /** PaperPwModel */
         PaperPwModel: {
@@ -3625,6 +3632,7 @@ export interface operations {
                 document_id?: number | null;
                 /** @description List of paper owner */
                 id?: string[] | null;
+                "with document"?: boolean | null;
             };
             header?: never;
             path?: never;

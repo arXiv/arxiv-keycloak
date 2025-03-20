@@ -2,7 +2,6 @@ import React, {useCallback, useContext, useEffect, useState} from "react";
 import {
     DataGrid,
     GridColDef,
-    GridRowParams,
     GridFilterModel,
     GridPaginationModel,
     GridRenderCellParams,
@@ -13,7 +12,8 @@ import {RuntimeContext} from "../RuntimeContext.tsx";
 import {paths as adminApi} from "../types/admin-api";
 import UnlockIcon from "@mui/icons-material/LockOpen";
 import AuthorIcon from "@mui/icons-material/Attribution";
-import NonAuthorIcon from "@mui/icons-material/LocalShipping";
+// import NonAuthorIcon from "@mui/icons-material/LocalShipping";
+import NonAuthorIcon from "@mui/icons-material/Upload";
 // import UndoIcon from "@mui/icons-material/Undo";
 // import Container from '@mui/material/Container'
 import Typography from "@mui/material/Typography";
@@ -21,7 +21,6 @@ import Link from "@mui/material/Link";
 import Paper from "@mui/material/Paper";
 import Box from "@mui/material/Box";
 // import Checkbox from "@mui/material/Checkbox";
-import DocumentMetadata from "../bits/DocumentMetadata.tsx";
 // import PaperPassword from "../bits/PaperPassword.tsx";
 import IconButton from "@mui/material/IconButton";
 import Menu from "@mui/material/Menu";
@@ -43,11 +42,14 @@ import DatagridPaginationMaker from "../bits/DataGridPagination.tsx";
 import Button from "@mui/material/Button";
 
 
-type DocumentType = adminApi['/v1/documents/{id}']['get']['responses']['200']['content']['application/json'];
-type DocumentsType = adminApi['/v1/documents/']['get']['responses']['200']['content']['application/json'];
+// type DocumentType = adminApi['/v1/documents/{id}']['get']['responses']['200']['content']['application/json'];
+// type DocumentsType = adminApi['/v1/documents/']['get']['responses']['200']['content']['application/json'];
 type DemographicType = adminApi['/v1/demographics/{id}']['get']['responses']['200']['content']['application/json'];
 type PaperPasswordResponseType = adminApi['/v1/paper-pw/{id}']['get']['responses']['200']['content']['application/json'];
 type PaperAuthoredRequestType = adminApi['/v1/paper_owners/update-authorship']['post']['requestBody']['content']['application/json'];
+// type PaperOwnerListRequestType = adminApi['/v1/paper_owners/']['get']['requestBody'];
+type PaperOwnerListResponseType = adminApi['/v1/paper_owners/']['get']['responses']['200']['content']['application/json'];
+type PaperOwnerType = adminApi['/v1/paper_owners/{id}']['get']['responses']['200']['content']['application/json'];
 
 
 const PAGE_SIZES = [5, 20, 100];
@@ -76,10 +78,10 @@ const menuActions = [
 ];
 
 const ActionMenu: React.FC<{
-    rowId: number;
+    rowId: string;
     anchorEl: null | HTMLElement;
     position: { mouseX: number, mouseY: number } | null;
-    onClose: (rowId: number, action: string) => void;
+    onClose: (rowId: string, action: string) => void;
 }> = ({ rowId, anchorEl, position, onClose }) => {
     const open = Boolean(anchorEl || position);
 
@@ -125,10 +127,8 @@ const dateFilterOperators: GridFilterOperator[] = [
     },
 ];
 
-const Author: React.FC<{ authors?: number[], uid?: string }> = ({authors, uid}) => {
-    const user_id = Number(uid);
-    const yes = authors && uid && authors.includes(user_id);
-    return yes ? <AuthorIcon /> : <NonAuthorIcon />;
+const Author: React.FC<{ yes: boolean }> = ({yes}) => {
+    return yes ? <AuthorIcon sx={{scale: "1.5"}} /> : <NonAuthorIcon sx={{scale: "1.5"}} />;
 };
 
 const YourDocuments: React.FC = () => {
@@ -136,7 +136,7 @@ const YourDocuments: React.FC = () => {
     const {showMessageDialog, showNotification} = useNotification();
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [demographic, setDemographic] = useState<DemographicType | null>(null);
-    const [documents, setDocuments] = useState<DocumentsType>([]);
+    const [papers, setPapers] = useState<PaperOwnerListResponseType>([]);
     const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
         page: 0, // starts at page 0
         pageSize: PAGE_SIZES[0],
@@ -151,7 +151,7 @@ const YourDocuments: React.FC = () => {
     const [totalSubmissions, setTotalSubmissions] = useState<number>(0);
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
     const [menuPosition, setMenuPosition] = useState<{ mouseX: number, mouseY: number } | null>(null);
-    const [selectedRowId, setSelectedRowId] = useState<number | null>(null);
+    const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
     const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>([]);
 
     useEffect(() => {
@@ -210,33 +210,13 @@ const YourDocuments: React.FC = () => {
     // Pagination state
     const [totalCount, setTotalCount] = useState<number>(0);
 
-
-    const fetchDocuments = useCallback(async () => {
+/*
+    useEffect(() => {
         if (!runtimeProps.currentUser)
             return;
 
-        // const interestedIds = Object.values(submissinStatusList).filter(status => status.group === "current" || status.group === "processing");
-        const start = paginationModel.page * paginationModel.pageSize;
-        const end = start + paginationModel.pageSize;
         const query = new URLSearchParams();
-
-        query.append("submitter_id", runtimeProps.currentUser.id);
-        query.append("_start", start.toString());
-        query.append("_end", end.toString());
-        if (sortModel) {
-            for (const criteria of sortModel) {
-                query.append("_sort", criteria.field);
-                if (criteria.sort)
-                    query.append("_order", criteria.sort.toUpperCase());
-            }
-        }
-
-        filterModel.items.forEach((filter) => {
-            console.log("filter " + JSON.stringify(filter));
-            if (filter.value) {
-                query.append("filter", JSON.stringify(filter));
-            }
-        });
+        query.append("id", papers.map((paper) => paper.document_id));
 
         try {
             setIsLoading(true);
@@ -247,17 +227,67 @@ const YourDocuments: React.FC = () => {
                 }
                 return;
             }
-            const data: DocumentType[] = await response.json();
-            const total = parseInt(response.headers.get("X-Total-Count") || "0", 10);
-            setTotalCount(total);
-
+            const docs: DocumentType[] = await response.json();
             setDocuments(
-                data.map((document) => ({
-                    ...document,
-                    identifier: Number(document.id),
-                    expires: Number(document.created),
-                }))
+                docs.reduce((result, doc) => {
+                    result[String(doc.id)] = doc;
+                    return result;
+                }, {} as { [key: string]: DocumentType })
             );
+        } catch (err) {
+            console.error("Error fetching documents:", err);
+        }
+        finally {
+            setIsLoading(false);
+        }
+    }, [papers]);
+*/
+
+    const fetchMyPapers = useCallback(async () => {
+        if (!runtimeProps.currentUser)
+            return;
+
+        try {
+
+            // const interestedIds = Object.values(submissinStatusList).filter(status => status.group === "current" || status.group === "processing");
+            const start = paginationModel.page * paginationModel.pageSize;
+            const end = start + paginationModel.pageSize;
+            const query = new URLSearchParams();
+
+            query.append("user_id", runtimeProps.currentUser.id);
+            query.append("with_document", String(true));
+            query.append("_start", start.toString());
+            query.append("_end", end.toString());
+            if (sortModel) {
+                for (const criteria of sortModel) {
+                    query.append("_sort", criteria.field);
+                    if (criteria.sort)
+                        query.append("_order", criteria.sort.toUpperCase());
+                }
+            }
+
+            filterModel.items.forEach((filter) => {
+                console.log("filter " + JSON.stringify(filter));
+                if (filter.value) {
+                    query.append("filter", JSON.stringify(filter));
+                }
+            });
+
+            setIsLoading(true);
+            const response1 = await fetch(runtimeProps.ADMIN_API_BACKEND_URL  + `/paper_owners/?${query.toString()}`);
+            if (!response1.ok) {
+                if (response1.status >= 500) {
+                    showNotification("Data service is not responding", "warning");
+                    return;
+                }
+                const message = await response1.text();
+                showNotification(message, "warning");
+                return;
+            }
+            const myPapers: PaperOwnerListResponseType = await response1.json();
+            const total = parseInt(response1.headers.get("X-Total-Count") || "0", 10);
+            setTotalCount(total);
+            setPapers(myPapers);
         } catch (err) {
             console.error("Error fetching documents:", err);
         }
@@ -266,12 +296,13 @@ const YourDocuments: React.FC = () => {
         }
     }, [paginationModel, filterModel, sortModel, runtimeProps.currentUser]);
 
+
     useEffect(() => {
-        fetchDocuments();
-    }, [fetchDocuments]);
+        fetchMyPapers();
+    }, [fetchMyPapers]);
 
 
-    const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, rowId: number) => {
+    const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, rowId: string) => {
         event.stopPropagation(); // Prevent right-click event from triggering
         setSelectedRowId(rowId);
         setMenuAnchor(event.currentTarget);
@@ -290,7 +321,7 @@ const YourDocuments: React.FC = () => {
         };
     */
 
-    const handleMenuClose = (rowId: number, action: string) => {
+    const handleMenuClose = (rowId: string, action: string) => {
         setMenuAnchor(null);
         setMenuPosition(null);
 
@@ -335,56 +366,61 @@ const YourDocuments: React.FC = () => {
 
         const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/paper_owners/update-authorship",
             {
-                body: JSON.stringify(body),
-                method: "POST",
+                method: "POST", headers: {"Content-Type": "application/json",}, body: JSON.stringify(body),
             });
         if (response.ok) {
-
+            await fetchMyPapers();
         }
-    }, [selectedRows, runtimeProps?.currentUser, documents, runtimeProps.ADMIN_API_BACKEND_URL]);
+        else {
+            console.log(await response.text());
+        }
+    }, [selectedRows, runtimeProps?.currentUser, papers, runtimeProps.ADMIN_API_BACKEND_URL]);
 
 
-    const columns: GridColDef<DocumentType>[] = [
+    const columns: GridColDef<PaperOwnerType>[] = [
         {
-            field: 'author_ids',
+            field: 'flag_author',
             headerName: 'Author',
             width: 40,
             sortable: true,
-            renderCell: (cell: GridRenderCellParams) => <Author authors={cell.row.author_ids} uid={runtimeProps.currentUser?.id} />
+            renderCell: (cell: GridRenderCellParams) => <Author yes={cell.value} />
         },
         {
-            field: 'paper_id',
+            field: 'document.paper_id',
             headerName: 'Identifier',
             width: 120,
             sortable: true,
             renderCell: (cell: GridRenderCellParams) => {
                 return <Link href={`https://arxiv.org/abs/${cell.value}`} target="_">{cell.value}</Link>;
-            }
+            },
+            valueGetter: (_cell, row) => row.document?.paper_id || "",
         },
         {
-            field: 'abs_categories',
+            field: 'document.abs_categories',
             headerName: 'Primary Category',
             width: 100,
             sortable: false,
             renderCell: (cell: GridRenderCellParams) => {
-                return cell.row.abs_categories.split(' ')[0];
-            }
+                return cell.value?.split(' ')[0] ?? '';
+            },
+            valueGetter: (_cell, row) => row.document?.abs_categories,
         },
         {
-            field: 'dated',
+            field: 'date',
             headerName: 'Date',
             width: 76,
             sortable: true,
             filterOperators: dateFilterOperators,
             renderCell: (cell: GridRenderCellParams) => {
-                return new Date(cell.row.dated).toLocaleDateString('en-CA');
+                return new Date(cell.value).toLocaleDateString('en-CA');
             }
         },
         {
-            field: 'title',
+            field: 'document.title',
             headerName: 'Title',
             flex: 1,
             sortable: false,
+            valueGetter: (_cell, row) => row.document?.title || "No Title",
         },
         {
             field: 'actions',
@@ -453,7 +489,7 @@ const YourDocuments: React.FC = () => {
 
             <Box display="flex" gap={0} mb={0}>
 
-                <DataGrid
+                <DataGrid<PaperOwnerType>
                     loading={isLoading}
                     filterModel={filterModel}
                     filterMode="server"
@@ -468,22 +504,12 @@ const YourDocuments: React.FC = () => {
                     onSortModelChange={setSortModel}
 
                     columns={columns}
-                    rows={documents}
+                    rows={papers}
                     rowCount={totalCount}
 
                     checkboxSelection
                     disableRowSelectionOnClick
                     onRowSelectionModelChange={(newSelection) => setSelectedRows(newSelection)}
-
-
-                    getDetailPanelContent={({row}: GridRowParams<DocumentType>) => (
-                        <Box sx={{p: 2, backgroundColor: "#f9f9f9", b: 2}}>
-                            <Typography variant="subtitle1" fontWeight="bold">
-                                Abstract:
-                            </Typography>
-                            <DocumentMetadata arxivId={row.paper_id} />
-                        </Box>
-                    )}
 
                     slots={{
                         pagination: CustomPagination
