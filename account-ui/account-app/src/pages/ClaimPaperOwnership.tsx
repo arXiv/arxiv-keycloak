@@ -22,6 +22,7 @@ type PaperOwnerRequestType = adminApi['/v1/paper_owners/authorize']['post']['req
 
 import {printUserName} from "../bits/printer.ts";
 import {useNotification} from "../NotificationContext.tsx";
+import {useFetchPlus} from "../fetchPlus.ts";
 
 
 const ClaimPaperOwnership: React.FC = () => {
@@ -30,13 +31,14 @@ const ClaimPaperOwnership: React.FC = () => {
     const runtimeProps = useContext(RuntimeContext);
     const [formData, setFormData] = useState<PaperOwnerRequestType>({user_id: runtimeProps.currentUser?.id || "", paper_id: "", password: "", verify_id: false});
     const [document, setDocument] = useState<DocumentType|null>(null);
+    const fetchPlus = useFetchPlus();
 
     useEffect(() => {
         async function fetchDocument() {
             if (runtimeProps.currentUser && formData.paper_id) {
                 try {
                     setInProgress(true);
-                    const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/documents/paper_id/" + formData.paper_id);
+                    const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + "/documents/paper_id/" + formData.paper_id);
                     if (response.ok) {
                         const doc = await response.json();
                         setDocument(doc);
@@ -67,7 +69,7 @@ const ClaimPaperOwnership: React.FC = () => {
         event.preventDefault();
 
         try {
-            const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/paper_owners/authorize/", {
+            const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + "/paper_owners/authorize/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

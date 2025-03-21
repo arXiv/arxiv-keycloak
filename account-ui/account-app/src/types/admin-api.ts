@@ -1321,11 +1321,13 @@ export interface components {
         /** CreateOwnershipRequestModel */
         CreateOwnershipRequestModel: {
             /** User Id */
-            user_id?: number | null;
+            user_id?: string | null;
             /** Endorsement Request Id */
-            endorsement_request_id?: number | null;
+            endorsement_request_id?: string | null;
+            /** Arxiv Ids */
+            arxiv_ids?: string[] | null;
             /** Document Ids */
-            document_ids?: number[] | null;
+            document_ids?: string[] | null;
             /** Remote Addr */
             remote_addr?: string | null;
         };
@@ -1997,6 +1999,8 @@ export interface components {
             is_author: boolean;
             /** Endorsement Request Id */
             endorsement_request_id?: number | null;
+            /** Arxiv Ids */
+            arxiv_ids?: string[] | null;
             /** Document Ids */
             document_ids?: number[] | null;
             /** Remote Addr */
@@ -3628,11 +3632,14 @@ export interface operations {
                 /** @description End date for filtering */
                 end_date?: string | null;
                 flag_valid?: boolean | null;
-                user_id?: number | null;
+                user_id?: string | null;
                 document_id?: number | null;
+                /** @description MUI datagrid filter */
+                filter?: string | null;
                 /** @description List of paper owner */
                 id?: string[] | null;
-                "with document"?: boolean | null;
+                /** @description with document */
+                with_document?: boolean | null;
             };
             header?: never;
             path?: never;

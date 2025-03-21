@@ -23,6 +23,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import {RuntimeProps} from "../RuntimeContext.tsx";
 import { paths as adminApi } from "../types/admin-api";
+import {useFetchPlus} from "../fetchPlus.ts";
 // import DocumentStatusName from "./DocumentStatusName.tsx";
 // import categoryChooser from "./CategoryChooser.tsx";
 
@@ -38,6 +39,7 @@ const DocumentTable: React.FC<{runtimeProps: RuntimeProps}> = ({runtimeProps}) =
     const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
     const [statusFilter, setStatusFilter] = useState<DocumentStatus>("all");
     const [titleFilter, setTitleFilter] = useState<string>("");
+    const fetchPlus = useFetchPlus();
 
     // Pagination state
     const [page, setPage] = useState<number>(0);
@@ -66,7 +68,7 @@ const DocumentTable: React.FC<{runtimeProps: RuntimeProps}> = ({runtimeProps}) =
             if (statusFilter) query.append("status", statusFilter);
             if (titleFilter) query.append("title_like", titleFilter);
 
-            const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL  + `/documents/?${query.toString()}`);
+            const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL  + `/documents/?${query.toString()}`);
             const data: DocumentType[] = await response.json();
             const total = parseInt(response.headers.get("X-Total-Count") || "0", 10);
 

@@ -20,6 +20,7 @@ import Box from "@mui/material/Box";
 // import Checkbox from "@mui/material/Checkbox";
 import EditIcon from "@mui/icons-material/Edit";
 import DatagridPaginationMaker from "../bits/DataGridPagination.tsx";
+import {useFetchPlus} from "../fetchPlus.ts";
 
 
 type SubmissionType = adminApi['/v1/submissions/{id}']['get']['responses']['200']['content']['application/json'];
@@ -49,13 +50,14 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimeProps
 
     const noSSRT:SubmissionStatusRecordType = {};
     const [submissinStatusList, setSubmissinStatusList] = useState<SubmissionStatusRecordType>(noSSRT);
+    const fetchPlus = useFetchPlus();
 
     useEffect(() => {
         async function doSubmissionStatusList() {
             if (submissinStatusList === noSSRT) {
                 try {
                     setIsLoading(true);
-                    const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/submissions/metadata/status-list");
+                    const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + "/submissions/metadata/status-list");
                     const data: SubmissionsStatusListType = await response.json();
                     const record: SubmissionStatusRecordType =
                         data.reduce((acc: SubmissionStatusRecordType,
@@ -108,7 +110,7 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimeProps
 
         try {
             setIsLoading(true);
-            const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + `/submissions/?${query.toString()}`);
+            const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/submissions/?${query.toString()}`);
             const data: SubmissionType[] = await response.json();
             const total = parseInt(response.headers.get("X-Total-Count") || "0", 10);
             setTotalCount(total);

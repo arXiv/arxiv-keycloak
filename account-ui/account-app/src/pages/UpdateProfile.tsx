@@ -16,6 +16,7 @@ import CareerStatusSelect, {CareerStatusType} from "../bits/CareerStatus.tsx";
 import {RuntimeContext} from "../RuntimeContext.tsx";
 import {paths} from "../types/aaa-api.ts";
 import {emailValidator} from "../bits/validators.ts";
+import {useFetchPlus} from "../fetchPlus.ts";
 
 type AccountProfileRequest = paths["/account/profile/{user_id}"]['get']['responses']['200']['content']['application/json'];
 type UpdateProfileRequest = paths["/account/profile/"]['put']['requestBody']['content']['application/json'];
@@ -31,6 +32,7 @@ const UpdateProfile = () => {
     const {showNotification, showMessageDialog} = useNotification();
     const runtimeProps = useContext(RuntimeContext);
     const user = runtimeProps.currentUser;
+    const fetchPlus = useFetchPlus();
 
     // State to store input values
     const [formData, setFormData] = useState<UpdateProfileRequest>({
@@ -71,7 +73,7 @@ const UpdateProfile = () => {
             if (!user)
                 return;
             try {
-                const response = await fetch(runtimeProps.AAA_URL + `/account/profile/${user.id}`);
+                const response = await fetchPlus(runtimeProps.AAA_URL + `/account/profile/${user.id}`);
                 if (!response.ok) {
                     showNotification("Fetching user failed", "error")
                     return;
@@ -171,7 +173,7 @@ const UpdateProfile = () => {
         event.preventDefault();
 
         try {
-            const response = await fetch(runtimeProps.AAA_URL + "/account/profile/", {
+            const response = await fetchPlus(runtimeProps.AAA_URL + "/account/profile/", {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",

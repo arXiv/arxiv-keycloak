@@ -16,12 +16,14 @@ import {paths} from "../types/aaa-api.ts";
 import {passwordValidator} from "../bits/validators.ts";
 import PasswordWrapper from "../bits/PasswordWrapper.tsx";
 import {useNavigate} from "react-router-dom";
+import {useFetchPlus} from "../fetchPlus.ts";
 
 // type AccountProfileRequest = paths["/account/profile/{user_id}"]['get']['responses']['200']['content']['application/json'];
 type ChangePasswordRequest = paths["/account/password/"]['put']['requestBody']['content']['application/json'];
 
 const ChangePassword = () => {
     const runtimeProps = useContext(RuntimeContext);
+    const fetchPlus = useFetchPlus();
     const user = runtimeProps.currentUser;
     const {showNotification, showMessageDialog} = useNotification();
     const [inProgress, setInProgress] = useState(false);
@@ -57,7 +59,7 @@ const ChangePassword = () => {
         event.preventDefault();
 
         try {
-            const response = await fetch(runtimeProps.AAA_URL + "/account/password/", {
+            const response = await fetchPlus(runtimeProps.AAA_URL + "/account/password/", {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",

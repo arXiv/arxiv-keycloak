@@ -25,18 +25,20 @@ import {useNotification} from "../NotificationContext.tsx";
 
 import { paths as adminApi } from "../types/admin-api";
 import MathJaxToggle from "../bits/MathJaxToggle.tsx";
+import {useFetchPlus} from "../fetchPlus.ts";
 
 type EndorsementListType = adminApi["/v1/endorsements/"]["get"]['responses']["200"]['content']['application/json'];
 
 
 const VerifyEmailButton: React.FC<{ runtimeProps: RuntimeProps }> = ({ runtimeProps }) => {
     const user = runtimeProps.currentUser;
+    const fetchPlus = useFetchPlus();
     const [dialogOpen, setDialogOpen] = useState(false);
 
     const verifyEmailRequest = useCallback(() => {
         async function requestEmail() {
             try {
-                const reply = await fetch(`${runtimeProps.AAA_URL}/account/email/verify/`, {
+                const reply = await fetchPlus(`${runtimeProps.AAA_URL}/account/email/verify/`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email: user?.email }), // Convert object to JSON string
@@ -86,6 +88,7 @@ const AccountSettings = () => {
     const user = runtimeProps.currentUser;
     const {showMessageDialog} = useNotification();
     const [endorsedCategories, sstEndorsedCategories] = useState("");
+    const fetchPlus = useFetchPlus();
 
     let url = user?.url || "https://arxiv.org";
 
@@ -110,7 +113,7 @@ const AccountSettings = () => {
             query.set("endorsee_id", runtimeProps.currentUser.id);
             query.set("type", "user");
             try {
-                const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + `/endorsements/?${query.toString()}`);
+                const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/endorsements/?${query.toString()}`);
                 const body: EndorsementListType = await response.json();
                 const cats = body.map( (endorsement) => `${endorsement.archive}.${endorsement.subject_class || "*"}`);
                 sstEndorsedCategories(cats.join(" "));

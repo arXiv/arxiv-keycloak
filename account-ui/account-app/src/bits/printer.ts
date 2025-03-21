@@ -11,7 +11,6 @@ export function printUserName(user: PublicUserType | User | null | undefined): s
     return `${user?.first_name} ${user?.last_name}`;
 }
 
-
 const options: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     month: '2-digit',
@@ -22,6 +21,10 @@ const options: Intl.DateTimeFormatOptions = {
 export const utcToNnewYorkDateFormatter = new Intl.DateTimeFormat('en-CA', options);
 
 export const utcToNnewYorkDatePrinter = (timestamp: string)=> {
-    const formatter = new Intl.DateTimeFormat('en-CA', options);
-    return formatter.format(new Date(timestamp));
+    try {
+        return utcToNnewYorkDateFormatter.format(new Date(timestamp));
+    }
+    catch (error) {
+        return timestamp;
+    }
 }

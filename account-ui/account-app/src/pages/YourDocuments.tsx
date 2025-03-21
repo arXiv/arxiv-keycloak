@@ -40,6 +40,7 @@ import JournalReferenceIcon from "../assets/images/journalref.png";
 import LinkCodeDataIcon from "../assets/images/pwc_logo.png";
 import DatagridPaginationMaker from "../bits/DataGridPagination.tsx";
 import Button from "@mui/material/Button";
+import {useFetchPlus} from "../fetchPlus.ts";
 
 
 // type DocumentType = adminApi['/v1/documents/{id}']['get']['responses']['200']['content']['application/json'];
@@ -153,6 +154,7 @@ const YourDocuments: React.FC = () => {
     const [menuPosition, setMenuPosition] = useState<{ mouseX: number, mouseY: number } | null>(null);
     const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
     const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>([]);
+    const fetchPlus = useFetchPlus();
 
     useEffect(() => {
         async function fetchSubmissions() {
@@ -170,7 +172,7 @@ const YourDocuments: React.FC = () => {
 
             try {
                 setIsLoading(true);
-                const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + `/submissions/?${query.toString()}`);
+                const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/submissions/?${query.toString()}`);
                 const total = parseInt(response.headers.get("X-Total-Count") || "0", 10);
                 setTotalSubmissions(total);
             } catch (err) {
@@ -191,7 +193,7 @@ const YourDocuments: React.FC = () => {
 
             try {
                 setIsLoading(true);
-                const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + `/demographics/${runtimeProps.currentUser.id}`);
+                const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/demographics/${runtimeProps.currentUser.id}`);
                 const demographic: DemographicType = await response.json();
                 setDemographic(demographic);
             } catch (err) {
@@ -220,7 +222,7 @@ const YourDocuments: React.FC = () => {
 
         try {
             setIsLoading(true);
-            const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL  + `/documents/?${query.toString()}`);
+            const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL  + `/documents/?${query.toString()}`);
             if (!response.ok) {
                 if (response.status >= 500) {
                     showNotification("Data service is not responding", "warning");
@@ -274,7 +276,7 @@ const YourDocuments: React.FC = () => {
             });
 
             setIsLoading(true);
-            const response1 = await fetch(runtimeProps.ADMIN_API_BACKEND_URL  + `/paper_owners/?${query.toString()}`);
+            const response1 = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL  + `/paper_owners/?${query.toString()}`);
             if (!response1.ok) {
                 if (response1.status >= 500) {
                     showNotification("Data service is not responding", "warning");
@@ -329,7 +331,7 @@ const YourDocuments: React.FC = () => {
             async function showPaperPassword() {
                 try {
                     setIsLoading(true);
-                    const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/paper-pw/" + rowId );
+                    const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + "/paper-pw/" + rowId );
                     if (response.ok) {
                         const body: PaperPasswordResponseType = await response.json();
                         showMessageDialog(body.password_enc, "Paper Password");
@@ -364,7 +366,7 @@ const YourDocuments: React.FC = () => {
             not_authored: !authored ? docIds : [],
         }
 
-        const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/paper_owners/update-authorship",
+        const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + "/paper_owners/update-authorship",
             {
                 method: "POST", headers: {"Content-Type": "application/json",}, body: JSON.stringify(body),
             });

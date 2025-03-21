@@ -13,12 +13,14 @@ import {useNotification} from "../NotificationContext";
 import {paths} from "../types/aaa-api.ts";
 import {emailValidator} from "../bits/validators.ts";
 import {printUserName} from "../bits/printer.ts";
+import {useFetchPlus} from "../fetchPlus.ts";
 
 type AccountProfileRequest = paths["/account/profile/{user_id}"]['get']['responses']['200']['content']['application/json'];
 type ChangeEmailRequest = paths["/account/email/"]['put']['requestBody']['content']['application/json'];
 
 const ChangeEmail = () => {
     const runtimeProps = useContext(RuntimeContext);
+    const fetchPlus = useFetchPlus();
     const user = runtimeProps.currentUser;
     const emailAddress = user?.email || "";
     const [inProgress, setInProgress] = useState(false);
@@ -42,7 +44,7 @@ const ChangeEmail = () => {
                 return;
             setFormData({...formData, user_id: user.id });
             try {
-                const response = await fetch(runtimeProps.AAA_URL + `/account/profile/${user.id}`);
+                const response = await fetchPlus(runtimeProps.AAA_URL + `/account/profile/${user.id}`);
                 if (!response.ok) {
                     const data = await response.json();
                     showNotification("Connection to arXiv failed. " + data.detail, "error")
@@ -69,7 +71,7 @@ const ChangeEmail = () => {
         setInProgress(true);
 
         try {
-            const response = await fetch(runtimeProps.AAA_URL + "/account/email/", {
+            const response = await fetchPlus(runtimeProps.AAA_URL + "/account/email/", {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",

@@ -21,6 +21,7 @@ import Radio from "@mui/material/Radio";
 import CardHeader from "@mui/material/CardHeader";
 import Link from "@mui/material/Link";
 import {printUserName} from "../bits/printer.ts";
+import {useFetchPlus} from "../fetchPlus.ts";
 
 type EndorsementCodeRequest = adminApi["/v1/endorsements/endorse"]['post']['requestBody']['content']['application/json'];
 
@@ -64,6 +65,9 @@ const EnterEndorsementCode = () => {
         reason?: string
     }>({endorser_id: "No current user", endorsement_code: "Empty"});
 
+    const fetchPlus = useFetchPlus();
+
+
     useEffect(() => {
         async function doSetCurrentUserID() {
             if (!user)
@@ -82,7 +86,7 @@ const EnterEndorsementCode = () => {
                 const query = new URLSearchParams();
                 query.set("secret", formData.endorsement_code);
                 try {
-                    const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + '/endorsements/endorse',
+                    const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + '/endorsements/endorse',
                         {
                             method: "POST",
                             body: JSON.stringify(formData),
@@ -132,7 +136,7 @@ const EnterEndorsementCode = () => {
             const er = endorsementOutcome?.endorsement_request;
             if (er) {
                 try {
-                    const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + `/categories/${er.archive}/subject-class/${er.subject_class}`);
+                    const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/categories/${er.archive}/subject-class/${er.subject_class}`);
                     if (response.ok) {
                         const body: CategoryResponse = await response.json();
                         setEndorsementCategoryName(body.category_name);
@@ -231,7 +235,7 @@ const EnterEndorsementCode = () => {
         event.preventDefault();
 
         try {
-            const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/endorsements/endorse", {
+            const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + "/endorsements/endorse", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

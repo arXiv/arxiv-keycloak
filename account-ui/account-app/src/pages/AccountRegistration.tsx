@@ -25,6 +25,7 @@ import {emailValidator, passwordValidator} from "../bits/validators.ts";
 import Tooltip from "@mui/material/Tooltip";
 import PasswordRequirements from "../bits/PasswordRequirements.tsx";
 import {useNotification} from "../NotificationContext.tsx";
+import {useFetchPlus} from "../fetchPlus.ts";
 
 type TokenResponse = paths["/account/register/"]['get']['responses']['200']['content']['application/json'];
 type SubmitRequest = paths["/account/register/"]['post']['requestBody']['content']['application/json'];
@@ -61,6 +62,7 @@ const PostSubmitActionDialog: React.FC<PostSubmitDialogProps> = ({title, message
 const AccountRegistration = () => {
     const runtimeContext = useContext(RuntimeContext);
     const {showNotification} = useNotification();
+    const fetchPlus = useFetchPlus();
     // State to store input values
     const [formData, setFormData] = useState<SubmitRequest>({
         username: "",
@@ -125,6 +127,7 @@ const AccountRegistration = () => {
         }
     );
 
+
     useEffect(() => {
         console.log(JSON.stringify(formData));
         if (formData.token) {
@@ -132,7 +135,7 @@ const AccountRegistration = () => {
                 <img alt={"captcha"} src={runtimeContext.AAA_URL + `/captcha/image?token=${formData.token}`}/>
             )
         } else {
-            fetch(runtimeContext.AAA_URL + "/account/register/")
+            fetchPlus(runtimeContext.AAA_URL + "/account/register/")
                 .then(response => response.json()
                     .then((data: TokenResponse) => setFormData(
                         {
@@ -255,7 +258,7 @@ const AccountRegistration = () => {
             return;
         }
         try {
-            const response = await fetch(runtimeContext.AAA_URL + "/account/register/", {
+            const response = await fetchPlus(runtimeContext.AAA_URL + "/account/register/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
