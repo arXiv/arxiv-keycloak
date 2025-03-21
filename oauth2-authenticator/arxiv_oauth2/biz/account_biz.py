@@ -340,6 +340,9 @@ def um_to_group_name(group_flag, um: UserModel) -> Optional[str]:
 def get_account_info(session: Session, user_id: str) -> Optional[AccountInfoModel]:
     um = UserModel.one_user(session, user_id)
     if um:
+        if um.flag_deleted or um.flag_banned:
+            return None
+
         groups = [um_to_group_name(group_flag, um) for group_flag in Demographic.GROUP_FLAGS]
 
         category: Optional[Category] = session.query(Category).filter(
@@ -351,12 +354,26 @@ def get_account_info(session: Session, user_id: str) -> Optional[AccountInfoMode
 
         category_model = CategoryIdModel.model_validate(category) if category else None
 
+        scopes = None
+        for flag, value in [
+            ("admin", um.flag_edit_users),
+            ("root", um.flag_edit_system),
+            ("mod", um.flag_is_mod),
+            ("tex", um.flag_allow_tex_produced),
+            ("can-lock", um.flag_can_lock),
+            ]:
+            if value:
+                if scopes is None:
+                    scopes = [flag]
+                else:
+                    scopes.append(flag)
+
         account = AccountInfoModel(
             id = str(um.id),
             username = um.username,
             email = um.email,
             email_verified = True if um.flag_email_verified else False,
-            scopes = None,
+            scopes = scopes,
             oidc_id = None,
             first_name = um.first_name,
             last_name = um.last_name,

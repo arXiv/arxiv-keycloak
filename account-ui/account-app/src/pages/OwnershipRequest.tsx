@@ -22,6 +22,7 @@ import { paths as adminApi } from "../types/admin-api";
 import {useNotification} from "../NotificationContext.tsx";
 import {utcToNnewYorkDatePrinter} from "../bits/printer.ts";
 import {useFetchPlus} from "../fetchPlus.ts";
+import YourOwnershipRequests from "../components/YourOwnershipRequests.tsx";
 
 type ArxivDocument = adminApi['/v1/documents/paper_id/{paper_id}']['get']['responses']['200']['content']['application/json'];
 type OwnershipRequstsRequest = adminApi['/v1/ownership_requests/']['post']['requestBody']['content']['application/json'];
@@ -153,7 +154,7 @@ const TableRowComponent: React.FC<{
     );
 };
 
-function EditableTable({runtimeProps} : {runtimeProps: RuntimeProps}) : React.ReactNode {
+function OwnershipRequstTable({runtimeProps} : {runtimeProps: RuntimeProps}) : React.ReactNode {
     const {showNotification, showMessageDialog} = useNotification();
     const fetchPlus = useFetchPlus();
     const [rows, setRows] = useState<TableRowData[]>([Object.assign({}, null_row)]);
@@ -275,9 +276,10 @@ const OwnershipRequest = () => {
                 <Typography>
                     To process an ownership request, enter either the numeric request id.
                 </Typography>
-                <EditableTable runtimeProps={runtimeProps} />
+                <OwnershipRequstTable runtimeProps={runtimeProps} />
             </Paper>
 
+            <YourOwnershipRequests runtimeProps={runtimeProps} />
         </Container>
     );
 };

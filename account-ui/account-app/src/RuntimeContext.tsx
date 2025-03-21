@@ -3,6 +3,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import {Box} from '@mui/material';
 import {paths} from "./types/aaa-api";
 export type User = paths["/account/profile/{user_id}"]["get"]["responses"]["200"]["content"]["application/json"];
+export type CurrentUser = paths["/account/current"]["get"]["responses"]["200"]["content"]["application/json"];
 
 export interface ArxivSiteURLs {
     arXiv: string,
@@ -57,6 +58,10 @@ export interface RuntimeProps
     MATHJAX_COOKIE_NAME: string,
     URLS: ArxivSiteURLs,
     currentUser: User | null,
+    isAdmin: boolean,
+    isMod: boolean,
+    isCanLock: boolean,
+    isSystem: boolean,
 }
 
 const defaultRuntimeProps : RuntimeProps = {
@@ -106,7 +111,11 @@ const defaultRuntimeProps : RuntimeProps = {
         userChangeEmail: "/user-account/change-email",
         userSendEmailVerification: "/send-email-verification",
     },
-    currentUser: null
+    currentUser: null,
+    isMod: false,
+    isAdmin: false,
+    isCanLock: false,
+    isSystem: false,
 };
 
 export const RuntimeContext = createContext<RuntimeProps>(defaultRuntimeProps);
@@ -159,14 +168,19 @@ export const RuntimeContextProvider = ({ children } : RuntimeContextProviderProp
                 try {
                     const reply = await fetch(runtime2.AAA_URL + "/account/current");
                     if (reply.status === 200) {
-                        const data = await reply.json();
-                        console.log({currentUser: data});
-                        updateRuntimeEnv({currentUser: data});
+                        const data: CurrentUser = await reply.json();
+                        // console.log({currentUser: data});
+                        const isMod = !!(data?.scopes && data.scopes.filter((scope) => scope === "mod" ).length > 0);
+                        const isAdmin = !!(data?.scopes && data.scopes.filter((scope) => scope === "admin" ).length > 0);
+                        const isCanLock = !!(data?.scopes && data.scopes.filter((scope) => scope === "can-lock" ).length > 0);
+                        const isSystem = !!(data?.scopes && data.scopes.filter((scope) => scope === "root" ).length > 0);
+
+                        updateRuntimeEnv({currentUser: data, isMod: isMod, isAdmin: isAdmin, isCanLock: isCanLock, isSystem: isSystem});
                     }
                     else {
                         const data = await reply.json();
                         console.log("status=" + reply.status  + " data=" + JSON.stringify(data));
-                        updateRuntimeEnv({currentUser: null});
+                        updateRuntimeEnv({currentUser: null, isMod: false, isAdmin: false, isCanLock: false, isSystem: false});
                     }
                 } catch (error) {
                     updateRuntimeEnv({currentUser: null});

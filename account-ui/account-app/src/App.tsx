@@ -13,7 +13,7 @@ import AccountRegistration from "./pages/AccountRegistration.tsx";
 import ArxivHeader from "./components/ArxivHeader";
 import {Box, Container} from "@mui/material";
 import ArxivFooter from "./components/ArxivFooter.tsx";
-import AccountSettings from "./pages/AccountSettings.tsx";
+import UserAccountInfo from "./pages/UserAccountInfo.tsx";
 import OwnershipRequest from "./pages/OwnershipRequest.tsx";
 import NotFound404 from "./components/NotFound404.tsx";
 import AuthorshipStatus from "./pages/AuthorshipStatus.tsx";
@@ -50,7 +50,7 @@ const App: React.FC = () => {
                             <ArxivHeader/>
                             i <Container component="main">
                             <Routes>
-                                <Route path="/user-account" element={<AccountSettings/>}/>
+                                <Route path="/user-account" element={<UserAccountInfo/>}/>
                                 <Route path="/user-account/login" element={<ExternalRedirect to={"/login"}/>}/>
                                 <Route path="/user-account/logout" element={<Logout/>}/>
                                 <Route path="/user-account/register" element={<AccountRegistration/>}/>

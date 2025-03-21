@@ -12,9 +12,13 @@ import Tooltip from "@mui/material/Tooltip";
 import VerifiedUser from "@mui/icons-material/VerifiedUser";
 import Edit from "@mui/icons-material/Edit";
 import Email from "@mui/icons-material/Email";
-import Lock from "@mui/icons-material/Lock";
+import PasswordIcon from "@mui/icons-material/Password";
 // import LinkIcon from "@mui/icons-material/Link";
 import NofificationIcon from "@mui/icons-material/Notifications";
+import AdminIcon from "@mui/icons-material/Check";
+import ModIcon from "@mui/icons-material/People";
+import CanLockIcon from "@mui/icons-material/Lock";
+import SystemIcon from "@mui/icons-material/Settings";
 
 import {RuntimeContext, RuntimeProps} from "../RuntimeContext.tsx";
 import PreflightChecklist from "../bits/PreflightChecklist.tsx";
@@ -83,7 +87,7 @@ const VerifyEmailButton: React.FC<{ runtimeProps: RuntimeProps }> = ({ runtimePr
 };
 
 
-const AccountSettings = () => {
+const UserAccountInfo = () => {
     const runtimeProps = useContext(RuntimeContext);
     const user = runtimeProps.currentUser;
     const {showMessageDialog} = useNotification();
@@ -130,6 +134,15 @@ const AccountSettings = () => {
 
     }, [runtimeProps.currentUser]);
 
+    const roles = runtimeProps.isAdmin || runtimeProps.isMod || runtimeProps.isCanLock || runtimeProps.isSystem ? (
+        <Typography variant="body1"><b>{"Role: "} </b>
+            {runtimeProps.isMod ?  <Tooltip title="Moderator" children={<ModIcon />} /> : null}
+            {runtimeProps.isAdmin ? <Tooltip title="Administrator" children={<AdminIcon />} /> : null}
+            {runtimeProps.isSystem ? <Tooltip title="Sysadmin staff" children={<SystemIcon />} /> : null}
+            {runtimeProps.isCanLock ? <Tooltip title="Can Lock" children={<CanLockIcon />} /> : null}
+        </Typography>
+    ) : null;
+
     return (
         <Container maxWidth={"md"} sx={{ mt: 0 }}>
             <Paper elevation={3} sx={{ p: 3}}>
@@ -154,6 +167,7 @@ const AccountSettings = () => {
                         <Typography variant="body1"><b>{"Endorsed categories: "}</b>{endorsedCategories}</Typography>
                     </Box>
                     <Box sx={{flex:1}}>
+                        {roles}
                         <Typography variant="body1"><b>{"Affiliation: "}</b>{user?.affiliation}</Typography>
                         <Typography variant="body1"><b>{"URL: "}</b> <Link href={url} target="_blank">{user?.url}</Link></Typography>
                         <Typography variant="body1"><b>{"Country: "}</b>{user?.country}</Typography>
@@ -164,7 +178,7 @@ const AccountSettings = () => {
                     <Button component="a" disabled={user === null}
                             variant="outlined" startIcon={<Edit />} href={runtimeProps.URLS.userChangeProfile}>Change User Information</Button>
                     <Button disabled={user === null}
-                            variant="outlined" startIcon={<Lock />} href={runtimeProps.URLS.userChangePassword}>Change Password</Button>
+                            variant="outlined" startIcon={<PasswordIcon />} href={runtimeProps.URLS.userChangePassword}>Change Password</Button>
                     <Button disabled={user === null}
                             variant="outlined" startIcon={<Email />} href={runtimeProps.URLS.userChangeEmail}>Change Email</Button>
                     <VerifyEmailButton runtimeProps={runtimeProps} />
@@ -183,4 +197,4 @@ const AccountSettings = () => {
     );
 };
 
-export default AccountSettings;
+export default UserAccountInfo;

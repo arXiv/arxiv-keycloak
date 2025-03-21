@@ -1715,9 +1715,11 @@ export interface components {
             endorsement_request_id?: number | null;
             workflow_status: components["schemas"]["WorkflowStatus"];
             /** Date */
-            date: string | null;
+            date?: string | null;
             /** Document Ids */
             document_ids?: number[] | null;
+            /** Paper Ids */
+            paper_ids?: string[] | null;
         };
         /** OwnershipRequestsAuditModel */
         OwnershipRequestsAuditModel: {

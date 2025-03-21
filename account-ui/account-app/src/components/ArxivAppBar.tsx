@@ -28,14 +28,6 @@ const ownershipOptions = [
 ];
 
 
-const pages = [
-    {label: 'Account', link: '/user-account/'},
-    {label: 'Articles', link: '/user-account/articles'},
-    {label: 'Endorsements', link: '/user-account/endorse'},
-    {label: 'Moderation', link: '/user-account/moderation'},
-    {label: 'Administration', link: '/admin-console/'},
-];
-
 const ArxivAppBar = () => {
     const runtimeProps = useContext(RuntimeContext);
     const user = runtimeProps.currentUser;
@@ -87,6 +79,16 @@ const ArxivAppBar = () => {
         }
         setAccountMenuAnchorEL(null);
     };
+
+    const commonPages = [
+        {label: 'Account', link: '/user-account/'},
+        {label: 'Articles', link: '/user-account/articles'},
+        {label: 'Endorsements', link: '/user-account/endorse'},
+    ];
+
+    const modPages = runtimeProps.isMod ? [{label: 'Moderation', link: '/user-account/moderation'}] : [];
+    const adminPages = runtimeProps.isAdmin ? [{label: 'Administration', link: '/admin-console/'}] : [];
+    const pages = commonPages.concat(modPages, adminPages);
 
 
     const in_or_out = user ? (
