@@ -169,7 +169,7 @@ const ChangePassword = () => {
                         <input name="user_id" id="user_id" type="text" disabled={true} value={formData.user_id} hidden={true}/>
                         <Box>
                             <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Old Password"}</Typography>
-                            <PasswordWrapper passwordInputId="old_password">
+                            <PasswordWrapper>
                                 <TextField name="old_password" id="old_password" label="Old Password" type="password"
                                            variant="outlined" fullWidth onChange={handleChange} value={formData.old_password}
                                            error={Boolean(errors.old_password)} helperText={errors.old_password} />
@@ -177,21 +177,21 @@ const ChangePassword = () => {
                         </Box>
                         <Box>
                             <Typography fontWeight={"bold"} sx={{mb: 1}}>{"New Password"}</Typography>
-                                <PasswordWrapper passwordInputId="new_password">
+                                <PasswordWrapper>
                                     <Tooltip title={<PasswordRequirements />}>
-                                    <TextField name="new_password" id="new_password" label="New Password" type="password"
-                                               variant="outlined" fullWidth onChange={handleChange} value={formData.new_password}
-                                               error={Boolean(errors.new_password)} helperText={errors.new_password} />
+                                        <TextField name="new_password" id="new_password" label="New Password" type="password"
+                                                   variant="outlined" fullWidth onChange={handleChange} value={formData.new_password}
+                                                   error={Boolean(errors.new_password)} helperText={errors.new_password} />
                                     </Tooltip>
                                 </PasswordWrapper>
                         </Box>
                         <Box>
                             <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Retype Password"}</Typography>
-                            <Tooltip title={<PasswordRequirements />}>
+                            <PasswordWrapper>
                                 <TextField name="secondPassword" label="Retype Password" type="password" variant="outlined" fullWidth onChange={handleChange}
                                            error={Boolean(errors.secondPassword)} helperText={errors.secondPassword}
                                 />
-                            </Tooltip>
+                            </PasswordWrapper>
                         </Box>
 
                         <Box display="flex" justifyContent="space-between" alignItems="center">

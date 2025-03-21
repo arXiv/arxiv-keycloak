@@ -23,7 +23,7 @@ const ResetPassword = () => {
     const [inProgress, setInProgress] = useState(false);
 
     const [formData, setFormData] = useState<ResetPasswordRequest>({
-        username_or_email: runtimeProps.currentUser ? runtimeProps.currentUser.email : "",
+        username_or_email: runtimeProps?.currentUser?.email || "",
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
