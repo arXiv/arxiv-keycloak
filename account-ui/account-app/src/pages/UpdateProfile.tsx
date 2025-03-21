@@ -167,7 +167,7 @@ const UpdateProfile = () => {
 
     // Handle form submission
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        console.log("update");
+        console.log("update " + JSON.stringify(formData));
         event.preventDefault();
 
         try {

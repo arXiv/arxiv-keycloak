@@ -86,7 +86,7 @@ CategoryGroupToCategoryFlags = {
     "grp_cs": "flag_group_cs",
     "grp_q-bio": "flag_group_q_bio",
     "grp_q-fin": "flag_group_q_fin",
-    "grp_q-stat": "flag_group_q_stat",
+    "grp_q-stat": "flag_group_stat",
     "grp_q-econ": "flag_group_econ",
     "grp_eess": "flag_group_eess",
     "grp_nlin": "flag_group_nlin",
