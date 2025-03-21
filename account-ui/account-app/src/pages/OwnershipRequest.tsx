@@ -20,8 +20,10 @@ import {RuntimeContext, RuntimeProps} from "../RuntimeContext.tsx";
 // import YesNoDialog from "../bits/YesNoDialog.tsx";
 import { paths as adminApi } from "../types/admin-api";
 import {useNotification} from "../NotificationContext.tsx";
+import {utcToNnewYorkDatePrinter} from "../bits/printer.ts";
 
 type ArxivDocument = adminApi['/v1/documents/paper_id/{paper_id}']['get']['responses']['200']['content']['application/json'];
+type OwnershipRequstsRequest = adminApi['/v1/ownership_requests/']['post']['requestBody']['content']['application/json'];
 
 /*
 const SubmitRequest: React.FC<{ runtimeProps: RuntimeProps }> = ({ runtimeProps }) => {
@@ -89,14 +91,14 @@ const null_row = { id: "", dated: "", title: "", authors: "" };
 
 // Function to fetch data based on ID
 async function fetchData(id: string, runtimeProps: RuntimeProps) : Promise<TableRowData> {
-    if (!id) return null_row;
+    if (!id) return Object.assign({}, null_row);
     try {
         const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/documents/paper_id/" + id);
         const doc: ArxivDocument = await response.json();
         return {id: doc.paper_id, dated: doc.dated, title: doc.title, authors: doc.authors || ""};
     }
     catch (error) {
-        return null_row;
+        return Object.assign({}, null_row);
     }
 }
 
@@ -123,6 +125,7 @@ const TableRowComponent: React.FC<{
                     sx={{width: "12em"}}
                 />
             </TableCell>
+            <TableCell>{data ? utcToNnewYorkDatePrinter(data.dated) : ""}</TableCell>
             <TableCell>{data?.title || ""}</TableCell>
             <TableCell>{data?.authors || ""}</TableCell>
             <TableCell>
@@ -136,7 +139,7 @@ const TableRowComponent: React.FC<{
 
 function EditableTable({runtimeProps} : {runtimeProps: RuntimeProps}) : React.ReactNode {
     const {showNotification, showMessageDialog} = useNotification();
-    const [rows, setRows] = useState<TableRowData[]>([null_row]);
+    const [rows, setRows] = useState<TableRowData[]>([Object.assign({}, null_row)]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -148,7 +151,7 @@ function EditableTable({runtimeProps} : {runtimeProps: RuntimeProps}) : React.Re
     };
 
     const addRow = () => {
-        setRows([...rows, null_row]);
+        setRows([...rows, Object.assign({}, null_row)]);
     };
 
     const removeRow = (index: number) => {
@@ -160,6 +163,10 @@ function EditableTable({runtimeProps} : {runtimeProps: RuntimeProps}) : React.Re
         setError(null);
 
         const ids = rows.map((row) => row.id.trim()).filter((id) => id !== ""); // Remove empty IDs
+        const body: OwnershipRequstsRequest = {
+            user_id: runtimeProps.currentUser?.id ? String(runtimeProps.currentUser.id) : undefined,
+            document_ids: ids,
+        };
 
         if (ids.length === 0) {
             setError("Please enter at least one ID before submitting.");
@@ -168,12 +175,12 @@ function EditableTable({runtimeProps} : {runtimeProps: RuntimeProps}) : React.Re
         }
 
         try {
-            const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/ownership/requests/", {
+            const response = await fetch(runtimeProps.ADMIN_API_BACKEND_URL + "/ownership_requests/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ ids }), // Sending only IDs in the request
+                body: JSON.stringify(body), // Sending only IDs in the request
             });
 
             if (!response.ok) {

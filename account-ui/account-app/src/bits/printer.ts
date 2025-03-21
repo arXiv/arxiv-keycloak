@@ -10,3 +10,18 @@ export function printUserName(user: PublicUserType | User | null | undefined): s
         return "";
     return `${user?.first_name} ${user?.last_name}`;
 }
+
+
+const options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'America/New_York',
+};
+
+export const utcToNnewYorkDateFormatter = new Intl.DateTimeFormat('en-CA', options);
+
+export const utcToNnewYorkDatePrinter = (timestamp: string)=> {
+    const formatter = new Intl.DateTimeFormat('en-CA', options);
+    return formatter.format(new Date(timestamp));
+}
