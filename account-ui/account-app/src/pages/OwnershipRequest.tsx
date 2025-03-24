@@ -25,7 +25,7 @@ import {useFetchPlus} from "../fetchPlus.ts";
 import YourOwnershipRequests from "../components/YourOwnershipRequests.tsx";
 
 type ArxivDocument = adminApi['/v1/documents/paper_id/{paper_id}']['get']['responses']['200']['content']['application/json'];
-type OwnershipRequstsRequest = adminApi['/v1/ownership_requests/']['post']['requestBody']['content']['application/json'];
+type OwnershipRequestsRequest = adminApi['/v1/ownership_requests/']['post']['requestBody']['content']['application/json'];
 
 /*
 const SubmitRequest: React.FC<{ runtimeProps: RuntimeProps }> = ({ runtimeProps }) => {
@@ -182,7 +182,7 @@ function OwnershipRequstTable({runtimeProps} : {runtimeProps: RuntimeProps}) : R
         setError(null);
 
         const ids = rows.map((row) => row.id.trim()).filter((id) => id !== ""); // Remove empty IDs
-        const body: OwnershipRequstsRequest = {
+        const body: OwnershipRequestsRequest = {
             user_id: runtimeProps.currentUser?.id ? String(runtimeProps.currentUser.id) : undefined,
             arxiv_ids: ids,
         };

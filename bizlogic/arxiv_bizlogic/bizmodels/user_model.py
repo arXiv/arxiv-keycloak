@@ -23,6 +23,13 @@ def dict_merge(dict1: dict, dict2: dict) -> dict:
     return dict1
 
 
+class VetoStatusEnum(str, Enum):
+    ok = 'ok'
+    no_endorse = 'no-endorse'
+    no_upload = 'no-upload'
+    no_replace = 'no-replace'
+
+
 class UserModel(BaseModel):
     class Config:
         from_attributes = True
@@ -79,7 +86,7 @@ class UserModel(BaseModel):
     flag_group_stat: Optional[int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
     flag_group_eess: Optional[int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
     flag_group_econ: Optional[int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
-    veto_status: Optional[str] = None  # Mapped[Literal['ok', 'no-endorse', 'no-upload', 'no-replace']] = mapped_column(Enum('ok', 'no-endorse', 'no-upload', 'no-replace'), nullable=False, server_default=text("'ok'"))
+    veto_status: Optional[VetoStatusEnum] = None  # Mapped[Literal['ok', 'no-endorse', 'no-upload', 'no-replace']] = mapped_column(Enum('ok', 'no-endorse', 'no-upload', 'no-replace'), nullable=False, server_default=text("'ok'"))
 
     flag_is_mod: Optional[bool] = None
 
