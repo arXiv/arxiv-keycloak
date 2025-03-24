@@ -3,6 +3,8 @@
 This is more abstract than using raw SQLAlchemy table based models
 """
 from __future__ import annotations
+
+from enum import Enum
 from typing import Optional, List
 
 from sqlalchemy import select, case, exists, cast, LargeBinary
