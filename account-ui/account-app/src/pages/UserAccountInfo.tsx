@@ -13,6 +13,7 @@ import VerifiedUser from "@mui/icons-material/VerifiedUser";
 import Edit from "@mui/icons-material/Edit";
 import Email from "@mui/icons-material/Email";
 import PasswordIcon from "@mui/icons-material/Password";
+import WarningIcon from "@mui/icons-material/Warning";
 // import LinkIcon from "@mui/icons-material/Link";
 import NofificationIcon from "@mui/icons-material/Notifications";
 import AdminIcon from "@mui/icons-material/Check";
@@ -134,6 +135,34 @@ const UserAccountInfo = () => {
 
     }, [runtimeProps.currentUser]);
 
+    const vetoStatus= runtimeProps.currentUser?.veto_status && runtimeProps.currentUser?.veto_status !== "ok" ? (
+        <Typography variant="body1" component="div"><b>{"Account Status: "} </b>
+            {runtimeProps.currentUser?.veto_status === "no-endorse" ? (
+                <Tooltip slotProps={{tooltip: {sx: {fontSize: "1.2em"}} }}
+                         title={"You may not endorse other users."}>
+                    <WarningIcon />
+                    <Typography variant="body1" component="span">
+                        No Endorse
+                    </Typography>
+                </Tooltip>
+                ) : null}
+            {runtimeProps.currentUser?.veto_status === "no-upload" ? (
+                <Tooltip slotProps={{tooltip: {sx: {fontSize: "1.2em"}} }}
+                         title={"Your ability to submit papers to arXiv has been suspended by administrative action. Contact moderation@arxiv.org for more information."}>
+                    <WarningIcon />
+                    <Typography variant="body1" component="span">No Upload</Typography>
+                </Tooltip>
+            ) : null}
+            {runtimeProps.currentUser?.veto_status === "no-replace" ? (
+                <Tooltip slotProps={{tooltip: {sx: {fontSize: "1.2em"}} }}
+                         title={"Your ability to submit papers to arXiv has been suspended by administrative action. Contact moderation@arxiv.org for more information."}>
+                    <WarningIcon />
+                    <Typography variant="body1" component="span">Replace</Typography>
+                </Tooltip>
+            ) : null}
+        </Typography>
+    ) : null;
+
     const roles = runtimeProps.isAdmin || runtimeProps.isMod || runtimeProps.isCanLock || runtimeProps.isSystem ? (
         <Typography variant="body1"><b>{"Role: "} </b>
             {runtimeProps.isMod ?  <Tooltip title="Moderator" children={<ModIcon />} /> : null}
@@ -167,6 +196,7 @@ const UserAccountInfo = () => {
                         <Typography variant="body1"><b>{"Endorsed categories: "}</b>{endorsedCategories}</Typography>
                     </Box>
                     <Box sx={{flex:1}}>
+                        {vetoStatus}
                         {roles}
                         <Typography variant="body1"><b>{"Affiliation: "}</b>{user?.affiliation}</Typography>
                         <Typography variant="body1"><b>{"URL: "}</b> <Link href={url} target="_blank">{user?.url}</Link></Typography>

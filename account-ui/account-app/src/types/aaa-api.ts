@@ -442,6 +442,7 @@ export interface components {
             career_status?: components["schemas"]["CAREER_STATUS"] | null;
             /** Tracking Cookie */
             tracking_cookie?: string | null;
+            veto_status?: components["schemas"]["VetoStatusEnum"] | null;
             /** Id */
             id: string;
             /** Email Verified */
@@ -484,6 +485,7 @@ export interface components {
             career_status?: components["schemas"]["CAREER_STATUS"] | null;
             /** Tracking Cookie */
             tracking_cookie?: string | null;
+            veto_status?: components["schemas"]["VetoStatusEnum"] | null;
             /** Password */
             password: string;
             /** Origin Ip */
@@ -589,6 +591,11 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /**
+         * VetoStatusEnum
+         * @enum {string}
+         */
+        VetoStatusEnum: "ok" | "no-endorse" | "no-upload" | "no-replace";
         /** WellKnownServices */
         WellKnownServices: {
             /** Arxiv Base Url */

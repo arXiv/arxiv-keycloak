@@ -606,22 +606,88 @@ export interface paths {
          * Update Ownership Request
          * @description Update ownership request.
          *
+         *     $nickname=$auth->get_nickname_of($user_id);
+         *     $policy_class=$auth->conn->select_scalar("SELECT name FROM tapir_policy_classes WHERE class_id=$user->policy_class");
          *
-         *     $auth->conn->begin();
          *
-         *     $sql="INSERT INTO arXiv_ownership_requests (user_id,workflow_status,endorsement_request_id) VALUES ($auth->user_id,'pending',$_endorsement_request_id)";
-         *     $auth->conn->query($sql);
+         *     if ($_SERVER["REQUEST_METHOD"]=="POST") {
+         *        if ($_POST["reject"]) {
+         *           $auth->conn->query("UPDATE arXiv_ownership_requests SET workflow_status='rejected' WHERE request_id=$request->request_id");
+         *           include "ownership-rejected-screen.php";
+         *           exit();
+         *        }
          *
-         *     $sql="INSERT INTO arXiv_ownership_requests_audit (request_id,remote_addr,remote_host,session_id,tracking_cookie,date) VALUES (LAST_INSERT_ID(),'$_remote_addr','$_remote_host','$_session_id','$_tracking_cookie',{$auth->timestamp})";
-         *     $auth->conn->query($sql);
+         *        if ($_POST["revisit"]) {
+         *           $auth->conn->query("UPDATE arXiv_ownership_requests SET workflow_status='pending' WHERE request_id=$request->request_id");
+         *           $request->workflow_status="pending";
+         *        } else {
          *
-         *     foreach($documents as $document_id) {
-         *        $sql="INSERT INTO arXiv_ownership_requests_papers (request_id,document_id) VALUES (LAST_INSERT_ID(),$document_id)";
-         *        $auth->conn->query($sql);
+         *           $flag_author=$_POST["is_author"] ? 1:0;
+         *           $n_papers=$_POST["n_papers"];
+         *           $document_ids=array();
+         *           $approved_count=0;
+         *           for ($i=0;$i<$n_papers;$i++) {
+         *              if ($_POST["approve_$i"]) {
+         *                 $approved_count++;
+         *                 array_push($document_ids,addslashes($_POST["document_id_$i"]));
+         *              }
+         *           }
+         *
+         *           if($approved_count==0) {
+         *              if($bulk_mode) {
+         *                 include "ownership-bulk-none-approved-screen.php";
+         *                 exit();
+         *              }
+         *
+         *              $auth->conn->query("UPDATE arXiv_ownership_requests SET workflow_status='accepted' WHERE request_id=$request->request_id");
+         *              include "ownership-none-approved-screen.php";
+         *              exit();
+         *           }
+         *
+         *           $auth->conn->begin();
+         *
+         *           $id_list="(".join(",",$document_ids).")";
+         *           $already_owns=$auth->conn->select_keys_and_values("SELECT document_id,1 FROM arXiv_paper_owners
+         *                                                        WHERE user_id=$user->user_id
+         *                                                        AND document_id IN $id_list FOR UPDATE");
+         *
+         *           if(count($already_owns) == count($document_ids)) {
+         *              include "ownership-all-owned-screen.php";
+         *              exit();
+         *           }
+         *
+         *           $paper_ids=$auth->conn->select_keys_and_values("SELECT document_id,paper_id FROM arXiv_documents
+         *                                                           WHERE document_id IN $id_list");
+         *
+         *           $paper_list=array();
+         *           $owned_list=array();
+         *
+         *           for($i=0;$i<$n_papers;$i++) {
+         *             if ($_POST["approve_$i"]) {
+         *                $_document_id=addslashes($_POST["document_id_$i"]);
+         *                $paper_id=$paper_ids[$_document_id];
+         *                if($already_owns[$_document_id]) {
+         *                   array_push($owned_list,$paper_id);
+         *                } else {
+         *                   $_remote_addr=addslashes($_SERVER["REMOTE_ADDR"]);
+         *                   $_remote_host=addslashes($_SERVER["REMOTE_HOST"]);
+         *                   $_tracking_cookie=addslashes($_COOKIE["M4_TRACKING_COOKIE_NAME"]);
+         *                   array_push($paper_list,$paper_id);
+         *                   $auth->conn->query("INSERT INTO arXiv_paper_owners (document_id,user_id,date,added_by,remote_addr,remote_host,tracking_cookie,valid,flag_author,flag_auto) VALUES ($_document_id,$user_id,$auth->timestamp,$auth->user_id,'$_remote_addr','$_remote_host','$_tracking_cookie',1,$flag_author,0)");
+         *                   tapir_audit_admin($user_id,"add-paper-owner-2",$_document_id);
+         *                }
+         *              }
+         *           }
+         *
+         *           if(!$bulk_mode) {
+         *              $auth->conn->query("UPDATE arXiv_ownership_requests SET workflow_status='accepted' WHERE request_id=$request->request_id");
+         *           }
+         *
+         *           $auth->conn->commit();
+         *           include "ownership-granted-screen.php";
+         *           exit();
+         *        }
          *     }
-         *
-         *     $request_id=$auth->conn->select_scalar("SELECT LAST_INSERT_ID()");
-         *     $auth->conn->commit();
          */
         put: operations["update_ownership_request_v1_ownership_requests__id__put"];
         post?: never;
@@ -1975,38 +2041,6 @@ export interface components {
             end_time: string | null;
             /** Close Session */
             close_session: boolean;
-        };
-        /**
-         * UpdateOwnershipRequestModel
-         * @description make_owner: This field is checked to determine if the action is to approve ownership. If present, the function proceeds to process the approval of ownership for selected documents.
-         *
-         *     approve_<doc_id>: These fields are dynamically generated based on the document IDs. The function looks for keys in the form that start with approve_ followed by a document ID (e.g., approve_123). These represent the documents that the user has selected to approve for ownership.
-         *
-         *     is_author: This field is used to determine if the user is an author of the document. It is a boolean field that influences the flag_author attribute when creating a new PaperOwner record.
-         *
-         *     reject: This field is checked to determine if the action is to reject the ownership request. If present, the function updates the ownership request status to "rejected".
-         *
-         *     revisit: This field is checked to determine if the action is to revisit the ownership request. If present, the function updates the ownership request status to "pending".
-         */
-        UpdateOwnershipRequestModel: {
-            /**
-             * Make Owner
-             * @default false
-             */
-            make_owner: boolean;
-            /**
-             * Is Author
-             * @default false
-             */
-            is_author: boolean;
-            /** Endorsement Request Id */
-            endorsement_request_id?: number | null;
-            /** Arxiv Ids */
-            arxiv_ids?: string[] | null;
-            /** Document Ids */
-            document_ids?: number[] | null;
-            /** Remote Addr */
-            remote_addr?: string | null;
         };
         /** UserModel */
         UserModel: {
@@ -3972,6 +4006,8 @@ export interface operations {
                 end_date?: string | null;
                 /** @description List of ownership request IDs to filter by */
                 id?: number[] | null;
+                /** @description Current ID - index position - for navigation */
+                current_id?: number | null;
                 user_id?: number | null;
                 endorsement_request_id?: number | null;
                 workflow_status?: ("pending" | "accepted" | "rejected") | null;
@@ -4075,11 +4111,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateOwnershipRequestModel"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
