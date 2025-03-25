@@ -16,7 +16,7 @@ import CareerStatusSelect, {CareerStatusType} from "../bits/CareerStatus.tsx";
 import {RuntimeContext} from "../RuntimeContext.tsx";
 import {paths} from "../types/aaa-api.ts";
 import {emailValidator} from "../bits/validators.ts";
-import {useFetchPlus} from "../fetchPlus.ts";
+import {fetchPlus} from "../fetchPlus.ts";
 
 type AccountProfileRequest = paths["/account/profile/{user_id}"]['get']['responses']['200']['content']['application/json'];
 type UpdateProfileRequest = paths["/account/profile/"]['put']['requestBody']['content']['application/json'];
@@ -32,7 +32,6 @@ const UpdateProfile = () => {
     const {showNotification, showMessageDialog} = useNotification();
     const runtimeProps = useContext(RuntimeContext);
     const user = runtimeProps.currentUser;
-    const fetchPlus = useFetchPlus();
 
     // State to store input values
     const [formData, setFormData] = useState<UpdateProfileRequest>({

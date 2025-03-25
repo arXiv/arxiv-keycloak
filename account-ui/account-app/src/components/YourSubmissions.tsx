@@ -20,7 +20,7 @@ import Box from "@mui/material/Box";
 // import Checkbox from "@mui/material/Checkbox";
 import EditIcon from "@mui/icons-material/Edit";
 import DatagridPaginationMaker from "../bits/DataGridPagination.tsx";
-import {useFetchPlus} from "../fetchPlus.ts";
+import {fetchPlus} from "../fetchPlus.ts";
 
 
 type SubmissionType = adminApi['/v1/submissions/{id}']['get']['responses']['200']['content']['application/json'];
@@ -50,7 +50,6 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimeProps
 
     const noSSRT:SubmissionStatusRecordType = {};
     const [submissinStatusList, setSubmissinStatusList] = useState<SubmissionStatusRecordType>(noSSRT);
-    const fetchPlus = useFetchPlus();
 
     useEffect(() => {
         async function doSubmissionStatusList() {

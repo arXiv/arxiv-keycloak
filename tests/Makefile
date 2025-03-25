@@ -30,6 +30,7 @@ development:
 test:
 	. ../tools/venv/bin/activate && pytest
 
+# mysqldump -h 127.0.0.1 -u testuser -ptestpassword --no-create-info --skip-triggers --compact --single-transaction --ssl-mode=DISABLED arXiv arXiv_endorsements arXiv_endorsements_audit | sed 's/INSERT INTO/INSERT IGNORE INTO/g' | mysql -h 127.0.0.1 -P 21504  -u root -proot_password --ssl-mode=DISABLED --force arXiv
 
 #-#
 #-# dump-arxiv-db:

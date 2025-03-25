@@ -6,7 +6,7 @@ import { paths as adminApi } from "../types/admin-api";
 import {RuntimeContext} from "../RuntimeContext";
 import arxivCategories from "./arxivCategories"
 import {paths} from "../types/aaa-api.ts";
-import {useFetchPlus} from "../fetchPlus.ts";
+import {fetchPlus} from "../fetchPlus.ts";
 
 export type CategoryType = adminApi["/v1/categories/{id}"]["get"]["responses"]["200"]["content"]["application/json"];
 export type SubmitRequestType = paths["/account/register/"]['post']['requestBody']['content']['application/json'];
@@ -26,7 +26,6 @@ interface CategoryChooserProps {
 
 const CategoryChooser: React.FC<CategoryChooserProps> = ({onSelect, selectedCategory}) => {
     const runtimeContext = useContext(RuntimeContext);
-    const fetchPlus = useFetchPlus();
     const [categoryList, setCategoryList] = useState<CategoryType[]>(arxivCategories);
     const [categories, setCategories] = useState<CategoryGroupType[]>([]);
 

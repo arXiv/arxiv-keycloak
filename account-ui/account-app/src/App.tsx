@@ -26,6 +26,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import ClaimPaperOwnership from "./pages/ClaimPaperOwnership.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
+import {GlobalAuthHandler} from "./fetchPlus.ts";
 
 const queryClient = new QueryClient();
 
@@ -47,8 +48,9 @@ const App: React.FC = () => {
                 <RuntimeContextProvider>
                     <Box sx={{minHeight: '100vh', backgroundColor: 'white', display: 'flex', flexDirection: 'column'}}>
                         <Router>
+                            <GlobalAuthHandler />
                             <ArxivHeader/>
-                            i <Container component="main">
+                            <Container component="main">
                             <Routes>
                                 <Route path="/user-account" element={<UserAccountInfo/>}/>
                                 <Route path="/user-account/login" element={<ExternalRedirect to={"/login"}/>}/>

@@ -21,7 +21,7 @@ import {RuntimeContext, RuntimeProps} from "../RuntimeContext.tsx";
 import { paths as adminApi } from "../types/admin-api";
 import {useNotification} from "../NotificationContext.tsx";
 import {utcToNnewYorkDatePrinter} from "../bits/printer.ts";
-import {useFetchPlus} from "../fetchPlus.ts";
+import {fetchPlus} from "../fetchPlus.ts";
 import YourOwnershipRequests from "../components/YourOwnershipRequests.tsx";
 
 type ArxivDocument = adminApi['/v1/documents/paper_id/{paper_id}']['get']['responses']['200']['content']['application/json'];
@@ -122,7 +122,6 @@ const TableRowComponent: React.FC<{
     onIdChange: (index: number, newId: string) => void;
     onRemove: () => void;
 }> = ({ runtimeProps, row, index, onIdChange, onRemove }) => {
-    const fetchPlus = useFetchPlus();
 
     console.log("TableRowComponent " + JSON.stringify(row));
 
@@ -156,7 +155,6 @@ const TableRowComponent: React.FC<{
 
 function OwnershipRequstTable({runtimeProps} : {runtimeProps: RuntimeProps}) : React.ReactNode {
     const {showNotification, showMessageDialog} = useNotification();
-    const fetchPlus = useFetchPlus();
     const [rows, setRows] = useState<TableRowData[]>([Object.assign({}, null_row)]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);

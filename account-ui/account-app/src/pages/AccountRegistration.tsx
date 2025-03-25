@@ -25,7 +25,7 @@ import {emailValidator, passwordValidator} from "../bits/validators.ts";
 import Tooltip from "@mui/material/Tooltip";
 import PasswordRequirements from "../bits/PasswordRequirements.tsx";
 import {useNotification} from "../NotificationContext.tsx";
-import {useFetchPlus} from "../fetchPlus.ts";
+import {fetchPlus} from "../fetchPlus.ts";
 
 type TokenResponse = paths["/account/register/"]['get']['responses']['200']['content']['application/json'];
 type SubmitRequest = paths["/account/register/"]['post']['requestBody']['content']['application/json'];
@@ -62,7 +62,7 @@ const PostSubmitActionDialog: React.FC<PostSubmitDialogProps> = ({title, message
 const AccountRegistration = () => {
     const runtimeContext = useContext(RuntimeContext);
     const {showNotification} = useNotification();
-    const fetchPlus = useFetchPlus();
+
     // State to store input values
     const [formData, setFormData] = useState<SubmitRequest>({
         username: "",

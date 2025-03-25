@@ -30,14 +30,14 @@ import {useNotification} from "../NotificationContext.tsx";
 
 import { paths as adminApi } from "../types/admin-api";
 import MathJaxToggle from "../bits/MathJaxToggle.tsx";
-import {useFetchPlus} from "../fetchPlus.ts";
+import {fetchPlus} from "../fetchPlus.ts";
+import EndorsedCategories from "../bits/EndorsedCategories.tsx";
 
 type EndorsementListType = adminApi["/v1/endorsements/"]["get"]['responses']["200"]['content']['application/json'];
 
 
 const VerifyEmailButton: React.FC<{ runtimeProps: RuntimeProps }> = ({ runtimeProps }) => {
     const user = runtimeProps.currentUser;
-    const fetchPlus = useFetchPlus();
     const [dialogOpen, setDialogOpen] = useState(false);
 
     const verifyEmailRequest = useCallback(() => {
@@ -92,8 +92,7 @@ const UserAccountInfo = () => {
     const runtimeProps = useContext(RuntimeContext);
     const user = runtimeProps.currentUser;
     const {showMessageDialog} = useNotification();
-    const [endorsedCategories, sstEndorsedCategories] = useState("");
-    const fetchPlus = useFetchPlus();
+    const [endorsements, setEndorsements] = useState<EndorsementListType>([]);
 
     let url = user?.url || "https://arxiv.org";
 
@@ -120,8 +119,7 @@ const UserAccountInfo = () => {
             try {
                 const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/endorsements/?${query.toString()}`);
                 const body: EndorsementListType = await response.json();
-                const cats = body.map( (endorsement) => `${endorsement.archive}.${endorsement.subject_class || "*"}`);
-                sstEndorsedCategories(cats.join(" "));
+                setEndorsements(body);
             }
             catch (error) {
                 console.error(error);
@@ -140,24 +138,30 @@ const UserAccountInfo = () => {
             {runtimeProps.currentUser?.veto_status === "no-endorse" ? (
                 <Tooltip slotProps={{tooltip: {sx: {fontSize: "1.2em"}} }}
                          title={"You may not endorse other users."}>
-                    <WarningIcon />
-                    <Typography variant="body1" component="span">
-                        No Endorse
-                    </Typography>
+                    <span>
+                        <WarningIcon />
+                        <Typography variant="body1" component="span">
+                            No Endorse
+                        </Typography>
+                    </span>
                 </Tooltip>
                 ) : null}
             {runtimeProps.currentUser?.veto_status === "no-upload" ? (
                 <Tooltip slotProps={{tooltip: {sx: {fontSize: "1.2em"}} }}
                          title={"Your ability to submit papers to arXiv has been suspended by administrative action. Contact moderation@arxiv.org for more information."}>
-                    <WarningIcon />
-                    <Typography variant="body1" component="span">No Upload</Typography>
+                    <span>
+                        <WarningIcon />
+                        <Typography variant="body1" component="span">No Upload</Typography>
+                    </span>
                 </Tooltip>
             ) : null}
             {runtimeProps.currentUser?.veto_status === "no-replace" ? (
                 <Tooltip slotProps={{tooltip: {sx: {fontSize: "1.2em"}} }}
                          title={"Your ability to submit papers to arXiv has been suspended by administrative action. Contact moderation@arxiv.org for more information."}>
-                    <WarningIcon />
-                    <Typography variant="body1" component="span">Replace</Typography>
+                    <span>
+                        <WarningIcon />
+                        <Typography variant="body1" component="span">Replace</Typography>
+                    </span>
                 </Tooltip>
             ) : null}
         </Typography>
@@ -171,6 +175,9 @@ const UserAccountInfo = () => {
             {runtimeProps.isCanLock ? <Tooltip title="Can Lock" children={<CanLockIcon />} /> : null}
         </Typography>
     ) : null;
+
+    const endorsedCategories = endorsements ? <EndorsedCategories endorsements={endorsements} key={user?.id || "user"} runtimeProps={runtimeProps} /> : null;
+
 
     return (
         <Container maxWidth={"md"} sx={{ mt: 0 }}>
@@ -193,7 +200,7 @@ const UserAccountInfo = () => {
                         <Typography variant="body1"><b>{"E-mail: "}</b>{user?.email}{need_verify}</Typography>
                         <Typography variant="body1"><b>{"Default Category: "}</b>{user?.default_category?.archive}.{user?.default_category?.subject_class}</Typography>
                         <Typography variant="body1"><b>{"Groups: "}</b>{user?.groups}</Typography>
-                        <Typography variant="body1"><b>{"Endorsed categories: "}</b>{endorsedCategories}</Typography>
+                        <Typography variant="body1" component="div"><b>{"Endorsed categories: "}</b>{endorsedCategories}</Typography>
                     </Box>
                     <Box sx={{flex:1}}>
                         {vetoStatus}

@@ -40,7 +40,7 @@ import JournalReferenceIcon from "../assets/images/journalref.png";
 import LinkCodeDataIcon from "../assets/images/pwc_logo.png";
 import DatagridPaginationMaker from "../bits/DataGridPagination.tsx";
 import Button from "@mui/material/Button";
-import {useFetchPlus} from "../fetchPlus.ts";
+import {fetchPlus} from "../fetchPlus.ts";
 
 
 // type DocumentType = adminApi['/v1/documents/{id}']['get']['responses']['200']['content']['application/json'];
@@ -154,7 +154,7 @@ const YourDocuments: React.FC = () => {
     const [menuPosition, setMenuPosition] = useState<{ mouseX: number, mouseY: number } | null>(null);
     const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
     const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>([]);
-    const fetchPlus = useFetchPlus();
+
 
     useEffect(() => {
         async function fetchSubmissions() {

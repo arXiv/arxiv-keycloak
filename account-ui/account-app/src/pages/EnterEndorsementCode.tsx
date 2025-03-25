@@ -21,7 +21,8 @@ import Radio from "@mui/material/Radio";
 import CardHeader from "@mui/material/CardHeader";
 import Link from "@mui/material/Link";
 import {printUserName} from "../bits/printer.ts";
-import {useFetchPlus} from "../fetchPlus.ts";
+import {fetchPlus} from "../fetchPlus.ts";
+import { useLocation } from "react-router-dom";
 
 type EndorsementCodeRequest = adminApi["/v1/endorsements/endorse"]['post']['requestBody']['content']['application/json'];
 
@@ -34,6 +35,7 @@ type CategoryResponse = adminApi["/v1/categories/{archive}/subject-class/{subjec
 
 const EnterEndorsementCode = () => {
     const runtimeProps = useContext(RuntimeContext);
+    const location = useLocation();
     const user = runtimeProps.currentUser;
     const {showNotification, showMessageDialog} = useNotification();
     const [inProgress, setInProgress] = useState(false);
@@ -42,17 +44,22 @@ const EnterEndorsementCode = () => {
     const endorsementRequest = endorsementOutcome?.endorsement_request
     const endorsee = endorsementOutcome?.endorsee;
     const categoryName = endorsementRequest ? `${printCategory(endorsementRequest)}` : "";
-    const categoryFullName = endorsementRequest ? `${printCategory(endorsementRequest)} - ${endorsementCategoryName}` : "";
+    const categoryFullName = endorsementRequest ? `${printCategory(endorsementRequest)} - ${endorsementCategoryName || "all"}` : "";
+
+    const queryParams = new URLSearchParams(location.search);
+    const codeFromURL = queryParams.get("code") || "";
+
     const initialFormData: EndorsementCodeRequest = {
         preflight: true,
         endorser_id: user?.id || "",
         positive: true,
-        endorsement_code: "",
+        endorsement_code: codeFromURL,
         comment: "",
         knows_personally: false,
         seen_paper: false
     };
     const [formData, setFormData] = useState<EndorsementCodeRequest>(initialFormData);
+
 
     const [errors, setErrors] = useState<{
         endorser_id?: string,
@@ -63,10 +70,7 @@ const EnterEndorsementCode = () => {
         seen_paper?: string,
         endorsee?: string,
         reason?: string
-    }>({endorser_id: "No current user", endorsement_code: "Empty"});
-
-    const fetchPlus = useFetchPlus();
-
+    }>({endorser_id: "No current user", endorsement_code: codeFromURL ? "" : "Empty"});
 
     useEffect(() => {
         async function doSetCurrentUserID() {

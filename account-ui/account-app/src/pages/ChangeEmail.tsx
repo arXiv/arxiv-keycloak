@@ -13,14 +13,13 @@ import {useNotification} from "../NotificationContext";
 import {paths} from "../types/aaa-api.ts";
 import {emailValidator} from "../bits/validators.ts";
 import {printUserName} from "../bits/printer.ts";
-import {useFetchPlus} from "../fetchPlus.ts";
+import {fetchPlus} from "../fetchPlus.ts";
 
 type AccountProfileRequest = paths["/account/profile/{user_id}"]['get']['responses']['200']['content']['application/json'];
 type ChangeEmailRequest = paths["/account/email/"]['put']['requestBody']['content']['application/json'];
 
 const ChangeEmail = () => {
     const runtimeProps = useContext(RuntimeContext);
-    const fetchPlus = useFetchPlus();
     const user = runtimeProps.currentUser;
     const emailAddress = user?.email || "";
     const [inProgress, setInProgress] = useState(false);

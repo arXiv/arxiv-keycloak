@@ -19,7 +19,7 @@ const HoverLink : React.FC<HoverLinkProps> = ({href, label}) => {
                 width: "auto",
             }}
         >
-            <Typography variant="body2" sx={{display: "inline"}}>{label}</Typography>
+            <Typography component="span" variant="body2" sx={{display: "inline"}}>{label}</Typography>
         </Link>
     )
 }

@@ -23,7 +23,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import {RuntimeProps} from "../RuntimeContext.tsx";
 import { paths as adminApi } from "../types/admin-api";
-import {useFetchPlus} from "../fetchPlus.ts";
+import {fetchPlus} from "../fetchPlus.ts";
 // import DocumentStatusName from "./DocumentStatusName.tsx";
 // import categoryChooser from "./CategoryChooser.tsx";
 
@@ -39,7 +39,6 @@ const DocumentTable: React.FC<{runtimeProps: RuntimeProps}> = ({runtimeProps}) =
     const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
     const [statusFilter, setStatusFilter] = useState<DocumentStatus>("all");
     const [titleFilter, setTitleFilter] = useState<string>("");
-    const fetchPlus = useFetchPlus();
 
     // Pagination state
     const [page, setPage] = useState<number>(0);

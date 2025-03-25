@@ -11,7 +11,7 @@ import {RuntimeContext} from "../RuntimeContext";
 import {useNotification} from "../NotificationContext";
 
 import {paths} from "../types/aaa-api.ts";
-import {useFetchPlus} from "../fetchPlus.ts";
+import {fetchPlus} from "../fetchPlus.ts";
 
 // type AccountProfileRequest = paths["/account/profile/{user_id}"]['get']['responses']['200']['content']['application/json'];
 type ResetPasswordRequest = paths["/account/password/reset/"]['post']['requestBody']['content']['application/json'];
@@ -19,7 +19,6 @@ type ResetPasswordRequest = paths["/account/password/reset/"]['post']['requestBo
 const ResetPassword = () => {
     const runtimeProps = useContext(RuntimeContext);
     const {showNotification, showMessageDialog} = useNotification();
-    const fetchPlus = useFetchPlus();
     const [inProgress, setInProgress] = useState(false);
 
     const [formData, setFormData] = useState<ResetPasswordRequest>({

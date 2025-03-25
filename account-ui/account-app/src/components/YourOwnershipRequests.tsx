@@ -20,7 +20,7 @@ import Box from "@mui/material/Box";
 // import EditIcon from "@mui/icons-material/Edit";
 import Link from "@mui/material/Link";
 import DatagridPaginationMaker from "../bits/DataGridPagination.tsx";
-import {useFetchPlus} from "../fetchPlus.ts";
+import {fetchPlus} from "../fetchPlus.ts";
 import {utcToNnewYorkDatePrinter} from "../bits/printer.ts";
 import IconButton from '@mui/material/IconButton';
 
@@ -51,8 +51,6 @@ const YourOwnershipRequests: React.FC<{ runtimeProps: RuntimeProps }> = ({runtim
     });
     const [filterModel, setFilterModel] = useState<GridFilterModel>({items: [],});
     const [totalCount, setTotalCount] = useState<number>(0);
-    const fetchPlus = useFetchPlus();
-
 
     const fetchOwnershipRequests = useCallback(async () => {
         if (!runtimeProps.currentUser)
