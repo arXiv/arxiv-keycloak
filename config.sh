@@ -1,9 +1,18 @@
 #!/bin/bash
 
+TARGET=local
+
+num_args=$#
+if [ $num_args -eq 0 ]; then
+  TARGET="localdb"
+else
+  TARGET=$1
+  shift
+fi
+
 ACCOUNT=arxiv.1password.com
 
-
-if [ ! -r .env.localdb ] ; then
+if [ "$TARGET" = "local" ] && [ ! -r .env.localdb ] ; then
     SERVER_HOST=localhost.arxiv.org
     HTTP_PORT=5100
     SERVER_URL=http://$SERVER_HOST:$HTTP_PORT
@@ -173,10 +182,10 @@ if [ ! -r .env.localdb ] ; then
         OS=macos
     fi
     echo OS=$OS >> .env.localdb
-
 fi
 
-if [ ! -r .env.devdb ] ; then
+
+if [ "$TARGET" = "local" ] && [ ! -r .env.devdb ] ; then
     echo KC_DOCKER_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/keycloak >> .env.devdb
     echo KC_DB_HOST_PUBLIC=$(op item get  $KC_AUTH_DB_1P_ITEM --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "fnxbox5ugfkr2ol5wtqbk6wkwq") | .value') >> .env.devdb
     echo KC_DB_HOST_PRIVATE=$(op item get  $KC_AUTH_DB_1P_ITEM --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "o4idffxy6bns7nihak4q4lo3xe") | .value') >> .env.devdb
@@ -190,8 +199,122 @@ if [ ! -r .env.devdb ] ; then
     echo LEGACY_AUTH_API_TOKEN=$(op item get  bdmmxlepkfsqy5hfgfunpsli2i --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "rs25xevxhbvy6l2aom7z633rti") | .value') >> .env.devdb
 fi
 
+if  [ "$TARGET" != "local" ] ; then
+    OS=redhat
+    SERVER_HOST=$TARGET.arxiv.org
+    SERVER_URL=https://$SERVER_HOST
+    PLATFORM=linux/amd64
+    GCP_PROJECT=$(jq -r .gcp_projet /opt_arxiv/devops/build/$TARGET.json)
+    PUBSUB_PROJECT=$GCP_PROJECT
+
+    echo OAUTH2_DOMAIN=.${SERVER_HOST} >> .env.$TARGET
+    echo PUBSUB_PROJECT=$PUBSUB_PROJECT  >> .env.$TARGET
+    # Not really used
+    echo DOCKER_NETWORK=arxiv-network >> .env.$TARGET
+
+    echo ARXIV_USER_REGISTRATION_URL=${SERVER_URL}/user-account/registration >> .env.$TARGET
+
+    # IRL, this is a secure "password" for encrypting JWT token
+    JWT_SECRET=$(jq -r .jwt_secret /opt_arxiv/devops/build/$TARGET.json)
+    echo JWT_SECRET=$JWT_SECRET >> .env.$TARGET
+
+    # IRL, this is a secure "password" for encrypting tapir cookie
+    CLASSIC_SESSION_HASH=$(jq -r .classic_session_hash /opt_arxiv/devops/build/$TARGET.json)
+    echo CLASSIC_SESSION_HASH=$CLASSIC_SESSION_HASH >> .env.$TARGET
+    echo CLASSIC_SESSION_DURATION=36000 >> .env.$TARGET
+
+    echo DOCKER_PLATFORM=$PLATFORM >> .env.$TARGET
+
+    # This is what nginx runs
+    echo NGINX_PORT=$HTTP_PORT >> .env.$TARGET
+
+    # keycloak and its database
+    KC_HOST_PUBLIC=$(jq -r .kc_host /opt_arxiv/devops/build/$TARGET.json)
+    echo KC_URL_PUBLIC=$KC_HOST_PUBLIC >> .env.$TARGET
+
+    echo GCP_PROJECT=$GCP_PROJECT >> .env.$TARGET
+    echo GCP_EVENT_TOPIC_ID=keycloak-arxiv-events >> .env.$TARGET
+    echo GCP_ADMIN_EVENT_TOPIC_ID=keycloak-arxiv-events >> .env.$TARGET
+    #
+    echo KEYCLOAK_TEST_CLIENT_SECRET=$(jq -r .keycloak_arxiv_client_secret /opt_arxiv/devops/build/$TARGET.json) >> .env.$TARGET
+    #
+    # oauth2 client - aka cookie maker
+    #
+    AAA_PORT=21503
+    echo ARXIV_OAUTH2_CLIENT_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/arxiv-oauth2-client >> .env.$TARGET
+    echo ARXIV_OAUTH2_CLIENT_APP_NAME=arxiv-oauth2-client >> .env.$TARGET
+    echo ARXIV_OAUTH2_APP_PORT=$AAA_PORT >> .env.$TARGET
+    #
+    # where aaa is hosted
+    #
+    echo AAA_CALLBACK_URL=$SERVER_URL/aaa/callback >> .env.$TARGET
+    echo AAA_LOGIN_REDIRECT_URL=$SERVER_URL/aaa/login >> .env.$TARGET
+    echo AAA_TOKEN_REFRESH_URL=$SERVER_URL/aaa/refresh >> .env.$TARGET
+    #
+    # arxiv mysql db
+    #
+    # if you are using non-host docker network, this would be "arxiv-db" to match the container name
+    # Do not use "localhost". It is special cased to use the Unix socket
+    echo CLASSIC_DB_URI=$(jq -r .classic_db_uri /opt_arxiv/devops/build/$TARGET.json) >> .env.$TARGET
+    #
+    # legacy auth provider
+    #
+    echo LEGACY_AUTH_DOCKER_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/legacy-auth-provider >> .env.$TARGET
+    #
+    # Keycloak to tapir bridge
+    echo KC_TAPIR_BRIDGE_DOCKER_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/kc-tapir-bridge >> .env.$TARGET
+    # keycloak-arxiv-events-sub is the default so you don't need for the python code but this is used to create
+    # for subscription during the pubsub setup.
+    # see GCP_EVENT_TOPIC_ID, GCP_ADMIN_EVENT_TOPIC_ID
+    echo KC_TAPIR_BRIDGE_SUBSCRIPTION=keycloak-arxiv-events-sub >> .env.$TARGET
+    #
+    # email
+    #
+    SMTP_PORT=21508
+    echo SMTP_PORT=$SMTP_PORT >> .env.$TARGET
+    echo SMTP_HOST=0.0.0.0:$SMTP_PORT >> .env.$TARGET
+    echo MAILSTORE_PORT=21512 >> .env.$TARGET
+    echo TEST_MTA_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/test-mta >> .env.$TARGET
+    #
+    echo TESTSITE_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/testsite >> .env.$TARGET
+    echo TESTSITE_PORT=21509 >> .env.$TARGET
+    #
+    # This is not strictry necessary but here
+    #
+    echo ADMIN_API_TAG=gcr.io/$GCP_PROJECT/admin-console/admin-api >> .env.$TARGET
+    echo ADMIN_API_PORT=21510 >> .env.$TARGET
+    echo ADMIN_API_URL=$SERVER_URL/admin-api >> .env.$TARGET
+    echo ADMIN_CONSOLE_TAG=gcr.io/$GCP_PROJECT/admin-console/admin-ui >> .env.$TARGET
+    echo ADMIN_CONSOLE_PORT=21511 >> .env.$TARGET
+    echo ADMIN_CONSOLE_URL=$SERVER_URL/admin-console >> .env.$TARGET
+    #
+    # portals
+    #
+    echo ARXIV_PORTAL_PORT=21513  >> .env.$TARGET
+    echo ARXIV_PORTAL_APP_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/arxiv-user-portal  >>  .env.localdb
+    echo ARIXV_PORTAL_APP_NAME=arxiv-user-portal >> .env.$TARGET
+    # portal config - these are set in the docker-compose.yaml for the docker. But it's convenient for running Flask with .env
+    echo ARXIV_AUTH_DEBUG=1  >> .env.$TARGET
+    echo BASE_SERVER=$SERVER_HOST >> .env.$TARGET
+    echo DEFAULT_LOGIN_REDIRECT_URL=/user-account/ >> .env.$TARGET
+    echo DEFAULT_LOGOUT_REDIRECT_URL=$SERVER_URL >> .env.$TARGET
+    echo AUTH_SESSION_COOKIE_DOMAIN=$SERVER_HOST >> .env.$TARGET
+    echo CLASSIC_COOKIE_NAME=tapir_session  >> .env.$TARGET
+
+    #
+    # echo ACCOUNT_PORTAL_API_PORT=21515 >>  .env.localdb
+    echo ACCOUNT_PORTAL_APP_PORT=21514 >>  .env.localdb
+    echo ACCOUNT_PORTAL_APP_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/account-portal  >>  .env.localdb
+    echo ACCOUNT_PORTAL_APP_NAME=account-portal >> .env.$TARGET
+
+    #
+    # Do OS detection so that we can have automatic setup / install on Debian (at least)
+    #
+    echo OS=$OS >> .env.$TARGET
+fi
+
 if [ ! -r .env ] ; then
-    ln -s .env.localdb .env
+    ln -s .env.$TARGET .env
 fi
 
 if [ x"$KC_DB" = x"" ] ; then

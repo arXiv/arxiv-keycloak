@@ -72,6 +72,11 @@ setup-arch: .setup-arch
 	$(call run_in_all_subdirs,bootstrap)
 	touch .setup-arch
 
+setup-redhat: .setup-redhat
+	pyenv update && pyenv install -s 3.12
+	$(call run_in_all_subdirs,bootstrap)
+	touch .setup-redhat
+
 #-#
 #-# docker-image:
 #-#   builds docker images

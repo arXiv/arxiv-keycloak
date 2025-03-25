@@ -4,8 +4,6 @@ import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { styled } from '@mui/material/styles';
 
@@ -39,7 +37,7 @@ const groupByArchiveSubject = (endorsements: EndorsementListType): Grouped => {
 };
 
 
-const CompactAccordion = styled(Accordion)(({ theme }) => ({
+const CompactAccordion = styled(Accordion)(() => ({
     display: 'inline-block',
     verticalAlign: 'top',
     margin: 0,
@@ -88,7 +86,7 @@ const EndorsedCategories: React.FC<EndorsedCategoriesProps> = ({ runtimeProps, e
                         <Typography variant="subtitle2">{key}</Typography>
                     </CompactAccordionSummary>
                     <CompactAccordionDetails>
-                            {endorserId.map((id, idx) => (
+                            {endorserId.map((id) => (
                                     <PublicUser key={id} user_id={id} runtimeProps={runtimeProps} />
                             ))}
                     </CompactAccordionDetails>
