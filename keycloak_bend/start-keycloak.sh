@@ -102,6 +102,12 @@ echo "KC_PORT=$KC_PORT"
 echo "KC_SSL_PORT=$KC_SSL_PORT"
 
 # -------------------------------------------------------------------------------------------
+# Registration
+#
+
+export ARXIV_USER_REGISTRATION_URL
+
+# -------------------------------------------------------------------------------------------
 # start / start-dev
 #
 KEYCLOAK_START="${KEYCLOAK_START:-start-dev}"

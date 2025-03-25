@@ -8,9 +8,17 @@ platform:
   arch: amd64
 
 steps:
-  - name: test
+  - name: build-keycloak-docker-image
     commands:
-      - echo "Hello on VM"
+      - git clone https://github.com/arXiv/arxiv-keycloak.git
+      - cd arxiv-keycloak
+      - make docker-image
+
+  - name: build-admin-console-docker-image
+    commands:
+      - git clone https://github.com/arXiv/arxiv-admin-console.git
+      - cd arxiv-admin-console
+      - make docker-image
 
 ---
 kind: pipeline
