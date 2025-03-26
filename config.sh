@@ -6,13 +6,14 @@ num_args=$#
 if [ $num_args -eq 0 ]; then
   TARGET="localdb"
 else
-  TARGET=$1
+  SETTINGS_FILE=$1
+  TARGET=$(jq -r .target $SETTINGS_FILE)
   shift
 fi
 
 ACCOUNT=arxiv.1password.com
 
-if [ "$TARGET" = "local" ] && [ ! -r .env.localdb ] ; then
+if [ "$TARGET" = "localdb" ] && [ ! -r .env.localdb ] ; then
     SERVER_HOST=localhost.arxiv.org
     HTTP_PORT=5100
     SERVER_URL=http://$SERVER_HOST:$HTTP_PORT
@@ -86,7 +87,7 @@ if [ "$TARGET" = "local" ] && [ ! -r .env.localdb ] ; then
     echo ARXIV_OAUTH2_CLIENT_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/arxiv-oauth2-client >> .env.localdb
     echo ARXIV_OAUTH2_CLIENT_APP_NAME=arxiv-oauth2-client >> .env.localdb
     echo ARXIV_OAUTH2_APP_PORT=$AAA_PORT >> .env.localdb
-    #
+i    #
     # where aaa is hosted
     #
     echo AAA_CALLBACK_URL=$SERVER_URL/aaa/callback >> .env.localdb
@@ -185,26 +186,12 @@ if [ "$TARGET" = "local" ] && [ ! -r .env.localdb ] ; then
 fi
 
 
-if [ "$TARGET" = "local" ] && [ ! -r .env.devdb ] ; then
-    echo KC_DOCKER_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/keycloak >> .env.devdb
-    echo KC_DB_HOST_PUBLIC=$(op item get  $KC_AUTH_DB_1P_ITEM --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "fnxbox5ugfkr2ol5wtqbk6wkwq") | .value') >> .env.devdb
-    echo KC_DB_HOST_PRIVATE=$(op item get  $KC_AUTH_DB_1P_ITEM --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "o4idffxy6bns7nihak4q4lo3xe") | .value') >> .env.devdb
-    echo KC_DB_USER=keycloak >> .env.devdb
-    echo KC_DB_PASS=$(op item get  $KC_AUTH_DB_1P_ITEM --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "vlf6422dpbnqhne535fpgg4vqm") | .value') >> .env.devdb
-    echo KC_ADMIN_PASSWORD=$(op item get  bdmmxlepkfsqy5hfgfunpsli2i --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "password") | .value') >> .env.devdb
-    echo GCP_PROJECT=$GCP_PROJECT >> .env.devdb
-    echo KC_JDBC_CONNECTION= >> .env.devdb
-    echo GCP_CRED=$(op item get  bdmmxlepkfsqy5hfgfunpsli2i --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "bwh5wxl5lw4yfc3lf53azij4ny") | .value') >> .env.devdb
-    echo ARXIV_USER_SECRET=$(op item get  bdmmxlepkfsqy5hfgfunpsli2i --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "gxogpm2ztuyfeyvzjrwx4gqogi") | .value') >> .env.devdb
-    echo LEGACY_AUTH_API_TOKEN=$(op item get  bdmmxlepkfsqy5hfgfunpsli2i --account arxiv.1password.com --format=json | jq -r '.fields[] | select(.id == "rs25xevxhbvy6l2aom7z633rti") | .value') >> .env.devdb
-fi
-
-if  [ "$TARGET" != "local" ] ; then
-    OS=redhat
-    SERVER_HOST=$TARGET.arxiv.org
+if  [ "$TARGET" != "localdb" ] ; then
+    OS=$(jq -r .os $SETTINGS_FILE)
+    SERVER_HOST=$(jq -r .server_host $SETTINGS_FILE)
     SERVER_URL=https://$SERVER_HOST
     PLATFORM=linux/amd64
-    GCP_PROJECT=$(jq -r .gcp_projet /opt_arxiv/devops/build/$TARGET.json)
+    GCP_PROJECT=$(jq -r .gcp_project $SETTINGS_FILE)
     PUBSUB_PROJECT=$GCP_PROJECT
 
     echo OAUTH2_DOMAIN=.${SERVER_HOST} >> .env.$TARGET
@@ -215,11 +202,11 @@ if  [ "$TARGET" != "local" ] ; then
     echo ARXIV_USER_REGISTRATION_URL=${SERVER_URL}/user-account/registration >> .env.$TARGET
 
     # IRL, this is a secure "password" for encrypting JWT token
-    JWT_SECRET=$(jq -r .jwt_secret /opt_arxiv/devops/build/$TARGET.json)
+    JWT_SECRET=$(jq -r .jwt_secret $SETTINGS_FILE)
     echo JWT_SECRET=$JWT_SECRET >> .env.$TARGET
 
     # IRL, this is a secure "password" for encrypting tapir cookie
-    CLASSIC_SESSION_HASH=$(jq -r .classic_session_hash /opt_arxiv/devops/build/$TARGET.json)
+    CLASSIC_SESSION_HASH=$(jq -r .classic_session_hash $SETTINGS_FILE)
     echo CLASSIC_SESSION_HASH=$CLASSIC_SESSION_HASH >> .env.$TARGET
     echo CLASSIC_SESSION_DURATION=36000 >> .env.$TARGET
 
@@ -229,14 +216,14 @@ if  [ "$TARGET" != "local" ] ; then
     echo NGINX_PORT=$HTTP_PORT >> .env.$TARGET
 
     # keycloak and its database
-    KC_HOST_PUBLIC=$(jq -r .kc_host /opt_arxiv/devops/build/$TARGET.json)
+    KC_HOST_PUBLIC=$(jq -r .kc_host $SETTINGS_FILE)
     echo KC_URL_PUBLIC=$KC_HOST_PUBLIC >> .env.$TARGET
 
     echo GCP_PROJECT=$GCP_PROJECT >> .env.$TARGET
     echo GCP_EVENT_TOPIC_ID=keycloak-arxiv-events >> .env.$TARGET
     echo GCP_ADMIN_EVENT_TOPIC_ID=keycloak-arxiv-events >> .env.$TARGET
     #
-    echo KEYCLOAK_TEST_CLIENT_SECRET=$(jq -r .keycloak_arxiv_client_secret /opt_arxiv/devops/build/$TARGET.json) >> .env.$TARGET
+    echo KEYCLOAK_TEST_CLIENT_SECRET=$(jq -r .keycloak_arxiv_client_secret $SETTINGS_FILE) >> .env.$TARGET
     #
     # oauth2 client - aka cookie maker
     #
@@ -255,7 +242,7 @@ if  [ "$TARGET" != "local" ] ; then
     #
     # if you are using non-host docker network, this would be "arxiv-db" to match the container name
     # Do not use "localhost". It is special cased to use the Unix socket
-    echo CLASSIC_DB_URI=$(jq -r .classic_db_uri /opt_arxiv/devops/build/$TARGET.json) >> .env.$TARGET
+    echo CLASSIC_DB_URI=$(jq -r .classic_db_uri $SETTINGS_FILE) >> .env.$TARGET
     #
     # legacy auth provider
     #
@@ -317,12 +304,8 @@ if [ ! -r .env ] ; then
     ln -s .env.$TARGET .env
 fi
 
-if [ x"$KC_DB" = x"" ] ; then
-    KC_DB=localdb
-fi
-
 if [ -z $1 ] ; then
-  cat .env.$KC_DB
+  cat .env.$TARGET
 else
-  gawk -F = -e "/^$1=/ {print substr(\$0,length(\" $1=\"),999)}" .env.$KC_DB
+  gawk -F = -e "/^$1=/ {print substr(\$0,length(\" $1=\"),999)}" .env.$TARGET
 fi
