@@ -132,8 +132,8 @@ deploy:
 	  --memory=2Gi \
 	  --timeout=300 \
 	  --concurrency=80 \
-	  --set-env-vars=DB_ADDR=${KC_DB_HOST_PRIVATE},PROXY_MODE=--proxy-headers=forwarded,KEYCLOAK_ADMIN=admin,BOOTSTRAP=no,LOG_OUTPUT_FORMAT=--log-console-output=json,GCP_PROJECT_ID=arxiv-development \
-	  --set-secrets=/secrets/authdb-certs/db-certs-expand.sh=authdb-certs:latest,KC_DB_PASS=authdb-password:latest,KEYCLOAK_ADMIN_PASSWORD=keycloak-admin-password:latest,GCP_CREDENTIALS=keycloak-pubsub-event-sa:latest \
+	  --set-env-vars=DB_ADDR=${KC_DB_HOST_PRIVATE},PROXY_MODE=--proxy-headers=forwarded,KC_BOOTSTRAP_ADMIN_USERNAME=admin,BOOTSTRAP=no,LOG_OUTPUT_FORMAT=--log-console-output=json,GCP_PROJECT_ID=arxiv-development,KC_PORT=8080,GRPC_LOG_LEVEL=DEBUG,GRPC_TRACE="tcp,http,api",ARXIV_USER_REGISTRATION_URL=https://alphatest.dev.arxiv.org/user-account/register \
+	  --set-secrets=/secrets/authdb-certs/db-certs-expand.sh=authdb-certs:latest,KC_DB_PASS=authdb-password:latest,KC_BOOTSTRAP_ADMIN_PASSWORD=keycloak-admin-password:latest,GCP_CREDENTIALS=keycloak-pubsub-event-sa:latest \
 	  --cpu-boost \
 	  --session-affinity \
 	  --vpc-egress=private-ranges-only

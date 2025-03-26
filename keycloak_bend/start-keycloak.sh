@@ -29,13 +29,17 @@ if [ -z $KC_DB_PASS ] ; then
 fi
 
 if [ -z $KC_PORT ] ; then
-   echo "KC_PORT needs to be set"
-  exit 1
+  KC_PORT=8080
+  echo "KC_PORT is default HTTP 8080"
 fi
 
-if [ ! -r /etc/keycloak/keycloak.p12 ] ; then
-    echo "/etc/keycloak/keycloak.p12 is not readable"
-    exit 1
+if [ -z $KC_SSL_PORT ] ; then
+  echo "No HTTPS"
+else
+    if [ ! -r /etc/keycloak/keycloak.p12 ] ; then
+        echo "/etc/keycloak/keycloak.p12 is not readable"
+        exit 1
+    fi
 fi
 
 
@@ -99,7 +103,12 @@ echo "GCP_EVENT_TOPIC_ID=$GCP_EVENT_TOPIC_ID"
 #
 
 echo "KC_PORT=$KC_PORT"
-echo "KC_SSL_PORT=$KC_SSL_PORT"
+if [ ! -z $KC_SSL_PORT ] ; then
+    echo "KC_SSL_PORT=$KC_SSL_PORT"
+    HTTPS_ARGS="--https-port=$KC_SSL_PORT  --config-keystore=/etc/keycloak/keycloak.p12 --config-keystore-password=kcpassword --config-keystore-type=PKCS12"
+else
+    HTTPS_ARGS=
+fi
 
 # -------------------------------------------------------------------------------------------
 # Registration
@@ -117,10 +126,7 @@ KEYCLOAK_START="${KEYCLOAK_START:-start-dev}"
 /opt/keycloak/bin/kc.sh $KEYCLOAK_START \
   --log-level=$LOG_LEVEL \
   --http-port=$KC_PORT \
-  --https-port=$KC_SSL_PORT \
-  --config-keystore=/etc/keycloak/keycloak.p12 \
-  --config-keystore-password=kcpassword \
-  --config-keystore-type=PKCS12 \
+  $HTTPS_ARGS \
   --transaction-xa-enabled=true \
   --db=$DB_VENDOR \
   --db-url="jdbc:$JDBC_DRIVER://$DB_ADDR/$DB_DATABASE$JDBC_CONNECTION" \

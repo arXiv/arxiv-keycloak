@@ -3,6 +3,9 @@ kind: pipeline
 type: exec
 name: CIT Build
 
+node:
+  environment: web40
+
 platform:
   os: linux
   arch: amd64
@@ -10,7 +13,25 @@ platform:
 steps:
   - name: hello
     commands:
-      - echo hello
+      - sh ./config.sh /opt_arxiv/devops/build/web40.json
+
+---
+# Pipeline for CentOS 9
+kind: pipeline
+type: exec
+name: CIT Build
+
+node:
+  environment: centos9
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+  - name: hello
+    commands:
+      - sh ./config.sh /opt_arxiv/devops/build/web40.json
 
 ---
 kind: pipeline
@@ -39,6 +60,8 @@ steps:
     image: alpine
     commands:
       - set
+      - echo FOO=bar >> envvars
+      - ls
     volumes:
       - name: docker-socket
         path: /var/run

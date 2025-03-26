@@ -247,6 +247,7 @@ if  [ "$TARGET" != "localdb" ] ; then
     # legacy auth provider
     #
     echo LEGACY_AUTH_DOCKER_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/legacy-auth-provider >> .env.$TARGET
+    echo LEGACY_AUTH_API_TOKEN=$(jq -r .legacy_auth_token $SETTINGS_FILE) >> .env.localdb
     #
     # Keycloak to tapir bridge
     echo KC_TAPIR_BRIDGE_DOCKER_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/kc-tapir-bridge >> .env.$TARGET

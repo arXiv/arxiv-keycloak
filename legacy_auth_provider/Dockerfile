@@ -12,6 +12,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 ADD pyproject.toml poetry.lock src/legacy_auth_provider.py src/__init__.py src/logging.conf README.md ./
 
 RUN $VIRTUAL_ENV/bin/pip install -U pip
+RUN $VIRTUAL_ENV/bin/pip install uvicorn
 RUN $VIRTUAL_ENV/bin/pip install poetry
 # RUN $VIRTUAL_ENV/bin/poetry config virtualenvs.create false
 RUN $VIRTUAL_ENV/bin/poetry lock
