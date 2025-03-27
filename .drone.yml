@@ -19,7 +19,7 @@ steps:
 # Pipeline for CentOS 9
 kind: pipeline
 type: exec
-name: CIT Build
+name: CentOS 9 Build
 
 node:
   environment: centos9
@@ -31,7 +31,7 @@ platform:
 steps:
   - name: hello
     commands:
-      - sh ./config.sh /opt_arxiv/devops/build/web40.json
+      - sh ./config.sh /opt_arxiv/devops/build/centos9.json
 
 ---
 kind: pipeline

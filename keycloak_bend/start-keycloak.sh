@@ -121,15 +121,19 @@ export ARXIV_USER_REGISTRATION_URL
 #
 KEYCLOAK_START="${KEYCLOAK_START:-start-dev}"
 
-# -verbose --http-port ${KC_PORT} --https-port ${KC_SSL_PORT} --config-keystore=/path/to/keystore.p12 --config-keystore-password=keystorepass --config-keystore-type=PKCS12
+#  --http-port ${KC_PORT} --https-port ${KC_SSL_PORT} --config-keystore=/path/to/keystore.p12 --config-keystore-password=keystorepass --config-keystore-type=PKCS12
+
+export KC_DB_URL="jdbc:$JDBC_DRIVER://$DB_ADDR/$DB_DATABASE$KC_JDBC_CONNECTION"
+echo KC_DB_URL=$KC_DB_URL
 
 /opt/keycloak/bin/kc.sh $KEYCLOAK_START \
   --log-level=$LOG_LEVEL \
   --http-port=$KC_PORT \
-  $HTTPS_ARGS \
+  --verbose \
   --transaction-xa-enabled=true \
   --db=$DB_VENDOR \
-  --db-url="jdbc:$JDBC_DRIVER://$DB_ADDR/$DB_DATABASE$JDBC_CONNECTION" \
+  --db-url=$KC_DB_URL \
   --db-username=$KC_DB_USER \
   --db-password=$KC_DB_PASS \
+  $HTTPS_ARGS \
   $DB_SCHEMA $PROXY_MODE $LOG_OUTPUT_FORMAT
