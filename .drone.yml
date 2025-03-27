@@ -1,21 +1,3 @@
-# Pipeline for CIT
-kind: pipeline
-type: exec
-name: CIT Build
-
-node:
-  environment: web40
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-  - name: hello
-    commands:
-      - sh ./config.sh /opt_arxiv/devops/build/web40.json
-
----
 # Pipeline for CentOS 9
 kind: pipeline
 type: exec
@@ -73,7 +55,7 @@ steps:
   # This build only succeeds after you bootstrap the arxiv-builder container
   # You can do so by `make builder` in cicd/docker
   - name: build
-    image: gcr.io/arxiv-stage/arxiv-devops/arxiv-builder:e7a4be9
+    image: gcr.io/arxiv-stage/arxiv-devops/arxiv-builder:8df2b8904211be4936218812515a87f8a3f0fed8
     privileged: true
     environment:
       GIT_SHA: ${DRONE_COMMIT_SHA}
