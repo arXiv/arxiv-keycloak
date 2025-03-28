@@ -1,24 +1,6 @@
-# Pipeline for CentOS 9
-kind: pipeline
-type: exec
-name: CentOS 9 Build
-
-node:
-  environment: centos9
-
-platform:
-  os: linux
-  arch: amd64
-
-steps:
-  - name: hello
-    commands:
-      - sh ./config.sh /opt_arxiv/devops/build/centos9.json
-
----
 kind: pipeline
 type: kubernetes
-name: build
+name: build-docker-images
 
 node:
   environment: gcp
@@ -116,3 +98,22 @@ volumes:
 trigger:
   event:
     - push
+---
+# Pipeline for CentOS 9
+kind: pipeline
+type: exec
+name: centos-9-deploy
+
+node:
+  environment: centos9
+depends_on:
+  - build-docker-images
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+  - name: refresh dockers
+    commands:
+      - cd /opt_arxiv/bomb-range && make down && make up

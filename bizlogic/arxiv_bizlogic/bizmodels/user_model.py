@@ -13,10 +13,11 @@ from sqlalchemy.engine.row import Row
 from pydantic import BaseModel
 
 from arxiv.db.models import (TapirUser, TapirNickname, t_arXiv_moderators, Demographic)
+from logging import getLogger
+logger = getLogger(__name__)
 
 _tapir_user_utf8_fields_ = ["first_name", "last_name", "suffix_name", "email"]
 _demographic_user_utf8_fields_ = ["url", "affiliation", ]
-
 
 def dict_merge(dict1: dict, dict2: dict) -> dict:
     for key, value in dict2.items():
@@ -204,8 +205,13 @@ class UserModel(BaseModel):
             raise ValueError("Not Row, UserModel or dict")
 
         for field in _tapir_user_utf8_fields_ + _demographic_user_utf8_fields_:
+            if row[field] is None:
+                continue
             if isinstance(row[field], bytes):
                 row[field] = row[field].decode("utf-8") if row[field] is not None else None
+            elif isinstance(row[field], str):
+                logger.warning(f"Field {field} is unexpectedly string. value = '{row[field]}'. You may need to fix it")
+                pass
             else:
                 raise ValueError(f"Field {field} needs to be BLOB access")
         return UserModel.model_validate(row)

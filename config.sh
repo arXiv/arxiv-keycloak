@@ -193,8 +193,9 @@ if  [ "$TARGET" != "localdb" ] ; then
     PLATFORM=linux/amd64
     GCP_PROJECT=$(jq -r .gcp_project $SETTINGS_FILE)
     PUBSUB_PROJECT=$GCP_PROJECT
+    COOKIE_DOMAIN=$(jq -r .cookie_domain $SETTINGS_FILE)
 
-    echo OAUTH2_DOMAIN=.${SERVER_HOST} >> .env.$TARGET
+    echo OAUTH2_DOMAIN=${COOKIE_DOMAIN} >> .env.$TARGET
     echo PUBSUB_PROJECT=$PUBSUB_PROJECT  >> .env.$TARGET
     # Not really used
     echo DOCKER_NETWORK=arxiv-network >> .env.$TARGET

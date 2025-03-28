@@ -104,14 +104,14 @@ const AccountRegistration = () => {
         captcha_value?: string
     }>({groups: "Please select at least one group", captcha_value: "Please fill"});
 
-    const [captchaImage, setCaptchaImage] = useState<React.ReactNode | null>(null);
+    const [captchaUrl, setCaptchaUrl] = useState<string | undefined>();
 
     const setSelectedGroups = (groups: CategoryGroupType[]) => {
-        setFormData({...formData, groups: groups});
+        setFormData(prev => ({...prev, groups: groups}));
         if (groups.length > 0) {
-            setErrors({...errors, groups: ""});
+            setErrors(prev => ({...prev, groups: ""}));
         } else {
-            setErrors({...errors, groups: "Please select at least one group"});
+            setErrors(prev => ({...prev, groups: "Please select at least one group"}));
         }
     }
 
@@ -127,27 +127,30 @@ const AccountRegistration = () => {
         }
     );
 
+    const fetchCaptchaToken = async () => {
+        try {
+            const response = await fetchPlus(runtimeContext.AAA_URL + "/account/register/");
+            const data: TokenResponse = await response.json();
+            console.log("Setting captcha token", data.token);
+            setFormData(prev => ({
+                ...prev, token: data.token,
+            }));
+        }
+        catch (error) {
+            console.log("fetchCaptchaToken - " + error);
+        }
+    };
 
     useEffect(() => {
-        console.log(JSON.stringify(formData));
+        console.log("" + JSON.stringify(formData));
         if (formData.token) {
-            setCaptchaImage(
-                <img alt={"captcha"} src={runtimeContext.AAA_URL + `/captcha/image?token=${formData.token}`}/>
-            )
+            setCaptchaUrl(runtimeContext.AAA_URL + `/captcha/image?token=${formData.token}`);
         } else {
-            fetchPlus(runtimeContext.AAA_URL + "/account/register/")
-                .then(response => response.json()
-                    .then((data: TokenResponse) => setFormData(
-                        {
-                            ...formData, token: data.token,
-                        }
-                    )));
+            fetchCaptchaToken();
         }
     }, [formData.token]);
 
-    const resetCaptcha = useCallback(() => {
-        setFormData({...formData, token: ""});
-    }, []);
+    const resetCaptcha = useCallback(() => {fetchCaptchaToken();}, []);
 
     const speakCaptcha = () => {
         const audio = new Audio(runtimeContext.AAA_URL + `/captcha/audio?token=${formData.token}`);
@@ -215,10 +218,10 @@ const AccountRegistration = () => {
                 setErrors((prev) => ({...prev, secondPassword: undefined}));
             }
         } else {
-            setFormData({
-                ...formData,
+            setFormData(prev => ({
+                ...prev,
                 [name]: value,
-            });
+            }));
         }
 
         const validator = validators[name];
@@ -229,22 +232,22 @@ const AccountRegistration = () => {
 
     const setCarrerStatus = (value: CareerStatusType | null) => {
         if (value) {
-            setFormData({...formData, career_status: value})
+            setFormData(prev => ({...prev, career_status: value}));
         }
     };
 
     const setCountry = (value: string | null) => {
         if (value) {
-            setFormData({...formData, country: value})
+            setFormData(prev => ({...prev, country: value}));
         }
     };
 
     const setDefaultCategory = (cat: SelectedCategoryType | null) => {
         if (cat) {
-            setFormData({
-                ...formData,
+            setFormData(prev => ({
+                ...prev,
                 default_category: {archive: cat.archive, subject_class: cat.subject_class || "*"}
-            });
+            }));
         }
     }
 
@@ -553,7 +556,7 @@ const AccountRegistration = () => {
                         <Box>
                             <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Verification:  "}</Typography>
                             <Box display="flex" justifyContent="space-between" alignItems="center">
-                                {captchaImage}
+                                <img key={captchaUrl} alt={"captcha"} src={captchaUrl}/>
                                 <IconButton onClick={resetCaptcha}> <RefreshIcon/></IconButton>
                                 <IconButton onClick={speakCaptcha} aria-label="Listen to captcha value"> <HearingIcon/></IconButton>
 

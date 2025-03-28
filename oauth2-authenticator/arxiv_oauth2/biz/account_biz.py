@@ -441,8 +441,10 @@ def register_tapir_account(session: Session, registration: AccountRegistrationMo
     hashed = passwords.hash_password(registration.password)
     db_pass = TapirUsersPassword(user_id = tapir_user.user_id, password_storage = 2, password_enc = hashed)
     session.add(db_pass)
+    session.flush()
 
     logger.info("Tapir user account created successfully.")
+
     return tapir_user
 
 
