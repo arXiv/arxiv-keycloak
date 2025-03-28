@@ -116,4 +116,7 @@ platform:
 steps:
   - name: refresh dockers
     commands:
-      - cd /opt_arxiv/bomb-range && make down && make up
+      - cd /opt_arxiv/bomb-range
+      - docker compose down
+      - docker compose pull --quiet
+      - docker compose up -d

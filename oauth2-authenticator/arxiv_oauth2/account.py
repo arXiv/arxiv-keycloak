@@ -146,10 +146,12 @@ async def register_account(
         migrate_to_keycloak(kc_admin, account, registration.password, client_secret)
         result = account
     else:
-        result = register_arxiv_account(kc_admin, client_secret, session, registration)
-
-    if isinstance(result, TapirUser):
-        logger.info("User account created successfully")
+        maybe_tapir_user = register_arxiv_account(kc_admin, client_secret, session, registration)
+        if isinstance(maybe_tapir_user, TapirUser):
+            logger.info("User account created successfully")
+            result = get_account_info(session, str(maybe_tapir_user.user_id))
+        else:
+            result = maybe_tapir_user
 
     if isinstance(result, AccountRegistrationError):
         response.status_code = status.HTTP_404_NOT_FOUND
