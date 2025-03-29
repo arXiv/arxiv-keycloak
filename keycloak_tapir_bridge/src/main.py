@@ -72,6 +72,12 @@ def subscribe_keycloak_events(project_id: str, subscription_id: str, request_tim
     """
     logger = logging.getLogger(__file__)
 
+    def callback_exception_handler(future):
+        try:
+            future.result()
+        except Exception as e:
+            logger.error("Callback thread crashed: %s", str(e), exc_info=True)
+
     def handle_keycloak_event(message: Message) -> None:
         """Keycloak event handler
         the event looks like
@@ -149,11 +155,17 @@ def subscribe_keycloak_events(project_id: str, subscription_id: str, request_tim
         logger.info("ack %s", data.get('id', '<no-id>'))
         return
 
-    subscriber_client = SubscriberClient()
+    from google.auth import default
+    creds, project = default()
+    logger.info("AUTH: Project, SA: %s, %s", project, creds.signer_email)
+
+    subscriber_client = SubscriberClient(credentials=creds)
     subscription_path = subscriber_client.subscription_path(project_id, subscription_id)
     streaming_pull_future = subscriber_client.subscribe(subscription_path, callback=handle_keycloak_event)
+    streaming_pull_future.add_done_callback(callback_exception_handler)
+
     log_extra = {"app": "kc-to-tapir"}
-    logger.info("Starting %s %s", project_id, subscription_id, extra=log_extra)
+    logger.info("Starting on target %s, path %s", subscriber_client.target, subscription_path, extra=log_extra)
     with subscriber_client:
         try:
             while RUNNING:

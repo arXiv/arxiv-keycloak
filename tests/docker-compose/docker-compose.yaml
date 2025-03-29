@@ -233,7 +233,7 @@ services:
       
     
   keycloak-setup:
-    image: python:3.11
+    image: python:3.12
     container_name: keycloak-setup
     depends_on:
       - keycloak
@@ -251,7 +251,7 @@ services:
     entrypoint: sh /keycloak_bend/tools/setup-arxiv-realm.sh
 
   # arxiv-test-db-setup:
-  #   image: python:3.11
+  #   image: python:3.12
   #   container_name: arxiv-test-db-setup
   #   depends_on:
   #     - arxiv-test-db
