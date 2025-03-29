@@ -127,7 +127,6 @@ class AccountInfoBaseModel(BaseModel):
     url: Optional[str] = None
     joined_date: Optional[int] = None
     oidc_id: Optional[str] = None
-    groups: Optional[List[str]] = None
     career_status: Optional[CAREER_STATUS] = None
     tracking_cookie: Optional[str] = None
     veto_status: Optional[VetoStatusEnum] = None
@@ -150,6 +149,14 @@ class AccountInfoBaseModel(BaseModel):
                         # groups = [CategoryGroup(elem) for elem in value]
                         for group in list(CategoryGroup):
                             result[CategoryGroupToCategoryFlags[group.value]] = group.value in value
+
+                case "career_status":
+                    del result[key]
+                    result["type"] = get_career_status_index(value)
+
+                case "veto_status":
+                    del result[key]
+                    result[key] = value.value
 
         if not kwargs.get("exclude_defaults", False):
             for key, value in USER_MODEL_DEFAULTS.items():
