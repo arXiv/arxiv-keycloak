@@ -20,6 +20,7 @@ from fastapi import HTTPException, status
 from keycloak import KeycloakAdmin, KeycloakError, KeycloakAuthenticationError, KeycloakOpenID
 from pydantic import BaseModel
 from sqlalchemy import and_
+from sqlalchemy.exc import IntegrityError
 
 from sqlalchemy.orm import Session
 
@@ -416,7 +417,8 @@ def register_tapir_account(session: Session, registration: AccountRegistrationMo
     try:
         tapir_user = UserModel.create_user(session, um)
 
-    except RegistrationFailed as this_e:
+    except IntegrityError as this_e:
+        # If user name or email is dupe, this would catch it and may be able to produce a reasonable error mssage.
         session.rollback()
 
         tb_exception = traceback.TracebackException.from_exception(this_e)
