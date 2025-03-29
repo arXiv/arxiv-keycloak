@@ -337,6 +337,6 @@ USER_MODEL_DEFAULTS = {
     "flag_allow_tex_produced": False,
     "flag_can_lock": False,
     "dirty": False,
-    "veto-status": "ok",
+    "veto_status": "ok",
     "flag_proxy": False,
 }
