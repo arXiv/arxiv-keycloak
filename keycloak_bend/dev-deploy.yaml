@@ -18,7 +18,7 @@
   KC_PORT: "8080"
   GRPC_LOG_LEVEL: DEBUG
   GRPC_TRACE: tcp,http,api
-  ARXIV_USER_REGISTRATION_URL: https://alphatest.dev.arxiv.org/user-account/register
+  ARXIV_USER_REGISTRATION_URL: https://dev9.arxiv.org/user-account/register
 --set-secrets:
   "/secrets/authdb-certs/db-certs-expand.sh": "authdb-certs:latest"
   KC_DB_PASS: "authdb-password:latest"

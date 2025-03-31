@@ -1,4 +1,5 @@
 """Provides Flask integration for the external user interface."""
+import os
 import urllib.parse
 from typing import Any, Callable
 from datetime import timedelta, datetime
@@ -13,7 +14,7 @@ from arxiv.base import logging
 from arxiv.auth.auth.decorators import scoped
 
 from arxiv_user_portal.controllers import registration
-
+from arxiv.config import settings
 
 logger = logging.getLogger(__name__)
 blueprint = Blueprint('ui', __name__, url_prefix='')
@@ -104,7 +105,34 @@ def apply_response_headers(response: Response) -> Response:
 @blueprint.route('/', methods=['GET'])
 def landing() -> Response:
     """Interface for creating new accounts."""
-    content = render_template("landing.html")
+    BASE_SERVER = settings.BASE_SERVER
+
+    KEYCLOAK_SERVER_URL = os.environ.get("KEYCLOAK_SERVER_URL" , "https://localhost.arxiv.org:21520")
+    LEGACY_AUTH_PROVIDER = os.environ.get("LEGACY_AUTH_PROVIDER", f"http://{BASE_SERVER}:21505")
+    ADMIN_API_URL = os.environ.get("ADMIN_API_URL", f"http://{BASE_SERVER}:21510")
+    MAIL_STORE_URL = os.environ.get("MAIL_STORE_URL", f"http://{BASE_SERVER}:21512")
+    AAA_URL = os.environ.get("AAA_URL", f"http://{BASE_SERVER}:21503")
+    ADMIN_CONSOLE_URL = os.environ.get("ADMIN_CONSOLE_URL", "/admin-console/")
+
+    links = {
+        "login": url_for('ui.login'),
+        "logout": url_for('ui.logout'),
+        "register": url_for('ui.register'),
+        "example": "/user-account/",
+        "ownership_pending": url_for('ownership.pending'),
+        "ownership_accepted": url_for('ownership.accepted'),
+        "ownership_rejected": url_for('ownership.rejected'),
+        "admin_console": ADMIN_CONSOLE_URL,
+        "keycloak": KEYCLOAK_SERVER_URL,
+        "keycloak_account": f"{KEYCLOAK_SERVER_URL}/realms/arxiv/account",
+        "change_password": f"{KEYCLOAK_SERVER_URL}/realms/arxiv/login-actions/required-action?execution=UPDATE_PASSWORD&client_id=account-console",
+        "aaa_server": f"{AAA_URL}/docs",
+        "legacy_auth_provider": f"{LEGACY_AUTH_PROVIDER}/docs",
+        "admin_api": f"${ADMIN_API_URL}/docs",
+        "mail_store": f"${MAIL_STORE_URL}/docs",
+    }
+
+    content = render_template("landing.html", links=links)
     response = make_response(content)
     return response
 

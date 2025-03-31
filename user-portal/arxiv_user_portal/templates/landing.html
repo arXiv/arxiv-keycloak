@@ -8,28 +8,26 @@
   </div>
   <div>
     <ul>
-      <li><a href="{{url_for('ui.login')}}">login</a></li>
-      <li><a href="{{url_for('ui.logout')}}">logout</a></li>
-      <li><a href="{{url_for('ui.register')}}">Register user</a></li>
-      <li><a href="{{url_for('ui.an_example')}}">an example protected page</a></li>
-      <li><a href="{{url_for('ownership.pending')}}">ownership.pending</a></li>
-      <li><a href="{{url_for('ownership.accepted')}}">ownership.accepted</a></li>
-      <li><a href="{{url_for('ownership.rejected')}}">ownership.rejected</a></li>
-      <li><a href="/admin-console/">Admin console</a></li>
-    </ul>
+      <li><a href="{{ links.login }}">login</a></li>
+      <li><a href="{{ links.logout }}">logout</a></li>
+      <li><a href="{{ links.register }}">Register user</a></li>
+      <li><a href="{{ links.change_password }}" target="_blank">Change Password</a></li>
+      <li><a href="{{ links.example }}">an example protected page</a></li>
+      <li><a href="{{ links.ownership_pending }}">ownership.pending</a></li>
+      <li><a href="{{ links.ownership_accepted }}">ownership.accepted</a></li>
+      <li><a href="{{ links.ownership_rejected }}">ownership.rejected</a></li>
+      <li><a href="{{ links.admin_console }}">Admin console</a></li>
   </div>
   <div>
     <p></p>
     <h2>Servers</h2>
     <ul>
-      <li><a href="https://localhost.arxiv.org:21520" target="_blank">Keycloak</a></li>
-      <li><a href="https://localhost.arxiv.org:21520/realms/arxiv/account" target="_blank">Keycloak Account</a></li>
-      <li><a href="https://localhost.arxiv.org:21520/realms/arxiv/login-actions/required-action?execution=UPDATE_PASSWORD&client_id=account-console" target="_blank">Change Password</a></li>
-      <li><a href="http://localhost.arxiv.org:21503/docs" target="_blank">Arxiv Authorization Server</a></li>
-      <li><a href="http://localhost.arxiv.org:21505/docs" target="_blank">Legacy Authorization Server</a></li>
-      <li><a href="http://localhost.arxiv.org:21510/docs" target="_blank">Admin API</a></li>
-      <li><a href="http://localhost.arxiv.org:21512/docs" target="_blank">Mail Store Server</a></li>
-      <li><a href="http://localhost.arxiv.org:21515/docs" target="_blank">User Portal API</a></li>
+      <li><a href="{{ links.keycloak }}" target="_blank">Keycloak</a></li>
+      <li><a href="{{ links.keycloak_account }}" target="_blank">Keycloak Account</a></li>
+      <li><a href="{{ links.auth_server }}" target="_blank">Arxiv Authorization/Account Server</a></li>
+      <li><a href="{{ links.legacy_auth_server }}" target="_blank">Legacy Authorization Server</a></li>
+      <li><a href="{{ links.admin_api }}" target="_blank">Admin API</a></li>
+      <li><a href="{{ links.mail_store }}" target="_blank">Mail Store Server (does not exist on dev9)</a></li>
     </ul>
   </div>
 </div>
