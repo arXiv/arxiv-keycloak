@@ -53,29 +53,30 @@ export default function ArxivLogin(props: PageProps<Extract<KcContext, { pageId:
     // Check if there's an error for the username field
     const errorHtml = userNameHasError ? kcSanitize(messagesPerField.getFirstError("username", "password")) : "";
 
-    const newUserPanel = (
-        <Container maxWidth="sm" sx={{ p: 3, mt: 2 }}>
+    const newUserComponent = (
+        <Box  sx={{ p: 3, mt: 2 }}>
             <Typography variant="h2" gutterBottom>
                 {"If you've never logged in to arXiv.org"}
             </Typography>
-            <Box id="kc-registration-container">
-                <div id="kc-registration">
-                    <Button
-                        tabIndex={8}
-                        variant="contained"
-                        color="primary"
-                        onClick={() => {
-                            window.location.href = url.registrationUrl;
-                        }}
-                    >
-                        {"Register for the first time"}
-                    </Button>
-
-                    <Typography variant="h6" component="div" maxWidth={"30rem"}>
-                        Registration is required to submit or update papers, but is not necessary to view them.
-                    </Typography>
-                </div>
+            <Box>
+                <Button
+                    tabIndex={8}
+                    variant="contained"
+                    color="primary"
+                    href={registrationUrl}
+                >
+                    {"Register for the first time"}
+                </Button>
+                <Typography variant="h6" component="div" maxWidth={"30rem"}>
+                    Registration is required to submit or update papers, but is not necessary to view them.
+                </Typography>
             </Box>
+        </Box>
+    );
+
+    const newUserPanel = (
+        <Container maxWidth="sm">
+            {newUserComponent}
         </Container>
     );
 
@@ -310,6 +311,7 @@ export default function ArxivLogin(props: PageProps<Extract<KcContext, { pageId:
                             )}
                         </div>
                     </Card>
+                    {newUserComponent}
                 </Container>
             </Template>
         </>

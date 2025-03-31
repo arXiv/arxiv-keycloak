@@ -2,7 +2,7 @@ FROM python:3.12-slim
 WORKDIR /app
 
 ENV SMTP_PORT=21508
-ENV MAILSTORE_PORT=21512
+ENV MAIL_API_PORT=21512
 
 COPY mail_store.py .
 COPY smtp_sink.py .

@@ -45,9 +45,9 @@ class EmailHandler:
 
 if __name__ == "__main__":
     smtp_port = int(os.environ.get("SMTP_PORT", 21508))
-    mailstore_port = int(os.environ.get("MAILSTORE_PORT", 21512))
+    MAIL_API_PORT = int(os.environ.get("MAIL_API_PORT", 21512))
 
-    handler = EmailHandler(os.environ.get("MAILSTORE_API", f"http://localhost:{mailstore_port}/emails"))
+    handler = EmailHandler(os.environ.get("MAILSTORE_API", f"http://localhost:{MAIL_API_PORT}/emails"))
     controller = Controller(handler, hostname="0.0.0.0", port=smtp_port)
     controller.start()
     logger.info("SMTP server running. Press Ctrl+C to stop.")

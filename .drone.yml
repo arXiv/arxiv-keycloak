@@ -77,6 +77,7 @@ steps:
             echo "No changes in test-mta/, skipping build."
         else
             . ./envvars && python3 /arxiv/docker_builder.py test-mta test-mta/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f test-mta/Dockerfile
+            . ./envvars && python3 /arxiv/docker_builder.py email-to-pubsub test-mta/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f test-mta/email-to-pubsub.Dockerfile
         fi
       - |
         if git diff --quiet $DRONE_COMMIT_BEFORE $GIT_SHA -- user-portal/; then
