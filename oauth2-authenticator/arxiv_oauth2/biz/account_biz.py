@@ -156,7 +156,7 @@ class AccountInfoBaseModel(BaseModel):
 
                 case "veto_status":
                     del result[key]
-                    if value is not None
+                    if value is not None:
                         result[key] = value.value
                     else:
                         result[key] = VetoStatusEnum.ok.value

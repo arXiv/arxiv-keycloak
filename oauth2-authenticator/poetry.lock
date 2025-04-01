@@ -122,6 +122,25 @@ resolved_reference = "62f4e367ed695726178a282370587910bbe1f1b6"
 subdirectory = "bizlogic"
 
 [[package]]
+name = "asgi-correlation-id"
+version = "4.3.4"
+description = "Middleware correlating project logs to individual requests"
+optional = false
+python-versions = "<4.0,>=3.8"
+groups = ["main"]
+files = [
+    {file = "asgi_correlation_id-4.3.4-py3-none-any.whl", hash = "sha256:36ce69b06c7d96b4acb89c7556a4c4f01a972463d3d49c675026cbbd08e9a0a2"},
+    {file = "asgi_correlation_id-4.3.4.tar.gz", hash = "sha256:ea6bc310380373cb9f731dc2e8b2b6fb978a76afe33f7a2384f697b8d6cd811d"},
+]
+
+[package.dependencies]
+packaging = "*"
+starlette = ">=0.18"
+
+[package.extras]
+celery = ["celery"]
+
+[[package]]
 name = "async-property"
 version = "0.2.2"
 description = "Python decorator for async properties."
@@ -2687,4 +2706,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "a9d4a2efd17f221cba113b50ccf8a0ed3d6860e6763bc24fe6d7185ea5ab405e"
+content-hash = "5dcbb9403930315e0aa620aa0433566c4d7a18f0016d103837e2dc2028ab5395"

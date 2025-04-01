@@ -8,6 +8,9 @@ from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 # from sqlalchemy.orm import sessionmaker
 from keycloak import KeycloakAdmin # , KeycloakError
+from asgi_correlation_id import CorrelationIdMiddleware
+from asgi_correlation_id.middleware import is_valid_uuid4
+from uuid import uuid4
 
 from arxiv.auth.legacy.util import missing_configs
 from arxiv.base.globals import get_application_config
@@ -221,6 +224,15 @@ def create_app(*args, **kwargs) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    app.add_middleware(
+        CorrelationIdMiddleware,
+        header_name='X-Request-ID',
+        update_request_header=True,
+        generator=lambda: uuid4().hex,
+        validator=is_valid_uuid4,
+        transformer=lambda a: a,
+        )
 
     app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
