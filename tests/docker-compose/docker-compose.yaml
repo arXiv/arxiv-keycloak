@@ -225,11 +225,11 @@ services:
     container_name: test-mta
     ports:
       - "${SMTP_PORT}:${SMTP_PORT}"
-      - "${MAILSTORE_PORT}:${MAILSTORE_PORT}"
+      - "${MAIL_API_PORT}:${MAIL_API_PORT}"
     network_mode: host
     environment:
       SMTP_PORT: "${SMTP_PORT}"
-      MAILSTORE_PORT: "${MAILSTORE_PORT}"
+      MAIL_API_PORT: "${MAIL_API_PORT}"
       
     
   keycloak-setup:

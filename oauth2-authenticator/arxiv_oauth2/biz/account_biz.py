@@ -156,7 +156,10 @@ class AccountInfoBaseModel(BaseModel):
 
                 case "veto_status":
                     del result[key]
-                    result[key] = value.value
+                    if value is not None
+                        result[key] = value.value
+                    else:
+                        result[key] = VetoStatusEnum.ok.value
 
         if not kwargs.get("exclude_defaults", False):
             for key, value in USER_MODEL_DEFAULTS.items():

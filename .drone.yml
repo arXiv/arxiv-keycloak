@@ -147,7 +147,11 @@ platform:
 steps:
   - name: refresh dockers
     commands:
+      - whoami
+      - export HOME=/home/drone
+      - export GOOGLE_APPLICATION_CREDENTIALS=/opt_arxiv/bomb-range/cred/drone-runner-sa.json
+      - gcloud auth activate-service-account --key-file=/opt_arxiv/bomb-range/cred/drone-runner-sa.json
+      - gcloud auth configure-docker gcr.io
       - cd /opt_arxiv/bomb-range
-      - docker compose down
-      - docker compose pull --quiet
-      - docker compose up -d
+      - make down
+      - make up

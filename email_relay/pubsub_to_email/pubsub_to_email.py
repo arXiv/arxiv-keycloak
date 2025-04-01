@@ -10,30 +10,49 @@ logger = logging.getLogger(__name__)
 # GCP Pub/Sub configuration
 GCP_PROJECT = "arxiv-development"
 SUBSCRIPTION_ID = "arxiv-email-queue-sub"
+SMTP_SERVER = "mail.arxiv.org"
+SMTP_PORT = 25
+smtp_user = None
+smtp_pass = None
 
 def send_email_via_smtp(email_data: dict):
+    sender = email_data["mail_from"]
+    recipient = email_data["mail_to"]
+    subject = email_data["subject"]
+    timestamp = email_data["timestamp"]
+    body = email_data["body"]
+    headers = email_data.get("headers", "")
+
     try:
         msg = EmailMessage()
-        msg["From"] = email_data["mail_from"]
-        msg["To"] = email_data["mail_to"]
-        msg["Subject"] = email_data["subject"]
-        msg["Date"] = email_data["timestamp"]
-        msg.set_content(email_data["body"])
+        msg["From"] = sender
+        msg["To"] = recipient
+        msg["Subject"] = subject
+        msg["Date"] = timestamp
+        msg.set_content(body, "plain")
 
         # Add headers
-        headers = email_data.get("headers", "")
         for header_line in headers.splitlines():
             if ":" in header_line:
                 key, value = header_line.split(":", 1)
                 msg[key.strip()] = value.strip()
 
         # Send email to localhost SMTP server
-        with smtplib.SMTP("localhost", 25) as server:
-            server.send_message(msg)
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+
+            if smtp_user and smtp_pass:
+                server.login(smtp_user, smtp_pass)
+
+            server.sendmail(sender, recipient, msg.as_string())
 
         logger.info(f"Email sent to {email_data['mail_to']}")
+
     except Exception as e:
         logger.error(f"Failed to send email: {e}")
+        raise
 
 def callback(message: pubsub_v1.subscriber.message.Message):
     logger.info(f"Received message: {message.message_id}")
