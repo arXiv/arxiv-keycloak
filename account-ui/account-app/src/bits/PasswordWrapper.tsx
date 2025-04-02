@@ -45,7 +45,7 @@ const PasswordWrapper: React.FC<{ children: JSX.Element }> = ({ children }) => {
 
     return (
         <Box display="flex" alignItems="center">
-            {React.cloneElement(children, { ref: passwordInputRef })}
+            {React.cloneElement(children, { inputRef: passwordInputRef })}
             <IconButton
                 onClick={toggleIsPasswordRevealed}
                 aria-label={isPasswordRevealed ? "hide password" : "show password"}

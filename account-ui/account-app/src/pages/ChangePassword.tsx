@@ -195,15 +195,20 @@ const ChangePassword = () => {
                         </Box>
 
                         <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Button variant="outlined" onClick={() => navigate("/user-account/reset-password")}>
+                                Forgot Password?
+                            </Button>
+                            <Box flex={1} />
+                            <Button variant="outlined" onClick={() => navigate(runtimeProps.URLS.userAccountInfo)}>
+                                Cancel
+                            </Button>
+                            <Box sx={{width: "16px"}} />
+
                             <Button type="submit" variant="contained" sx={{
                                 backgroundColor: "#1976d2",
                                 "&:hover": { backgroundColor: "#1420c0"
                                 } }} disabled={invalidFormData || inProgress}>
                                 Submit
-                            </Button>
-                            <Box flex={1} />
-                            <Button variant="outlined" onClick={() => navigate("/user-account/reset-password")}>
-                                Forgot Password?
                             </Button>
                         </Box>
                     </Box>

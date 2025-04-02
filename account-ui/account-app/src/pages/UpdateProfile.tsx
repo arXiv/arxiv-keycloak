@@ -388,11 +388,11 @@ const UpdateProfile = () => {
                             />
                         </Box>
                         <Box display="flex" justifyContent="space-between" alignItems="center" sx={{p:1}}>
+                            <Box sx={{flex: 1}} />
                             <Button variant="outlined" onClick={() => navigate(runtimeProps.URLS.userAccountInfo)}>
                                 Cancel
                             </Button>
-
-                            <Box sx={{flex: 1}} />
+                            <Box sx={{width: "16px"}} />
                             <Button type="submit" variant="contained" disabled={invalidFormData} sx={{
                                 backgroundColor: "#1976d2",
                                 "&:hover": { backgroundColor: "#1420c0"

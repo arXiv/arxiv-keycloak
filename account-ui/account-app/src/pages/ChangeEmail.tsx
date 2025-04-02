@@ -83,6 +83,13 @@ const ChangeEmail = () => {
                 console.error(response.statusText);
                 const errorResponse = await response.json();
                 showNotification(errorResponse.detail, "warning");
+                if (response.status >= 500) {
+                    const message = errorResponse.detail;
+                    showMessageDialog(message, "Please try again later!");
+                }
+                else {
+                    showMessageDialog(errorResponse.detail, "Request failed");
+                }
                 return;
             }
 
@@ -194,6 +201,12 @@ const ChangeEmail = () => {
                         </Box>
 
                         <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Box flex={1} />
+                            <Button variant="outlined" onClick={() => navigate(runtimeProps.URLS.userAccountInfo)}>
+                                Cancel
+                            </Button>
+                            <Box sx={{width: "16px"}} />
+
                             <Button type="submit" variant="contained" sx={{
                                 backgroundColor: "#1976d2",
                                 "&:hover": { backgroundColor: "#1420c0"

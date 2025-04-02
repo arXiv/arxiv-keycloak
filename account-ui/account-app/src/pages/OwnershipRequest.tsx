@@ -246,7 +246,7 @@ function OwnershipRequstTable({runtimeProps} : {runtimeProps: RuntimeProps}) : R
             </Table>
         </TableContainer>
             <Box sx={{ mt: 2, display: "flex", flexDirection: "row", alignItems: "center" }}>
-                <Button onClick={addRow} startIcon={<Add />} variant="contained">
+                <Button onClick={addRow} startIcon={<Add />} variant="outlined">
                   Add Row
                </Button>
 
