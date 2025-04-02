@@ -170,8 +170,6 @@ steps:
     commands:
       # - python3 /arxiv/slacker.py
       - echo bummer
-    depends_on:
-      - build
     when:
       status:
         - failure
@@ -184,9 +182,6 @@ steps:
         from_secret: slack_webhook
     commands:
       - echo SUCCESS
-
-    depends_on:
-      - build
     when:
       status:
         - success
