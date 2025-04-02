@@ -376,6 +376,14 @@ async def reset_user_password(
 
     try:
         kc_admin.send_update_account(user_id=user_id, payload=["UPDATE_PASSWORD"])
+    except KeycloakGetError as kce:
+        detail = "Password reset request did not succeed due to arXiv server problem. " + str(kce)
+        body = kce.response_body.decode('utf-8') if kce.response_body and isinstance(kce.response_body, bytes) else str(kce.response_body)
+        if "send email" in body:
+            detail += "\nKeycloak failed to send email. Please contact mailto:help@arXiv.org"
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail) from exc
     except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Password reset request did not succeed") from exc
+        detail = "Password reset request did not succeed: " + str(exc)
+        logger.error(detail)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail) from exc
     return

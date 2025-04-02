@@ -14,6 +14,7 @@ import {paths} from "../types/aaa-api.ts";
 import {emailValidator} from "../bits/validators.ts";
 import {printUserName} from "../bits/printer.ts";
 import {fetchPlus} from "../fetchPlus.ts";
+import { useNavigate } from "react-router-dom";
 
 type AccountProfileRequest = paths["/account/profile/{user_id}"]['get']['responses']['200']['content']['application/json'];
 type ChangeEmailRequest = paths["/account/email/"]['put']['requestBody']['content']['application/json'];
@@ -25,6 +26,7 @@ const ChangeEmail = () => {
     const [inProgress, setInProgress] = useState(false);
     const {showNotification, showMessageDialog} = useNotification();
     const fullName = printUserName(user);
+    const navigate = useNavigate();
 
     const [formData, setFormData] = useState<ChangeEmailRequest>({
         user_id: "",
@@ -84,7 +86,8 @@ const ChangeEmail = () => {
                 return;
             }
 
-            showMessageDialog("Please follow the link in the email and verify your new email address.", "Check Your Email");
+            showMessageDialog("Please follow the link in the email and verify your new email address.", "Check Your Email",
+                () => navigate(runtimeProps.URLS.userAccountInfo), "OK");
             showNotification("Email change successfully", "success");
         } catch (error) {
             console.error("Error:", error);

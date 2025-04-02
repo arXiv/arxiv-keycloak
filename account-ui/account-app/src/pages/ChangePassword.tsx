@@ -79,6 +79,7 @@ const ChangePassword = () => {
             }
 
             showNotification("Password updated successfully", "success");
+            navigate(runtimeProps.URLS.userAccountInfo);
         } catch (error) {
             console.error("Error:", error);
             showNotification(JSON.stringify(error), "warning");

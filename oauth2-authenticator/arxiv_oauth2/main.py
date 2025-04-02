@@ -85,26 +85,25 @@ _idp_ = ArxivOidcIdpClient(CALLBACK_URL,
                            )
 
 
-origins = ["http://localhost",
-           "http://localhost:5000",
-           "http://localhost:5000/",
-           "http://localhost:5000/admin-console",
-           "http://localhost:5000/admin-console/",
-           "http://localhost:5100",
-           "http://localhost:5100/",
-           "http://localhost:5100/admin-console",
-           "http://localhost:5100/admin-console/",
-           "https://dev3.arxiv.org",
-           "https://dev3.arxiv.org/",
-           "https://dev.arxiv.org",
-           "https://dev.arxiv.org/",
-           "https://arxiv.org",
-           "https://arxiv.org/",
-           "https://web40.arxiv.org",
-           "https://web40.arxiv.org/",
-           "https://web41.arxiv.org",
-           "https://web41.arxiv.org/",
-           ]
+origins = [
+    "http://localhost",
+    "http://localhost:5000",
+    "http://localhost:5000/",
+    "http://localhost:5000/admin-console",
+    "http://localhost:5000/admin-console/",
+    "https://arxiv.org",
+    "https://arxiv.org/",
+    "https://dev.arxiv.org",
+    "https://dev.arxiv.org/",
+    "https://dev3.arxiv.org",
+    "https://dev3.arxiv.org/",
+    "https://dev9.arxiv.org",
+    "https://dev9.arxiv.org/",
+    "https://web40.arxiv.org",
+    "https://web40.arxiv.org/",
+    "https://web41.arxiv.org",
+    "https://web41.arxiv.org/",
+    ]
 
 def create_app(*args, **kwargs) -> FastAPI:
     setup_logger()

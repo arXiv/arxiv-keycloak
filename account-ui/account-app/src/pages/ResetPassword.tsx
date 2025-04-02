@@ -52,7 +52,10 @@ const ResetPassword = () => {
                 return;
             }
 
-            showMessageDialog("Your request for password recovery has been started. Please check your email", "Password reset in progress");
+            showMessageDialog("Your request for password recovery has been started. Please check your email",
+                "Password reset in progress"
+
+            );
         } catch (error) {
             console.error("Error:", error);
             showNotification(JSON.stringify(error), "warning");

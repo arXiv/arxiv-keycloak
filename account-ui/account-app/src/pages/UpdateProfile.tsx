@@ -17,6 +17,7 @@ import {RuntimeContext} from "../RuntimeContext.tsx";
 import {paths} from "../types/aaa-api.ts";
 import {emailValidator} from "../bits/validators.ts";
 import {fetchPlus} from "../fetchPlus.ts";
+import {useNavigate} from "react-router-dom";
 
 type AccountProfileRequest = paths["/account/profile/{user_id}"]['get']['responses']['200']['content']['application/json'];
 type UpdateProfileRequest = paths["/account/profile/"]['put']['requestBody']['content']['application/json'];
@@ -33,6 +34,8 @@ const UpdateProfile = () => {
     const {showNotification, showMessageDialog} = useNotification();
     const runtimeProps = useContext(RuntimeContext);
     const [user, setUser] = useState<typeof runtimeProps.currentUser>( runtimeProps.currentUser) ;
+    const navigate = useNavigate();
+
 
     // State to store input values
     const [formData, setFormData] = useState<UpdateProfileRequest>({
@@ -385,6 +388,10 @@ const UpdateProfile = () => {
                             />
                         </Box>
                         <Box display="flex" justifyContent="space-between" alignItems="center" sx={{p:1}}>
+                            <Button variant="outlined" onClick={() => navigate(runtimeProps.URLS.userAccountInfo)}>
+                                Cancel
+                            </Button>
+
                             <Box sx={{flex: 1}} />
                             <Button type="submit" variant="contained" disabled={invalidFormData} sx={{
                                 backgroundColor: "#1976d2",
