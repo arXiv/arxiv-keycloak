@@ -47,21 +47,23 @@ export interface ArxivSiteURLs {
 
 export interface RuntimeProps
 {
-    AAA_URL: string,
-    ADMIN_API_BACKEND_URL: string,
-    ADMIN_APP_ROOT: string,
-    ARXIV_COOKIE_NAME: string,
-    TAPIR_COOKIE_NAME: string,
-    UNIVERSITY: string,
-    POST_USER_REGISTRATION_URL: string,
-    HOME: string,
-    MATHJAX_COOKIE_NAME: string,
-    URLS: ArxivSiteURLs,
-    currentUser: User | null,
-    isAdmin: boolean,
-    isMod: boolean,
-    isCanLock: boolean,
-    isSystem: boolean,
+    AAA_URL: string;
+    ADMIN_API_BACKEND_URL: string;
+    ADMIN_APP_ROOT: string;
+    ARXIV_COOKIE_NAME: string;
+    TAPIR_COOKIE_NAME: string;
+    UNIVERSITY: string;
+    POST_USER_REGISTRATION_URL: string;
+    HOME: string;
+    MATHJAX_COOKIE_NAME: string;
+    URLS: ArxivSiteURLs;
+    currentUser: User | null;
+    isAdmin: boolean;
+    isMod: boolean;
+    isCanLock: boolean;
+    isSystem: boolean;
+    updateCurrentUser: () => void;
+    setCurrentUser: (user: User) => void;
 }
 
 const defaultRuntimeProps : RuntimeProps = {
@@ -116,12 +118,39 @@ const defaultRuntimeProps : RuntimeProps = {
     isAdmin: false,
     isCanLock: false,
     isSystem: false,
+    updateCurrentUser: async () => {},
+    setCurrentUser: (_user: User) => {},
 };
 
 export const RuntimeContext = createContext<RuntimeProps>(defaultRuntimeProps);
 
 interface RuntimeContextProviderProps {
     children: React.ReactNode;
+}
+
+async function fetchCurrentUser(props: RuntimeProps, setProps: (props: RuntimeProps) => void) {
+    try {
+        const reply = await fetch(`${props.AAA_URL}/account/current`);
+        if (reply.status === 200) {
+            const data: CurrentUser = await reply.json();
+            const isMod = data.scopes?.includes("mod") || false;
+            const isAdmin = data.scopes?.includes("admin") || false;
+            const isCanLock = data.scopes?.includes("can-lock") || false;
+            const isSystem = data.scopes?.includes("root") || false;
+
+            const updated = Object.assign({}, props, { currentUser: data, isMod, isAdmin, isCanLock, isSystem });
+            setProps(updated);
+        } else {
+            const data = await reply.json();
+            console.log("status=" + reply.status  + " data=" + JSON.stringify(data));
+            const updated = Object.assign({}, props, { currentUser: null, isMod: false, isAdmin: false, isCanLock: false, isSystem: false });
+            setProps(updated);
+        }
+    } catch (error) {
+        const updated = Object.assign({}, props, { currentUser: null});
+        setProps(updated);
+        console.error('Error fetching account urls:', error);
+    }
 }
 
 
@@ -134,8 +163,18 @@ export const RuntimeContextProvider = ({ children } : RuntimeContextProviderProp
         setRuntimeEnv(updated);
     }
 
+    const updateCurrentUser = () => {
+        fetchCurrentUser(runtimeEnv, setRuntimeEnv);
+    };
+
+    const setCurrentUser = (user: User) => {
+        updateRuntimeEnv({currentUser: user});
+    };
+
     useEffect(() => {
         const fetchRuntimeEnvironment = async () => {
+            updateRuntimeEnv({ updateCurrentUser: updateCurrentUser, setCurrentUser: setCurrentUser });
+
             try {
                 let baseUrl = window.location.protocol + "//" + window.location.hostname;
                 if ((window.location.port !== "80") && (window.location.port !== "") && (window.location.port !== "443"))
@@ -154,8 +193,9 @@ export const RuntimeContextProvider = ({ children } : RuntimeContextProviderProp
                 const cookie_names = await cookie_name_response.json();
                 console.log("cookie_names: " + JSON.stringify(cookie_names));
 
+                const aaa_url = baseUrl + "aaa";
                 const runtime2: Partial<RuntimeProps> = {
-                    AAA_URL: baseUrl + "aaa",
+                    AAA_URL: aaa_url,
                     ADMIN_API_BACKEND_URL: baseUrl + "admin-api/v1",
                     ADMIN_APP_ROOT: baseUrl + "admin-console/",
                     ARXIV_COOKIE_NAME: cookie_names.session,
@@ -164,28 +204,7 @@ export const RuntimeContextProvider = ({ children } : RuntimeContextProviderProp
 
                 console.log("runtime-2: " + JSON.stringify(runtime2));
                 updateRuntimeEnv(runtime2);
-
-                try {
-                    const reply = await fetch(runtime2.AAA_URL + "/account/current");
-                    if (reply.status === 200) {
-                        const data: CurrentUser = await reply.json();
-                        // console.log({currentUser: data});
-                        const isMod = !!(data?.scopes && data.scopes.filter((scope) => scope === "mod" ).length > 0);
-                        const isAdmin = !!(data?.scopes && data.scopes.filter((scope) => scope === "admin" ).length > 0);
-                        const isCanLock = !!(data?.scopes && data.scopes.filter((scope) => scope === "can-lock" ).length > 0);
-                        const isSystem = !!(data?.scopes && data.scopes.filter((scope) => scope === "root" ).length > 0);
-
-                        updateRuntimeEnv({currentUser: data, isMod: isMod, isAdmin: isAdmin, isCanLock: isCanLock, isSystem: isSystem});
-                    }
-                    else {
-                        const data = await reply.json();
-                        console.log("status=" + reply.status  + " data=" + JSON.stringify(data));
-                        updateRuntimeEnv({currentUser: null, isMod: false, isAdmin: false, isCanLock: false, isSystem: false});
-                    }
-                } catch (error) {
-                    updateRuntimeEnv({currentUser: null});
-                    console.error('Error fetching account urls:', error);
-                }
+                await fetchCurrentUser(runtimeEnv, setRuntimeEnv);
 
             } catch (error) {
                 console.error('Error fetching runtime urls:', error);

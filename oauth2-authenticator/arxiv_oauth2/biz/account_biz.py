@@ -43,21 +43,20 @@ class CAREER_STATUS(str, Enum):
     GradStudent = "Grad Student"
     Other = "Other"
 
-CAREER_STATUS_LIST = [CAREER_STATUS.Unknown, CAREER_STATUS.Staff, CAREER_STATUS.Professor, CAREER_STATUS.PostDoc, CAREER_STATUS.GradStudent]
-
 def get_career_status(index: int | None) -> CAREER_STATUS:
     """map an integer to a CAREER_STATUS"""
     if index is None:
         return CAREER_STATUS.Unknown
-
-    if 0 <= index < len(CAREER_STATUS_LIST):
-        return CAREER_STATUS_LIST[index]
+    csl: [CAREER_STATUS] = list(CAREER_STATUS)
+    if 0 <= index < len(csl):
+        return csl[index]
     return CAREER_STATUS.Unknown  # Default fallback
 
 
 def get_career_status_index(status: CAREER_STATUS) -> int:
-    if status in CAREER_STATUS_LIST:
-        return CAREER_STATUS_LIST.index(status)
+    csl = list(CAREER_STATUS)
+    if status in csl:
+        return csl.index(status)
     return 0
 
 

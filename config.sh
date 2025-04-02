@@ -170,6 +170,11 @@ i    #
     echo ACCOUNT_PORTAL_APP_NAME=account-portal >> .env.localdb
 
     #
+    echo EMAIL_TO_PUBSUB_APP_PORT=21515 >>  .env.localdb
+    echo EMAIL_TO_PUBSUB_APP_TAG=gcr.io/arxiv-development/arxiv-keycloak/email-to-pubsub  >>  .env.localdb
+    echo EMAIL_TO_PUBSUB_APP_NAME="email-to-pubsub-relay" >> .env.localdb
+
+    #
     # Do OS detection so that we can have automatic setup / install on Debian (at least)
     #
     OS=${OS:-unknown}

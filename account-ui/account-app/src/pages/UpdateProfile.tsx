@@ -20,6 +20,7 @@ import {fetchPlus} from "../fetchPlus.ts";
 
 type AccountProfileRequest = paths["/account/profile/{user_id}"]['get']['responses']['200']['content']['application/json'];
 type UpdateProfileRequest = paths["/account/profile/"]['put']['requestBody']['content']['application/json'];
+type UpdateProfileResponse = paths["/account/profile/"]['put']['responses']['200']['content']['application/json'];
 // type RegistrationSuccessReply = paths["/account/register/"]['post']['responses']['200']['content']['application/json'];
 type RegistrationErrorReply = paths["/account/register/"]['post']['responses']['400']['content']['application/json'];
 
@@ -31,26 +32,26 @@ User registration and profile update shares a lot of similarity. NEEDS REFACTOR.
 const UpdateProfile = () => {
     const {showNotification, showMessageDialog} = useNotification();
     const runtimeProps = useContext(RuntimeContext);
-    const user = runtimeProps.currentUser;
+    const [user, setUser] = useState<typeof runtimeProps.currentUser>( runtimeProps.currentUser) ;
 
     // State to store input values
     const [formData, setFormData] = useState<UpdateProfileRequest>({
-        id: "",
-        username: "",
-        email: "",
-        first_name: "",
-        last_name: "",
-        suffix_name: "",
-        affiliation: "",
-        country: "",
-        career_status: "Unknown",
-        groups: [],
-        url: "",
-        default_category: {archive: "", subject_class: ""},
-        oidc_id: "",
-        email_verified: null,
-        joined_date: null,
-        scopes: null,
+        id: user?.id || "",
+        username: user?.username ||  "",
+        email: user?.email || "",
+        first_name: user?.first_name || "",
+        last_name: user?.last_name || "",
+        suffix_name: user?.suffix_name || "",
+        affiliation: user?.affiliation || "",
+        country: user?.country || "",
+        career_status: user?.career_status || "Unknown",
+        groups: user?.groups || [],
+        url: user?.url || "",
+        default_category: {archive: user?.default_category?.archive || "", subject_class: user?.default_category?.subject_class || ""},
+        oidc_id: user?.oidc_id || "",
+        email_verified: user?.email_verified || null,
+        joined_date: user?.joined_date || null,
+        scopes: user?.scopes ||null,
     });
 
     const [errors, setErrors] = useState<{
@@ -66,6 +67,7 @@ const UpdateProfile = () => {
         groups?: string,
         default_category?: string,
     }>({});
+
 
     useEffect(() => {
         async function doFetchCurrentUser() {
@@ -101,7 +103,7 @@ const UpdateProfile = () => {
             }
         }
         doFetchCurrentUser();
-    }, [user])
+    }, [])
 
     const setSelectedGroups = (groups: CategoryGroupType[]) => {
         setFormData({...formData, groups: groups});
@@ -147,7 +149,7 @@ const UpdateProfile = () => {
         }
     };
 
-    const setCarrerStatus = (value: CareerStatusType | null) => {
+    const setCarrierStatus = (value: CareerStatusType | null) => {
         if (value) {
             setFormData({...formData, career_status: value})
         }
@@ -181,9 +183,11 @@ const UpdateProfile = () => {
             });
 
             if (response.ok) {
-                const data = await response.json();
+                const data: UpdateProfileResponse = await response.json();
                 console.log("Response:", data);
                 showNotification("Updated successfully", "success");
+                setUser(data);
+                runtimeProps.setCurrentUser(data);
             }
             else if (response.status === 400) {
                 const message: RegistrationErrorReply = await response.json();
@@ -201,9 +205,11 @@ const UpdateProfile = () => {
                 showMessageDialog(message, "Failed to update your profile");
             }
 
+            runtimeProps.updateCurrentUser();
         } catch (error) {
             console.error("Error:", error);
-            showMessageDialog(JSON.stringify(error) , "Registration Unsuccessful");
+            showMessageDialog(JSON.stringify(error) , "Profile update was unsuccessful");
+            runtimeProps.updateCurrentUser();
         }
     };
 
@@ -358,7 +364,7 @@ const UpdateProfile = () => {
                                     sx={{ flex: 3 }} // Ensures both fields take equal width
                                 />
                                 <CountrySelector onSelect={setCountry} selectedCountry={formData.country || ""}/>
-                                <CareerStatusSelect onSelect={setCarrerStatus} careereStatus={formData.career_status}/>
+                                <CareerStatusSelect onSelect={setCarrierStatus} careereStatus={formData.career_status}/>
                             </Box>
                         </Box>
                         <CategoryGroupSelection selectedGroups={formData.groups as unknown as CategoryGroupType[]} setSelectedGroups={setSelectedGroups} />

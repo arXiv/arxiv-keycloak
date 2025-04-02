@@ -32,6 +32,7 @@ import { paths as adminApi } from "../types/admin-api";
 import MathJaxToggle from "../bits/MathJaxToggle.tsx";
 import {fetchPlus} from "../fetchPlus.ts";
 import EndorsedCategories from "../bits/EndorsedCategories.tsx";
+import {useNavigate} from "react-router-dom";
 
 type EndorsementListType = adminApi["/v1/endorsements/"]["get"]['responses']["200"]['content']['application/json'];
 
@@ -93,6 +94,7 @@ const UserAccountInfo = () => {
     const user = runtimeProps.currentUser;
     const {showMessageDialog} = useNotification();
     const [endorsements, setEndorsements] = useState<EndorsementListType>([]);
+    const navigate = useNavigate();
 
     let url = user?.url || "https://arxiv.org";
 
@@ -111,6 +113,12 @@ const UserAccountInfo = () => {
     );
 
     useEffect(() => {
+        if (runtimeProps.updateCurrentUser)
+            runtimeProps.updateCurrentUser();
+    }, []) ;
+
+
+    useEffect(() => {
         async function doGetEndorsedCategories() {
             if (!runtimeProps.currentUser) return;
             const query = new URLSearchParams();
@@ -126,11 +134,12 @@ const UserAccountInfo = () => {
             }
         }
 
-        if (!runtimeProps.currentUser)
-            showMessageDialog("You are not logged in to use see your account.", "Please log in");
-        else
+        if (runtimeProps.currentUser)
             doGetEndorsedCategories()
-
+        if (runtimeProps.currentUser)
+            doGetEndorsedCategories()
+        else
+            showMessageDialog("You are not logged in to use see your account.", "Please log in");
     }, [runtimeProps.currentUser]);
 
     const vetoStatus= runtimeProps.currentUser?.veto_status && runtimeProps.currentUser?.veto_status !== "ok" ? (
@@ -213,11 +222,11 @@ const UserAccountInfo = () => {
                 </Box>
                 <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
                     <Button component="a" disabled={user === null}
-                            variant="outlined" startIcon={<Edit />} href={runtimeProps.URLS.userChangeProfile}>Change User Information</Button>
+                            variant="outlined" startIcon={<Edit />} onClick={() => navigate(runtimeProps.URLS.userChangeProfile)}>Change User Information</Button>
                     <Button disabled={user === null}
-                            variant="outlined" startIcon={<PasswordIcon />} href={runtimeProps.URLS.userChangePassword}>Change Password</Button>
+                            variant="outlined" startIcon={<PasswordIcon />} onClick={ () => navigate(runtimeProps.URLS.userChangePassword)}>Change Password</Button>
                     <Button disabled={user === null}
-                            variant="outlined" startIcon={<Email />} href={runtimeProps.URLS.userChangeEmail}>Change Email</Button>
+                            variant="outlined" startIcon={<Email />} onClick={() => navigate(runtimeProps.URLS.userChangeEmail)}>Change Email</Button>
                     <VerifyEmailButton runtimeProps={runtimeProps} />
                 </Box>
                 <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
