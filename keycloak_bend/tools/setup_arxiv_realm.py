@@ -173,6 +173,7 @@ class KeycloakSetup:
             "accountTheme",
             "adminTheme",
             "emailTheme",
+            "internationalizationEnabled",
         }
         for key in self.realm.keys():
             if key not in transfers:
@@ -204,6 +205,22 @@ class KeycloakSetup:
             del payload['protocolMappers']
 
         self.admin.create_client(payload=payload, skip_exists=True)
+
+
+    def update_client_secret(self, client_id: str, client_secret: str):
+        existing_clients = {cl['clientId']: cl for cl in self.admin.get_clients()}
+        if client_id not in existing_clients:
+            logger.error(f"Client '{client_id}' does not exist.")
+            return
+
+        client = existing_clients[client_id]
+        client_uuid = client['id']
+
+        # Get the full client representation
+        client_rep = self.admin.get_client(client_uuid)
+        client_rep['secret'] = client_secret
+        self.admin.update_client(client_id=client_uuid, payload=client_rep)
+        logger.info(f"Client '{client_id}' secret updated successfully.")
 
 
     def restore_legacy_auth_provider(self):

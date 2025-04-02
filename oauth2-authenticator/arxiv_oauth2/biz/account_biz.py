@@ -246,8 +246,12 @@ def migrate_to_keycloak(kc_admin: KeycloakAdmin, account: AccountInfoModel, pass
                 })
 
     kc_set_user_password(kc_admin, account, password)
-    kc_send_verify_email(kc_admin, account.id)
+    logger.info("Registration successful. Try email verification")
+    try:
+        kc_send_verify_email(kc_admin, account.id)
 
+    except KeycloakError as e:
+        logger.warning("Registration successful, but email verification not working.")
 
 
 def to_kc_user_profile(account: AccountInfoModel, email_verified: bool = False, attributes: dict = {}) -> dict:
