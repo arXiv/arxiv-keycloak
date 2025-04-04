@@ -20,8 +20,19 @@ services:
 
 
 steps:
+  - name: show-changes
+    image: alpine/git
+    commands:
+      - git fetch origin $DRONE_COMMIT_BEFORE
+      - echo "Comparing $DRONE_COMMIT_BEFORE → $DRONE_COMMIT_SHA"
+      - git diff --name-only $DRONE_COMMIT_BEFORE $DRONE_COMMIT_SHA
+
   - name: hello
     image: alpine
+    environment:
+      GIT_SHA: ${DRONE_COMMIT_SHA}
+      PLUGIN_JSON_KEY:
+        from_secret: drone_runner_sa_key
     commands:
       - set
       - echo FOO=bar >> envvars
@@ -29,10 +40,6 @@ steps:
     volumes:
       - name: docker-socket
         path: /var/run
-    when:
-      changeset:
-        includes:
-          - cicd/docker
 
   # Step: keycloak_bend
   - name: build-keycloak-bend
@@ -173,6 +180,13 @@ steps:
     when:
       status:
         - failure
+    depends_on:
+      - build-keycloak-bend
+      - build-account-ui
+      - build-keycloak-tapir-bridge
+      - build-oauth2-authenticator
+      - build-test-mta
+      - build-user-portal
 
   - name: success
     image: gcr.io/arxiv-stage/arxiv-devops/arxiv-builder:e7a4be9
@@ -182,6 +196,13 @@ steps:
         from_secret: slack_webhook
     commands:
       - echo SUCCESS
+    depends_on:
+      - build-keycloak-bend
+      - build-account-ui
+      - build-keycloak-tapir-bridge
+      - build-oauth2-authenticator
+      - build-test-mta
+      - build-user-portal
     when:
       status:
         - success

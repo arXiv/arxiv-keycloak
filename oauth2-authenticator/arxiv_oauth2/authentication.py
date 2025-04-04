@@ -95,8 +95,8 @@ async def oauth2_callback(request: Request,
     tapir_cookie, tapir_session = create_tapir_session(user_claims, client_ip)
 
     # NG cookie
-    #if tapir_cookie is not None:
-    #    user_claims.set_tapir_cookie(tapir_cookie)
+    if tapir_cookie and tapir_session:
+        user_claims.set_tapir_session(tapir_cookie, tapir_session)
 
     # Set up cookies
     next_page = urllib.parse.unquote(request.query_params.get("state", "/"))  # Default to root if not provided
