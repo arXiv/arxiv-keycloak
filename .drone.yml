@@ -44,8 +44,6 @@ steps:
     volumes:
       - name: docker-socket
         path: /var/run
-    depends_on:
-      - show-changes
 
   # Step: keycloak_bend
   - name: build-keycloak-bend
