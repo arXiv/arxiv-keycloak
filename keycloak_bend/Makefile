@@ -3,7 +3,7 @@ export $(shell sed 's/=.*//' ../.env)
 
 tag := ${KC_DOCKER_TAG}
 
-.PHONY: bootstrap run proxy sql docker-image push deploy local arxiv-realm sh-arxiv-realm test dev9-arxiv-realm local-arxiv-realm
+.PHONY: bootstrap run proxy sql docker-image push deploy local arxiv-realm sh-arxiv-realm test dev9-arxiv-realm local-arxiv-realm deploy2 kc-service
 
 all: .env.localdb
 	@echo KC_DB_HOST_PUBLIC: ${KC_DB_HOST_PUBLIC}  KC_DB_HOST_PRIVATE:  ${KC_DB_HOST_PRIVATE}  KC_DB_USER: ${KC_DB_USER} KC_DB_PASS: ${KC_DB_PASS}
@@ -119,9 +119,25 @@ init:
 #-#   Using the TCP connectin rather than proxy (for now) that you need to know the Keycloak IP address
 #-#   and white-list the IP address at Postgres firewall.
 deploy:
-	gcloud run deploy keycloak-service \
-	  --image=${tag}:latest \
-	  --flags-file=./dev-deploy.yaml
+	gcloud run deploy keycloak-service --image=${tag}:latest  --flags-file=./dev-deploy.yaml
+
+
+#-#
+#-# DO NOT USE - NOT COMPLETE
+#-# deploy2:
+#-#   deploys the keycloak docker on GCT -dev
+#-#   Using the TCP connectin rather than proxy (for now) that you need to know the Keycloak IP address
+#-#   and white-list the IP address at Postgres firewall.
+#-# 
+deploy2:
+	gcloud run services replace kc-service.yaml --dry-run --project=arxiv-development --region=us-central1  --platform=managed
+	gcloud run services replace kc-service.yaml --project=arxiv-development --region=us-central1  --platform=managed
+
+
+kc-service:
+	gcloud run services describe keycloak-service \
+	  --region=us-central1 \
+	  --format export > service.yaml
 
 #-#
 #-# arxiv-realm:
