@@ -75,7 +75,7 @@ steps:
         path: /var/run
     commands:
       - python3 /arxiv/setup_sa.py
-      - if [ -f /tmp/run-account-ui ] then . ./envvars && python3 /arxiv/docker_builder.py account-ui account-ui/account-app/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f account-ui/account-app/Dockerfile ; fi
+      - if [ -f /tmp/run-account-ui ]; then . ./envvars && python3 /arxiv/docker_builder.py account-ui account-ui/account-app/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f account-ui/account-app/Dockerfile ; fi
     depends_on:
       - hello
       
@@ -92,7 +92,7 @@ steps:
         path: /var/run
     commands:
       - python3 /arxiv/setup_sa.py
-      - if [ -f /tmp/run-keycloak_tapir_bridge ] then . ./envvars && python3 /arxiv/docker_builder.py keycloak-tapir-bridge keycloak_tapir_bridge/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f keycloak_tapir_bridge/Dockerfile; fi
+      - if [ -f /tmp/run-keycloak_tapir_bridge ]; then . ./envvars && python3 /arxiv/docker_builder.py keycloak-tapir-bridge keycloak_tapir_bridge/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f keycloak_tapir_bridge/Dockerfile; fi
     depends_on:
       - hello
 
@@ -109,7 +109,7 @@ steps:
         path: /var/run
     commands:
       - python3 /arxiv/setup_sa.py
-      - if [ -f /tmp/run-oauth2-authenticator ] then . ./envvars && python3 /arxiv/docker_builder.py oauth2-authenticator oauth2-authenticator/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f oauth2-authenticator/Dockerfile ; fi
+      - if [ -f /tmp/run-oauth2-authenticator ]; then . ./envvars && python3 /arxiv/docker_builder.py oauth2-authenticator oauth2-authenticator/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f oauth2-authenticator/Dockerfile ; fi
     depends_on:
       - hello
 
@@ -126,8 +126,8 @@ steps:
         path: /var/run
     commands:
       - python3 /arxiv/setup_sa.py
-      - if [ -f /tmp/run-test-mta ] then . ./envvars && python3 /arxiv/docker_builder.py test-mta test-mta/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f test-mta/Dockerfile ; fi
-      - if [ -f /tmp/run-test-mta ] then . ./envvars && python3 /arxiv/docker_builder.py email-to-pubsub test-mta/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f test-mta/email-to-pubsub.Dockerfile ; fi
+      - if [ -f /tmp/run-test-mta ]; then . ./envvars && python3 /arxiv/docker_builder.py test-mta test-mta/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f test-mta/Dockerfile ; fi
+      - if [ -f /tmp/run-test-mta ]; then . ./envvars && python3 /arxiv/docker_builder.py email-to-pubsub test-mta/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f test-mta/email-to-pubsub.Dockerfile ; fi
     depends_on:
       - hello
 
@@ -144,7 +144,7 @@ steps:
         path: /var/run
     commands:
       - python3 /arxiv/setup_sa.py
-      - if [ -f /tmp/run-user-portal ] then . ./envvars && python3 /arxiv/docker_builder.py user-portal user-portal/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f user-portal/Dockerfile ; fi
+      - if [ -f /tmp/run-user-portal ]; then . ./envvars && python3 /arxiv/docker_builder.py user-portal user-portal/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f user-portal/Dockerfile ; fi
     depends_on:
       - hello
 
