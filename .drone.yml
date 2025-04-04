@@ -20,15 +20,9 @@ services:
 
 
 steps:
-  - name: show-changes
-    image: alpine/git
-    commands:
-      - git fetch origin $DRONE_COMMIT_BEFORE
-      - echo "Comparing $DRONE_COMMIT_BEFORE → $DRONE_COMMIT_SHA"
-      - git diff --name-only $DRONE_COMMIT_BEFORE $DRONE_COMMIT_SHA
 
   - name: hello
-    image: alpine
+    image: alpine/git
     environment:
       GIT_SHA: ${DRONE_COMMIT_SHA}
       PLUGIN_JSON_KEY:
@@ -37,9 +31,21 @@ steps:
       - set
       - echo FOO=bar >> envvars
       - ls
+      - git fetch origin $DRONE_COMMIT_BEFORE
+      - echo "Comparing $DRONE_COMMIT_BEFORE → $DRONE_COMMIT_SHA"
+      - git diff --name-only $DRONE_COMMIT_BEFORE $DRONE_COMMIT_SHA > changed_files.txt
+      - cat changed_files.txt
+      - grep -q '^keycloak_bend/' changed_files.txt && touch /tmp/run-keycloak_bend || echo "No changes in keycloak_bend"
+      - grep -q '^account-ui/' changed_files.txt && touch /tmp/run-account-ui || echo "No changes in account-ui"
+      - grep -q '^keycloak_tapir_bridge/' changed_files.txt && touch /tmp/run-keycloak_tapir_bridge || echo "No changes in keycloak_tapir_bridge"
+      - grep -q '^oauth2-authenticator/' changed_files.txt && touch /tmp/run-oauth2-authenticator || echo "No changes in oauth2-authenticator"
+      - grep -q '^user-portal/' changed_files.txt && touch /tmp/run-user-portal || echo "No changes in user-portal"
+      - grep -q '^test-mta/' changed_files.txt && touch /tmp/run-test-mta || echo "No changes in test-mta"
     volumes:
       - name: docker-socket
         path: /var/run
+    depends_on:
+      - show-changes
 
   # Step: keycloak_bend
   - name: build-keycloak-bend
@@ -54,11 +60,7 @@ steps:
         path: /var/run
     commands:
       - python3 /arxiv/setup_sa.py
-      - . ./envvars && python3 /arxiv/docker_builder.py arxiv-keycloak keycloak_bend/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f keycloak_bend/Dockerfile
-    when:
-      changeset:
-        includes:
-          - keycloak_bend/**
+      -  if [ -f /tmp/run-keycloak_bend ]; then . ./envvars && python3 /arxiv/docker_builder.py arxiv-keycloak keycloak_bend/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f keycloak_bend/Dockerfile; fi
     depends_on:
       - hello
 
@@ -75,14 +77,10 @@ steps:
         path: /var/run
     commands:
       - python3 /arxiv/setup_sa.py
-      - . ./envvars && python3 /arxiv/docker_builder.py account-ui account-ui/account-app/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f account-ui/account-app/Dockerfile
-    when:
-      changeset:
-        includes:
-          - account-ui/**
+      - if [ -f /tmp/run-account-ui ] then . ./envvars && python3 /arxiv/docker_builder.py account-ui account-ui/account-app/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f account-ui/account-app/Dockerfile ; fi
     depends_on:
       - hello
-
+      
   # Step: keycloak_tapir_bridge
   - name: build-keycloak-tapir-bridge
     image: gcr.io/arxiv-stage/arxiv-devops/arxiv-builder:1575e2fe2c54556229df469ed4cc237bc9ce130f
@@ -96,11 +94,7 @@ steps:
         path: /var/run
     commands:
       - python3 /arxiv/setup_sa.py
-      - . ./envvars && python3 /arxiv/docker_builder.py keycloak-tapir-bridge keycloak_tapir_bridge/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f keycloak_tapir_bridge/Dockerfile
-    when:
-      changeset:
-        includes:
-          - keycloak_tapir_bridge/**
+      - if [ -f /tmp/run-keycloak_tapir_bridge ] then . ./envvars && python3 /arxiv/docker_builder.py keycloak-tapir-bridge keycloak_tapir_bridge/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f keycloak_tapir_bridge/Dockerfile; fi
     depends_on:
       - hello
 
@@ -117,11 +111,7 @@ steps:
         path: /var/run
     commands:
       - python3 /arxiv/setup_sa.py
-      - . ./envvars && python3 /arxiv/docker_builder.py oauth2-authenticator oauth2-authenticator/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f oauth2-authenticator/Dockerfile
-    when:
-      changeset:
-        includes:
-          - oauth2-authenticator/**
+      - if [ -f /tmp/run-oauth2-authenticator ] then . ./envvars && python3 /arxiv/docker_builder.py oauth2-authenticator oauth2-authenticator/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f oauth2-authenticator/Dockerfile ; fi
     depends_on:
       - hello
 
@@ -138,12 +128,8 @@ steps:
         path: /var/run
     commands:
       - python3 /arxiv/setup_sa.py
-      - . ./envvars && python3 /arxiv/docker_builder.py test-mta test-mta/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f test-mta/Dockerfile
-      - . ./envvars && python3 /arxiv/docker_builder.py email-to-pubsub test-mta/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f test-mta/email-to-pubsub.Dockerfile
-    when:
-      changeset:
-        includes:
-          - test-mta/**
+      - if [ -f /tmp/run-test-mta ] then . ./envvars && python3 /arxiv/docker_builder.py test-mta test-mta/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f test-mta/Dockerfile ; fi
+      - if [ -f /tmp/run-test-mta ] then . ./envvars && python3 /arxiv/docker_builder.py email-to-pubsub test-mta/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f test-mta/email-to-pubsub.Dockerfile ; fi
     depends_on:
       - hello
 
@@ -160,11 +146,7 @@ steps:
         path: /var/run
     commands:
       - python3 /arxiv/setup_sa.py
-      - . ./envvars && python3 /arxiv/docker_builder.py user-portal user-portal/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f user-portal/Dockerfile
-    when:
-      changeset:
-        includes:
-          - user-portal/**
+      - if [ -f /tmp/run-user-portal ] then . ./envvars && python3 /arxiv/docker_builder.py user-portal user-portal/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f user-portal/Dockerfile ; fi
     depends_on:
       - hello
 
