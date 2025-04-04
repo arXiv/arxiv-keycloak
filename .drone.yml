@@ -28,7 +28,7 @@ steps:
       - git diff --name-only $DRONE_COMMIT_BEFORE $DRONE_COMMIT_SHA
 
   - name: hello
-    image: gcr.io/arxiv-stage/arxiv-devops/arxiv-builder:1575e2fe2c54556229df469ed4cc237bc9ce130f
+    image: alpine
     environment:
       GIT_SHA: ${DRONE_COMMIT_SHA}
       PLUGIN_JSON_KEY:
@@ -37,7 +37,6 @@ steps:
       - set
       - echo FOO=bar >> envvars
       - ls
-      - python3 /arxiv/setup_sa.py
     volumes:
       - name: docker-socket
         path: /var/run
@@ -54,6 +53,7 @@ steps:
       - name: docker-socket
         path: /var/run
     commands:
+      - python3 /arxiv/setup_sa.py
       - . ./envvars && python3 /arxiv/docker_builder.py arxiv-keycloak keycloak_bend/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f keycloak_bend/Dockerfile
     when:
       changeset:
@@ -74,6 +74,7 @@ steps:
       - name: docker-socket
         path: /var/run
     commands:
+      - python3 /arxiv/setup_sa.py
       - . ./envvars && python3 /arxiv/docker_builder.py account-ui account-ui/account-app/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f account-ui/account-app/Dockerfile
     when:
       changeset:
@@ -94,6 +95,7 @@ steps:
       - name: docker-socket
         path: /var/run
     commands:
+      - python3 /arxiv/setup_sa.py
       - . ./envvars && python3 /arxiv/docker_builder.py keycloak-tapir-bridge keycloak_tapir_bridge/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f keycloak_tapir_bridge/Dockerfile
     when:
       changeset:
@@ -114,6 +116,7 @@ steps:
       - name: docker-socket
         path: /var/run
     commands:
+      - python3 /arxiv/setup_sa.py
       - . ./envvars && python3 /arxiv/docker_builder.py oauth2-authenticator oauth2-authenticator/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f oauth2-authenticator/Dockerfile
     when:
       changeset:
@@ -134,6 +137,7 @@ steps:
       - name: docker-socket
         path: /var/run
     commands:
+      - python3 /arxiv/setup_sa.py
       - . ./envvars && python3 /arxiv/docker_builder.py test-mta test-mta/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f test-mta/Dockerfile
       - . ./envvars && python3 /arxiv/docker_builder.py email-to-pubsub test-mta/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f test-mta/email-to-pubsub.Dockerfile
     when:
@@ -155,6 +159,7 @@ steps:
       - name: docker-socket
         path: /var/run
     commands:
+      - python3 /arxiv/setup_sa.py
       - . ./envvars && python3 /arxiv/docker_builder.py user-portal user-portal/ --repo $DRONE_REPO_NAME --gitsha $GIT_SHA -f user-portal/Dockerfile
     when:
       changeset:
