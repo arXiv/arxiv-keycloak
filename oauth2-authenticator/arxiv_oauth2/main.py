@@ -206,6 +206,7 @@ def create_app(*args, **kwargs) -> FastAPI:
         ARXIV_USER_SECRET=ARXIV_USER_SECRET,
         CAPTCHA_SECRET=os.environ.get("CAPTCHA_SECRET", "foocaptcha"),
         WELL_KNOWN=well_known,
+        AAA_API_SECRET_KEY=os.environ.get("AAA_API_SECRET_KEY", ""),
         **URLs
     )
 

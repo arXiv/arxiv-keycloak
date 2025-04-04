@@ -17,7 +17,8 @@ from arxiv.db.models import TapirUser, Demographic, TapirNickname, TapirUsersPas
 from arxiv.auth.legacy import passwords
 
 from . import (get_current_user_or_none, get_db, get_keycloak_admin, stateless_captcha,
-               get_client_host, sha256_base64_encode, get_current_user_access_token)  # , get_client_host
+               get_client_host, sha256_base64_encode, get_current_user_access_token,
+               verify_api_token)  # , get_client_host
 from .biz.account_biz import (AccountInfoModel, get_account_info,
                               AccountRegistrationError, AccountRegistrationModel, validate_password,
                               migrate_to_keycloak,
@@ -188,6 +189,56 @@ def email_verify_requset(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     kc_send_verify_email(kc_admin, user.user_id, force_verify=True)
     return
+
+
+class EmailVerifiedStatus(BaseModel):
+    user_id: str
+    result: bool
+
+@router.get("/email/verified/", description="Is the email verified for this usea?")
+def get_email_verified_status_current_user(
+        current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
+        session: Session = Depends(get_db),
+) -> EmailVerifiedStatus:
+    if not current_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
+    user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == current_user.user_id).one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    return EmailVerifiedStatus(result = user.is_verified, user_id = user.user_id)
+
+
+@router.get("/email/{user_id:str}/verified/", description="Is the email verified for this usea?")
+def get_email_verified_status(
+        user_id: str,
+        current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
+        session: Session = Depends(get_db),
+) -> EmailVerifiedStatus:
+    if not current_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
+    if current_user.user_id != user_id and (not current_user.is_admin):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not an admin")
+    user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return EmailVerifiedStatus(result = user.is_verified, user_id = user_id)
+
+
+@router.post("/email/{user_id:str}/verified/", description="Set the email verified status")
+def set_email_verified_status(
+        user_id: str,
+        _api_token: Optional[str] = Depends(verify_api_token),
+        session: Session = Depends(get_db),
+) -> EmailVerifiedStatus:
+    if not current_user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
+    if current_user.user_id != user_id and (not current_user.is_admin):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not an admin")
+    user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return EmailVerifiedStatus(result = user.is_verified, user_id = user_id)
 
 
 class EmailUpdateModel(EmailModel):
