@@ -32,15 +32,13 @@ COOKIE_ENV_NAMES = COOKIE_ENV_NAMES_TYPE(
     "ARXIV_KEYCLOAK_COOKIE_NAME"
 )
 
-def get_current_user_or_none(request: Request) -> ArxivUserClaims | None:
+
+def decode_user_claims(token: str, jwt_secret: str) -> ArxivUserClaims | None:
     logger = getLogger(__name__)
-    session_cookie_key = request.app.extra[COOKIE_ENV_NAMES.auth_session_cookie_env]
-    token = request.cookies.get(session_cookie_key)
     if not token:
-        logger.debug(f"There is no cookie '{session_cookie_key}'")
+        logger.error(f"There is no cookie")
         return None
-    secret = request.app.extra['JWT_SECRET']
-    if not secret:
+    if not jwt_secret:
         logger.error("The app is misconfigured or no JWT secret has been set")
         return None
 
@@ -51,7 +49,7 @@ def get_current_user_or_none(request: Request) -> ArxivUserClaims | None:
         return None
 
     try:
-        claims = ArxivUserClaims.decode_jwt_payload(tokens, jwt_payload, secret)
+        claims = ArxivUserClaims.decode_jwt_payload(tokens, jwt_payload, jwt_secret)
 
     except jwcrypto.jwt.JWTExpired:
         # normal course of token expiring
@@ -77,6 +75,20 @@ def get_current_user_or_none(request: Request) -> ArxivUserClaims | None:
         logger.info(f"unpacking token {token} failed")
         return None
     return claims
+
+
+def get_current_user_or_none(request: Request) -> ArxivUserClaims | None:
+    logger = getLogger(__name__)
+    session_cookie_key = request.app.extra[COOKIE_ENV_NAMES.auth_session_cookie_env]
+    token = request.cookies.get(session_cookie_key)
+    if not token:
+        logger.debug(f"There is no cookie '{session_cookie_key}'")
+        return None
+    secret = request.app.extra['JWT_SECRET']
+    if not secret:
+        logger.error("The app is misconfigured or no JWT secret has been set")
+        return None
+    return decode_user_claims(token, secret)
 
 
 async def get_current_user(request: Request) -> ArxivUserClaims | None:
