@@ -25,6 +25,7 @@ async def audit_event(
         session: Session = Depends(get_db),
         ) -> None:
     """
+    Receives Keycloak audit events and updates the state.
     """
     if not token:
         logger.warning("Unauthorized access of Keycloak audit event")

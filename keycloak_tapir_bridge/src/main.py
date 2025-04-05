@@ -145,6 +145,7 @@ def handle_keycloak_event(
         logger.debug(repr(kc_data))
         try:
             if token and url:
+                # This is the way to do
                 response_code = await post_to_keycloak_audit_to_aaa(url, token, kc_data)
                 if response_code == 200:
                     msg.ack()
@@ -155,6 +156,8 @@ def handle_keycloak_event(
                     if response_code == 520:
                         sleep(1)
             else:
+                logger.warning("Forgot setting AAA URL and secret?")
+                # This is deprecated in favor of using the API
                 if kc_data.get("realmName") != "arxiv":
                     logger.info("Not for arxiv - ack %s", kc_data.get('id', '<no-id>'))
                     msg.ack()
