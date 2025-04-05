@@ -124,7 +124,7 @@ services:
       # DOMAIN: localhost
       #
       # API bearer token
-      AAA_API_TOKEN: ${AAA_API_TOKEN}
+      AAA_API_SECRET_KEY: ${AAA_API_TOKEN}
     ports:
       - "${ARXIV_OAUTH2_APP_PORT}:${ARXIV_OAUTH2_APP_PORT}"  # Host port:Container port
 
