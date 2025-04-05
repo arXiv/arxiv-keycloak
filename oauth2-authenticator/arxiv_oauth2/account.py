@@ -13,12 +13,12 @@ from keycloak.exceptions import (KeycloakGetError)
 
 from arxiv.base import logging
 from arxiv.auth.user_claims import ArxivUserClaims
-from arxiv.db.models import TapirUser, Demographic, TapirNickname, TapirUsersPassword
+from arxiv.db.models import TapirUser, TapirNickname, TapirUsersPassword
 from arxiv.auth.legacy import passwords
 
 from . import (get_current_user_or_none, get_db, get_keycloak_admin, stateless_captcha,
                get_client_host, sha256_base64_encode, get_current_user_access_token,
-               verify_api_token)  # , get_client_host
+               verify_bearer_token, ApiToken)  # , get_client_host
 from .biz.account_biz import (AccountInfoModel, get_account_info,
                               AccountRegistrationError, AccountRegistrationModel, validate_password,
                               migrate_to_keycloak,
@@ -225,19 +225,32 @@ def get_email_verified_status(
     return EmailVerifiedStatus(result = user.is_verified, user_id = user_id)
 
 
-@router.post("/email/{user_id:str}/verified/", description="Set the email verified status")
+@router.put("/email/verified/", description="Set the email verified status")
 def set_email_verified_status(
-        user_id: str,
-        _api_token: Optional[str] = Depends(verify_api_token),
+        body: EmailVerifiedStatus,
+        token: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
+        current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
         session: Session = Depends(get_db),
 ) -> EmailVerifiedStatus:
+    user_id = body.user_id
     if not current_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
-    if current_user.user_id != user_id and (not current_user.is_admin):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not an admin")
+        if isinstance(token, ArxivUserClaims):
+            current_user = token
+            token = None
+        elif isinstance(token, ApiToken):
+            current_user = None
+        else:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
+
+    if not token:
+        if current_user.user_id != user_id and (not current_user.is_admin):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not an admin")
+
     user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    user.is_verified = body.is_verified
+    session.commit()
     return EmailVerifiedStatus(result = user.is_verified, user_id = user_id)
 
 

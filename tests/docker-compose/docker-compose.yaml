@@ -122,6 +122,9 @@ services:
       # local run, having this is harmful.
       # In production, this is probably set to .arxiv.org
       # DOMAIN: localhost
+      #
+      # API bearer token
+      AAA_API_TOKEN: ${AAA_API_TOKEN}
     ports:
       - "${ARXIV_OAUTH2_APP_PORT}:${ARXIV_OAUTH2_APP_PORT}"  # Host port:Container port
 
@@ -157,6 +160,8 @@ services:
       SUBSCRIPTION: ${KC_TAPIR_BRIDGE_SUBSCRIPTION}
       # CLASSIC_DB_URI: "mysql://arxiv:arxiv_password@arxiv-test-db:3306/arXiv"
       CLASSIC_DB_URI: ${CLASSIC_DB_URI}
+      AAA_API_URL: ${KC_TAPIR_BRIDGE_AUDIT_API_URL}
+      AAA_API_TOKEN: ${AAA_API_TOKEN}
     network_mode: host
     depends_on:
       - arxiv-test-db

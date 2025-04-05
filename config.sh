@@ -20,6 +20,8 @@ if [ "$TARGET" = "localdb" ] && [ ! -r .env.localdb ] ; then
     PLATFORM=linux/amd64
     GCP_PROJECT=arxiv-development
     PUBSUB_PROJECT=local-test
+    AAA_URL=$SERVER_URL/aaa
+
 
     echo OAUTH2_DOMAIN=.${SERVER_HOST} >> .env.localdb
     echo PUBSUB_PROJECT=$PUBSUB_PROJECT  >> .env.localdb
@@ -87,12 +89,13 @@ if [ "$TARGET" = "localdb" ] && [ ! -r .env.localdb ] ; then
     echo ARXIV_OAUTH2_CLIENT_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/arxiv-oauth2-client >> .env.localdb
     echo ARXIV_OAUTH2_CLIENT_APP_NAME=arxiv-oauth2-client >> .env.localdb
     echo ARXIV_OAUTH2_APP_PORT=$AAA_PORT >> .env.localdb
-i    #
+    #
     # where aaa is hosted
     #
-    echo AAA_CALLBACK_URL=$SERVER_URL/aaa/callback >> .env.localdb
-    echo AAA_LOGIN_REDIRECT_URL=$SERVER_URL/aaa/login >> .env.localdb
-    echo AAA_TOKEN_REFRESH_URL=$SERVER_URL/aaa/refresh >> .env.localdb
+    echo AAA_CALLBACK_URL=$AAA_URL/callback >> .env.localdb
+    echo AAA_LOGIN_REDIRECT_URL=$AAA_URL/login >> .env.localdb
+    echo AAA_TOKEN_REFRESH_URL=$AAA_URL/refresh >> .env.localdb
+    echo AAA_API_TOKEN=random-api-token >> .env.localdb
     #
     # arxiv mysql db
     #
@@ -128,6 +131,7 @@ i    #
     # for subscription during the pubsub setup.
     # see GCP_EVENT_TOPIC_ID, GCP_ADMIN_EVENT_TOPIC_ID
     echo KC_TAPIR_BRIDGE_SUBSCRIPTION=keycloak-arxiv-events-sub >> .env.localdb
+    echo KC_TAPIR_BRIDGE_AUDIT_API_URL=${AAA_URL}/keycloak/audit
     #
     # email
     #
@@ -199,6 +203,8 @@ if  [ "$TARGET" != "localdb" ] ; then
     GCP_PROJECT=$(jq -r .gcp_project $SETTINGS_FILE)
     PUBSUB_PROJECT=$GCP_PROJECT
     COOKIE_DOMAIN=$(jq -r .cookie_domain $SETTINGS_FILE)
+    AAA_URL=${SERVER_URL}/aaa
+    AAA_API_TOKEN=$(jq -r .aaa_api_token $SETTINGS_FILE)
 
     echo OAUTH2_DOMAIN=${COOKIE_DOMAIN} >> .env.$TARGET
     echo PUBSUB_PROJECT=$PUBSUB_PROJECT  >> .env.$TARGET
@@ -240,9 +246,10 @@ if  [ "$TARGET" != "localdb" ] ; then
     #
     # where aaa is hosted
     #
-    echo AAA_CALLBACK_URL=$SERVER_URL/aaa/callback >> .env.$TARGET
-    echo AAA_LOGIN_REDIRECT_URL=$SERVER_URL/aaa/login >> .env.$TARGET
-    echo AAA_TOKEN_REFRESH_URL=$SERVER_URL/aaa/refresh >> .env.$TARGET
+    echo AAA_CALLBACK_URL=$AAA_URL//callback >> .env.$TARGET
+    echo AAA_LOGIN_REDIRECT_URL=$AAA_URL//login >> .env.$TARGET
+    echo AAA_TOKEN_REFRESH_URL=$AAA_URL//refresh >> .env.$TARGET
+    echo AAA_API_TOKEN=${AAA_API_TOKEN}  >> .env.$TARGET
     #
     # arxiv mysql db
     #
@@ -261,6 +268,8 @@ if  [ "$TARGET" != "localdb" ] ; then
     # for subscription during the pubsub setup.
     # see GCP_EVENT_TOPIC_ID, GCP_ADMIN_EVENT_TOPIC_ID
     echo KC_TAPIR_BRIDGE_SUBSCRIPTION=keycloak-arxiv-events-sub >> .env.$TARGET
+    # 
+    echo KC_TAPIR_BRIDGE_AUDIT_API_URL=${AAA_URL}/keycloak/audit >> .env.$TARGET
     #
     # email
     #

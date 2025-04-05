@@ -21,10 +21,12 @@ from arxiv.db.models import State
 from .authentication import router as authn_router, WellKnownServices
 from .account import router as account_router
 from .captcha import router as captcha_router
+from .keycloak import router as keycloak_router
 
 from .app_logging import setup_logger
 from .mysql_retry import MySQLRetryMiddleware
 from . import get_db, COOKIE_ENV_NAMES, get_keycloak_admin
+from .biz.keycloak_audit import get_keycloak_dispatch_functions
 
 #
 # Since this is not a flask app, the config needs to be in the os.environ
@@ -207,6 +209,7 @@ def create_app(*args, **kwargs) -> FastAPI:
         CAPTCHA_SECRET=os.environ.get("CAPTCHA_SECRET", "foocaptcha"),
         WELL_KNOWN=well_known,
         AAA_API_SECRET_KEY=os.environ.get("AAA_API_SECRET_KEY", ""),
+        KEYCLOAK_DISPATCH_FUNCTIONS=get_keycloak_dispatch_functions(),
         **URLs
     )
 
@@ -242,6 +245,7 @@ def create_app(*args, **kwargs) -> FastAPI:
     # app.include_router(authz_router)
     app.include_router(account_router)
     app.include_router(captcha_router)
+    app.include_router(keycloak_router)
 
     @app.middleware("http")
     async def apply_response_headers(request: Request, call_next: Callable) -> Response:
