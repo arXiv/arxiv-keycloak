@@ -12,12 +12,14 @@ from sqlalchemy.orm import Session
 from sqlalchemy.engine.row import Row
 from pydantic import BaseModel
 
-from arxiv.db.models import (TapirUser, TapirNickname, t_arXiv_moderators, Demographic)
+from arxiv.db.models import (TapirUser, TapirNickname, t_arXiv_moderators, Demographic, OrcidIds)
 from logging import getLogger
+
 logger = getLogger(__name__)
 
 _tapir_user_utf8_fields_ = ["first_name", "last_name", "suffix_name", "email"]
 _demographic_user_utf8_fields_ = ["url", "affiliation", ]
+
 
 def dict_merge(dict1: dict, dict2: dict) -> dict:
     for key, value in dict2.items():
@@ -65,7 +67,8 @@ class UserModel(BaseModel):
     flag_can_lock: Optional[bool] = None
 
     # From Demographic
-    country: Optional[str] = None  # = mapped_column(String(2), nullable=False, index=True, server_default=FetchedValue())
+    country: Optional[
+        str] = None  # = mapped_column(String(2), nullable=False, index=True, server_default=FetchedValue())
     affiliation: Optional[str] = None  # = mapped_column(String(255), nullable=False, server_default=FetchedValue())
     url: Optional[str] = None  # = mapped_column(String(255), nullable=False, server_default=FetchedValue())
     type: Optional[int] = None  # = mapped_column(SmallInteger, index=True)
@@ -75,30 +78,42 @@ class UserModel(BaseModel):
     flag_group_physics: Optional[int] = None  # = mapped_column(Integer, index=True)
     flag_group_math: Optional[
         int]  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
-    flag_group_cs: Optional[int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
+    flag_group_cs: Optional[
+        int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
     flag_group_nlin: Optional[
         int]  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
     flag_proxy: Optional[int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
-    flag_journal: Optional[int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
+    flag_journal: Optional[
+        int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
     flag_xml: Optional[int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
     dirty: Optional[int] = None  # = mapped_column(Integer, nullable=False, server_default=text("'0'"))
     flag_group_test: Optional[int] = None  # = mapped_column(Integer, nullable=False, server_default=text("'0'"))
-    flag_suspect: Optional[int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
-    flag_group_q_bio: Optional[int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
-    flag_group_q_fin: Optional[int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
-    flag_group_stat: Optional[int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
-    flag_group_eess: Optional[int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
-    flag_group_econ: Optional[int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
-    veto_status: Optional[VetoStatusEnum] = None  # Mapped[Literal['ok', 'no-endorse', 'no-upload', 'no-replace']] = mapped_column(Enum('ok', 'no-endorse', 'no-upload', 'no-replace'), nullable=False, server_default=text("'ok'"))
+    flag_suspect: Optional[
+        int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
+    flag_group_q_bio: Optional[
+        int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
+    flag_group_q_fin: Optional[
+        int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
+    flag_group_stat: Optional[
+        int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
+    flag_group_eess: Optional[
+        int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
+    flag_group_econ: Optional[
+        int] = None  # = mapped_column(Integer, nullable=False, index=True, server_default=text("'0'"))
+    veto_status: Optional[
+        VetoStatusEnum] = None  # Mapped[Literal['ok', 'no-endorse', 'no-upload', 'no-replace']] = mapped_column(Enum('ok', 'no-endorse', 'no-upload', 'no-replace'), nullable=False, server_default=text("'ok'"))
 
     flag_is_mod: Optional[bool] = None
 
     tapir_policy_classes: Optional[List[int]] = None
 
+    orcid: Optional[str] = None
+
     @staticmethod
     def base_select(session: Session):
         is_mod_subquery = exists().where(t_arXiv_moderators.c.user_id == TapirUser.user_id).correlate(TapirUser)
-        nick_subquery = select(TapirNickname.nickname).where(TapirUser.user_id == TapirNickname.user_id).correlate(TapirUser).limit(1).scalar_subquery()
+        nick_subquery = select(TapirNickname.nickname).where(TapirUser.user_id == TapirNickname.user_id).correlate(
+            TapirUser).limit(1).scalar_subquery()
         """
         mod_subquery = select(
             func.concat(t_arXiv_moderators.c.user_id, "+",
@@ -161,14 +176,14 @@ class UserModel(BaseModel):
             Demographic.flag_group_stat,
             Demographic.flag_group_eess,
             Demographic.flag_group_econ,
-            Demographic.veto_status
-        ).outerjoin(Demographic, TapirUser.user_id == Demographic.user_id)
-                )
+            Demographic.veto_status,
+            OrcidIds.orcid)
+                .outerjoin(Demographic, TapirUser.user_id == Demographic.user_id)
+                .outerjoin(OrcidIds, TapirUser.user_id == OrcidIds.user_id))
 
     @property
     def is_admin(self) -> bool:
         return self.flag_edit_users or self.flag_edit_system
-
 
     @staticmethod
     def map_to_row_data(from_fields: dict, to_fields: List[str] | dict, utf8_fields: List[str]) -> dict:
@@ -185,7 +200,6 @@ class UserModel(BaseModel):
         for field in utf8_fields:
             data[field] = data[field].encode("utf-8").decode('iso-8859-1')
         return data
-
 
     @staticmethod
     def to_model(user: UserModel | Row | dict) -> UserModel:
@@ -237,7 +251,8 @@ class UserModel(BaseModel):
         :param username:
         :return:
         """
-        nick:TapirNickname | None = session.query(TapirNickname).filter(TapirNickname.nickname == username).one_or_none()
+        nick: TapirNickname | None = session.query(TapirNickname).filter(
+            TapirNickname.nickname == username).one_or_none()
         if nick is None:
             return None
         return UserModel.one_user(session, str(nick.user_id))
@@ -295,7 +310,6 @@ class UserModel(BaseModel):
         if not user_model.last_name:
             raise ValueError("Must have last_name to create user")
         return UserModel._upsert_user(session, user_model.model_dump())
-
 
     @staticmethod
     def update_user(session: Session, user_model: UserModel) -> TapirUser | None:
