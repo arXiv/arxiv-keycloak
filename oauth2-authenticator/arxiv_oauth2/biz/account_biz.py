@@ -132,6 +132,8 @@ class AccountInfoBaseModel(BaseModel):
 
     def to_user_model_data(self, **kwargs) -> dict[str, Any]:
         data = self.model_dump(**kwargs)
+        if "groups" not in data:
+            data["groups"] = []
         result = data.copy()
         for key, value in data.items():
             match key:
@@ -142,12 +144,12 @@ class AccountInfoBaseModel(BaseModel):
                     pass
 
                 case "groups":
+                    value: List[str]
+                    groups = {group: True for group in value}
                     del result[key]
-                    if value:
-                        value: List[str]
-                        # groups = [CategoryGroup(elem) for elem in value]
-                        for group in list(CategoryGroup):
-                            result[CategoryGroupToCategoryFlags[group.value]] = group.value in value
+                    # groups = [CategoryGroup(elem) for elem in value]
+                    for group in list(CategoryGroup):
+                        result[CategoryGroupToCategoryFlags[group.value]] = group.value in groups
 
                 case "career_status":
                     del result[key]
