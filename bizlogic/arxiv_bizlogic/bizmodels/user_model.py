@@ -43,7 +43,7 @@ class UserModel(BaseModel):
     email: str
     first_name: str
     last_name: str
-    suffix_name: str
+    suffix_name: Optional[str] = None
     share_first_name: bool = True
     share_last_name: bool = True
     username: str
