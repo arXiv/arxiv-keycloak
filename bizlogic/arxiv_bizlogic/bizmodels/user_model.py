@@ -198,7 +198,8 @@ class UserModel(BaseModel):
             elif from_field in USER_MODEL_DEFAULTS:
                 data[field] = USER_MODEL_DEFAULTS[from_field]
         for field in utf8_fields:
-            data[field] = data[field].encode("utf-8").decode('iso-8859-1')
+            if data[field] and isinstance(data[field], str):
+                data[field] = data[field].encode("utf-8").decode('iso-8859-1')
         return data
 
     @staticmethod
