@@ -4,15 +4,18 @@ import urllib.parse
 from dataclasses import asdict
 from typing import Optional, Tuple, Literal, Any
 
+from arxiv_bizlogic.bizmodels.user_model import UserModel
+from arxiv_bizlogic.fastapi_helpers import get_client_host
 from fastapi import APIRouter, Depends, status, Request, HTTPException
 from fastapi.responses import RedirectResponse, Response, JSONResponse
+from keycloak import KeycloakAdmin, KeycloakError
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from arxiv.auth.auth.exceptions import UnknownSession
 from arxiv.base import logging
-from arxiv.auth.user_claims import ArxivUserClaims
+from arxiv.auth.user_claims import ArxivUserClaims, get_roles
 from arxiv.auth.openid.oidc_idp import ArxivOidcIdpClient
 from arxiv.auth.legacy.sessions import invalidate as legacy_invalidate
 # from arxiv.auth.legacy import accounts, exceptions
@@ -103,6 +106,69 @@ async def oauth2_callback(request: Request,
     logger.debug("callback success: next page: %s", next_page)
 
     response = make_cookie_response(request, user_claims, tapir_cookie, next_page)
+    return response
+
+
+@router.post('/impersonate/{user_id: str}')
+async def impersonate(request: Request,
+                      user_id: str,
+                      session = Depends(get_db),
+                      client_ip = Depends(get_client_host),
+                      current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
+                      ) -> Response:
+    if current_user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    kc_admin: KeycloakAdmin = request.app.extra["KEYCLOAK_ADMIN"]
+    # Tapir user
+    tapir_user:  UserModel = UserModel.one_user(session, user_id)
+    if tapir_user is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User ID is not found")
+
+    try:
+        kc_user = kc_admin.get_user(user_id, user_profile_metadata=True)
+        if not kc_user:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User ID is not found")
+    except KeycloakError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    access_token = ""
+    id_token = ""
+    refresh_token = ""
+    # https://www.keycloak.org/docs-api/latest/rest-api/index.html#UserRepresentation
+    claims = {
+        'sub': user_id,
+        'exp': current_user.expires_at,
+        'iat': current_user.issued_at,
+        'realm_access': get_roles(kc_user.get("realmRoles", [])),
+        'email_verified': kc_user.get("emailVerified", False),
+        'email': kc_user.get("email", ""),
+        "acc": access_token,
+        "idt": id_token,
+        "refresh": refresh_token,
+        "given_name": kc_user.get("firstName", ""),
+        "family_name": kc_user.get("lastName", ""),
+        "username": tapir_user.username,
+        "client_ipv4": client_ip,
+    }
+
+    user_claims: ArxivUserClaims = ArxivUserClaims(claims)
+    # session_cookie_key, classic_cookie_key, keycloak_key, domain, secure, samesite = cookie_params(request)
+    logger.debug("User claims: user id=%s, email=%s", user_claims.user_id, user_claims.email)
+
+    # legacy cookie and session
+    tapir_cookie, tapir_session = create_tapir_session(user_claims, client_ip)
+
+    # NG cookie
+    if tapir_cookie and tapir_session:
+        user_claims.set_tapir_session(tapir_cookie, tapir_session)
+
+    # Perform impersonation (returns a URL to redirect to)
+    impersonation = kc_admin.raw_post(f"admin/realms/{kc_admin.realm_name}/users/{user_id}/impersonation")
+    impersonation_url = impersonation['redirect']
+    response = make_cookie_response(request, user_claims, tapir_cookie, impersonation_url)
     return response
 
 

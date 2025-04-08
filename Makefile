@@ -97,7 +97,7 @@ up: .env
 #-# down:
 #-#   runs docker compose down
 down:
-	docker compose --env-file=.env down
+	docker compose --env-file=.env down --remove-orphans
 
 
 #-#

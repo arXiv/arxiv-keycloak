@@ -261,7 +261,7 @@ def create_app(*args, **kwargs) -> FastAPI:
     async def root(request: Request):
         return "Hello"
 
-    @app.get("/states", response_model=dict)
+    @app.get("/status", response_model=dict)
     async def health_check(session: Session = Depends(get_db),
                            kc_admin: KeycloakAdmin = Depends(get_keycloak_admin)) -> dict | HTTPException:
         result = {}
@@ -271,8 +271,7 @@ def create_app(*args, **kwargs) -> FastAPI:
             token = keycloak_admin.connection.token
             result.update({"keycloak": "good" if isinstance(token, dict) and token.get('access_token', None) else "bad"})
         except Exception as exc:
-            result.update({"keycloak": f"{str(exc)}"})
-            pass
+            raise HTTPException(status_code=500, detail="Keycloak: " + str(exc))
 
         try:
             states: List[State] = session.query(State).all()
@@ -280,6 +279,7 @@ def create_app(*args, **kwargs) -> FastAPI:
             return result
 
         except Exception as exc:
-            raise HTTPException(status_code=500, detail=str(exc))
+            raise HTTPException(status_code=500, detail="mysql: " + str(exc))
+
 
     return app

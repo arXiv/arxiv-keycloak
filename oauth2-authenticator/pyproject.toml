@@ -30,6 +30,11 @@ asgi-correlation-id = "^4.3.4"
 uvicorn = "*"
 mypy = "^1.11.0"
 pytest = "^8.3.2"
+selenium = "^4.27.1"
+types-requests = "^2.32.0.20241016"
+pytest-mock = "^3.14.0"
+dotenv = "^0.9.9"
+pytest-asyncio = "^0.26.0"
 
 [build-system]
 requires = ["poetry-core"]

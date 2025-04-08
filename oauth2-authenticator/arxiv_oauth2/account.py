@@ -18,7 +18,7 @@ from arxiv.auth.legacy import passwords
 
 from . import (get_current_user_or_none, get_db, get_keycloak_admin, stateless_captcha,
                get_client_host, sha256_base64_encode, get_current_user_access_token,
-               verify_bearer_token, ApiToken)  # , get_client_host
+               verify_bearer_token, ApiToken, is_super_user, describe_super_user)  # , get_client_host
 from .biz.account_biz import (AccountInfoModel, get_account_info,
                               AccountRegistrationError, AccountRegistrationModel, validate_password,
                               migrate_to_keycloak,
@@ -91,6 +91,7 @@ async def update_account_profile(
 
 # See profile update comment.
 @router.post('/register/',
+             status_code=status.HTTP_201_CREATED,
              responses={
                  status.HTTP_201_CREATED: {"model": AccountInfoModel, "description": "Successfully created account"},
                  status.HTTP_400_BAD_REQUEST: {"model": AccountRegistrationError,
@@ -104,6 +105,7 @@ async def register_account(
         registration: AccountRegistrationModel,
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
+        token: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
 ) -> AccountInfoModel | AccountRegistrationError:
     """
     Create a new user
@@ -116,27 +118,32 @@ async def register_account(
     if not registration.username:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="username is required")
 
-    # Check the captcha value against the captcha token.
-    try:
-        stateless_captcha.check(registration.token, registration.captcha_value, captcha_secret, host)
+    if is_super_user(token):
+        logger.info("API based user registration %s", describe_super_user(token))
+        pass
+    else:
+        # Check the captcha value against the captcha token.
+        try:
+            stateless_captcha.check(registration.token, registration.captcha_value, captcha_secret, host)
 
-    except InvalidCaptchaToken:
-        logger.warning(f"Registration: captcha token is invalid {registration.token!r} {host!r}")
-        detail = AccountRegistrationError(message="Captcha token is invalid. Restart the registration",
-                                          field_name="Captcha token")
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return detail
+        except InvalidCaptchaToken:
+            logger.warning(f"Registration: captcha token is invalid {registration.token!r} {host!r}")
+            detail = AccountRegistrationError(message="Captcha token is invalid. Restart the registration",
+                                              field_name="Captcha token")
+            response.status_code = status.HTTP_400_BAD_REQUEST
+            return detail
 
-    except InvalidCaptchaValue:
-        logger.info(f"Registration: wrong captcha value {registration.token!r} {host!r} {registration.captcha_value!r}")
-        detail = AccountRegistrationError(message="Captcha answer is incorrect.", field_name="Captcha answer")
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return detail
+        except InvalidCaptchaValue:
+            logger.info(f"Registration: wrong captcha value {registration.token!r} {host!r} {registration.captcha_value!r}")
+            detail = AccountRegistrationError(message="Captcha answer is incorrect.", field_name="Captcha answer")
+            response.status_code = status.HTTP_400_BAD_REQUEST
+            return detail
 
-    if not validate_password(registration.password):
-        detail = AccountRegistrationError(message="Captcha answer is incorrect.", field_name="Password")
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return detail
+        if not validate_password(registration.password):
+            detail = AccountRegistrationError(message="Captcha answer is incorrect.", field_name="Password")
+            response.status_code = status.HTTP_400_BAD_REQUEST
+            return detail
+        pass
 
     client_secret = request.app.extra['ARXIV_USER_SECRET']
 
