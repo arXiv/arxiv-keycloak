@@ -18,7 +18,8 @@ from arxiv.auth.legacy import passwords
 
 from . import (get_current_user_or_none, get_db, get_keycloak_admin, stateless_captcha,
                get_client_host, sha256_base64_encode, get_current_user_access_token,
-               verify_bearer_token, ApiToken, is_super_user, describe_super_user)  # , get_client_host
+               verify_bearer_token, ApiToken, is_super_user, describe_super_user, is_authorized,
+               is_authenticated)  # , get_client_host
 from .biz.account_biz import (AccountInfoModel, get_account_info,
                               AccountRegistrationError, AccountRegistrationModel, validate_password,
                               migrate_to_keycloak,
@@ -55,14 +56,14 @@ async def get_current_user_info(current_user: Optional[ArxivUserClaims] = Depend
 @router.get('/profile/{user_id:str}')
 async def get_user_profile(user_id: str,
                            current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
+                           token: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
                            session: Session = Depends(get_db)
                            ) -> AccountInfoModel:
-    if not current_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+    if not is_authenticated(token, current_user):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthenticated")
 
-    ok = current_user.is_admin or current_user.is_admin or current_user.user_id == user_id
-    if not ok:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    if not is_authorized(token, current_user, user_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
     return reply_account_info(session, user_id)
 
@@ -200,7 +201,7 @@ def email_verify_requset(
 
 class EmailVerifiedStatus(BaseModel):
     user_id: str
-    result: bool
+    email_verified: bool
 
 @router.get("/email/verified/", description="Is the email verified for this usea?")
 def get_email_verified_status_current_user(
@@ -213,23 +214,25 @@ def get_email_verified_status_current_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    return EmailVerifiedStatus(result = user.is_verified, user_id = user.user_id)
+    return EmailVerifiedStatus(email_verified= user.is_verified, user_id = user.user_id)
 
 
 @router.get("/email/{user_id:str}/verified/", description="Is the email verified for this usea?")
 def get_email_verified_status(
         user_id: str,
         current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
+        token: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
         session: Session = Depends(get_db),
 ) -> EmailVerifiedStatus:
-    if not current_user:
+    if not is_authenticated(token, current_user):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
-    if current_user.user_id != user_id and (not current_user.is_admin):
+    if not is_authorized(token, current_user, user_id):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not an admin")
+
     user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    return EmailVerifiedStatus(result = user.is_verified, user_id = user_id)
+    return EmailVerifiedStatus(email_verified= user.is_verified, user_id = user_id)
 
 
 @router.put("/email/verified/", description="Set the email verified status")
@@ -238,30 +241,34 @@ def set_email_verified_status(
         token: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
         current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
         session: Session = Depends(get_db),
+        kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ) -> EmailVerifiedStatus:
     user_id = body.user_id
-    if not current_user:
-        if isinstance(token, ArxivUserClaims):
-            current_user = token
-            token = None
-        elif isinstance(token, ApiToken):
-            current_user = None
-        else:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
+    if not is_authenticated(token, current_user):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
 
-    if not token:
-        if current_user.user_id != user_id and (not current_user.is_admin):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not an admin")
+    if not is_authorized(token, current_user, user_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not an admin")
 
     user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    user.is_verified = body.is_verified
+
+    try:
+        user = kc_admin.get_user_id(current_user.username)
+        kc_admin.update_user(user_id=user, payload={"emailVerified": body.email_verified})
+
+    except KeycloakGetError as kce:
+        # Handle errors here
+        raise HTTPException(status_code=kce.response_code, detail=str(kce))
+
+    user.is_verified = body.email_verified
     session.commit()
-    return EmailVerifiedStatus(result = user.is_verified, user_id = user_id)
+    return EmailVerifiedStatus(email_verified= user.is_verified, user_id = user_id)
 
 
 class EmailUpdateModel(EmailModel):
+    user_id: str
     new_email: str
 
 
@@ -381,8 +388,11 @@ async def change_user_password(
                  current_user.user_id if current_user else "No User", data.user_id,
                  sha256_base64_encode(data.old_password), sha256_base64_encode(data.new_password))
 
-    if not current_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+    if not is_authenticated(access_token, current_user):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
+
+    if not is_authorized(access_token, current_user, data.user_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
 
     if len(data.old_password) < 8:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Old password is invalid")

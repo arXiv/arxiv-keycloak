@@ -35,6 +35,8 @@ types-requests = "^2.32.0.20241016"
 pytest-mock = "^3.14.0"
 dotenv = "^0.9.9"
 pytest-asyncio = "^0.26.0"
+datamodel-code-generator = "^0.28.5"
+openapi-python-client = "^0.24.3"
 
 [build-system]
 requires = ["poetry-core"]

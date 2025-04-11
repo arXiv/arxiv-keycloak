@@ -1,4 +1,4 @@
-"""arXiv category routes."""
+"""arXiv stateless captcha."""
 from typing import Optional
 import io
 from fastapi import APIRouter, Request, HTTPException, status

@@ -1,9 +1,11 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, status
 from sqlalchemy import Column, Integer, String, Text, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from pydantic import BaseModel
 from typing import List
+import requests
+import re
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -92,3 +94,51 @@ def get_email(mail_id: int, db: Session = Depends(get_db)):
     if not email:
         raise HTTPException(status_code=404, detail="Email not found")
     return email
+
+
+@app.post("/emails/{mail_id}/verify")
+def maybe_click_link(mail_id: int, db: Session = Depends(get_db)):
+    email = db.query(Email).filter(Email.id == mail_id).one_or_none()
+    if not email:
+        raise HTTPException(status_code=404, detail="Email not found")
+    body = email.body
+
+    matched = re.search(r"https://[^\s]+", body)
+    if matched:
+        email_verify_link = matched.group(0)
+        logger.info(f"stage 1 - The link {mail_id}: {email_verify_link}")
+
+        try:
+            response = requests.get(email_verify_link, verify=False)  # disable SSL verification for localhost
+            logger.info(f"stage 1 - Clicked the link; {response.status_code}")
+            webpage = response.text
+
+        except requests.exceptions.RequestException as exc1:
+            logger.info(f"stage 1 - Error making request: {exc1}")
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Calling verification failed") from exc1
+
+        except Exception as exc2:
+            logger.info(f"stage 1 - Error making request: {exc2}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc2)) from exc2
+
+        matched_again = re.search(r"https://[^\s]+", webpage)
+        if matched_again:
+            confirm_link = matched.group(0)
+            logger.info(f"stage 2 - The link {mail_id}: {confirm_link}")
+
+            try:
+                response = requests.get(confirm_link, verify=False)  # disable SSL verification for localhost
+                logger.info(f"stage 2 - Clicked the confirm; {response.status_code}")
+
+            except requests.exceptions.RequestException as exc3:
+                logger.info(f"stage 2 - Error making request: {exc3}")
+                raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                                    detail="Calling verification failed") from exc3
+
+            except Exception as exc4:
+                logger.info(f"stage 2 - Error making request: {exc4}")
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc4)) from exc4
+
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email has no link")
+    return

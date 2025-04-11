@@ -68,3 +68,11 @@ up:
 down:
 	docker compose --env-file=test-env down --remove-orphans
 
+
+#-#
+#-# mta-models:
+#-#   gets
+mta-models:
+	datamodel-codegen --url http://localhost:${MAIL_API_PORT}/openapi.json --input-file-type openapi --output mta_models.py
+	-rm -fr fast-api-client/ test_mta_client/
+	openapi-python-client generate --url http://localhost:${MAIL_API_PORT}/openapi.json && mv fast-api-client/fast_api_client ./test_mta_client

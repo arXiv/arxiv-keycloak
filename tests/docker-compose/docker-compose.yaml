@@ -35,6 +35,7 @@ services:
     environment:
       KC_PORT: ${KC_PORT}
       KC_SSL_PORT: ${KC_SSL_PORT}
+      KC_MANAGEMENT_PORT: ${KC_MANAGEMENT_PORT}
       DB_ADDR: 127.0.0.1:${KC_DB_PORT}
       DB_DATABASE: keycloak
       DB_VENDOR: postgres

@@ -136,4 +136,5 @@ echo KC_DB_URL=$KC_DB_URL
   --db-username=$KC_DB_USER \
   --db-password=$KC_DB_PASS \
   $HTTPS_ARGS \
+  --http-management-port=$KC_MANAGEMENT_PORT \
   $DB_SCHEMA $PROXY_MODE $LOG_OUTPUT_FORMAT

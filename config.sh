@@ -47,6 +47,7 @@ if [ "$TARGET" = "localdb" ] && [ ! -r .env.localdb ] ; then
     # keycloak and its database
     KC_PORT=21501
     KC_SSL_PORT=21520
+    KC_MANAGEMENT_PORT=21521
     KC_HOST_PUBLIC=https://$SERVER_HOST:$KC_SSL_PORT
 
     # would be "keycloak" if the network is NOT host network
@@ -55,6 +56,7 @@ if [ "$TARGET" = "localdb" ] && [ ! -r .env.localdb ] ; then
 
     echo KC_PORT=$KC_PORT >> .env.localdb
     echo KC_SSL_PORT=$KC_SSL_PORT >> .env.localdb
+    echo KC_MANAGEMENT_PORT=$KC_MANAGEMENT_PORT  >> .env.localdb
     # This is for pedantic prettiness and not really used
     echo KC_HOST_PUBLIC=$KC_HOST_PUBLIC >> .env.localdb
     echo KC_HOST_PRIVATE=$KC_HOST_PRIVATE >> .env.localdb

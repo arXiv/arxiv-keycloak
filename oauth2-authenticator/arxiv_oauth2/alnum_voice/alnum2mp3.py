@@ -1,3 +1,7 @@
+"""
+Convert alnum letters to MP3 byte stream.
+
+"""
 import zipfile
 import wave
 import lameenc
@@ -11,6 +15,12 @@ zip_path = "voices.zip"
 filename_patten = re.compile(r'__([a-z0-9]).wav')
 
 def alnum_to_mp3(alnums: str) -> BytesIO:
+    """
+    Turns short text to MP3 byte stream. The voice file is zip archive. Unzip, look for alnum letter,
+    combine binary WAV, encode it in MP3, and send back.
+
+    The butter size needs to be bigger than the combined WAV frames.
+    """
     buffer = bytearray(BUFFER_SIZE)
     zip_path = os.path.join(os.path.dirname(__file__), "voices.zip")
     voice_files = {}

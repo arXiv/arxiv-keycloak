@@ -60,6 +60,7 @@ KC_HOST_PUBLIC=localhost.arxiv.org
 KC_JDBC_CONNECTION=?ssl=false&sslmode=disable
 KC_PORT=22201
 KC_SSL_PORT=22220
+KC_MANAGEMENT_PORT=22221
 KC_TAPIR_BRIDGE_AUDIT_API_URL=http://localhost.arxiv.org:5222/aaa/keycloak/audit
 KC_TAPIR_BRIDGE_DOCKER_TAG=gcr.io/arxiv-development/arxiv-keycloak/kc-tapir-bridge
 KC_TAPIR_BRIDGE_SUBSCRIPTION=keycloak-arxiv-events-sub

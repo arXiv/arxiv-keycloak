@@ -31,6 +31,22 @@ def verify_bearer_token(request: Request,
 def is_super_user(token: ArxivUserClaims | ApiToken | None) -> bool:
     return token and (isinstance(token, ApiToken) or (isinstance(token, ArxivUserClaims) and token.is_admin))
 
+
+def is_authenticated(token: ApiToken | ArxivUserClaims | None, current_user: ArxivUserClaims | None) -> bool:
+    return token is not None or current_user is not None
+
+
+def is_authorized(token: ApiToken | ArxivUserClaims | None, current_user: ArxivUserClaims | None, user_id: str) -> bool:
+    if token:
+        if isinstance(token, ApiToken):
+            return True
+        elif isinstance(token, ArxivUserClaims):
+            current_user = token
+            token = None
+
+    return current_user.is_admin or current_user.user_id == user_id
+
+
 def describe_super_user(token: ArxivUserClaims | ApiToken | None) -> str:
     if token:
         if isinstance(token, ApiToken):
