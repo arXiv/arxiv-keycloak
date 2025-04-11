@@ -42,9 +42,20 @@ def is_authorized(token: ApiToken | ArxivUserClaims | None, current_user: ArxivU
             return True
         elif isinstance(token, ArxivUserClaims):
             current_user = token
-            token = None
 
     return current_user.is_admin or current_user.user_id == user_id
+
+
+def check_authnz(token: ApiToken | ArxivUserClaims | None, current_user: ArxivUserClaims | None, user_id: str):
+    """
+    Sugar to do both authentication and authorization check
+    """
+    if not is_authenticated(token, current_user):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
+
+    if not is_authorized(token, current_user, user_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
+
 
 
 def describe_super_user(token: ArxivUserClaims | ApiToken | None) -> str:

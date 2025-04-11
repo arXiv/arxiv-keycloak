@@ -113,6 +113,15 @@ class CategoryModel(CategoryIdModel):
     endorsement_domain: Optional[str] # Mapped[Optional[str]] = mapped_column(ForeignKey("arXiv_endorsement_domains.endorsement_domain"), index=True)
 
 
+class AccountIdentifierModel(BaseModel):
+    """
+    Mapping ot 3 identifier that can point to a user
+    """
+    user_id: Optional[str]
+    email: Optional[str]
+    username: Optional[str]
+
+
 class AccountInfoBaseModel(BaseModel):
     username: str  # aka nickname in Tapir
     email: Optional[str] = None
@@ -177,7 +186,7 @@ class AccountInfoBaseModel(BaseModel):
 
 
 class AccountInfoModel(AccountInfoBaseModel):
-    id: str
+    id: str  # user id
     email_verified: Optional[bool] = None
     scopes: Optional[List[str]] = None
 

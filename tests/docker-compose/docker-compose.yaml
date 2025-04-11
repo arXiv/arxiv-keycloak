@@ -181,7 +181,7 @@ services:
       #
       # config.py
       LOCALHOST_DEV: 1
-      BASE_SERVER: localhost.arxiv.org:5100
+      BASE_SERVER: localhost.arxiv.org:${NGINX_PORT}
       # SECRET_KEY:
       ARXIV_AUTH_DEBUG: 1
       CLASSIC_COOKIE_NAME: tapir_session
@@ -192,6 +192,10 @@ services:
       DEFAULT_LOGIN_REDIRECT_URL: "/user-account/"
       DEFAULT_LOGOUT_REDIRECT_URL: "http://localhost.arxiv.org:5100"
       AUTH_SESSION_COOKIE_DOMAIN: 'localhost.arxiv.org'
+      AAA_URL: "http://localhost.arxiv.org:${NGINX_PORT}/aaa"
+      LEGACY_AUTH_PROVIDER: "http://localhost.arxiv.org:${LEGACY_AUTH_PORT}"
+      MAIL_STORE_URL: "http://localhost.arxiv.org:${MAIL_API_PORT}"
+      ADMIN_API_URL: "http://localhost.arxiv.org:${NGINX_PORT}/admin-api"
 
     network_mode: host
 

@@ -114,6 +114,7 @@ def landing() -> Response:
     AAA_URL = os.environ.get("AAA_URL", f"http://{BASE_SERVER}:21503")
     ADMIN_CONSOLE_URL = os.environ.get("ADMIN_CONSOLE_URL", "/admin-console/")
 
+
     links = {
         "login": url_for('ui.login'),
         "logout": url_for('ui.logout'),
@@ -128,8 +129,8 @@ def landing() -> Response:
         "change_password": f"{KEYCLOAK_SERVER_URL}/realms/arxiv/login-actions/required-action?execution=UPDATE_PASSWORD&client_id=account-console",
         "aaa_server": f"{AAA_URL}/docs",
         "legacy_auth_provider": f"{LEGACY_AUTH_PROVIDER}/docs",
-        "admin_api": f"${ADMIN_API_URL}/docs",
-        "mail_store": f"${MAIL_STORE_URL}/docs",
+        "admin_api": f"{ADMIN_API_URL}/docs",
+        "mail_store": f"{MAIL_STORE_URL}/docs",
     }
 
     content = render_template("landing.html", links=links)

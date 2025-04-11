@@ -5,7 +5,8 @@ import base64
 import random
 from typing import Optional
 
-from fastapi import APIRouter, Depends, status, HTTPException, Request, Response
+from arxiv_bizlogic.bizmodels.user_model import UserModel
+from fastapi import APIRouter, Depends, status, HTTPException, Request, Response, Query
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from keycloak import KeycloakAdmin, KeycloakError
@@ -17,14 +18,14 @@ from arxiv.db.models import TapirUser, TapirNickname, TapirUsersPassword
 from arxiv.auth.legacy import passwords
 
 from . import (get_current_user_or_none, get_db, get_keycloak_admin, stateless_captcha,
-               get_client_host, sha256_base64_encode, get_current_user_access_token,
-               verify_bearer_token, ApiToken, is_super_user, describe_super_user, is_authorized,
-               is_authenticated)  # , get_client_host
+               get_client_host, sha256_base64_encode, get_current_user_kc_access_token,
+               verify_bearer_token, ApiToken, is_super_user, describe_super_user, check_authnz,
+               is_authorized)  # , get_client_host
 from .biz.account_biz import (AccountInfoModel, get_account_info,
                               AccountRegistrationError, AccountRegistrationModel, validate_password,
                               migrate_to_keycloak,
                               kc_validate_access_token, kc_send_verify_email, register_arxiv_account,
-                              update_tapir_account)
+                              update_tapir_account, AccountIdentifierModel)
 # from . import stateless_captcha
 from .captcha import CaptchaTokenReplyModel, get_captcha_token
 from .stateless_captcha import InvalidCaptchaToken, InvalidCaptchaValue
@@ -42,9 +43,10 @@ def reply_account_info(session: Session, id: str) -> AccountInfoModel:
 
 
 @router.get('/current', description="")
-async def get_current_user_info(current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
-                                session: Session = Depends(get_db)
-                                ) -> AccountInfoModel:
+async def get_current_user_info(
+        current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
+        session: Session = Depends(get_db)
+        ) -> AccountInfoModel:
     """
     Hit the db and get user info
     """
@@ -59,13 +61,43 @@ async def get_user_profile(user_id: str,
                            token: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
                            session: Session = Depends(get_db)
                            ) -> AccountInfoModel:
-    if not is_authenticated(token, current_user):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthenticated")
-
-    if not is_authorized(token, current_user, user_id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    check_authnz(token, current_user, user_id)
 
     return reply_account_info(session, user_id)
+
+
+@router.get('/identifier/')
+async def get_user_profile_with_query(
+        user_id: Optional[str] = Query(None, description="User ID"),
+        email: Optional[str] = Query(None, description="Email"),
+        username: Optional[str] = Query(None, description="Logi name"),
+        token: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
+        session: Session = Depends(get_db)
+        ) -> AccountIdentifierModel:
+    tapir = None
+
+    if username or email:
+        # If you know a email or username, there is no security concern as both are equivalent
+        query = session.query(TapirUser, TapirNickname).join(TapirNickname, TapirUser.user_id == TapirNickname.user_id)
+        if username:
+            query = query.filter(TapirNickname.nickname == username)
+        else:
+            query = query.filter(TapirUser.email == email)
+
+        tapir = query.one_or_none()
+
+    if user_id:
+        if not is_authorized(token, None, user_id):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized. If you want to know your user id, use /current")
+        tapir = session.query(TapirUser, TapirNickname).join(TapirNickname, TapirUser.user_id == TapirNickname.user_id).filter(TapirUser.user_id == user_id).one_or_none()
+
+    if not tapir:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Username not found")
+
+    user: TapirUser
+    nick: TapirNickname
+    user, nick = tapir
+    return AccountIdentifierModel(user_id=str(user.user_id), username=nick.nickname, email=user.email)
 
 
 #
@@ -75,18 +107,51 @@ async def get_user_profile(user_id: str,
 async def update_account_profile(
         data: AccountInfoModel,
         current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
+        token: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ) -> AccountInfoModel:
     """
     Update the profile name of a user.
     """
-    if not current_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
+    user_id = data.id
+    check_authnz(token, current_user, user_id)
 
-    tapir_user = update_tapir_account(session, data)
+    # class AccountInfoModel:
+    #    username: str  # aka nickname in Tapir
+    #    email: Optional[str] = None
+    #    first_name: str
+    #    last_name: str
+    #    suffix_name: Optional[str] = None
+    #    country: Optional[str] = None
+    #    affiliation: Optional[str] = None
+    #    default_category: Optional[CategoryIdModel] = None
+    #    groups: Optional[List[CategoryGroup]] = None
+    #    url: Optional[str] = None
+    #    joined_date: Optional[int] = None
+    #    oidc_id: Optional[str] = None
+    #    career_status: Optional[CAREER_STATUS] = None
+    #    tracking_cookie: Optional[str] = None
+    #    veto_status: Optional[VetoStatusEnum] = None
+    #    
+    #    id
+    #    email_verified: Optional[bool] = None
+    #    scopes: Optional
+
+    existing_user = UserModel.one_user(session, user_id)
+    if existing_user.username != data.username:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username/user id do not match")
+
+    updates = data.to_user_model_data(exclude_defaults=True, exclude_unset=True)
+    for field in ["email", "joined_date", "tracking_cookie", "veto_status", "email_verified", "scopes"]:
+        if field in updates:
+            del updates[field]
+
+    scrubbed = AccountInfoModel.model_validate(updates)
+    tapir_user = update_tapir_account(session, scrubbed)
     if not isinstance(tapir_user, TapirUser):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Tapir User")
+
     return reply_account_info(session, tapir_user.user_id)
 
 
@@ -217,17 +282,14 @@ def get_email_verified_status_current_user(
     return EmailVerifiedStatus(email_verified= user.is_verified, user_id = user.user_id)
 
 
-@router.get("/email/{user_id:str}/verified/", description="Is the email verified for this usea?")
+@router.get("/email/verified/{user_id:str}/", description="Is the email verified for this usea?")
 def get_email_verified_status(
         user_id: str,
         current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
         token: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
         session: Session = Depends(get_db),
 ) -> EmailVerifiedStatus:
-    if not is_authenticated(token, current_user):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
-    if not is_authorized(token, current_user, user_id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not an admin")
+    check_authnz(token, current_user, user_id)
 
     user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
     if not user:
@@ -244,11 +306,7 @@ def set_email_verified_status(
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ) -> EmailVerifiedStatus:
     user_id = body.user_id
-    if not is_authenticated(token, current_user):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
-
-    if not is_authorized(token, current_user, user_id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not an admin")
+    check_authnz(token, current_user, user_id)
 
     user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
     if not user:
@@ -327,10 +385,11 @@ def change_email(
         body: EmailUpdateModel,
         session: Session = Depends(get_db),
         current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
+        token: Optional[ApiToken] = Depends(verify_bearer_token),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ):
-    if current_user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
+    user_id = body.user_id
+    check_authnz(token, current_user, user_id)
 
     user: TapirUser | None = session.query(TapirUser).filter(TapirUser.email == body.email).one_or_none()
     if not user:
@@ -377,7 +436,8 @@ async def change_user_password(
         request: Request,
         data: ChangePasswordModel,
         current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
-        access_token: Optional[str] = Depends(get_current_user_access_token),
+        kc_access_token: Optional[str] = Depends(get_current_user_kc_access_token),
+        token: Optional[ApiToken] = Depends(verify_bearer_token),
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ):
@@ -388,20 +448,14 @@ async def change_user_password(
                  current_user.user_id if current_user else "No User", data.user_id,
                  sha256_base64_encode(data.old_password), sha256_base64_encode(data.new_password))
 
-    if not is_authenticated(access_token, current_user):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
-
-    if not is_authorized(access_token, current_user, data.user_id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
+    user_id = data.user_id
+    check_authnz(token, current_user, user_id)
 
     if len(data.old_password) < 8:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Old password is invalid")
 
     if not validate_password(data.new_password):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New password is invalid")
-
-    if (current_user.user_id != data.user_id) and (not current_user.is_admin):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Not allowed. User ID: %s" % data.user_id)
 
     user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == data.user_id).one_or_none()
     if not user:
@@ -431,7 +485,7 @@ async def change_user_password(
     idp = request.app.extra["idp"]
 
     # if not kc_check_old_password(kc_admin, idp, nick.nickname, data.old_password, idp._ssl_cert_verify):
-    if not await kc_validate_access_token(kc_admin, idp, access_token):
+    if not await kc_validate_access_token(kc_admin, idp, kc_access_token):
         if current_user.user_id == data.user_id:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                 detail="Stale access. Please log out/login again.")
@@ -467,6 +521,7 @@ async def reset_user_password(
         request: Request,
         body: PasswordResetRequest,
         current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
+        token: Optional[ApiToken] = Depends(verify_bearer_token),
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ):
@@ -521,14 +576,14 @@ async def reset_user_password(
                             detail="Failed to migrate a user account")
 
     try:
-        kc_admin.send_update_account(user_id=user_id, payload=["UPDATE_PASSWORD"])
+        kc_admin.send_update_account(user_id=user_id, payload={"requiredActions": ["UPDATE_PASSWORD"]})
     except KeycloakGetError as kce:
         detail = "Password reset request did not succeed due to arXiv server problem. " + str(kce)
         body = kce.response_body.decode('utf-8') if kce.response_body and isinstance(kce.response_body, bytes) else str(
             kce.response_body)
         if "send email" in body:
             detail += "\nKeycloak failed to send email. Please contact mailto:help@arXiv.org"
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail) from exc
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail) from kce
     except Exception as exc:
         detail = "Password reset request did not succeed: " + str(exc)
         logger.error(detail)

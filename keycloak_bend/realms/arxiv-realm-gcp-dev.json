@@ -134,6 +134,15 @@
         "attributes": {}
       },
       {
+        "id": "e24f30c6-3af0-4318-a92f-f19e3ae539d7",
+        "name": "Proxy",
+        "description": "proxy submitter",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "e9b31419-5843-4014-9bd1-f05a2df3b96b",
+        "attributes": {}
+      },
+      {
         "id": "856ffdc0-0475-4caa-b727-49cc74ffb51c",
         "name": "Public user",
         "description": "",
@@ -146,6 +155,24 @@
         "id": "cbc10a39-1d9a-4f41-b0ac-d13daf1877a1",
         "name": "CanLock",
         "description": "ARXIVNG-2605",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "e9b31419-5843-4014-9bd1-f05a2df3b96b",
+        "attributes": {}
+      },
+      {
+        "id": "544204ce-48cc-485a-8a74-47c8b4e6c390",
+        "name": "XML",
+        "description": "xml submitter",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "e9b31419-5843-4014-9bd1-f05a2df3b96b",
+        "attributes": {}
+      },
+      {
+        "id": "7b762d1d-7fc9-43c9-8488-0cac1e983b56",
+        "name": "Suspect",
+        "description": "suspect",
         "composite": false,
         "clientRole": false,
         "containerId": "e9b31419-5843-4014-9bd1-f05a2df3b96b",
@@ -2461,15 +2488,15 @@
   "smtpServer": {
     "password": "**********",
     "replyToDisplayName": "",
-    "starttls": "true",
+    "starttls": "false",
     "auth": "false",
-    "port": "25",
-    "host": "mail.arxiv.org",
-    "replyTo": "account-admin@arxiv.org",
-    "from": "account-admin@arxiv.org",
+    "port": "465",
+    "host": "smtp-relay.gmail.com",
+    "replyTo": "help@arxiv.org",
+    "from": "help@arxiv.org",
     "fromDisplayName": "arXiv account administrator",
     "envelopeFrom": "",
-    "ssl": "false",
+    "ssl": "true",
     "user": "ntai@arxiv.org"
   },
   "loginTheme": "kc-arXiv-react",
@@ -2736,7 +2763,7 @@
             "true"
           ],
           "URI": [
-            ""
+            "https://legacy-auth-provider-6lhtms3oua-uc.a.run.app/auth"
           ],
           "USE_USER_ID_FOR_CREDENTIAL_VERIFICATION": [
             "false"

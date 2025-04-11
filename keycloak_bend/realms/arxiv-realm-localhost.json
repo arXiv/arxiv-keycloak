@@ -169,6 +169,42 @@
         "attributes": {}
       },
       {
+        "id": "e24f30c6-3af0-4318-a92f-f19e3ae539d7",
+        "name": "Proxy",
+        "description": "proxy submitter",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "e9b31419-5843-4014-9bd1-f05a2df3b96b",
+        "attributes": {}
+      },
+      {
+        "id": "544204ce-48cc-485a-8a74-47c8b4e6c390",
+        "name": "XML",
+        "description": "xml submitter",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "e9b31419-5843-4014-9bd1-f05a2df3b96b",
+        "attributes": {}
+      },
+      {
+        "id": "7b762d1d-7fc9-43c9-8488-0cac1e983b56",
+        "name": "Suspect",
+        "description": "suspect",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "e9b31419-5843-4014-9bd1-f05a2df3b96b",
+        "attributes": {}
+      },
+      {
+        "id": "63eb67d3-aac1-4232-9af1-e25c02b00e2e",
+        "name": "AllowTexProduced",
+        "description": "Allow producing submission tex files",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "e9b31419-5843-4014-9bd1-f05a2df3b96b",
+        "attributes": {}
+      },
+      {
         "id": "c9a835bb-b47a-4769-9122-f36990990236",
         "name": "Approved",
         "description": "Approved user",

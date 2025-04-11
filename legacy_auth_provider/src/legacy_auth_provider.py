@@ -172,6 +172,18 @@ def user_model_to_auth_response(um: UserModel, tapir_user: TapirUser) -> AuthRes
     if um.flag_can_lock:
         roles.append('CanLock')
 
+    if um.flag_proxy:
+        roles.append("Proxy")
+
+    if um.flag_xml:
+        roles.append("XML")
+
+    if um.flag_suspect:
+        roles.append("Suspect")
+
+    if um.flag_allow_tex_produced:
+        roles.append("AllowTexProduced")
+
     attributes = {}
 
     # Important to have this. Otherwise, Keycloak does not pick up the email
@@ -222,6 +234,15 @@ def user_model_to_auth_response(um: UserModel, tapir_user: TapirUser) -> AuthRes
 
     if os.environ.get("NORMALIZE_USERNAME", "true") == "true":
         username = username.lower()
+
+    if um.affiliation:
+        attributes["affiliation"] = [um.affiliation]
+
+    if um.url:
+        attributes["url"] = [um.url]
+
+    if um.orcid:
+        attributes["orcid"] = [um.orcid]
 
     return AuthResponse(
         id=str(um.id),
