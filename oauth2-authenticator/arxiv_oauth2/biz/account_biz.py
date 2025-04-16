@@ -61,10 +61,10 @@ def get_career_status_index(status: CAREER_STATUS) -> int:
     return 0
 
 
-allowed_pattern = re.compile(r"^[A-Za-z0-9_.+#\-=/:;(){}\[\]%^]+$")
+allowed_pattern = re.compile(r"^[A-Za-z0-9_.+#\-=/:;(){}<>\[\]%^]+$")
 
 def validate_password(pwd: str) -> bool:
-    if len(pwd) < 8 or (not "_" in pwd) or not allowed_pattern.match(pwd):
+    if len(pwd) < 8 or (not allowed_pattern.match(pwd)):
         return False
     return True
 
@@ -224,7 +224,8 @@ def register_to_keycloak(kc_admin: KeycloakAdmin, account: AccountInfoModel, pas
     kc_set_user_password(kc_admin, account, password)
 
 
-def migrate_to_keycloak(kc_admin: KeycloakAdmin, account: AccountInfoModel, password: str, client_secret: str):
+def kc_login_with_client_credential(kc_admin: KeycloakAdmin, username: str, password: str,
+                                    client_secret: str) -> Optional[dict]:
     # Configuration
     keycloak_url = kc_admin.connection.server_url
     realm = kc_admin.connection.realm_name
@@ -237,7 +238,7 @@ def migrate_to_keycloak(kc_admin: KeycloakAdmin, account: AccountInfoModel, pass
         "client_id": client_id,
         "client_secret": client_secret,
         "grant_type": "password",
-        "username": account.username,
+        "username": username,
         "password": password,
     }
 
@@ -247,17 +248,17 @@ def migrate_to_keycloak(kc_admin: KeycloakAdmin, account: AccountInfoModel, pass
     with httpx.Client(verify=not is_local) as client:
         response = client.post(token_url, data=payload)
         if response.status_code == 200:
-            logger.info("Migration successful")
-        else:
-            logger.warning(
-                "Migration failed. status: %d. Migration is likely to fail", response.status_code,
-                extra={
-                    "status_code": response.status_code,
-                    "client_id": client_id,
-                    "username": account.username,
-                })
+            return response.json()
+    return None
 
-    kc_set_user_password(kc_admin, account, password)
+
+def migrate_to_keycloak(kc_admin: KeycloakAdmin, account: AccountInfoModel, password: str, client_secret: str):
+    # Configuration
+    token = kc_login_with_client_credential(kc_admin, account.username, password, client_secret)
+
+    if not token:
+        kc_set_user_password(kc_admin, account, password)
+
     logger.info("Registration successful. Try email verification")
     try:
         kc_send_verify_email(kc_admin, account.id)

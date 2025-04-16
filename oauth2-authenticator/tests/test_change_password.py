@@ -23,15 +23,23 @@ def test_change_password(docker_compose, test_env, aaa_client, aaa_api_headers):
     change_password_data = PasswordUpdateModel(
         user_id=ident.user_id,
         old_password="wrong-password",
-        new_password="<PASSWORD>"
+        new_password="P"
+    )
+    response2 = aaa_client.put("/account/password/", json=change_password_data.model_dump(), headers=aaa_api_headers)
+    assert response2.status_code == 400
+
+    change_password_data = PasswordUpdateModel(
+        user_id=ident.user_id,
+        old_password="wrong-password",
+        new_password="<PASS_WORD>"
     )
     response3 = aaa_client.put("/account/password/", json=change_password_data.model_dump(), headers=aaa_api_headers)
-    assert response3.status_code == 200
+    assert response3.status_code == 400
 
     change_password_data = PasswordUpdateModel(
         user_id=ident.user_id,
         old_password="changeme",
-        new_password="<PASSWORD>"
+        new_password="<PASS_WORD>"
     )
     response4 = aaa_client.put("/account/password/", json=change_password_data.model_dump(), headers=aaa_api_headers)
     assert response4.status_code == 200

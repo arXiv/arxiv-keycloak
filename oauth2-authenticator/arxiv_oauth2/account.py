@@ -29,7 +29,7 @@ from .biz.account_biz import (AccountInfoModel, get_account_info,
                               AccountRegistrationError, AccountRegistrationModel, validate_password,
                               migrate_to_keycloak,
                               kc_validate_access_token, kc_send_verify_email, register_arxiv_account,
-                              update_tapir_account, AccountIdentifierModel)
+                              update_tapir_account, AccountIdentifierModel, kc_login_with_client_credential)
 # from . import stateless_captcha
 from .captcha import CaptchaTokenReplyModel, get_captcha_token
 from .stateless_captcha import InvalidCaptchaToken, InvalidCaptchaValue
@@ -512,26 +512,44 @@ async def change_user_password(
     idp = request.app.extra["idp"]
 
     # if not kc_check_old_password(kc_admin, idp, nick.nickname, data.old_password, idp._ssl_cert_verify):
-    if not await kc_validate_access_token(kc_admin, idp, kc_access_token):
-        if current_user.user_id == data.user_id:
+    if not isinstance(token, ApiToken):
+        if kc_access_token is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                 detail="Stale access. Please log out/login again.")
-        if not current_user.is_admin:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail="Stale access. Please log out/login again.")
 
-    kc_user = kc_admin.get_user(data.user_id)
+        if not await kc_validate_access_token(kc_admin, idp, kc_access_token):
+            if current_user.user_id == data.user_id:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                    detail="Stale access. Please log out/login again.")
+            if not current_user.is_admin:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                    detail="Stale access. Please log out/login again.")
+
+    kc_user = None
+    try:
+        kc_user = kc_admin.get_user(data.user_id)
+    except KeycloakGetError:
+        pass
+
     tapir_password: TapirUsersPassword | None = session.query(TapirUsersPassword).filter(
         TapirUsersPassword.user_id == user_id).one_or_none()
     if not tapir_password:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Password has never been set")
 
+    um: UserModel | None = UserModel.one_user(session, str(user_id))
+    if um is None:
+        # This should not happen. The tapir user exists and therefore, this must succeed.
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
+
+    client_secret = request.app.extra['ARXIV_USER_SECRET']
+
     if not kc_user:
-        um: UserModel | None = UserModel.one_user(session, str(user_id))
-        if um is None:
-            # This should not happen. The tapir user exists and therefore, this must succeed.
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
+        try:
+            passwords.check_password(data.old_password, tapir_password.password_enc.encode("ascii"))
+        except:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="Incorrect password")
 
         tapir_password.password_enc = passwords.hash_password(data.new_password)
         session.commit()
@@ -544,11 +562,15 @@ async def change_user_password(
                 first_name = um.first_name,
                 last_name=um.last_name,
             )
-            client_secret = request.app.extra['ARXIV_USER_SECRET']
             migrate_to_keycloak(kc_admin, account, data.new_password, client_secret)
         finally:
             pass
     else:
+        token = kc_login_with_client_credential(kc_admin, um.username, data.old_password, client_secret)
+        if token is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="Incorrect password")
+
         try:
             kc_admin.set_user_password(kc_user["id"], data.new_password, temporary=False)
         except Exception as exc:
