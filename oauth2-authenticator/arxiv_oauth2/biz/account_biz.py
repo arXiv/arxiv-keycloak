@@ -16,8 +16,9 @@ from arxiv.base import logging
 from arxiv.db.models import TapirNickname, TapirUsersPassword, TapirUser, Demographic, Category
 from arxiv.auth.legacy.exceptions import RegistrationFailed
 from arxiv.auth.legacy import passwords
+from arxiv_bizlogic.bizmodels.tapir_to_kc_mapping import AuthResponse
 from fastapi import HTTPException, status
-from keycloak import KeycloakAdmin, KeycloakError, KeycloakAuthenticationError, KeycloakOpenID
+from keycloak import KeycloakAdmin, KeycloakError, KeycloakAuthenticationError, KeycloakOpenID, KeycloakPostError
 from pydantic import BaseModel
 from sqlalchemy import and_
 from sqlalchemy.exc import IntegrityError
@@ -508,3 +509,39 @@ def update_tapir_account(session: Session, profile: AccountInfoModel) -> Account
 
     logger.info("Tapir user account updated successfully.")
     return tapir_user
+
+
+def create_kc_account(kc_admin: KeycloakAdmin, user: AuthResponse, exist_ok: bool=True) -> None:
+    """
+    ** THIS DOES NOT WORK IF THERE IS A TAPIR USER **
+
+    The reason is that, it hits the legacy auth provider and finds the username.
+    POST always ends with 409/conflict because of this. IOW, you have to migrate user using legacy auth provider.
+
+    Code is here to let you know that this does not work. OTOH, if there is no tapir user, this would work.
+
+    Create a new KC user account from auth response
+
+    https://www.keycloak.org/docs-api/latest/rest-api/index.html#UserRepresentation
+
+    """
+    try:
+        kc_admin.create_user({
+            "id": user.id,
+            "username": user.username,
+            "firstName": user.firstName,
+            "lastName": user.lastName,
+            "email": user.email,
+            "emailVerified": user.emailVerified,
+            "enabled": True,
+            "credentials": [],
+            "realmRoles": user.roles,
+            "groups": user.groups,
+            "attributes": user.attributes  # To have the attributes, make sure the unmanaged user profile is enabled
+        }, exist_ok=exist_ok)
+
+    except KeycloakPostError as exc:
+        if exc.response_code == status.HTTP_409_CONFLICT:
+            if exist_ok:
+                return
+        raise exc

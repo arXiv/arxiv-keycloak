@@ -1,7 +1,7 @@
 import os
 from typing import Callable, List
 
-from fastapi import FastAPI, Request, HTTPException, Depends
+from fastapi import FastAPI, Request, HTTPException, Depends, status
 from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -271,7 +271,7 @@ def create_app(*args, **kwargs) -> FastAPI:
             token = keycloak_admin.connection.token
             result.update({"keycloak": "good" if isinstance(token, dict) and token.get('access_token', None) else "bad"})
         except Exception as exc:
-            raise HTTPException(status_code=500, detail="Keycloak: " + str(exc))
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Keycloak: " + str(exc))
 
         try:
             states: List[State] = session.query(State).all()
@@ -279,7 +279,7 @@ def create_app(*args, **kwargs) -> FastAPI:
             return result
 
         except Exception as exc:
-            raise HTTPException(status_code=500, detail="mysql: " + str(exc))
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="mysql: " + str(exc))
 
 
     return app

@@ -1,5 +1,6 @@
 import json
 import re
+from fastapi import status
 from fastapi.exceptions import HTTPException
 from typing import Optional, Any, Dict, Callable
 import logging
@@ -119,7 +120,7 @@ def handle_keycloak_event(session: Session, data: dict[str, Any], dispatch_funct
             pass
         except Exception as exc:
             logger.warning("Error: %s", repr(data), exc_info=exc)
-            raise HTTPException(status_code=500, detail=repr(exc))
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=repr(exc))
     else:
         logger.info("dispatch %s does not exist: %s", dispatch_name, repr(data))
 

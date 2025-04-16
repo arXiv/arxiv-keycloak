@@ -3767,7 +3767,8 @@
     "acr.loa.map": "{}",
     "adminEventsExpiration": "2678400",
     "shortVerificationUri": "",
-    "actionTokenGeneratedByUserLifespan.reset-credentials": "600"
+    "actionTokenGeneratedByUserLifespan.reset-credentials": "600",
+    "userProfileProvider": "true"
   },
   "keycloakVersion": "26.1.2",
   "userManagedAccessAllowed": true,

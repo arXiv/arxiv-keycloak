@@ -13,27 +13,20 @@ from arxiv_oauth2.biz.account_biz import AccountInfoModel, AccountIdentifierMode
 
 
 @pytest.mark.asyncio
-def test_change_user_profile(docker_compose, test_env, aaa_client):
-    # Wait for the backend to be up before making the request
+def test_change_user_profile(docker_compose, test_env, aaa_client, aaa_api_headers):
 
-    aaa_api_token = test_env['AAA_API_TOKEN']
-    headers = {
-        "Authorization": f"Bearer {aaa_api_token}",
-        "Content-Type": "application/json"
-    }
-
-    response1 = aaa_client.get("/account/identifier/?username=user0001", headers=headers)
+    response1 = aaa_client.get("/account/identifier/?username=user0001", headers=aaa_api_headers)
     ident = AccountIdentifierModel.model_validate(response1.json())
 
-    response2 = aaa_client.get(f"/account/profile/{ident.user_id}", headers=headers)
+    response2 = aaa_client.get(f"/account/profile/{ident.user_id}", headers=aaa_api_headers)
     profile2 = AccountInfoModel.model_validate(response2.json())
 
     profile2.affiliation = "Mandalore"
-    response3 = aaa_client.put("/account/profile/", json=profile2.model_dump(), headers=headers)
+    response3 = aaa_client.put("/account/profile/", json=profile2.model_dump(), headers=aaa_api_headers)
 
     assert response3.status_code == 200
 
-    response3 = aaa_client.get(f"/account/profile/{ident.user_id}", headers=headers)
+    response3 = aaa_client.get(f"/account/profile/{ident.user_id}", headers=aaa_api_headers)
     profile3 = AccountInfoModel.model_validate(response3.json())
 
     assert profile3.affiliation == "Mandalore"

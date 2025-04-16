@@ -2769,7 +2769,8 @@
     "clientSessionMaxLifespan": "0",
     "clientOfflineSessionIdleTimeout": "0",
     "cibaInterval": "5",
-    "realmReusableOtpCode": "false"
+    "realmReusableOtpCode": "false",
+    "userProfileProvider": "true"
   },
   "keycloakVersion": "26.1.2",
   "userManagedAccessAllowed": false,

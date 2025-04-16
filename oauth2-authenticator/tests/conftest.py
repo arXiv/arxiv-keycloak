@@ -1,3 +1,7 @@
+#import sys, os
+# rooddir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# sys.path.append(os.path.join(rooddir, "arxiv_oauth2"))
+
 import subprocess
 from pathlib import Path
 from typing import Dict, Optional, List
@@ -71,10 +75,12 @@ def docker_compose(test_env):
     working_dir = AAA_TEST_DIR.as_posix()
 
     try:
-        logging.info("Stopping docker-compose...")
-        subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "down", "--remove-orphans"], check=False, cwd=working_dir)
-        logging.info("Starting docker-compose...")
-        subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "up", "-d"], check=True, cwd=working_dir)
+        if os.environ.get("RECREATE_DOCKERS", "true") == "true":
+            logging.info("Stopping docker-compose...")
+            subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "down", "--remove-orphans"], check=False, cwd=working_dir)
+            logging.info("Starting docker-compose...")
+            subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "up", "-d"], check=True, cwd=working_dir)
+            pass
 
         # Loop until at least one row is present
         for _ in range(100):
@@ -93,7 +99,8 @@ def docker_compose(test_env):
 
     try:
         logging.info("Stopping docker-compose...")
-        subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "down", "--remove-orphans"], check=False, cwd=working_dir)
+        if os.environ.get("RECREATE_DOCKERS", "true") == "true":
+            subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "down", "--remove-orphans"], check=False, cwd=working_dir)
     except Exception:
         pass
 
@@ -125,3 +132,13 @@ def aaa_client(test_env, docker_compose):
         assert False, "The docker compose did not start?"
     yield client
     client.close()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def aaa_api_headers(test_env):
+    aaa_api_token = test_env['AAA_API_TOKEN']
+    headers = {
+        "Authorization": f"Bearer {aaa_api_token}",
+        "Content-Type": "application/json"
+    }
+    return headers

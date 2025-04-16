@@ -3,14 +3,18 @@
 """
 import base64
 import random
+import string
 from typing import Optional
 
 from arxiv_bizlogic.bizmodels.user_model import UserModel
+from arxiv_bizlogic.validation.email_validation import is_valid_email
+from arxiv_bizlogic.fastapi_helpers import  get_current_user_access_token
 from fastapi import APIRouter, Depends, status, HTTPException, Request, Response, Query
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from keycloak import KeycloakAdmin, KeycloakError
-from keycloak.exceptions import (KeycloakGetError)
+from keycloak import KeycloakAdmin
+from keycloak.exceptions import (KeycloakGetError, KeycloakError)
+
 
 from arxiv.base import logging
 from arxiv.auth.user_claims import ArxivUserClaims
@@ -18,9 +22,9 @@ from arxiv.db.models import TapirUser, TapirNickname, TapirUsersPassword
 from arxiv.auth.legacy import passwords
 
 from . import (get_current_user_or_none, get_db, get_keycloak_admin, stateless_captcha,
-               get_client_host, sha256_base64_encode, get_current_user_kc_access_token,
+               get_client_host, sha256_base64_encode,
                verify_bearer_token, ApiToken, is_super_user, describe_super_user, check_authnz,
-               is_authorized)  # , get_client_host
+               is_authorized, is_authenticated)  # , get_client_host
 from .biz.account_biz import (AccountInfoModel, get_account_info,
                               AccountRegistrationError, AccountRegistrationModel, validate_password,
                               migrate_to_keycloak,
@@ -51,7 +55,7 @@ async def get_current_user_info(
     Hit the db and get user info
     """
     if not current_user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
     return reply_account_info(session, current_user.user_id)
 
 
@@ -64,41 +68,6 @@ async def get_user_profile(user_id: str,
     check_authnz(token, current_user, user_id)
 
     return reply_account_info(session, user_id)
-
-
-@router.get('/identifier/')
-async def get_user_profile_with_query(
-        user_id: Optional[str] = Query(None, description="User ID"),
-        email: Optional[str] = Query(None, description="Email"),
-        username: Optional[str] = Query(None, description="Logi name"),
-        token: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
-        session: Session = Depends(get_db)
-        ) -> AccountIdentifierModel:
-    tapir = None
-
-    if username or email:
-        # If you know a email or username, there is no security concern as both are equivalent
-        query = session.query(TapirUser, TapirNickname).join(TapirNickname, TapirUser.user_id == TapirNickname.user_id)
-        if username:
-            query = query.filter(TapirNickname.nickname == username)
-        else:
-            query = query.filter(TapirUser.email == email)
-
-        tapir = query.one_or_none()
-
-    if user_id:
-        if not is_authorized(token, None, user_id):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized. If you want to know your user id, use /current")
-        tapir = session.query(TapirUser, TapirNickname).join(TapirNickname, TapirUser.user_id == TapirNickname.user_id).filter(TapirUser.user_id == user_id).one_or_none()
-
-    if not tapir:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Username not found")
-
-    user: TapirUser
-    nick: TapirNickname
-    user, nick = tapir
-    return AccountIdentifierModel(user_id=str(user.user_id), username=nick.nickname, email=user.email)
-
 
 #
 # Profile update and registering user is VERY similar. It is essentially upsert. At some point, I should think
@@ -332,7 +301,7 @@ class EmailUpdateModel(EmailModel):
 
 @router.put("/email/", description="Request to change email", responses={
     400: {
-        "description": "Old and new email are the same",
+        "description": "Old and new email are the same. Or bad new email address",
         "content": {
             "application/json": {
                 "example": {"detail": "Old and new email are the same"},
@@ -391,23 +360,36 @@ def change_email(
     user_id = body.user_id
     check_authnz(token, current_user, user_id)
 
+    if not is_valid_email(body.new_email):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New email is invalid.")
+
+    if not is_authenticated(token, current_user):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
+
+    if not is_authorized(token, current_user, user_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not allowed to change this email")
+
     user: TapirUser | None = session.query(TapirUser).filter(TapirUser.email == body.email).one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Old email does not exist")
 
     other_user: TapirUser | None = session.query(TapirUser).filter(TapirUser.email == body.new_email).one_or_none()
     if other_user:
-        if other_user.user_id != user.user_id:
+        if other_user.user_id != user_id:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="New email already exists")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Old and new email are the same")
-
-    if str(current_user.user_id) != str(user.user_id) and not current_user.is_admin:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not allowed to change this email")
 
     user.email = body.new_email
     user.flag_email_verified = False
 
-    kc_user = kc_admin.get_user(body.user_id)
+    kc_user = None
+    try:
+        kc_user = kc_admin.get_user(str(user_id))
+    except KeycloakGetError:
+        # The user has not been migrated yet
+        logger.warning("Email change before user migration")
+        pass
+
     if kc_user:
         # The user has not migrated to KC? Trying to log in should have done the migration
         try:
@@ -417,15 +399,54 @@ def change_email(
             session.rollback()
             detail = "Account service not available at the moment. Please contact help@arxiv.org: " + str(e)
             raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=detail)
+    else:
+        # Force the issue, and create the account
+        #
+        # I cannot come up with anything better, so here it goes.
+        # 1. Save the current password data
+        # 2. Smash the existing password with temporary password
+        # 3. Using the temp password, migrate the user
+        # 4. Once the migration is complete, restore the original password to Tapir password
+        # 5. Purge the credentials from keycloak so the next login hits legacy auth provider and uses old password
+        um: UserModel | None = UserModel.one_user(session, str(user_id))  # Use UserModel to get username
+        if um is None:
+            # This should not happen. The tapir user exists and therefore, this must succeed.
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
 
-    # session.add(user)
+        tapir_password: TapirUsersPassword = session.query(TapirUsersPassword).filter(TapirUsersPassword.user_id == user_id).one_or_none()
+        current_password_enc = tapir_password.password_enc
+        try:
+            temp_password = ''.join(random.choices(string.ascii_letters, k=48))
+            tapir_password.password_enc = passwords.hash_password(temp_password)
+            session.commit()
+
+            account = AccountInfoModel(
+                id = str(um.id),
+                email_verified=False,
+                email = um.email,
+                username= um.username,
+                first_name = um.first_name,
+                last_name=um.last_name,
+            )
+            client_secret = request.app.extra['ARXIV_USER_SECRET']
+            migrate_to_keycloak(kc_admin, account, temp_password, client_secret)
+        finally:
+            tapir_password.password_enc = current_password_enc
+            session.commit()
+
+        credentials = kc_admin.get_credentials(str(user_id))
+        for credential in credentials:
+            credential_id = credential["id"]
+            kc_admin.delete_credential(user_id=str(user_id), credential_id=credential_id)
+        kc_user = kc_admin.get_user(str(user_id))
+
     session.commit()
     if kc_user:
         kc_send_verify_email(kc_admin, kc_user["id"], force_verify=True)
     return
 
 
-class ChangePasswordModel(BaseModel):
+class PasswordUpdateModel(BaseModel):
     user_id: str
     old_password: str
     new_password: str
@@ -434,9 +455,9 @@ class ChangePasswordModel(BaseModel):
 @router.put('/password/', description="Update user password")
 async def change_user_password(
         request: Request,
-        data: ChangePasswordModel,
+        data: PasswordUpdateModel,
         current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
-        kc_access_token: Optional[str] = Depends(get_current_user_kc_access_token),
+        kc_access_token: Optional[str] = Depends( get_current_user_access_token),
         token: Optional[ApiToken] = Depends(verify_bearer_token),
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
@@ -456,6 +477,12 @@ async def change_user_password(
 
     if not validate_password(data.new_password):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New password is invalid")
+
+    if not is_authenticated(token, current_user):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
+
+    if not is_authorized(token, current_user, user_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
 
     user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == data.user_id).one_or_none()
     if not user:
@@ -494,18 +521,41 @@ async def change_user_password(
                                 detail="Stale access. Please log out/login again.")
 
     kc_user = kc_admin.get_user(data.user_id)
+    tapir_password: TapirUsersPassword | None = session.query(TapirUsersPassword).filter(
+        TapirUsersPassword.user_id == user_id).one_or_none()
+    if not tapir_password:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Password has never been set")
+
     if not kc_user:
-        # The user has not migrated to KC? Trying to log in should have done the migration
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="The user has not been migrated")
+        um: UserModel | None = UserModel.one_user(session, str(user_id))
+        if um is None:
+            # This should not happen. The tapir user exists and therefore, this must succeed.
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
 
-    try:
-        kc_admin.set_user_password(kc_user["id"], data.new_password, temporary=False)
-    except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Changing password failed")
+        tapir_password.password_enc = passwords.hash_password(data.new_password)
+        session.commit()
+        try:
+            account = AccountInfoModel(
+                id = str(um.id),
+                email_verified=False,
+                email = um.email,
+                username= um.username,
+                first_name = um.first_name,
+                last_name=um.last_name,
+            )
+            client_secret = request.app.extra['ARXIV_USER_SECRET']
+            migrate_to_keycloak(kc_admin, account, data.new_password, client_secret)
+        finally:
+            pass
+    else:
+        try:
+            kc_admin.set_user_password(kc_user["id"], data.new_password, temporary=False)
+        except Exception as exc:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Changing password failed")
 
-    pwd.password_enc = passwords.hash_password(data.new_password)
-    session.add(pwd)
-    session.commit()
+        pwd.password_enc = passwords.hash_password(data.new_password)
+        session.commit()
 
     logger.info("User password changed successfully. Old password %s, new password %s",
                 sha256_base64_encode(data.old_password), sha256_base64_encode(data.new_password))
@@ -589,3 +639,37 @@ async def reset_user_password(
         logger.error(detail)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=detail) from exc
     return
+
+
+@router.get('/identifier/')
+async def get_user_profile_with_query(
+        user_id: Optional[str] = Query(None, description="User ID"),
+        email: Optional[str] = Query(None, description="Email"),
+        username: Optional[str] = Query(None, description="Logi name"),
+        token: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
+        session: Session = Depends(get_db)
+        ) -> AccountIdentifierModel:
+    tapir = None
+
+    if username or email:
+        # If you know a email or username, there is no security concern as both are equivalent
+        query = session.query(TapirUser, TapirNickname).join(TapirNickname, TapirUser.user_id == TapirNickname.user_id)
+        if username:
+            query = query.filter(TapirNickname.nickname == username)
+        else:
+            query = query.filter(TapirUser.email == email)
+
+        tapir = query.one_or_none()
+
+    if user_id:
+        if not is_authorized(token, None, user_id):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized. If you want to know your user id, use /current")
+        tapir = session.query(TapirUser, TapirNickname).join(TapirNickname, TapirUser.user_id == TapirNickname.user_id).filter(TapirUser.user_id == user_id).one_or_none()
+
+    if not tapir:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Username not found")
+
+    user: TapirUser
+    nick: TapirNickname
+    user, nick = tapir
+    return AccountIdentifierModel(user_id=str(user.user_id), username=nick.nickname, email=user.email)

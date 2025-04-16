@@ -23,14 +23,13 @@ from test_mta_client.models import EmailRecord
 
 
 @pytest.mark.asyncio
-def test_register_account_success_with_token(docker_compose, test_env, aaa_client, test_mta):
+def test_register_account_success_with_token(docker_compose, test_env, aaa_client, test_mta, aaa_api_headers):
     # Wait for the backend to be up before making the request
 
     mta_client = MtaClient(base_url=test_mta)
     email_list: List[EmailRecord] = get_emails_emails_get.sync(client=mta_client)
     assert len(email_list) == 0
 
-    aaa_api_token = test_env['AAA_API_TOKEN']
     aaa_url = test_env['AAA_URL']
 
     registration_data = {
@@ -57,12 +56,7 @@ def test_register_account_success_with_token(docker_compose, test_env, aaa_clien
     # Make sure the registration data conforms
     input_data = AccountRegistrationModel.model_validate(registration_data)
 
-    headers = {
-        "Authorization": f"Bearer {aaa_api_token}",
-        "Content-Type": "application/json"
-    }
-
-    response1 = aaa_client.post("/account/register/", json=input_data.model_dump(), headers=headers)
+    response1 = aaa_client.post("/account/register/", json=input_data.model_dump(), headers=aaa_api_headers)
 
     assert response1.status_code == 201
     user1 = AccountInfoModel.model_validate(response1.json())
