@@ -6,8 +6,8 @@ from typing import Optional, Tuple, Literal, Any, Dict
 
 from arxiv_bizlogic.bizmodels.user_model import UserModel
 from arxiv_bizlogic.fastapi_helpers import get_client_host
-from fastapi import APIRouter, Depends, status, Request, HTTPException
-from fastapi.responses import RedirectResponse, Response, JSONResponse
+from fastapi import APIRouter, Depends, status, Request, HTTPException, Response
+from fastapi.responses import RedirectResponse, JSONResponse
 from keycloak import KeycloakAdmin, KeycloakError
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -104,8 +104,7 @@ async def oauth2_callback(request: Request,
     next_page = urllib.parse.unquote(request.query_params.get("state", "/"))  # Default to root if not provided
     logger.debug("callback success: next page: %s", next_page)
 
-    response = make_cookie_response(request, user_claims, tapir_cookie, next_page)
-    return response
+    return make_cookie_response(request, user_claims, tapir_cookie, next_page)
 
 
 @router.post('/impersonate/{user_id: str}')
@@ -122,7 +121,7 @@ async def impersonate(request: Request,
 
     kc_admin: KeycloakAdmin = request.app.extra["KEYCLOAK_ADMIN"]
     # Tapir user
-    tapir_user:  UserModel = UserModel.one_user(session, user_id)
+    tapir_user = UserModel.one_user(session, user_id)
     if tapir_user is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User ID is not found")
 
@@ -165,7 +164,7 @@ async def impersonate(request: Request,
         user_claims.set_tapir_session(tapir_cookie, tapir_session)
 
     # Perform impersonation (returns a URL to redirect to)
-    impersonation_response = kc_admin.connection.raw_post(f"admin/realms/{kc_admin.connection.user_realm_name}/users/{user_id}/impersonation")
+    impersonation_response = kc_admin.connection.raw_post(f"admin/realms/{kc_admin.connection.user_realm_name}/users/{user_id}/impersonation", {})
     impersonation_url = impersonation_response.headers.get("redirect")
     response = make_cookie_response(request, user_claims, tapir_cookie, impersonation_url)
     return response
@@ -230,6 +229,7 @@ class Tokens(BaseModel):
     """Token refresh request body"""
     classic: Optional[str]
     session: str
+    refresh: str
 
 class RefreshedTokens(BaseModel):
     """Token refresh reply"""
@@ -243,11 +243,11 @@ class RefreshedTokens(BaseModel):
 reported_env_name = set()
 
 @router.post('/refresh')
-async def refresh_tokens(request: Request, response: Response, tokens: Tokens) -> RefreshedTokens:
-    session = tokens.session
+async def refresh_tokens(request: Request, response: Response, body: Tokens) -> RefreshedTokens | RedirectResponse:
+    session = body.session
     if not session:
         logger.debug(f"There is no oidc session cookie.")
-    classic_cookie = tokens.classic
+    classic_cookie = body.classic
 
     try:
         tokens, jwt_payload = ArxivUserClaims.unpack_token(session)
@@ -257,11 +257,16 @@ async def refresh_tokens(request: Request, response: Response, tokens: Tokens) -
 
     idp: ArxivOidcIdpClient = request.app.extra["idp"]
     refresh_token = tokens.get('refresh')
-    if refresh_token is None:
-        raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED) # You can call this when refresh token available
 
-    user = idp.refresh_access_token(refresh_token)
-    if user is None:
+    if refresh_token is None:
+        logger.warning("Refresh token is not in the tokens")
+        login_url = request.url_for("login")  # Assuming you have a route named 'login'
+        return RedirectResponse(url=login_url, status_code=status.HTTP_303_SEE_OTHER)
+
+    idp: ArxivOidcIdpClient = request.app.extra["idp"]
+    user_claims = idp.refresh_access_token(refresh_token)
+
+    if user_claims is None:
         # The refresh token is invalid, or expired. Purge the session cookie
         for env_name in asdict(COOKIE_ENV_NAMES).values():
             if env_name in request.app.extra:
@@ -283,7 +288,7 @@ async def refresh_tokens(request: Request, response: Response, tokens: Tokens) -
     cookie_max_age = int(request.app.extra['COOKIE_MAX_AGE'])
 
     content = RefreshedTokens(
-        session = user.encode_jwt_token(secret),
+        session = user_claims.encode_jwt_token(secret),
         classic = classic_cookie,
         domain = domain,
         max_age = cookie_max_age,
@@ -293,7 +298,7 @@ async def refresh_tokens(request: Request, response: Response, tokens: Tokens) -
     default_next_page = request.app.extra['ARXIV_URL_HOME']
     # "post" should not redirect, I think.
     # next_page = request.query_params.get('next_page', request.query_params.get('next', default_next_page))
-    response = make_cookie_response(request, user, classic_cookie, '', content=content.model_dump())
+    response = make_cookie_response(request, user_claims, classic_cookie, '', content=content.model_dump())
     return response
 
 

@@ -7,7 +7,7 @@ import traceback
 from datetime import datetime
 from enum import Enum
 from traceback import TracebackException
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Tuple
 from urllib.parse import urlparse
 
 import httpx
@@ -245,7 +245,7 @@ def kc_login_with_client_credential(kc_admin: KeycloakAdmin, username: str, pass
     }
 
     parsed_url = urlparse(token_url)
-    is_local = parsed_url.hostname.lower() in ("127.0.0.1", "localhost", "localhost.arxiv.org")
+    is_local = parsed_url.hostname.lower() in ("127.0.0.1", "localhost", "localhost.arxiv.org") if parsed_url.hostname is not None else False
 
     logger.info(f"Logging in local {str(is_local)} {token_url} to Keycloak account {username}")
 
@@ -367,7 +367,7 @@ async def kc_validate_access_token(kc_admin: KeycloakAdmin, idp: ArxivOidcIdpCli
     return False
 
 
-def um_to_group_name(group_flag, um: UserModel) -> Optional[str]:
+def um_to_group_name(group_flag: Tuple[str, str], um: UserModel) -> Optional[str]:
     group_name, flag_name = group_flag
     return group_name if hasattr(um, flag_name) and getattr(um, flag_name) else None
 
@@ -418,7 +418,7 @@ def get_account_info(session: Session, user_id: str) -> Optional[AccountInfoMode
             affiliation = um.affiliation,
             url = um.url,
             default_category = category_model,
-            groups = [group for group in groups if group],
+            groups = [CategoryGroup(group) for group in groups if group is not None],
             joined_date = um.joined_date,
             career_status = get_career_status(um.type),
             tracking_cookie=um.tracking_cookie,
@@ -459,7 +459,7 @@ def register_tapir_account(session: Session, registration: AccountRegistrationMo
         messages = []
         cause = tb_exception.__cause__
         if isinstance(cause, TracebackException):
-            messages.append(str(cause.exc_type_str))
+            messages.append(str(cause.exc_type))
             messages.append(str(cause))
         flattened_error = "\n".join(messages)
         message = flattened_error
@@ -471,15 +471,21 @@ def register_tapir_account(session: Session, registration: AccountRegistrationMo
             message = f"'{match.group(1)}' for '{where}' belongs to an existing user."
         return AccountRegistrationError(message=message, field_name=where)
 
-    db_nick = TapirNickname(user_id = tapir_user.user_id,  nickname = um.username, flag_valid = 1, flag_primary = 1)
-    session.add(db_nick)
+    if tapir_user:
+        db_nick = TapirNickname(user_id = tapir_user.user_id,  nickname = um.username, flag_valid = 1, flag_primary = 1)
+        session.add(db_nick)
 
-    hashed = passwords.hash_password(registration.password)
-    db_pass = TapirUsersPassword(user_id = tapir_user.user_id, password_storage = 2, password_enc = hashed)
-    session.add(db_pass)
-    session.commit() # The account needs to be committed, so the following account migration works.
-    logger.info("Tapir user account created successfully. The user data committed.")
-    return tapir_user
+        hashed = passwords.hash_password(registration.password)
+        db_pass = TapirUsersPassword(user_id = tapir_user.user_id, password_storage = 2, password_enc = hashed)
+        session.add(db_pass)
+
+        session.commit() # The account needs to be committed, so the following account migration works.
+        logger.info("Tapir user account created successfully. The user data committed.")
+        return tapir_user
+
+    # This should not happen.
+    logger.error("Tapir user account is not created.")
+    return AccountRegistrationError(message="Tapir user account is not created.", field_name="user_id")
 
 
 def update_tapir_account(session: Session, profile: AccountInfoModel) -> AccountRegistrationError | TapirUser :
@@ -496,7 +502,6 @@ def update_tapir_account(session: Session, profile: AccountInfoModel) -> Account
 
     try:
         tapir_user = UserModel.update_user(session, um1)
-
     except RegistrationFailed as this_e:
         session.rollback()
 
@@ -509,15 +514,19 @@ def update_tapir_account(session: Session, profile: AccountInfoModel) -> Account
         flattened_error = "\n".join(messages)
         message = flattened_error
         match = re.search(r"Duplicate entry '([^']+)' for key '([^']+)'", flattened_error, flags=re.MULTILINE)
-        where = None
+        where = "Unknown"
         if match:
             field = match.group(2)
             where = {"nickname": "User name", "email": "Email"}.get(field, field)
             message = f"'{match.group(1)}' for '{where}' belongs to an existing user."
         return AccountRegistrationError(message=message, field_name=where)
 
-    logger.info("Tapir user account updated successfully.")
-    return tapir_user
+    if tapir_user:
+        logger.info("Tapir user account updated successfully.")
+        return tapir_user
+
+    logger.error("Tapir user account is not updated.")
+    return AccountRegistrationError(message="Failed to update user account", field_name="Unknown")
 
 
 def create_kc_account(kc_admin: KeycloakAdmin, user: AuthResponse, exist_ok: bool=True) -> None:

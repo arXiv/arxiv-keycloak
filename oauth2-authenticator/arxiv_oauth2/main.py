@@ -112,7 +112,7 @@ def create_app(*args, **kwargs) -> FastAPI:
     from arxiv.config import Settings
 
     settings = Settings(
-        CLASSIC_DB_URI = os.environ.get('CLASSIC_DB_URI'),
+        CLASSIC_DB_URI = os.environ.get('CLASSIC_DB_URI', "arXiv"),
         LATEXML_DB_URI = None
     )
     from arxiv_bizlogic.database import Database
@@ -275,7 +275,7 @@ def create_app(*args, **kwargs) -> FastAPI:
 
         try:
             states: List[State] = session.query(State).all()
-            result.update({state.name: str(state.value) for state in states})
+            result.update({state.name: str(state.value) for state in states if state.name})
             return result
 
         except Exception as exc:

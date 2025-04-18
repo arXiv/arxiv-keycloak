@@ -81,6 +81,8 @@ async def get_captcha_audio(
     app = request.app
     secret = app.extra['CAPTCHA_SECRET']
     host = get_client_host(request)
+    if host is None:
+        raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="Host IP is not known")
     logger.info("Audio captcha: host %s %s", host, token)
     try:
         value = stateless_captcha.unpack(token, secret, host)
