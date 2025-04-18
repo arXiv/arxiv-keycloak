@@ -6,7 +6,8 @@ authors = ["arxiv.org"]
 packages = [
    { include = "arxiv_bizlogic" },
    ]
-   
+include = ["arxiv_bizlogic/py.typed"]
+
 [tool.poetry.dependencies]
 python = "^3.11"
 pydantic = "^2.8.2"

@@ -42,6 +42,10 @@ def update_username(value: Any, user: domain.User, logger: logging.Logger) -> bo
     return True
 
 def update_first_name(value: Any, user: domain.User, logger: logging.Logger) -> bool:
+    if user.name is None:
+        user.name = domain.UserFullName(forename=value, surname="")
+        return True
+
     if user.name.forename == value:
         return False
     logger.info('Update first name %s --> %s', user.name.forename, value)
@@ -49,6 +53,10 @@ def update_first_name(value: Any, user: domain.User, logger: logging.Logger) -> 
     return True
 
 def update_last_name(value: Any, user: domain.User, logger: logging.Logger) -> bool:
+    if user.name is None:
+        user.name = domain.UserFullName(forename="", surname=value)
+        return True
+
     if user.name.surname == value:
         return False
     logger.info('Update last name %s --> %s', user.name.surname, value)
@@ -106,5 +114,3 @@ def dispatch_user_do_update(_data: dict, representation: Any, session: Session, 
     if changed:
         logger.info("update user")
         accounts.update(user)
-
-

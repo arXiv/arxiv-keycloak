@@ -56,7 +56,7 @@ async def get_current_user_info(
     """
     if not current_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
-    return reply_account_info(session, current_user.user_id)
+    return reply_account_info(session, str(current_user.user_id))
 
 
 @router.get('/profile/{user_id:str}')
@@ -229,7 +229,7 @@ def email_verify_requset(
     user: TapirUser | None = session.query(TapirUser).filter(TapirUser.email == body.email).one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    kc_send_verify_email(kc_admin, user.user_id, force_verify=True)
+    kc_send_verify_email(kc_admin, str(user.user_id), force_verify=True)
     return
 
 
@@ -246,7 +246,7 @@ def get_email_verified_status_current_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
     user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == current_user.user_id).one_or_none()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     return EmailVerifiedStatus(email_verified= user.is_verified, user_id = user.user_id)
 
@@ -674,7 +674,7 @@ async def get_user_profile_with_query(
     tapir = None
 
     if username or email:
-        # If you know a email or username, there is no security concern as both are equivalent
+        # If you know an email or username, there is no security concern as both are equivalent
         query = session.query(TapirUser, TapirNickname).join(TapirNickname, TapirUser.user_id == TapirNickname.user_id)
         if username:
             query = query.filter(TapirNickname.nickname == username)

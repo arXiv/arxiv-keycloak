@@ -1,10 +1,14 @@
 """Contains route information."""
 
 from keycloak import KeycloakAdmin
-from arxiv_bizlogic.fastapi_helpers import *
-from fastapi import Depends, Request
+from arxiv_bizlogic.fastapi_helpers import (
+    decode_user_claims, get_current_user, get_db, get_current_user_or_none, get_hostname, get_client_host_name,
+    get_client_host, get_current_user_access_token, sha256_base64_encode, datetime_to_epoch, COOKIE_ENV_NAMES
+    )
+from fastapi import Depends, Request, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
+from arxiv.auth.user_claims import ArxivUserClaims
 
 ALGORITHM = "HS256"
 KEYCLOAK_ADMIN = 'KEYCLOAK_ADMIN'
@@ -29,7 +33,7 @@ def verify_bearer_token(request: Request,
 
 
 def is_super_user(token: ArxivUserClaims | ApiToken | None) -> bool:
-    return token and (isinstance(token, ApiToken) or (isinstance(token, ArxivUserClaims) and token.is_admin))
+    return (token is not None) and (isinstance(token, ApiToken) or (isinstance(token, ArxivUserClaims) and token.is_admin))
 
 
 def is_authenticated(token: ApiToken | ArxivUserClaims | None, current_user: ArxivUserClaims | None) -> bool:
@@ -43,7 +47,7 @@ def is_authorized(token: ApiToken | ArxivUserClaims | None, current_user: ArxivU
         elif isinstance(token, ArxivUserClaims):
             current_user = token
 
-    return current_user.is_admin or current_user.user_id == user_id
+    return (current_user is not None) and (current_user.is_admin or current_user.user_id == user_id)
 
 
 def check_authnz(token: ApiToken | ArxivUserClaims | None, current_user: ArxivUserClaims | None, user_id: str):

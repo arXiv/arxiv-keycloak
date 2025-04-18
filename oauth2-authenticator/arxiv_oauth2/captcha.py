@@ -41,6 +41,8 @@ async def get_captcha_image(
     secret = app.extra['CAPTCHA_SECRET']
     font = app.extra.get('CAPTCHA_FONT')
     host = get_client_host(request)
+    if host is None:
+        raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="Host IP is not known")
     logger.info("Image captcha: host %s %s", host, token)
     try:
         image = generate_captcha_image(token, secret, host, font=font)
@@ -60,6 +62,8 @@ async def get_captcha_image(
 def get_captcha_token(request: Request) -> CaptchaTokenReplyModel:
     captcha_secret = request.app.extra['CAPTCHA_SECRET']
     host = get_client_host(request)
+    if host is None:
+        raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="Host IP is not known")
     captcha_token = stateless_captcha.new(captcha_secret, host)
     logger.info("Captcha: host %s %s", host, captcha_token)
     return CaptchaTokenReplyModel(token=captcha_token)

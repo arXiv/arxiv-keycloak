@@ -34,10 +34,12 @@ from starlette.types import Scope, Receive, Send
 
 
 class MySQLRetryMiddleware:
-    def __init__(self, app: FastAPI, engine: Engine = None, retry_attempts: int = 2, retry_delay: int = 1):
+    def __init__(self, app: FastAPI, engine: Engine | None  = None, retry_attempts: int = 2, retry_delay: int = 1):
         self.app = app
         self.retry_attempts = retry_attempts
         self.retry_delay = retry_delay
+        if engine is None:
+            raise ValueError("DB engine is required.")
         self.engine = engine
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:

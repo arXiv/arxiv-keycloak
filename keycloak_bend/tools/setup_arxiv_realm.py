@@ -7,7 +7,7 @@ import os
 import string
 from typing import Optional
 
-from keycloak import KeycloakAdmin, KeycloakError
+from keycloak import KeycloakAdmin, KeycloakError, KeycloakPostError
 import argparse
 
 logging.basicConfig(level=logging.DEBUG)
@@ -74,12 +74,17 @@ class KeycloakSetup:
             if role_name in existing_roles:
                 continue
             role_description = role['description']
-            self.admin.create_realm_role(
-                payload={
-                    "name": role_name,
-                    "description": role_description
-                }
-            )
+            try:
+                self.admin.create_realm_role(
+                    payload={
+                        "name": role_name,
+                        "description": role_description
+                    }
+                )
+            except KeycloakPostError as exc:
+                logger.error(f"Error creating {role_name}: {exc}")
+                pass
+
 
     def restore_scopes(self):
         existing_scopes = {scope['name']: scope for scope in self.admin.get_client_scopes()}

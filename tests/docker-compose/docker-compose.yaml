@@ -243,7 +243,7 @@ services:
       
     
   keycloak-setup:
-    image: python:3.12
+    image: gcr.io/arxiv-development/arxiv-keycloak/python-keycloak-admin:latest
     container_name: keycloak-setup
     depends_on:
       - keycloak

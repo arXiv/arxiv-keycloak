@@ -48,7 +48,7 @@ def get_career_status(index: int | None) -> CAREER_STATUS:
     """map an integer to a CAREER_STATUS"""
     if index is None:
         return CAREER_STATUS.Unknown
-    csl: [CAREER_STATUS] = list(CAREER_STATUS)
+    csl: List[CAREER_STATUS] = list(CAREER_STATUS)
     if 0 <= index < len(csl):
         return csl[index]
     return CAREER_STATUS.Unknown  # Default fallback
@@ -142,8 +142,8 @@ class AccountInfoBaseModel(BaseModel):
 
     def to_user_model_data(self, **kwargs) -> dict[str, Any]:
         data = self.model_dump(**kwargs)
-        if "groups" not in data:
-            data["groups"] = []
+        # if "groups" not in data:
+        #     data["groups"] = []
         result = data.copy()
         for key, value in data.items():
             match key:
@@ -154,12 +154,14 @@ class AccountInfoBaseModel(BaseModel):
                     pass
 
                 case "groups":
-                    value: List[str]
-                    groups = {group: True for group in value}
-                    del result[key]
-                    # groups = [CategoryGroup(elem) for elem in value]
-                    for group in list(CategoryGroup):
-                        result[CategoryGroupToCategoryFlags[group.value]] = group.value in groups
+                    if isinstance(value, list):
+                        groups = {group: True for group in value}
+                        del result[key]
+                        # groups = [CategoryGroup(elem) for elem in value]
+                        for group in list(CategoryGroup):
+                            result[CategoryGroupToCategoryFlags[group.value]] = group.value in groups
+                    else:
+                        logger.warning(f"groups is not a list {value!r}")
 
                 case "career_status":
                     del result[key]
@@ -245,10 +247,14 @@ def kc_login_with_client_credential(kc_admin: KeycloakAdmin, username: str, pass
     parsed_url = urlparse(token_url)
     is_local = parsed_url.hostname.lower() in ("127.0.0.1", "localhost", "localhost.arxiv.org")
 
+    logger.info(f"Logging in local {str(is_local)} {token_url} to Keycloak account {username}")
+
     with httpx.Client(verify=not is_local) as client:
         response = client.post(token_url, data=payload)
         if response.status_code == 200:
+            logger.info(f"Success logging in {username}")
             return response.json()
+        logger.warning(f"Failed logging in {username} status_code={response.status_code}")
     return None
 
 
@@ -315,9 +321,11 @@ def kc_set_user_password(kc_admin: KeycloakAdmin, account: AccountInfoModel, pas
         logger.error(message, exc_info=e)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message) from e
 
-    except KeycloakError as e:
-        logger.error("Setting Keycloak user password failed.", exc_info=e)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR) from e
+    except KeycloakError as kce:
+        logger.error("Setting Keycloak user password failed. " + str(kce), exc_info=kce)
+        if kce.response_code == 404:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=kce.error_message) from kce
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=kce.error_message) from kce
 
 
 def kc_check_old_password(kc_admin: KeycloakAdmin, idp: ArxivOidcIdpClient,
@@ -444,14 +452,14 @@ def register_tapir_account(session: Session, registration: AccountRegistrationMo
         tapir_user = UserModel.create_user(session, um)
 
     except IntegrityError as this_e:
-        # If user name or email is dupe, this would catch it and may be able to produce a reasonable error mssage.
+        # If username or email is dupe, this would catch it and may be able to produce a reasonable error mssage.
         session.rollback()
 
         tb_exception = traceback.TracebackException.from_exception(this_e)
         messages = []
         cause = tb_exception.__cause__
         if isinstance(cause, TracebackException):
-            messages.append(str(cause.exc_type))
+            messages.append(str(cause.exc_type_str))
             messages.append(str(cause))
         flattened_error = "\n".join(messages)
         message = flattened_error
@@ -469,7 +477,7 @@ def register_tapir_account(session: Session, registration: AccountRegistrationMo
     hashed = passwords.hash_password(registration.password)
     db_pass = TapirUsersPassword(user_id = tapir_user.user_id, password_storage = 2, password_enc = hashed)
     session.add(db_pass)
-    session.commit() # The account needs to be commit, so the following account migration works.
+    session.commit() # The account needs to be committed, so the following account migration works.
     logger.info("Tapir user account created successfully. The user data committed.")
     return tapir_user
 
@@ -496,7 +504,7 @@ def update_tapir_account(session: Session, profile: AccountInfoModel) -> Account
         messages = []
         cause = tb_exception.__cause__
         if isinstance(cause, TracebackException):
-            messages.append(str(cause.exc_type))
+            messages.append(str(cause.exc_type_str))
             messages.append(str(cause))
         flattened_error = "\n".join(messages)
         message = flattened_error

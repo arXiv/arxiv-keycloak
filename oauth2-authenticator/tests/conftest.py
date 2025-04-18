@@ -16,19 +16,11 @@ load_dotenv(dotenv_path=AAA_TEST_DIR.joinpath(dotenv_filename), override=True)
 import pytest
 import logging
 
-from arxiv_bizlogic.bizmodels.user_model import VetoStatusEnum
-from arxiv_bizlogic.fastapi_helpers import datetime_to_epoch
-from datetime import datetime
 from time import sleep
 
-from arxiv_oauth2.biz.account_biz import CAREER_STATUS, AccountRegistrationModel, AccountInfoModel
 from fastapi.testclient import TestClient
 from arxiv_oauth2.main import create_app
 import os
-
-from test_mta_client.client import Client as MtaClient
-from test_mta_client.api.default import get_emails_emails_get, maybe_click_link_emails_mail_id_verify_post
-from test_mta_client.models import EmailRecord
 
 
 def check_any_rows_in_table(schema: str, table_name: str, db_user: str, db_password: str, db_port: str = "3306", ssl: bool = True) -> bool:
@@ -58,14 +50,14 @@ def check_any_rows_in_table(schema: str, table_name: str, db_user: str, db_passw
         return False
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def test_env() -> Dict[str, Optional[str]]:
     if not AAA_TEST_DIR.joinpath(dotenv_filename).exists():
         raise FileNotFoundError(dotenv_filename)
     return dotenv_values(AAA_TEST_DIR.joinpath(dotenv_filename).as_posix())
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="module", autouse=True)
 def docker_compose(test_env):
     logging.info("Setting up docker-compose")
     docker_compose_file = AAA_TEST_DIR.joinpath('docker-compose.yaml')
@@ -105,12 +97,12 @@ def docker_compose(test_env):
         pass
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="module", autouse=True)
 def test_mta(test_env, docker_compose):
     return f"http://127.0.0.1:{test_env['MAIL_API_PORT']}"
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="module", autouse=True)
 def aaa_client(test_env, docker_compose):
     """Start AAA App. Since it needs the database running, it needs the arxiv db up"""
     os.environ.update(test_env)
@@ -134,7 +126,7 @@ def aaa_client(test_env, docker_compose):
     client.close()
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="module", autouse=True)
 def aaa_api_headers(test_env):
     aaa_api_token = test_env['AAA_API_TOKEN']
     headers = {

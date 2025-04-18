@@ -2,7 +2,7 @@
 import json
 import urllib.parse
 from dataclasses import asdict
-from typing import Optional, Tuple, Literal, Any
+from typing import Optional, Tuple, Literal, Any, Dict
 
 from arxiv_bizlogic.bizmodels.user_model import UserModel
 from arxiv_bizlogic.fastapi_helpers import get_client_host
@@ -63,7 +63,6 @@ async def login(request: Request,
 
 @router.get('/callback')
 async def oauth2_callback(request: Request,
-
                           _db = Depends(get_db)
                           ) -> Response:
     """User can log in with username and password, or permanent token."""
@@ -74,7 +73,7 @@ async def oauth2_callback(request: Request,
         request.session.clear()
         return Response(status_code=status.HTTP_200_OK)
 
-    client_ip = request.headers.get("x-real-ip", request.client.host)
+    client_ip = request.headers.get("x-real-ip", request.client.host if request.client else "")
 
     idp: ArxivOidcIdpClient = request.app.extra["idp"]
     user_claims: Optional[ArxivUserClaims] = idp.from_code_to_user_claims(code, client_ipv4=client_ip)
@@ -138,7 +137,7 @@ async def impersonate(request: Request,
     id_token = ""
     refresh_token = ""
     # https://www.keycloak.org/docs-api/latest/rest-api/index.html#UserRepresentation
-    claims = {
+    claims: Dict[str, Any] = {
         'sub': user_id,
         'exp': current_user.expires_at,
         'iat': current_user.issued_at,
@@ -166,8 +165,8 @@ async def impersonate(request: Request,
         user_claims.set_tapir_session(tapir_cookie, tapir_session)
 
     # Perform impersonation (returns a URL to redirect to)
-    impersonation = kc_admin.raw_post(f"admin/realms/{kc_admin.realm_name}/users/{user_id}/impersonation")
-    impersonation_url = impersonation['redirect']
+    impersonation_response = kc_admin.connection.raw_post(f"admin/realms/{kc_admin.connection.user_realm_name}/users/{user_id}/impersonation")
+    impersonation_url = impersonation_response.headers.get("redirect")
     response = make_cookie_response(request, user_claims, tapir_cookie, impersonation_url)
     return response
 
@@ -380,10 +379,9 @@ async def check_db(request: Request,
 
 def make_cookie_response(request: Request,
                          user_claims: Optional[ArxivUserClaims],
-                         tapir_cookie: str,
-                         next_page: str,
+                         tapir_cookie: Optional[str],
+                         next_page: Optional[str],
                          content: Optional[Any] = None) -> Response:
-
     session_cookie_key, classic_cookie_key, keycloak_key, domain, secure, samesite = cookie_params(request)
     cookie_max_age = int(request.app.extra['COOKIE_MAX_AGE'])
 

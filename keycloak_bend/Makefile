@@ -1,6 +1,10 @@
 include ../.env
 export $(shell sed 's/=.*//' ../.env)
 
+DOCKER_DIRS := tools
+ALL_DIRS := $(DOCKER_DIRS)
+
+
 tag := ${KC_DOCKER_TAG}
 
 .PHONY: bootstrap run proxy sql docker-image push deploy local arxiv-realm sh-arxiv-realm test dev9-arxiv-realm local-arxiv-realm deploy2 kc-service
@@ -10,6 +14,14 @@ all: .env.localdb
 	@echo KC_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
 	@echo ARXIV_USER_SECRET: ${ARXIV_USER_SECRET}
 	@awk '/^#-#/ { print substr($$0, 5)}' Makefile
+
+
+define run_in_docker_dirs
+	@for dir in $(DOCKER_DIRS); do \
+		echo "Running $(1) in $$dir"; \
+		$(MAKE) -C $$dir $(1) || exit 1; \
+	done
+endef
 
 
 #-#
@@ -61,6 +73,7 @@ test:
 run: docker-image .bootstrap
 	KC_DOCKER_TAG=${tag} GCP_PROJECT=${GCP_PROJECT} GCP_CRED=${GCP_CRED} docker compose up -d
 
+
 #-#
 #-# kill: 
 #-#   stops the Keycloak and local Postgres DB
@@ -78,6 +91,7 @@ sh:
 #-#   builds docker image
 docker-image: keycloak_migration/keycloak-user-migration/target/keycloak-rest-provider-5.0.1-SNAPSHOT.jar pubsub-listener/keycloak-to-pubsub-jar-with-dependencies.jar
 	docker build --progress plain -t ${tag}:latest .
+	$(call run_in_docker_dirs,docker-image)
 
 keycloak_migration/keycloak-user-migration/target/keycloak-rest-provider-5.0.1-SNAPSHOT.jar:
 	cd keycloak_migration && $(MAKE) keycloak-user-migration/target/keycloak-rest-provider-5.0.1-SNAPSHOT.jar

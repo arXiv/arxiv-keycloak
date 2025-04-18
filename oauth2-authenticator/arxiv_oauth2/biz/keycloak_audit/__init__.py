@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 user_id_pattern = re.compile("^users/([^/]+)/")
 
 def get_user_id_from_audit_message(data: dict) -> Optional[str]:
-    matched = user_id_pattern.match(data.get("resourcePath"))
+    matched = user_id_pattern.match(data.get("resourcePath", ""))
     if not matched:
         return None
     return matched.group(1)
@@ -41,10 +41,10 @@ def find_role_name(representation: Any) -> Optional[str]:
         return None
 
 
-def get_keycloak_dispatch_functions() -> Dict[str, Callable]:
+def get_keycloak_dispatch_functions() -> Dict[str, Callable[..., None]]:
     # Dictionary to store dispatch functions
     logger = logging.getLogger(__name__)
-    dispatch_functions = {}
+    dispatch_functions: Dict[str, Callable[..., None]] = {}
     directory = os.path.dirname(__file__)
 
     # Get the list of Python files in the actions directory

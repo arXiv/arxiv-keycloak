@@ -63,7 +63,7 @@ async def get_kc_user(
 
         }
     except KeycloakGetError as kce:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=json.loads(kce.error_message.decode("utf-8")).get('detail'))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=json.loads(kce.error_message.encode("utf-8")).get('detail'))
     except KeycloakError as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
     return JSONResponse(data)
