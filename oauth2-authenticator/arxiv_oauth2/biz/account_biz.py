@@ -509,7 +509,7 @@ def update_tapir_account(session: Session, profile: AccountInfoModel) -> Account
         messages = []
         cause = tb_exception.__cause__
         if isinstance(cause, TracebackException):
-            messages.append(str(cause.exc_type_str))
+            messages.append(str(cause.exc_type))
             messages.append(str(cause))
         flattened_error = "\n".join(messages)
         message = flattened_error

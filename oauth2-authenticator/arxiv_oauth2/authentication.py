@@ -2,7 +2,7 @@
 import json
 import urllib.parse
 from dataclasses import asdict
-from typing import Optional, Tuple, Literal, Any, Dict
+from typing import Optional, Tuple, Literal, Any, Dict, Union
 
 from arxiv_bizlogic.bizmodels.user_model import UserModel
 from arxiv_bizlogic.fastapi_helpers import get_client_host
@@ -18,6 +18,8 @@ from arxiv.base import logging
 from arxiv.auth.user_claims import ArxivUserClaims, get_roles
 from arxiv.auth.openid.oidc_idp import ArxivOidcIdpClient
 from arxiv.auth.legacy.sessions import invalidate as legacy_invalidate
+from starlette.datastructures import URL
+
 # from arxiv.auth.legacy import accounts, exceptions
 # from arxiv.auth import domain
 
@@ -164,7 +166,7 @@ async def impersonate(request: Request,
         user_claims.set_tapir_session(tapir_cookie, tapir_session)
 
     # Perform impersonation (returns a URL to redirect to)
-    impersonation_response = kc_admin.connection.raw_post(f"admin/realms/{kc_admin.connection.user_realm_name}/users/{user_id}/impersonation", {})
+    impersonation_response = kc_admin.connection.raw_post(f"admin/realms/{kc_admin.connection.user_realm_name}/users/{user_id}/impersonation", {})  # type: ignore
     impersonation_url = impersonation_response.headers.get("redirect")
     response = make_cookie_response(request, user_claims, tapir_cookie, impersonation_url)
     return response
@@ -192,7 +194,7 @@ async def refresh_token(
     tapir_cookie = request.cookies.get(classic_cookie_key, "")
     login_url = request.url_for("login")  # Assuming you have a route named 'login'
     if next_page:
-        login_url = f"{login_url}?next_page={urllib.parse.quote(next_page)}"
+        login_url = URL(f"{login_url}?next_page={urllib.parse.quote(next_page)}")
 
     session_cookie_key = request.app.extra[COOKIE_ENV_NAMES.auth_session_cookie_env]
     token = request.cookies.get(session_cookie_key)
@@ -242,8 +244,20 @@ class RefreshedTokens(BaseModel):
 
 reported_env_name = set()
 
-@router.post('/refresh')
-async def refresh_tokens(request: Request, response: Response, body: Tokens) -> RefreshedTokens | RedirectResponse:
+@router.post('/refresh', responses = {
+    status.HTTP_200_OK: {
+        "model": RefreshedTokens,
+        "description": "Tokens successfully refreshed"
+    },
+    status.HTTP_303_SEE_OTHER: {
+        "model": RefreshedTokens,
+        "description": "Redirect to login if refresh token is missing"
+    },
+    status.HTTP_401_UNAUTHORIZED: {
+        "description": "Unauthorized if session or refresh token is invalid"
+    }
+    })
+async def refresh_tokens(request: Request, response: Response, body: Tokens) -> Response:
     session = body.session
     if not session:
         logger.debug(f"There is no oidc session cookie.")
@@ -263,7 +277,6 @@ async def refresh_tokens(request: Request, response: Response, body: Tokens) -> 
         login_url = request.url_for("login")  # Assuming you have a route named 'login'
         return RedirectResponse(url=login_url, status_code=status.HTTP_303_SEE_OTHER)
 
-    idp: ArxivOidcIdpClient = request.app.extra["idp"]
     user_claims = idp.refresh_access_token(refresh_token)
 
     if user_claims is None:
@@ -341,7 +354,7 @@ async def logout(request: Request,
 
 
 @router.post('/logout-callback')
-async def logout(request: Request) -> Response:
+async def logout_callback(request: Request) -> Response:
     body = await request.body()
     logger.info("logout-callback body: %s", json.dumps(body))
     return Response(status_code=status.HTTP_200_OK)
@@ -350,11 +363,11 @@ async def logout(request: Request) -> Response:
 @router.get('/token-names')
 async def get_token_names(request: Request) -> JSONResponse:
     session_cookie_key, classic_cookie_key, keycloak_key, _domain, _secure, _samesite = cookie_params(request)
-    return {
+    return JSONResponse(content={
         "session": session_cookie_key,
         "classic": classic_cookie_key,
         "arxiv_keycloak": keycloak_key,
-    }
+    })
 
 
 class WellKnownServices(BaseModel):
@@ -369,17 +382,16 @@ class WellKnownServices(BaseModel):
 
 
 @router.get('/well-known')
-async def get_token_names(request: Request) -> WellKnownServices:
+async def get_well_known_services(request: Request) -> WellKnownServices:
     well_known: WellKnownServices = request.app.extra["WELL_KNOWN"]
     return well_known
 
 
 @router.get('/check-db')
-async def check_db(request: Request,
-                   db: Session = Depends(get_db)) -> JSONResponse:
+async def check_db(db: Session = Depends(get_db)) -> JSONResponse:
     from arxiv.db.models import TapirCountry
     count = db.query(func.count(TapirCountry.digraph)).scalar()
-    return {"count": count}
+    return JSONResponse(content={"count": count})
 
 
 def make_cookie_response(request: Request,
