@@ -7,11 +7,15 @@ import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
 import Container from "@mui/material/Container";
+import FormControl from '@mui/material/FormControl';
+import FormLabel from '@mui/material/FormLabel';
+import RadioGroup from '@mui/material/RadioGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Radio from '@mui/material/Radio';
 
 import {RuntimeContext} from "../RuntimeContext";
 // import {useNotification} from "../NotificationContext";
 
-import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
 
 // import FormControl from "@mui/material/FormControl";
@@ -23,13 +27,14 @@ type PaperOwnerRequestType = adminApi['/v1/paper_owners/authorize/']['post']['re
 import {printUserName} from "../bits/printer.ts";
 import {useNotification} from "../NotificationContext.tsx";
 import {fetchPlus} from "../fetchPlus.ts";
+// import Switch from "@mui/material/Switch";
 
 
 const ClaimPaperOwnership: React.FC = () => {
     const {showNotification, showMessageDialog} = useNotification();
     const [inProgress, setInProgress] = useState(false);
     const runtimeProps = useContext(RuntimeContext);
-    const [formData, setFormData] = useState<PaperOwnerRequestType>({user_id: runtimeProps.currentUser?.id || "", paper_id: "", password: "", verify_id: false});
+    const [formData, setFormData] = useState<PaperOwnerRequestType>({user_id: runtimeProps.currentUser?.id || "", paper_id: "", password: "", verify_id: false, is_author: true});
     const [document, setDocument] = useState<DocumentType|null>(null);
 
     useEffect(() => {
@@ -157,6 +162,21 @@ const ClaimPaperOwnership: React.FC = () => {
                 />
                     <Typography sx={{flex: 1}} variant="body2">e.g. juq87"</Typography>
                 </Box>
+
+                <FormControl component="fieldset">
+                    <FormLabel >Are you an author of this paper?</FormLabel>
+                    <RadioGroup
+                        row
+                        value={formData.is_author ? 'yes' : 'no'}
+                        onChange={(e) =>
+                            setFormData({ ...formData, is_author: e.target.value === 'yes' })
+                        }
+                    >
+                        <FormControlLabel value="yes" control={<Radio />} label="Yes" />
+                        <FormControlLabel value="no" control={<Radio />} label="No" />
+                    </RadioGroup>
+                </FormControl>
+
                 <FormControlLabel
                     control={<Checkbox checked={formData.verify_id} onChange={(e) => setFormData(
                         {...formData, verify_id: e.target.checked})} />}
@@ -166,7 +186,7 @@ const ClaimPaperOwnership: React.FC = () => {
             </span>
                     }
                 />
-                <Button type="submit" variant="contained" color="primary" disabled={inProgress || !formData.verify_id || !runtimeProps.currentUser}>
+                <Button type="submit" variant="contained" color="primary" disabled={inProgress || !formData.verify_id || !runtimeProps.currentUser || !formData.paper_id || !formData.password ||  formData.password.length != 5 || !document}>
                     Submit
                 </Button>
             </Box>

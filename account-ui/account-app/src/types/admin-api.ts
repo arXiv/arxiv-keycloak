@@ -557,6 +557,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/paper-pw/renew/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Renew Paper Password
+         * @description Give the paper a new password
+         */
+        put: operations["renew_paper_password_v1_paper_pw_renew__document_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/ownership_requests/": {
         parameters: {
             query?: never;
@@ -688,6 +708,15 @@ export interface paths {
          *           exit();
          *        }
          *     }
+         *
+         *     {"id":62648,
+         *       "user_id":1129053,
+         *       "endorsement_request_id":null,
+         *       "workflow_status":"accepted",
+         *       "date":"2025-03-29T04:00:00Z",
+         *       "document_ids":[2123367,2123675,2125897,2130529,2134610,2612674,2618378],
+         *       "paper_ids":["2208.04373","2208.04681","2208.06903","2208.11535","2209.00613"]
+         *       "selected_documents":[2125897,2123675,2130529]}
          */
         put: operations["update_ownership_request_v1_ownership_requests__id__put"];
         post?: never;
@@ -1284,6 +1313,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/tapir_admin_audit/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Tapir Admin Audit */
+        get: operations["list_tapir_admin_audit_v1_tapir_admin_audit__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tapir_admin_audit/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Tapir Admin Audit */
+        get: operations["get_tapir_admin_audit_v1_tapir_admin_audit__id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/ping": {
         parameters: {
             query?: never;
@@ -1815,6 +1878,8 @@ export interface components {
             user_id: string;
             /** Verify Id */
             verify_id: boolean;
+            /** Is Author */
+            is_author: boolean;
         };
         /** PaperOwnershipDecisionModel */
         PaperOwnershipDecisionModel: {
@@ -2027,6 +2092,38 @@ export interface components {
             /** Group */
             group: string;
         };
+        /**
+         * TapirAdminActionEnum
+         * @enum {string}
+         */
+        TapirAdminActionEnum: "unknown" | "flip-flag" | "become-user" | "suspend-user" | "unsuspend-user" | "make-moderator" | "unmake-moderator" | "change-email" | "add-paper-owner" | "revoke-paper-owner" | "change-paper-pw" | "change-password" | "arXiv-change-status" | "arXiv-make-nonauthor" | "arXiv-make-author" | "add-paper-owner-2" | "arXiv-revoke-paper-owner" | "arXiv-unrevoke-paper-owner" | "arXiv-change-paper-pw" | "endorsed-by-suspect" | "got-negative-endorsement" | "add-comment";
+        /** TapirAdminAuditModel */
+        TapirAdminAuditModel: {
+            /** Id */
+            id: number;
+            /**
+             * Log Date
+             * Format: date-time
+             */
+            log_date: string;
+            /** Session Id */
+            session_id: number | null;
+            /** Ip Addr */
+            ip_addr: string;
+            /** Remote Host */
+            remote_host: string;
+            /** Admin User */
+            admin_user: number | null;
+            /** Affected User */
+            affected_user: number;
+            /** Tracking Cookie */
+            tracking_cookie: string;
+            action: components["schemas"]["TapirAdminActionEnum"];
+            /** Data */
+            data: string;
+            /** Comment */
+            comment: string;
+        };
         /** TapirSessionModel */
         TapirSessionModel: {
             /** Id */
@@ -2173,12 +2270,13 @@ export interface components {
             flag_group_eess?: number | null;
             /** Flag Group Econ */
             flag_group_econ?: number | null;
-            /** Veto Status */
-            veto_status?: string | null;
+            veto_status?: components["schemas"]["VetoStatusEnum"] | null;
             /** Flag Is Mod */
             flag_is_mod?: boolean | null;
             /** Tapir Policy Classes */
             tapir_policy_classes?: number[] | null;
+            /** Orcid */
+            orcid?: string | null;
         };
         /** UserUpdateModel */
         UserUpdateModel: {
@@ -2311,12 +2409,13 @@ export interface components {
             flag_group_eess?: number | null;
             /** Flag Group Econ */
             flag_group_econ?: number | null;
-            /** Veto Status */
-            veto_status?: string | null;
+            veto_status?: components["schemas"]["VetoStatusEnum"] | null;
             /** Flag Is Mod */
             flag_is_mod?: boolean | null;
             /** Tapir Policy Classes */
             tapir_policy_classes?: number[] | null;
+            /** Orcid */
+            orcid?: string | null;
         };
         /**
          * UserVetoStatus
@@ -2332,6 +2431,11 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /**
+         * VetoStatusEnum
+         * @enum {string}
+         */
+        VetoStatusEnum: "ok" | "no-endorse" | "no-upload" | "no-replace";
         /**
          * WorkflowStatus
          * @enum {string}
@@ -2972,6 +3076,8 @@ export interface operations {
                 first_name?: string | null;
                 flag_edit_users?: boolean | null;
                 flag_email_verified?: boolean | null;
+                flag_proxy?: boolean | null;
+                flag_veto?: boolean | null;
                 email_bouncing?: boolean | null;
                 clue?: string | null;
                 suspect?: boolean | null;
@@ -3379,6 +3485,8 @@ export interface operations {
                 _order?: string | null;
                 _start?: number | null;
                 _end?: number | null;
+                /** @description List of endorsement request IDs to filter by */
+                id?: number[] | null;
                 preset?: string | null;
                 /** @description Start date for filtering */
                 start_date?: string | null;
@@ -3397,6 +3505,8 @@ export interface operations {
                 endorsee_last_name?: string | null;
                 /** @description Endorsement request endorsee email */
                 endorsee_email?: string | null;
+                /** @description Current ID - index position - for navigation */
+                current_id?: number | null;
             };
             header?: never;
             path?: never;
@@ -3965,6 +4075,37 @@ export interface operations {
             path: {
                 category: string;
                 subject_class: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperPwModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    renew_paper_password_v1_paper_pw_renew__document_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: number;
             };
             cookie?: never;
         };
@@ -4773,6 +4914,10 @@ export interface operations {
                 submitter_id?: number | null;
                 /** @description MUI DataGrid Filter */
                 filter?: string | null;
+                /** @description Start Submission ID */
+                start_submission_id?: number | null;
+                /** @description End Submission ID */
+                end_submission_id?: number | null;
             };
             header?: never;
             path?: never;
@@ -5308,6 +5453,83 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicUserModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_tapir_admin_audit_v1_tapir_admin_audit__get: {
+        parameters: {
+            query?: {
+                /** @description sort by */
+                _sort?: string | null;
+                /** @description sort order */
+                _order?: string | null;
+                _start?: number | null;
+                _end?: number | null;
+                /** @description List of user IDs to filter by */
+                id?: number[] | null;
+                /** @description Admin User id */
+                admin_user?: number | null;
+                /** @description affected_user */
+                affected_user?: number | null;
+                /** @description Start date for filtering */
+                start_date?: string | null;
+                /** @description End date for filtering */
+                end_date?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TapirAdminAuditModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_tapir_admin_audit_v1_tapir_admin_audit__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TapirAdminAuditModel"];
                 };
             };
             /** @description Validation Error */
