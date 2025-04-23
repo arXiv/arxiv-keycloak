@@ -101,6 +101,8 @@ origins = [
     "https://dev3.arxiv.org/",
     "https://dev9.arxiv.org",
     "https://dev9.arxiv.org/",
+    "https://dev9.dev.arxiv.org",
+    "https://dev9.dev.arxiv.org/",
     "https://web40.arxiv.org",
     "https://web40.arxiv.org/",
     "https://web41.arxiv.org",

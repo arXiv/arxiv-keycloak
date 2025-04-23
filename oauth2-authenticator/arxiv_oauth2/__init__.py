@@ -1,4 +1,5 @@
 """Contains route information."""
+from typing import Optional
 
 from keycloak import KeycloakAdmin
 from arxiv_bizlogic.fastapi_helpers import (
@@ -19,17 +20,28 @@ def get_keycloak_admin(request: Request) -> KeycloakAdmin:
 class ApiToken(BaseModel):
     token: str
 
-HTTPBearer_security = HTTPBearer()
+# HTTPBearer_security = HTTPBearer()
+
+class OptionalHTTPBearer(HTTPBearer):
+    async def __call__(self, request: Request) -> Optional[HTTPAuthorizationCredentials]:
+        try:
+            return await super().__call__(request)
+        except Exception:
+            return None
+
+HTTPBearer_security = OptionalHTTPBearer()
 
 def verify_bearer_token(request: Request,
-                        credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer_security)) -> ArxivUserClaims | ApiToken | None:
-    token = credentials.credentials
-    if not token:
-        return None
-    if request.app.extra['AAA_API_SECRET_KEY'] and token == request.app.extra['AAA_API_SECRET_KEY']:
-        return ApiToken(token = token)
-    jwt_secret = request.app.extra['JWT_SECRET']
-    return decode_user_claims(token, jwt_secret)
+                        credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer_security)) -> ArxivUserClaims | ApiToken | None:
+    if credentials:
+        token = credentials.credentials
+        if not token:
+            return None
+        if request.app.extra['AAA_API_SECRET_KEY'] and token == request.app.extra['AAA_API_SECRET_KEY']:
+            return ApiToken(token = token)
+        jwt_secret = request.app.extra['JWT_SECRET']
+        return decode_user_claims(token, jwt_secret)
+    return None
 
 
 def is_super_user(token: ArxivUserClaims | ApiToken | None) -> bool:
@@ -47,7 +59,7 @@ def is_authorized(token: ApiToken | ArxivUserClaims | None, current_user: ArxivU
         elif isinstance(token, ArxivUserClaims):
             current_user = token
 
-    return (current_user is not None) and (current_user.is_admin or current_user.user_id == user_id)
+    return (current_user is not None) and (current_user.is_admin or (str(current_user.user_id) == str(user_id)))
 
 
 def check_authnz(token: ApiToken | ArxivUserClaims | None, current_user: ArxivUserClaims | None, user_id: str):

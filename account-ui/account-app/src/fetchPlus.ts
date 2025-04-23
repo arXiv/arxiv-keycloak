@@ -6,9 +6,16 @@ import { useNotification } from "./NotificationContext";
 export const fetchPlus = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const response = await fetch(input, init);
 
-    if (response.status === 401 || response.status === 403) {
+    if (response.status === 401) {
+        window.dispatchEvent(new CustomEvent("unauthenticated", {
+            detail: { message: "Session may be expired. Please log in." }
+        }));
+        throw new Error("Unauthenticated");
+    }
+
+    if (response.status === 403) {
         window.dispatchEvent(new CustomEvent("unauthorized", {
-            detail: { message: "Session expired. Please log in again." }
+            detail: { message: "Access is denied." }
         }));
         throw new Error("Unauthorized");
     }
