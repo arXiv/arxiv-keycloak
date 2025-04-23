@@ -186,6 +186,7 @@ steps:
       - build-oauth2-authenticator
       - build-test-mta
       - build-user-portal
+      - build-legacy-auth-provider
 
   - name: success
     image: gcr.io/arxiv-stage/arxiv-devops/arxiv-builder:e7a4be9
@@ -202,6 +203,8 @@ steps:
       - build-oauth2-authenticator
       - build-test-mta
       - build-user-portal
+      - build-legacy-auth-provider
+
     when:
       status:
         - success

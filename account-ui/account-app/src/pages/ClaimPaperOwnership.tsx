@@ -106,6 +106,8 @@ const ClaimPaperOwnership: React.FC = () => {
         finally {
             setInProgress(false);
         }
+
+        return false;
     };
 
     const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {

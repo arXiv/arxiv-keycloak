@@ -136,6 +136,8 @@ const YourDocuments: React.FC = () => {
     const runtimeProps = useContext(RuntimeContext);
     const {showMessageDialog, showNotification} = useNotification();
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [isSubmissionLoading, setIsSubmissionLoading] = useState<boolean>(false);
+    const [isDemographicLoading, setIsDemographicLoading] = useState<boolean>(false);
     const [demographic, setDemographic] = useState<DemographicType | null>(null);
     const [papers, setPapers] = useState<PaperOwnerListResponseType>([]);
     const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
@@ -171,14 +173,14 @@ const YourDocuments: React.FC = () => {
             query.append("_end", end.toString());
 
             try {
-                setIsLoading(true);
+                setIsSubmissionLoading(true);
                 const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/submissions/?${query.toString()}`);
                 const total = parseInt(response.headers.get("X-Total-Count") || "0", 10);
                 setTotalSubmissions(total);
             } catch (err) {
                 console.error("Error fetching documents:", err);
             } finally {
-                setIsLoading(false);
+                setIsSubmissionLoading(false);
             }
         }
 
@@ -192,7 +194,7 @@ const YourDocuments: React.FC = () => {
                 return;
 
             try {
-                setIsLoading(true);
+                setIsDemographicLoading(true);
                 const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/demographics/${runtimeProps.currentUser.id}`);
                 const demographic: DemographicType = await response.json();
                 setDemographic(demographic);
@@ -201,7 +203,7 @@ const YourDocuments: React.FC = () => {
                 console.error("Error fetching user:", err);
 
             } finally {
-                setIsLoading(false);
+                setIsDemographicLoading(false);
             }
         }
 
@@ -492,7 +494,7 @@ const YourDocuments: React.FC = () => {
             <Box display="flex" gap={0} mb={0}>
 
                 <DataGrid<PaperOwnerType>
-                    loading={isLoading}
+                    loading={isLoading || isDemographicLoading || isSubmissionLoading}
                     filterModel={filterModel}
                     filterMode="server"
                     filterDebounceMs={1000}
