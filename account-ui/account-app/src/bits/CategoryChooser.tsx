@@ -76,6 +76,7 @@ const CategoryChooser: React.FC<CategoryChooserProps> = ({onSelect, selectedCate
 
     return (
         <Autocomplete
+            size="small"
             options={categoryOptions.filter((cat) => !cat.isHeader)}
             groupBy={(option) => (!option.isHeader ? option.group.toUpperCase() : "")}
             getOptionLabel={(option) => option.label ?? "Unknown Category"}

@@ -3,6 +3,7 @@ import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Box from '@mui/material/Box';
 import Tooltip from '@mui/material/Tooltip';
+// import Breadcrumbs from '@mui/material/Breadcrumbs';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -20,6 +21,9 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+// import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+// import {breadcrumbItems} from "../bits/breadcrums.ts";
+import RouteBreadcrumbs from "../bits/RouteBreadcrumbs.tsx";
 
 const ownershipOptions = [
     { label: "Your Articles", link: "/user-account/owned-documents" },
@@ -81,14 +85,13 @@ const ArxivAppBar = () => {
     };
 
     const commonPages = [
-        {label: 'Account', link: '/user-account/'},
         {label: 'Articles', link: '/user-account/articles'},
         {label: 'Endorsements', link: '/user-account/endorse'},
     ];
 
     const modPages = runtimeProps.isMod ? [{label: 'Moderation', link: '/user-account/moderation'}] : [];
     const adminPages = runtimeProps.isAdmin ? [{label: 'Administration', link: '/admin-console/'}] : [];
-    const pages = commonPages.concat(modPages, adminPages);
+    const pages = runtimeProps.currentUser ? commonPages.concat(modPages, adminPages) : [];
 
 
     const in_or_out = user ? (
@@ -150,6 +153,7 @@ const ArxivAppBar = () => {
             window.location.href = page.link;
     };
 
+
     return (
         <AppBar position="sticky" sx={{backgroundColor: '#B31B1B'}}>
             <Toolbar disableGutters>
@@ -159,7 +163,15 @@ const ArxivAppBar = () => {
                     <img src="/user-account/static/images/arxiv-logo-one-color-white.svg?react" width="85"
                          alt="arXiv Logo" aria-label="arxiv-logo" />
                 </Link>
-                <Box sx={{width: isSmallScreen ? 0 : 20}}/>
+                <Box sx={{
+                    px: 1,
+                    py: 0.5,
+                    color: 'white',
+                }}>
+                    <RouteBreadcrumbs />
+                </Box>
+
+                <Box sx={{flexGrow: 1}}/>
                 <Box sx={{
                     flexGrow: 0,
                     display:  isSmallScreen ? 'grid' : 'flex',
@@ -206,7 +218,6 @@ const ArxivAppBar = () => {
                     ))}
                 </Box>
 
-                <Box sx={{flexGrow: 1}}/>
                 <Box sx={{flexGrow: 0}}>
                     {in_or_out}
                 </Box>

@@ -30,7 +30,7 @@ const CareerStatusSelect: React.FC<CareerStatusProps> = ({ onSelect, careereStat
                 value={careereStatus}
                 onChange={handleChange}
                 renderInput={(params) => (
-                    <TextField {...params} label="Career Status *" variant="outlined" />
+                    <TextField {...params} size="small" label="Career Status *" variant="outlined" />
                 )}
             />
         </Box>

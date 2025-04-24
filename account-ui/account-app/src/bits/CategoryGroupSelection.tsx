@@ -32,29 +32,33 @@ const CategoryGroupSelection : React.FC<{
     };
 
     const choices: {value: CategoryGroupType, label: string}[] = [
-            {value: "grp_cs", label: "CS"},
-            {value: "grp_q-econ", label: "Econ"},
-            {value: "grp_eess", label: "EESS"},
-            {value: "grp_math", label: "Math"},
+            {value: "grp_cs", label: "Computer Science"},
+            {value: "grp_q-econ", label: "Economics"},
+            {value: "grp_eess", label: "Electrical Engineering and Systems Science"},
+            {value: "grp_math", label: "Mathematics"},
             {value: "grp_physics", label: "Physics"},
-            {value: "grp_q-bio", label: "Q_Bio"},
-            {value: "grp_q-fin", label: "Q_Fin"},
-            {value: "grp_q-stat", label: "Stat"}
+            {value: "grp_q-bio", label: "Quantitative Biology"},
+            {value: "grp_q-fin", label: "Quantitative Finance"},
+            {value: "grp_q-stat", label: "Statistics"},
         ];
 
-    const prompt = selectedGroups.length == 0 ? (<Typography variant="caption"> Please select at least one </Typography>) : null;
+    const prompt = selectedGroups.length == 0 ? (<Typography variant="caption" color={"error"} sx={{fontSize: "1rem"}}> Please select at least one </Typography>) : null;
 
     return (
-        <Box sx={{ border: "1px solid #ddd", borderRadius: 1, padding: 1 }}>
+        <Box>
             <Typography variant="body1" sx={{ marginBottom: 1 }}>
-                *Group(s) you would like to submit to:
+                Categorie(s) you would like to submit to (required):
                 {
                     prompt
                 }
             </Typography>
             <FormGroup
                 aria-label="archive groups"
-                sx={{ display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 1, p: 1 }}
+                sx={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(4, 1fr)",
+                    gap: 1,
+                    p:1 }}
             >
                 {
                     choices.map((choice) =>  (
