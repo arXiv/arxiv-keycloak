@@ -28,6 +28,7 @@ import {useNotification} from "../NotificationContext.tsx";
 import {fetchPlus} from "../fetchPlus.ts";
 import CardWithTitle from "../bits/CardWithTitle.tsx";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import {useMediaQuery, useTheme} from "@mui/material";
 
 type TokenResponse = paths["/account/register/"]['get']['responses']['200']['content']['application/json'];
 type SubmitRequest = paths["/account/register/"]['post']['requestBody']['content']['application/json'];
@@ -64,6 +65,7 @@ const PostSubmitActionDialog: React.FC<PostSubmitDialogProps> = ({title, message
 const AccountRegistration = () => {
     const runtimeContext = useContext(RuntimeContext);
     const {showNotification} = useNotification();
+    const theme = useTheme();
 
     // State to store input values
     const [formData, setFormData] = useState<SubmitRequest>({
@@ -337,6 +339,8 @@ const AccountRegistration = () => {
     );
     const invalidFormData = hasErrors || formData.username.length < 2 || formData.password.length < 10 || formData.password !== secondPassword;
 
+    const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm")); // 'sm' is ~600px
+
     return (
         <Container maxWidth="md" sx={{mt: 2}}>
             <Box
@@ -514,7 +518,9 @@ const AccountRegistration = () => {
                     <Box sx={{p:1, m: 1}}>
 
                         <CategoryGroupSelection selectedGroups={formData.groups as unknown as CategoryGroupType[]}
-                                                setSelectedGroups={setSelectedGroups}/>
+                                                setSelectedGroups={setSelectedGroups}
+                                                isSmallScreen={isSmallScreen}
+                        />
                         <Box sx={{pb: 1}}>
                             <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Your default category:  "}</Typography>
                             <CategoryChooser onSelect={setDefaultCategory}
