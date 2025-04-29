@@ -7,7 +7,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional, List
 
-from sqlalchemy import select, case, exists, cast, LargeBinary
+from sqlalchemy import select, case, exists, cast, LargeBinary #, func
 from sqlalchemy.orm import Session
 from sqlalchemy.engine.row import Row
 from pydantic import BaseModel
@@ -33,6 +33,18 @@ class VetoStatusEnum(str, Enum):
     no_endorse = 'no-endorse'
     no_upload = 'no-upload'
     no_replace = 'no-replace'
+
+
+def list_mod_cats_n_arcs(session: Session, user_id: int) -> tuple[list[str], list[str]]:
+    list_mod = (
+        select(t_arXiv_moderators.c.archive, t_arXiv_moderators.c.subject_class)
+        .where(t_arXiv_moderators.c.user_id == user_id)
+    )
+    mods = session.execute(list_mod).fetchall()
+
+    mod_cats = [f"{mod.archive}.{mod.subject_class}" for mod in mods if mod.archive and mod.subject_class]
+    mod_archives = [row.archive for row in mods if row.archive and (not row.subject_class)]
+    return mod_cats, mod_archives
 
 
 class UserModel(BaseModel):
@@ -104,6 +116,8 @@ class UserModel(BaseModel):
         VetoStatusEnum] = None  # Mapped[Literal['ok', 'no-endorse', 'no-upload', 'no-replace']] = mapped_column(Enum('ok', 'no-endorse', 'no-upload', 'no-replace'), nullable=False, server_default=text("'ok'"))
 
     flag_is_mod: Optional[bool] = None
+    moderated_categories: Optional[List[str]] = None
+    moderated_archives: Optional[List[str]] = None
 
     tapir_policy_classes: Optional[List[int]] = None
 
@@ -114,12 +128,46 @@ class UserModel(BaseModel):
         is_mod_subquery = exists().where(t_arXiv_moderators.c.user_id == TapirUser.user_id).correlate(TapirUser)
         nick_subquery = select(TapirNickname.nickname).where(TapirUser.user_id == TapirNickname.user_id).correlate(
             TapirUser).limit(1).scalar_subquery()
+
         """
         mod_subquery = select(
             func.concat(t_arXiv_moderators.c.user_id, "+",
                         t_arXiv_moderators.c.archive, "+",
                         t_arXiv_moderators.c.subject_class)
         ).where(t_arXiv_moderators.c.user_id == TapirUser.user_id).correlate(TapirUser)
+
+        mod_cats_subquery = (
+            select(
+                func.group_concat(
+                    func.concat(
+                        t_arXiv_moderators.c.archive, ".", t_arXiv_moderators.c.subject_class
+                    ).op('ORDER BY')(t_arXiv_moderators.c.archive, t_arXiv_moderators.c.subject_class)
+                )
+            )
+            .where(
+                t_arXiv_moderators.c.user_id == TapirUser.user_id,
+                t_arXiv_moderators.c.archive.isnot(None),
+                t_arXiv_moderators.c.subject_class.isnot(None),
+                t_arXiv_moderators.c.subject_class != ""
+            )
+            .correlate(TapirUser)
+            .scalar_subquery()
+        )
+
+        mod_archives_subquery = (
+            select(
+                func.group_concat(
+                    t_arXiv_moderators.c.archive.op('ORDER BY')(t_arXiv_moderators.c.archive)
+                )
+            )
+            .where(
+                t_arXiv_moderators.c.user_id == TapirUser.user_id,
+                t_arXiv_moderators.c.archive.isnot(None),
+                (t_arXiv_moderators.c.subject_class.is_(None)) | (t_arXiv_moderators.c.subject_class == "")
+            )
+            .correlate(TapirUser)
+            .scalar_subquery()
+        )
         """
 
         return (session.query(
@@ -177,7 +225,8 @@ class UserModel(BaseModel):
             Demographic.flag_group_eess,
             Demographic.flag_group_econ,
             Demographic.veto_status,
-            OrcidIds.orcid)
+            OrcidIds.orcid
+        )
                 .outerjoin(Demographic, TapirUser.user_id == Demographic.user_id)
                 .outerjoin(OrcidIds, TapirUser.user_id == OrcidIds.user_id))
 
@@ -203,46 +252,52 @@ class UserModel(BaseModel):
         return data
 
     @staticmethod
-    def to_model(user: UserModel | Row | dict) -> UserModel:
+    def to_model(user: UserModel | Row | dict, session: Optional[Session] = None) -> UserModel:
         """
         Given data to user model data.
         :param user:  DB row, dict or UserModel.
-        :return:
+        :param session: SQLAlchemy db session
+        :return: result: UserModel data
         """
         # If the incoming is already a dict, to_model is equivalet of calling model_validate
         if isinstance(user, dict):
-            return UserModel.model_validate(user)
+            result = UserModel.model_validate(user)
         elif isinstance(user, UserModel):
+            # This is just a copy
             return UserModel.model_validate(user.model_dump())
         elif isinstance(user, Row):
             row = user._asdict()
+            for field in _tapir_user_utf8_fields_ + _demographic_user_utf8_fields_:
+                if row[field] is None:
+                    continue
+                if isinstance(row[field], bytes):
+                    row[field] = row[field].decode("utf-8") if row[field] is not None else None
+                elif isinstance(row[field], str):
+                    logger.warning(f"Field {field} is unexpectedly string. value = '{row[field]}'. You may need to fix it")
+                    pass
+                else:
+                    raise ValueError(f"Field {field} needs to be BLOB access")
+            result = UserModel.model_validate(row)
         else:
             raise ValueError("Not Row, UserModel or dict")
 
-        for field in _tapir_user_utf8_fields_ + _demographic_user_utf8_fields_:
-            if row[field] is None:
-                continue
-            if isinstance(row[field], bytes):
-                row[field] = row[field].decode("utf-8") if row[field] is not None else None
-            elif isinstance(row[field], str):
-                logger.warning(f"Field {field} is unexpectedly string. value = '{row[field]}'. You may need to fix it")
-                pass
-            else:
-                raise ValueError(f"Field {field} needs to be BLOB access")
-        return UserModel.model_validate(row)
+        if session:
+            result.moderated_categories, result.moderated_archives = list_mod_cats_n_arcs(session, result.id)
+        return result
+
 
     @staticmethod
-    def one_user(db: Session, user_id: str) -> UserModel | None:
+    def one_user(session: Session, user_id: str) -> UserModel | None:
         """
         Get one user model data from user id (aka int primary key)
-        :param db: DB session
+        :param session: DB session
         :param user_id:
         :return:
         """
-        user = UserModel.base_select(db).filter(TapirUser.user_id == user_id).one_or_none()
+        user = UserModel.base_select(session).filter(TapirUser.user_id == user_id).one_or_none()
         if user is None:
             return None
-        return UserModel.to_model(user)
+        return UserModel.to_model(user, session=session)
 
     @staticmethod
     def one_user_from_username(session: Session, username: str) -> UserModel | None:
