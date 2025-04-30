@@ -1,4 +1,6 @@
 import random
+
+from arxiv.auth.user_claims import ArxivUserClaims
 from pydantic import BaseModel
 import jwt
 from typing import Optional
@@ -13,11 +15,12 @@ class NGClaims(BaseModel):
 
     See arxiv-auth users/arxiv/users/auth/sessions/store.py
     generate_cookie()"""
-    user_id: int
-    session_id: str
-    nonce: str
-    expires: str
+    user_id: int     # session.user.user_id
+    session_id: str  # session.session_id
+    nonce: str       # generate_nonce
+    expires: str     # 'expires': session.end_time.isoformat()
     start_time: Optional[str]
+
 
 def generate_nonce(length: int = 8) -> str:
     nonce = random.randint(0, 10 ** length - 1)
@@ -34,6 +37,17 @@ def ng_cookie_decode(token: str, secret: str) -> dict:
 def ng_cookie_encode(user: NGClaims, secret: str) -> str:
     """Encode a auth token"""
     return jwt.encode(vars(user), secret, algorithm=NG_JWT_ALGO)
+
+
+def create_ng_claims(claims: ArxivUserClaims) -> NGClaims:
+    # NG Cookie
+    # I'm not sure of the duration of NG cookie. This prob. needs a review.
+
+    return NGClaims(
+        user_id=int(claims.user_id if claims.user_id else 0),
+        session_id=claims.tapir_session_id,
+        nonce=generate_nonce(),
+        expires=claims.expires_at.isoformat())
 
 
 # def user_jwt(user_id: int, secret: str) -> str:
