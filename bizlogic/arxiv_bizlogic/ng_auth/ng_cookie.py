@@ -19,7 +19,7 @@ class NGClaims(BaseModel):
     session_id: str  # session.session_id
     nonce: str       # generate_nonce
     expires: str     # 'expires': session.end_time.isoformat()
-    start_time: Optional[str]
+    start_time: Optional[str] = None
 
 
 def generate_nonce(length: int = 8) -> str:
