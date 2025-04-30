@@ -25,11 +25,13 @@ class COOKIE_ENV_NAMES_TYPE:
     classic_cookie_env: str
     auth_session_cookie_env: str
     arxiv_keycloak_cookie_env: str
+    ng_cookie_env: str
 
 COOKIE_ENV_NAMES = COOKIE_ENV_NAMES_TYPE(
     "CLASSIC_COOKIE_NAME",
     "AUTH_SESSION_COOKIE_NAME",
-    "ARXIV_KEYCLOAK_COOKIE_NAME"
+    "ARXIV_KEYCLOAK_COOKIE_NAME",
+    "ARXIVNG_COOKIE_NAME"
 )
 
 
