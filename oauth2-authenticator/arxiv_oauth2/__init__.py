@@ -20,16 +20,7 @@ def get_keycloak_admin(request: Request) -> KeycloakAdmin:
 class ApiToken(BaseModel):
     token: str
 
-# HTTPBearer_security = HTTPBearer()
-
-class OptionalHTTPBearer(HTTPBearer):
-    async def __call__(self, request: Request) -> Optional[HTTPAuthorizationCredentials]:
-        try:
-            return await super().__call__(request)
-        except Exception:
-            return None
-
-HTTPBearer_security = OptionalHTTPBearer()
+HTTPBearer_security = HTTPBearer(auto_error=False)
 
 def verify_bearer_token(request: Request,
                         credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer_security)) -> ArxivUserClaims | ApiToken | None:
@@ -81,3 +72,15 @@ def describe_super_user(token: ArxivUserClaims | ApiToken | None) -> str:
         if isinstance(token, ArxivUserClaims):
             return "Admin user %s" % token.username
     return "Not super"
+
+
+def get_authn_or_none(
+    request: Request,
+    cookie_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
+    credentials: Optional[ArxivUserClaims | ApiToken ] = Depends(verify_bearer_token)) -> ArxivUserClaims | ApiToken | None:
+    if credentials:
+        return credentials
+    elif cookie_user:
+        return cookie_user
+
+    return None

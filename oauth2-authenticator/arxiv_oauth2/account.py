@@ -24,7 +24,7 @@ from arxiv.auth.legacy import passwords
 from . import (get_current_user_or_none, get_db, get_keycloak_admin, stateless_captcha,
                get_client_host, sha256_base64_encode,
                verify_bearer_token, ApiToken, is_super_user, describe_super_user, check_authnz,
-               is_authorized)  # , get_client_host
+               is_authorized, get_authn_or_none)  # , get_client_host
 from .biz.account_biz import (AccountInfoModel, get_account_info,
                               AccountRegistrationError, AccountRegistrationModel, validate_password,
                               migrate_to_keycloak,
@@ -75,8 +75,7 @@ async def get_user_profile(user_id: str,
 @router.put('/profile/', description="Update the user account profile for both Keycloak and user in db")
 async def update_account_profile(
         data: AccountInfoModel,
-        current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
-        token: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
+        authn: Optional[ArxivUserClaims | ApiToken] = Depends(get_authn_or_none),
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ) -> AccountInfoModel:
@@ -84,7 +83,7 @@ async def update_account_profile(
     Update the profile name of a user.
     """
     user_id = data.id
-    check_authnz(token, current_user, user_id)
+    check_authnz(authn, None, user_id)
 
     # class AccountInfoModel:
     #    username: str  # aka nickname in Tapir
@@ -262,11 +261,10 @@ def get_email_verified_status_current_user(
 @router.get("/email/verified/{user_id:str}/", description="Is the email verified for this usea?")
 def get_email_verified_status(
         user_id: str,
-        current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
-        token: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
+        authn: Optional[ArxivUserClaims] = Depends(get_authn_or_none),
         session: Session = Depends(get_db),
 ) -> EmailVerifiedStatus:
-    check_authnz(token, current_user, user_id)
+    check_authnz(authn, None, user_id)
 
     user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
     if not user:
@@ -277,23 +275,26 @@ def get_email_verified_status(
 @router.put("/email/verified/", description="Set the email verified status")
 def set_email_verified_status(
         body: EmailVerifiedStatus,
-        token: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
-        current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
+        authn: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ) -> EmailVerifiedStatus:
-    if current_user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not loggeg in")
+    if authn is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     user_id = body.user_id
-    check_authnz(token, current_user, user_id)
+    check_authnz(authn, None, user_id)
 
     user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
+    nick: TapirNickname | None = session.query(TapirNickname).filter(TapirNickname.user_id == user_id).first()
+    if not nick:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
     try:
         # Update the email verified status. If the user has not migrated to Keycloak yet, no worries.
-        kc_user_id = kc_admin.get_user_id(current_user.username)
+        kc_user_id = kc_admin.get_user_id(nick.nickname)
         if kc_user_id:
             kc_admin.update_user(user_id=kc_user_id, payload={"emailVerified": body.email_verified})
     except KeycloakGetError as kce:
@@ -364,12 +365,11 @@ def change_email(
         request: Request,
         body: EmailUpdateModel,
         session: Session = Depends(get_db),
-        current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
-        token: Optional[ApiToken] = Depends(verify_bearer_token),
+        authn: Optional[ArxivUserClaims|ApiToken] = Depends(get_authn_or_none),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ):
     user_id = body.user_id
-    check_authnz(token, current_user, user_id)
+    check_authnz(authn, None, user_id)
 
     if not is_valid_email(body.new_email):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New email is invalid.")
@@ -576,7 +576,7 @@ async def change_user_password(
 
         try:
             kc_admin.set_user_password(kc_user["id"], data.new_password, temporary=False)
-        except Exception as exc:
+        except Exception as _exc:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Changing password failed")
 
         pwd.password_enc = passwords.hash_password(data.new_password)

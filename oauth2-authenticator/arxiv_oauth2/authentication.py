@@ -1,11 +1,15 @@
 """Provides integration for the external user interface."""
+import dataclasses
 import json
 import urllib.parse
 from dataclasses import asdict
-from typing import Optional, Tuple, Literal, Any, Dict, Union
+from typing import Optional, Literal, Any, Dict
 
+import jwt
 from arxiv_bizlogic.bizmodels.user_model import UserModel
 from arxiv_bizlogic.fastapi_helpers import get_client_host
+# from arxiv_bizlogic.ng_auth import ng_cookie
+from arxiv_bizlogic.ng_auth.ng_cookie import create_ng_claims, ng_cookie_encode  # NGClaims, generate_nonce,
 from fastapi import APIRouter, Depends, status, Request, HTTPException, Response
 from fastapi.responses import RedirectResponse, JSONResponse
 from keycloak import KeycloakAdmin, KeycloakError
@@ -15,7 +19,7 @@ from pydantic import BaseModel
 
 from arxiv.auth.auth.exceptions import UnknownSession
 from arxiv.base import logging
-from arxiv.auth.user_claims import ArxivUserClaims, get_roles
+from arxiv.auth.user_claims import ArxivUserClaims
 from arxiv.auth.openid.oidc_idp import ArxivOidcIdpClient
 from arxiv.auth.legacy.sessions import invalidate as legacy_invalidate
 from starlette.datastructures import URL
@@ -28,18 +32,41 @@ from . import get_current_user_or_none, get_db, COOKIE_ENV_NAMES
 
 from .sessions import create_tapir_session
 
+@dataclasses.dataclass
+class CookieParams:
+    auth_session_cookie_name: str    # ArxivUserClaims
+    classic_cookie_name: str         # classic cookie name
+    arxiv_keycloak_cookie_name: str  # Keycloak access token
+    ng_cookie_name: str              # arxivng cookie name
+    domain: Optional[str]            # domain
+    secure: bool                     # secure
+    samesite: Literal["lax", "none"] # same site
+    jwt_secret: str                  # JWT secret
+    max_age: int
 
-def cookie_params(request: Request) -> Tuple[str, str, str, Optional[str], bool, Literal["lax", "none"]]:
+
+def cookie_params(request: Request) -> CookieParams:
+    """
+    ,
+    request.app.extra[COOKIE_ENV_NAMES.classic_cookie_env],
+    request.app.extra[COOKIE_ENV_NAMES.arxiv_keycloak_cookie_env],  # This is the Keycloak access token
+    request.app.extra.get('DOMAIN'),
+    request.app.extra.get('SECURE', True),
+    request.app.extra.get('SAMESITE', "Lax"))
+
     """
 
-    """
-    return (
-        request.app.extra[COOKIE_ENV_NAMES.auth_session_cookie_env],
-        request.app.extra[COOKIE_ENV_NAMES.classic_cookie_env],
-        request.app.extra[COOKIE_ENV_NAMES.arxiv_keycloak_cookie_env], # This is the Keycloak access token
-        request.app.extra.get('DOMAIN'),
-        request.app.extra.get('SECURE', True),
-        request.app.extra.get('SAMESITE', "Lax"))
+    return CookieParams(
+        auth_session_cookie_name=request.app.extra[COOKIE_ENV_NAMES.auth_session_cookie_env],
+        classic_cookie_name=request.app.extra[COOKIE_ENV_NAMES.classic_cookie_env],
+        arxiv_keycloak_cookie_name=request.app.extra[COOKIE_ENV_NAMES.arxiv_keycloak_cookie_env],
+        ng_cookie_name=request.app.extra[COOKIE_ENV_NAMES.ng_cookie_env],
+        domain=request.app.extra.get('DOMAIN'),
+        secure=request.app.extra.get('SECURE', True),
+        samesite=request.app.extra.get('SAMESITE', "Lax"),
+        jwt_secret=request.app.extra.get('JWT_SECRET', "jwt secret is not set"),
+        max_age=int(request.app.extra['COOKIE_MAX_AGE']),
+    )
 
 
 logger = logging.getLogger(__name__)
@@ -98,7 +125,7 @@ async def oauth2_callback(request: Request,
     # legacy cookie and session
     tapir_cookie, tapir_session = create_tapir_session(user_claims, client_ip)
 
-    # NG cookie
+    # Legacy cookie
     if tapir_cookie and tapir_session:
         user_claims.set_tapir_session(tapir_cookie, tapir_session)
 
@@ -142,7 +169,7 @@ async def impersonate(request: Request,
         'sub': user_id,
         'exp': current_user.expires_at,
         'iat': current_user.issued_at,
-        'realm_access': get_roles(kc_user.get("realmRoles", [])),
+        'realm_access': kc_user.get("realmRoles", []),
         'email_verified': kc_user.get("emailVerified", False),
         'email': kc_user.get("email", ""),
         "acc": access_token,
@@ -161,7 +188,7 @@ async def impersonate(request: Request,
     # legacy cookie and session
     tapir_cookie, tapir_session = create_tapir_session(user_claims, client_ip)
 
-    # NG cookie
+    # legacy cookie
     if tapir_cookie and tapir_session:
         user_claims.set_tapir_session(tapir_cookie, tapir_session)
 
@@ -189,9 +216,9 @@ async def refresh_token(
     checking the cookies and rehydrate it.
     """
     next_page = request.query_params.get('next_page', request.query_params.get('next', ''))
-    _session_cookie_key, classic_cookie_key, _keycloak_key, _domain, _secure, _samesite = cookie_params(request)
+    cparam = cookie_params(request)
     user_claims: Optional[ArxivUserClaims] = None
-    tapir_cookie = request.cookies.get(classic_cookie_key, "")
+    tapir_cookie = request.cookies.get(cparam.classic_cookie_name, "")
     login_url = request.url_for("login")  # Assuming you have a route named 'login'
     if next_page:
         login_url = URL(f"{login_url}?next_page={urllib.parse.quote(next_page)}")
@@ -297,16 +324,16 @@ async def refresh_tokens(request: Request, response: Response, body: Tokens) -> 
 
     secret = request.app.extra['JWT_SECRET']
 
-    session_cookie_key, classic_cookie_key, _keycloak_key, domain, secure, samesite = cookie_params(request)
+    cparam = cookie_params(request)
     cookie_max_age = int(request.app.extra['COOKIE_MAX_AGE'])
 
     content = RefreshedTokens(
         session = user_claims.encode_jwt_token(secret),
         classic = classic_cookie,
-        domain = domain,
+        domain = cparam.domain,
         max_age = cookie_max_age,
-        secure = secure,
-        samesite = samesite
+        secure = cparam.secure,
+        samesite = cparam.samesite
     )
     default_next_page = request.app.extra['ARXIV_URL_HOME']
     # "post" should not redirect, I think.
@@ -323,9 +350,9 @@ async def logout(request: Request,
     """Log out of arXiv."""
     default_next_page = request.app.extra['ARXIV_URL_HOME']
     next_page = request.query_params.get('next_page', request.query_params.get('next', default_next_page))
-    session_cookie_key, classic_cookie_key, _keycloak_key, domain, secure, samesite = cookie_params(request)
+    cparam = cookie_params(request)
 
-    classic_cookie = request.cookies.get(classic_cookie_key)
+    classic_cookie = request.cookies.get(cparam.classic_cookie_name)
 
     logged_out = True
     email = "?"
@@ -362,11 +389,11 @@ async def logout_callback(request: Request) -> Response:
 
 @router.get('/token-names')
 async def get_token_names(request: Request) -> JSONResponse:
-    session_cookie_key, classic_cookie_key, keycloak_key, _domain, _secure, _samesite = cookie_params(request)
+    cparam = cookie_params(request)
     return JSONResponse(content={
-        "session": session_cookie_key,
-        "classic": classic_cookie_key,
-        "arxiv_keycloak": keycloak_key,
+        "session": cparam.auth_session_cookie_name,
+        "classic": cparam.classic_cookie_name,
+        "arxiv_keycloak": cparam.arxiv_keycloak_cookie_name,
     })
 
 
@@ -399,8 +426,17 @@ def make_cookie_response(request: Request,
                          tapir_cookie: Optional[str],
                          next_page: Optional[str],
                          content: Optional[Any] = None) -> Response:
-    session_cookie_key, classic_cookie_key, keycloak_key, domain, secure, samesite = cookie_params(request)
-    cookie_max_age = int(request.app.extra['COOKIE_MAX_AGE'])
+
+    # Create NG cookie
+    cparam = cookie_params(request)
+    keycloak_key = cparam.arxiv_keycloak_cookie_name
+    session_cookie_key = cparam.auth_session_cookie_name
+    classic_cookie_key = cparam.classic_cookie_name
+    ng_cookie_key = cparam.ng_cookie_name
+    secure = cparam.secure
+    domain = cparam.domain
+    samesite = cparam.samesite
+    cookie_max_age = cparam.max_age
 
     response: Response
     if next_page:
@@ -426,18 +462,20 @@ def make_cookie_response(request: Request,
         response = Response(status_code=status.HTTP_200_OK)
 
     if user_claims:
-        secret = request.app.extra['JWT_SECRET']
+        secret = cparam.jwt_secret
         token = user_claims.encode_jwt_token(secret)
         logger.debug('%s=%s',session_cookie_key, token)
         response.set_cookie(session_cookie_key, token, max_age=cookie_max_age,
                             domain=domain, path="/", secure=secure, samesite=samesite)
         response.set_cookie(keycloak_key, user_claims.access_token,  max_age=cookie_max_age,
                             domain=domain, path="/", secure=secure, samesite=samesite)
+        response.set_cookie(ng_cookie_key, ng_cookie_encode(create_ng_claims(user_claims), secret),
+                            max_age=cookie_max_age, domain=domain, path="/", secure=secure, samesite=samesite)
+
     else:
-        response.set_cookie(session_cookie_key, "", max_age=0,
-                            domain=domain, path="/", secure=secure, samesite=samesite, expires=1)
-        response.set_cookie(keycloak_key, "",  max_age=0,
-                            domain=domain, path="/", secure=secure, samesite=samesite, expires=1)
+        for key in [session_cookie_key, keycloak_key, ng_cookie_key]:
+            response.set_cookie(key, "", max_age=0,
+                                domain=domain, path="/", secure=secure, samesite=samesite, expires=1)
 
     if tapir_cookie:
         logger.debug('%s=%s',classic_cookie_key, tapir_cookie)

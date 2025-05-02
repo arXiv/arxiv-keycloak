@@ -127,8 +127,10 @@ def create_app(*args, **kwargs) -> FastAPI:
         os.environ[key] = CONFIG_DEFAULTS[key]
         os.putenv(key, CONFIG_DEFAULTS[key])
     CLASSIC_COOKIE_NAME = os.environ.get(COOKIE_ENV_NAMES.classic_cookie_env, "tapir_session")
+    ARXIVNG_COOKIE_NAME = os.environ.get(COOKIE_ENV_NAMES.ng_cookie_env, "ARXIVNG_SESSION_ID")
     SESSION_DURATION = int(os.environ.get("SESSION_DURATION", 120))
     logger = getLogger(__name__)
+
 
     # DOMAIN is okay to be None
     DOMAIN = os.environ.get("DOMAIN")
@@ -148,6 +150,7 @@ def create_app(*args, **kwargs) -> FastAPI:
     logger.info(f"CALLBACK_URL: {CALLBACK_URL}")
     logger.info(f"AUTH_SESSION_COOKIE_NAME: {AUTH_SESSION_COOKIE_NAME}")
     logger.info(f"CLASSIC_COOKIE_NAME: {CLASSIC_COOKIE_NAME}")
+    logger.info(f"NG_COOKIE_NAME: {ARXIVNG_COOKIE_NAME}")
     logger.info(f"SESSION_DURATION: {SESSION_DURATION}")
 
     if not secure:
@@ -205,6 +208,7 @@ def create_app(*args, **kwargs) -> FastAPI:
         AUTH_SESSION_COOKIE_NAME=AUTH_SESSION_COOKIE_NAME,
         ARXIV_KEYCLOAK_COOKIE_NAME=ARXIV_KEYCLOAK_COOKIE_NAME,
         CLASSIC_COOKIE_NAME=CLASSIC_COOKIE_NAME,
+        ARXIVNG_COOKIE_NAME=ARXIVNG_COOKIE_NAME,
         SESSION_DURATION=SESSION_DURATION,
         KEYCLOAK_ADMIN=keycloak_admin,
         ARXIV_USER_SECRET=ARXIV_USER_SECRET,
