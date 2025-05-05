@@ -1,7 +1,7 @@
 include ../.env
 export $(shell sed 's/=.*//' ../.env)
 
-DOCKER_DIRS :=
+DOCKER_DIRS := tools
 ALL_DIRS := $(DOCKER_DIRS)
 
 
