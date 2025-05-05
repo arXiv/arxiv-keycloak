@@ -4,7 +4,7 @@ export $(shell sed 's/=.*//' ../.env)
 app_tag := "${TEST_MTA_TAG}"
 app_name := "test-mta"
 
-email_to_pubsub_app_tag := "${EMAIL_TO_PUBSUB_TAG}"
+email_to_pubsub_app_tag := "${EMAIL_TO_PUBSUB_APP_TAG}"
 email_to_pubsub_app_name := "email-to-pubsub-relay"
 
 .PHONY: HELLO all bootstrap run docker-image sh relay relay.push
