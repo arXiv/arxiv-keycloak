@@ -122,6 +122,12 @@ const UserAccountInfo = () => {
 
 
     useEffect(() => {
+        if (!runtimeProps.currentUser)
+            showMessageDialog("Please log in first", "No user",  () => <Link href={"/login"} />);
+    }, [runtimeProps.currentUser]);
+
+
+    useEffect(() => {
         async function doGetEndorsedCategories() {
             if (!runtimeProps.currentUser) return;
             const query = new URLSearchParams();
