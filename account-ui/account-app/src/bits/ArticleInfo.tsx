@@ -1,8 +1,14 @@
-import React from "react";
+import React, {useContext} from "react";
 // import Typography from "@mui/material/Typography";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
+import AuthorIcon from "@mui/icons-material/Attribution";
+import NonAuthorIcon from "@mui/icons-material/SupervisedUserCircle";
+import { RuntimeContext } from "../RuntimeContext";
+// import {useNavigate} from "react-router-dom";
+import Link from "@mui/material/Link";
+import { Link as RouterLink } from 'react-router-dom';
 
 interface ArticleInfoProps {
     ownerCount: number;
@@ -21,10 +27,12 @@ const ArticleInfo: React.FC<ArticleInfoProps> = ({
                                                    orcidId,
                                                    orcidAuth,
                                                }) => {
+    const runtimeProps = useContext(RuntimeContext);
+    // const navigate = useNavigate();
     return (
         <Card>
             <CardHeader title={"Author Information"}  />
-            <CardContent>
+            <CardContent sx={{py: 0}}>
                 You own {ownerCount} article{ownerCount !== 1 ? "s" : ""}, have
                 submitted {submitCount} article{submitCount !== 1 ? "s" : ""} and are
                 registered as the author of {authorCount} article
@@ -32,9 +40,8 @@ const ArticleInfo: React.FC<ArticleInfoProps> = ({
 
             <p>
                 Are you incorrectly registered as an author or a non-author of any
-                articles you own?
-                <br />
-                If so, use <a href="/auth/change-author-status">the Change Author Status form</a>
+                articles you own? If so, update the authorship status below.
+               <AuthorIcon sx={{fontSize: "20px"}}/> {"= owner, and "}<NonAuthorIcon  sx={{fontSize: "20px"}}/>{"= proxy submission."}
             </p>
 
             <p>
@@ -42,21 +49,23 @@ const ArticleInfo: React.FC<ArticleInfoProps> = ({
                 here?
                 <br />
                 If you have the paper password use
-                <a href="/user-account/claim-document-ownership"> the Claim Ownership with a password form</a>
+
+                <Link component={RouterLink} to={runtimeProps.URLS.userClaimDocumentOwnership}> the Claim Ownership with a password form</Link>
                 <br />
                 If you do not have the paper password or are claiming multiple papers
-                use <a href="/auth/request-ownership">the Claim Authorship form</a>.
+                use
+                <Link component={RouterLink} to={runtimeProps.URLS.userRequestDocumentOwnership}> the Claim Authorship form</Link>
                 <br />
                 For more information please see our help page on
-                <a href="https://info.arxiv.org/help/authority"> authority records</a>.
+                <a href="https://info.arxiv.org/help/authority" target="_blank"> authority records</a>.
             </p>
 
             {authorId ? (
                 <p>
                     Your public author identifier is
-                    <a href={`https://arxiv.org/a/${authorId}`}> {authorId}</a> and may be used by other services
+                    <a href={`https://arxiv.org/a/${authorId}`} target="_blank"> {authorId}</a> and may be used by other services
                     to access the list of articles authored by you, see
-                    <a href="https://info.arxiv.org/help/author_identifiers">
+                    <a href="https://info.arxiv.org/help/author_identifiers" target="_blank">
                         author identifier help
                     </a>
                     .
@@ -64,7 +73,7 @@ const ArticleInfo: React.FC<ArticleInfoProps> = ({
             ) : authorCount >= 1 ? (
                 <p>
                     No public author identifier has been set for your account, see
-                    <a href="https://info.arxiv.org/help/author_identifiers">
+                    <a href="https://info.arxiv.org/help/author_identifiers" target="_blank">
                         author identifier help
                     </a>
                     or you may <a href="/set_author_id">set a public author identifier</a>.
@@ -73,7 +82,7 @@ const ArticleInfo: React.FC<ArticleInfoProps> = ({
 
             {orcidId && orcidAuth ? (
                 <p>
-                    Your <a href="https://info.arxiv.org/help/orcid">ORCID iD</a>{" is "}
+                    Your <a href="https://info.arxiv.org/help/orcid" target="_blank">ORCID iD</a>{" is "}
                     <a href={`https://arxiv.org/a/${orcidId}`}>{orcidId}</a>.
                 </p>
             ) : (

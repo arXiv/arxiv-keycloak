@@ -27,7 +27,7 @@ import RouteBreadcrumbs from "../bits/RouteBreadcrumbs.tsx";
 
 const ownershipOptions = [
     { label: "Your Articles", link: "/user-account/owned-documents" },
-    { label: "Claim Ownership", link: "/user-account/claim-paper-ownership" },
+    { label: "Claim Ownership", link: "/user-account/claim-document-ownership" },
     { label: "Request Ownership", link: "/user-account/request-document-ownership" },
 ];
 

@@ -44,6 +44,8 @@ export interface ArxivSiteURLs {
     userChangePassword: string;
     userChangeEmail: string;
     userSendEmailVerification: string;
+    userClaimDocumentOwnership: string;
+    userRequestDocumentOwnership: string;
 }
 
 export interface RuntimeProps
@@ -114,6 +116,8 @@ const defaultRuntimeProps : RuntimeProps = {
         userChangePassword: "/user-account/change-password",
         userChangeEmail: "/user-account/change-email",
         userSendEmailVerification: "/send-email-verification",
+        userClaimDocumentOwnership: "/user-account/claim-document-ownership",
+        userRequestDocumentOwnership:  "/user-account/request-document-ownership",
     },
     currentUser: null,
     isMod: false,

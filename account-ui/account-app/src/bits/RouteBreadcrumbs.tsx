@@ -11,14 +11,14 @@ const breadcrumbNameMap: Record<string, string> = {
     'login': 'Login',
     'logout': 'Logout',
     'register': 'Register',
-    'request-document-ownership': 'Request Document Ownership',
+    'request-document-ownership': 'Request Paper Ownership',
     'change-author-status': 'Change Author Status',
     'update-profile': 'Update Profile',
     'change-password': 'Change Password',
     'change-email': 'Change Email',
     'endorse': 'Enter Endorsement Code',
     'owned-documents': 'Your Documents',
-    'claim-paper-ownership': 'Claim Paper Ownership',
+    'claim-document-ownership': 'Claim Paper Ownership',
     'reset-password': 'Reset Password',
 };
 

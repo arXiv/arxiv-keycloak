@@ -35,6 +35,7 @@ import EndorsedCategories from "../bits/EndorsedCategories.tsx";
 import {useNavigate} from "react-router-dom";
 
 type EndorsementListType = adminApi["/v1/endorsements/"]["get"]['responses']["200"]['content']['application/json'];
+type DemographicType = adminApi['/v1/demographics/{id}']['get']['responses']['200']['content']['application/json'];
 
 
 const VerifyEmailButton: React.FC<{ runtimeProps: RuntimeProps }> = ({ runtimeProps }) => {
@@ -94,6 +95,8 @@ const UserAccountInfo = () => {
     const user = runtimeProps.currentUser;
     const {showMessageDialog} = useNotification();
     const [endorsements, setEndorsements] = useState<EndorsementListType>([]);
+    const [demographic, setDemographic] = useState<DemographicType | null>(null);
+
     const navigate = useNavigate();
 
     let url = user?.url || "https://arxiv.org";
@@ -136,11 +139,26 @@ const UserAccountInfo = () => {
 
         if (runtimeProps.currentUser)
             doGetEndorsedCategories()
-        if (runtimeProps.currentUser)
-            doGetEndorsedCategories()
-        else
-            showMessageDialog("You are not logged in to use see your account.", "Please log in");
     }, [runtimeProps.currentUser]);
+
+
+    useEffect(() => {
+        async function doGetDemographic() {
+            if (!runtimeProps.currentUser) return;
+            try {
+                const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/demographics/${runtimeProps.currentUser.id}/`);
+                const body: DemographicType = await response.json();
+                setDemographic(body);
+            }
+            catch (error) {
+                console.error(error);
+            }
+        }
+
+        if (runtimeProps.currentUser)
+            doGetDemographic()
+    }, [runtimeProps.currentUser]);
+
 
     const vetoStatus= runtimeProps.currentUser?.veto_status && runtimeProps.currentUser?.veto_status !== "ok" ? (
         <Typography variant="body1" component="div"><b>{"Account Status: "} </b>
@@ -218,6 +236,7 @@ const UserAccountInfo = () => {
                         <Typography variant="body1"><b>{"URL: "}</b> <Link href={url} target="_blank">{user?.url}</Link></Typography>
                         <Typography variant="body1"><b>{"Country: "}</b>{user?.country}</Typography>
                         <Typography variant="body1"><b>{"Career Status: "}</b>{user?.career_status}</Typography>
+                        <Typography variant="body1"><b>{"ORCID: "}</b>{demographic?.orcid}</Typography>
                     </Box>
                 </Box>
                 <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>

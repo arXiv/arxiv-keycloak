@@ -13,7 +13,7 @@ import {paths as adminApi} from "../types/admin-api";
 import UnlockIcon from "@mui/icons-material/LockOpen";
 import AuthorIcon from "@mui/icons-material/Attribution";
 // import NonAuthorIcon from "@mui/icons-material/LocalShipping";
-import NonAuthorIcon from "@mui/icons-material/Upload";
+import NonAuthorIcon from "@mui/icons-material/SupervisedUserCircle";
 // import UndoIcon from "@mui/icons-material/Undo";
 // import Container from '@mui/material/Container'
 import Typography from "@mui/material/Typography";
