@@ -23,14 +23,29 @@ const CareerStatusSelect: React.FC<CareerStatusProps> = ({ onSelect, careereStat
         }
     };
 
+    const displayLabel = (option: string) => {
+        return option === "Unknown" ? "" : option;
+    };
+
+    const isRequired = careereStatus === "Unknown";
+
     return (
         <Box sx={{flex: 2}}>
             <Autocomplete
                 options={career_status_options}
                 value={careereStatus}
                 onChange={handleChange}
+                getOptionLabel={displayLabel}
                 renderInput={(params) => (
-                    <TextField {...params} size="small" label="Career Status *" variant="outlined" />
+                    <TextField {...params} size="small" label="Career Status" variant="outlined"
+                               inputProps={{
+                                   ...params.inputProps,
+                                   style: {
+                                       color: isRequired ? "#909090" : "inherit",
+                                   },
+                               }}
+
+                    />
                 )}
             />
         </Box>

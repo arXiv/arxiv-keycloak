@@ -34,7 +34,7 @@ const CardWithTitle: React.FC<CardWithTitleProps> = ({ title, children }) => (
             </Typography>
         </Box>
 
-        <Card elevation={1} >
+        <Card elevation={2} >
             <Box sx={{ pt: 1 }}>
                 {children}
             </Box>

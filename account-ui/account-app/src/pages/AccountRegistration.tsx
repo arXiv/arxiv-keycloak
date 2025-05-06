@@ -28,7 +28,15 @@ import {useNotification} from "../NotificationContext.tsx";
 import {fetchPlus} from "../fetchPlus.ts";
 import CardWithTitle from "../bits/CardWithTitle.tsx";
 import FormControlLabel from "@mui/material/FormControlLabel";
+
 import {useMediaQuery, useTheme} from "@mui/material";
+/* import IconButton from '@mui/material/IconButton';
+import Collapse from '@mui/material/Collapse';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import AccentedCharactersGuide from "../bits/AccentedChars.tsx";
+
+ */
 
 type TokenResponse = paths["/account/register/"]['get']['responses']['200']['content']['application/json'];
 type SubmitRequest = paths["/account/register/"]['post']['requestBody']['content']['application/json'];
@@ -66,6 +74,7 @@ const AccountRegistration = () => {
     const runtimeContext = useContext(RuntimeContext);
     const {showNotification} = useNotification();
     const theme = useTheme();
+    // const [expanded, setExpanded] = useState(false);
 
     // State to store input values
     const [formData, setFormData] = useState<SubmitRequest>({
@@ -348,21 +357,29 @@ const AccountRegistration = () => {
                 onSubmit={handleSubmit}
                 sx={{display: "flex", flexDirection: "column", gap: 1}}
             >
-
-                {/* Register once */}
-                <Typography variant="body1" color="black" align="left">
-                    Fields with * are required.
+                <Typography variant="h4" color="black"  align="left" sx={{fontWeight: "bold"}}>
+                    Create your arXiv account
+                </Typography>
+                <Box sx={{mx:2}}>
+                <Typography variant="body" color="black" align="left">
+                    It is a violation of our policies to misrepresent your identity or
+                    institutional affiliation. Claimed affiliation should be current in the
+                    conventional sense: e.g., physical presence, funding, e-mail address,
+                    mention on institutional web pages, etc. Misrepresentation of identity or
+                    affiliation, for any reason, is possible grounds for immediate and
+                    permanent suspension.
                 </Typography>
 
+                </Box>
                 {/* Registration Form */}
                 <CardWithTitle title={"Account Credentials"}>
                     <Box sx={{p:1, m: 1}}>
                         <Box sx={{ display: "flex", gap: 1 }}>
                             <Box sx={{ flex: 1 }}>
-                                <Typography fontWeight="bold" sx={{ mb: 1 }}>{"Email *: "}</Typography>
+                                <Typography fontWeight="bold" sx={{ mb: 1 }}>{"Email (required): "}</Typography>
                                 <TextField
                                     size="small"
-                                    label="Email *"
+                                    label="Email (required)"
                                     error={Boolean(errors.email)}
                                     helperText={errors.email}
                                     name="email"
@@ -374,10 +391,10 @@ const AccountRegistration = () => {
                             </Box>
 
                             <Box sx={{ flex: 1 }}>
-                                <Typography fontWeight="bold" sx={{ mb: 1 }}>{"Username *: "}</Typography>
+                                <Typography fontWeight="bold" sx={{ mb: 1 }}>{"Username (required): "}</Typography>
                                 <TextField
                                     size="small"
-                                    label="Username *"
+                                    label="Username (required)"
                                     error={Boolean(errors.username)}
                                     helperText={errors.username}
                                     name="username"
@@ -393,11 +410,11 @@ const AccountRegistration = () => {
                             <Box sx={{ flex: 1, pt: 2 }}>
 
                                 <Typography fontWeight={"bold"}
-                                        sx={{mb: 1}}>{"Password *:  "}</Typography>
+                                        sx={{mb: 1}}>{"Password (required)"}</Typography>
                                 <Tooltip title={<PasswordRequirements/>}>
                                     <TextField
                                         size="small"
-                                        label="Password *"
+                                        label="Password (required)"
                                         error={Boolean(errors.password)}
                                         helperText={errors.password}
                                         name="password"
@@ -413,11 +430,11 @@ const AccountRegistration = () => {
                             <Box sx={{ flex: 1, pt: 2 }}>
 
                                 <Typography fontWeight={"bold"}
-                                            sx={{mb: 1}}>{"Reenter password *:  "}</Typography>
+                                            sx={{mb: 1}}>{"Reenter password (required):  "}</Typography>
 
                                 <TextField
                                     size="small"
-                                    label="Reenter Password *"
+                                    label="Reenter Password (required)"
                                     error={Boolean(errors.secondPassword)}
                                     helperText={errors.secondPassword}
                                     name="secondPassword"
@@ -435,12 +452,46 @@ const AccountRegistration = () => {
 
                 <CardWithTitle title={"User Information"}>
                     <Box sx={{p:1, m: 1}}>
-                        <Box>
-                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"First, Last and Sur name:  "}</Typography>
-                            <Box sx={{display: "flex", gap: 2}}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                        <Typography sx={{mt:0}} variant={"body2"}>Names accept pidgin TeX (\'o) for foreign characters</Typography>
+                            {
+                                /*
+                            <IconButton onClick={() => setExpanded((prev) => !prev)} size="small">
+                                {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                            </IconButton>
+                            <Collapse in={expanded}>
+                                <Box sx={{ mt: 1 }}>
+                                    <AccentedCharactersGuide />
+                                </Box>
+                            </Collapse>
+                                */
+                            }
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                            <Link
+                                sx={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 0.5,
+                                    padding: '4px 8px',
+                                    whiteSpace: 'nowrap' // Prevent line break if you want it on one line
+                                }}
+                                href={runtimeContext.URLS.accentedCharactersGuide}
+                                target='_blank'
+                            >
+                                <LinkIcon sx={{ fontSize: 18 }} />
+                                Open Accented Characters Guide
+                            </Link>
+                        </Box>
+                        </Box>
+
+
+                        <Box sx={{ display: "flex", gap: 1 }}>
+                            <Box sx={{ flex: 2 }}>
+                                <Box sx={{ flex: 1, pt: 2 }}>
+                                    <Typography fontWeight={"bold"} sx={{mb: 1}}>{"First name (required)"}</Typography>
                                 <TextField
                                     size="small"
-                                    label="First name *"
+                                    label="First name (required)"
                                     error={Boolean(errors.first_name)}
                                     helperText={errors.first_name}
                                     name="first_name"
@@ -450,9 +501,15 @@ const AccountRegistration = () => {
                                     onChange={handleChange}
                                     sx={{flex: 3}} // Ensures both fields take equal width
                                 />
-                                <TextField
+                                </Box>
+                            </Box>
+                            <Box sx={{ flex: 2 }}>
+                                <Box sx={{ flex: 1, pt: 2 }}>
+                                    <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Sur name / Last name / Family name (required)"}</Typography>
+
+                                    <TextField
                                     size="small"
-                                    label="Last name *"
+                                    label="Last name (required)"
                                     error={Boolean(errors.last_name)}
                                     helperText={errors.last_name}
                                     name="last_name"
@@ -462,9 +519,14 @@ const AccountRegistration = () => {
                                     onChange={handleChange}
                                     sx={{flex: 3}} // Ensures both fields take equal width
                                 />
+                                </Box> </Box>
+                            <Box sx={{ flex: 2 }}>
+                                <Box sx={{ flex: 1, pt: 2 }}>
+                                    <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Suffix"}</Typography>
+
                                 <TextField
                                     size="small"
-                                    label="Sur name"
+                                    label="examples: Jr. , Sr. , Ph.D, etc."
                                     error={Boolean(errors.suffix_name)}
                                     helperText={errors.suffix_name}
                                     name="suffix_name"
@@ -474,16 +536,20 @@ const AccountRegistration = () => {
                                     onChange={handleChange}
                                     sx={{flex: 1}} // Ensures both fields take equal width
                                 />
+                                </Box>
                             </Box>
                         </Box>
 
-                        <Box >
-                            <Typography fontWeight={"bold"}
-                                        sx={{mb: 1, pt: 2}}>{"Organization, Country and Career Status:  "}</Typography>
-                            <Box sx={{display: "flex", gap: 2}}>
+                        <Box sx={{ display: "flex", gap: 1 }}>
+                            <Box sx={{ flex: 2 }}>
+                                <Typography fontWeight={"bold"} sx={{mb: 1, pt: 2}}>{"Country (required)"}</Typography>
+                                <CountrySelector onSelect={setCountry} selectedCountry={formData.country || ""}/>
+                            </Box>
+                            <Box sx={{ flex: 2 }}>
+                                <Typography fontWeight={"bold"} sx={{mb: 1, pt: 2}}>{"Organization name (required)"}</Typography>
                                 <TextField
                                     size="small"
-                                    label="Organization *"
+                                    label="Organization (required)"
                                     error={Boolean(errors.affiliation)}
                                     helperText={errors.affiliation}
                                     name="affiliation"
@@ -493,13 +559,17 @@ const AccountRegistration = () => {
                                     onChange={handleChange}
                                     sx={{flex: 3}} // Ensures both fields take equal width
                                 />
-                                <CountrySelector onSelect={setCountry} selectedCountry={formData.country || ""}/>
+                            </Box>
+
+                            <Box sx={{ flex: 2 }}>
+                                <Typography fontWeight={"bold"}
+                                            sx={{mb: 1, pt: 2}}>{"Career Stage (required)"}</Typography>
                                 <CareerStatusSelect onSelect={setCarrerStatus} careereStatus={formData.career_status}/>
                             </Box>
                         </Box>
 
                         <Box>
-                            <Typography fontWeight={"bold"} sx={{mb: 1, pt: 2}}>{"Home page URL:  "}</Typography>
+                            <Typography fontWeight={"bold"} sx={{mb: 1, pt: 2}}>{"Home page URL"}</Typography>
                             <TextField
                                 size="small"
                                 label="Your Homepage URL"
@@ -559,7 +629,7 @@ const AccountRegistration = () => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                             <FormControlLabel
                                 control={<Checkbox onChange={handleChange} name="privacyPolicy" />}
-                                label="By submitting to arXiv, I agree to the arXiv Privacy Policy"
+                                label="I agree to the arXiv Privacy Policy."
                             />
                             <Link
                                 sx={{

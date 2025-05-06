@@ -23,6 +23,7 @@ export interface ArxivSiteURLs {
     arxivSlack: string;
     emailProtection: string;
     mathJaxHelp: string;
+    accentedCharactersGuide: string;
     needPaperPassword: string;
     requestOwnership: string;
     orcidOrg: string;
@@ -97,6 +98,7 @@ const defaultRuntimeProps : RuntimeProps = {
         arxivSlack: "https://subscribe.sorryapp.com/24846f03/slack/new",
         emailProtection: "https://info.arxiv.org/help/email-protection",
         mathJaxHelp: "https://info.arxiv.org/help/mathjax.html",
+        accentedCharactersGuide: "https://arxiv.org/edit-user/tex-accents.php",
         needPaperPassword: "/auth/need-paper-password",
         requestOwnership: "/auth/request-ownership",
         orcidOrg: "http://orcid.org/",
