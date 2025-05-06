@@ -161,7 +161,7 @@ services:
       SUBSCRIPTION: ${KC_TAPIR_BRIDGE_SUBSCRIPTION}
       # CLASSIC_DB_URI: "mysql://arxiv:arxiv_password@arxiv-test-db:3306/arXiv"
       CLASSIC_DB_URI: ${CLASSIC_DB_URI}
-      AAA_API_URL: ${KC_TAPIR_BRIDGE_AUDIT_API_URL}
+      AAA_API_URL: ${AAA_URL}
       AAA_API_TOKEN: ${AAA_API_TOKEN}
     network_mode: host
     depends_on:
@@ -194,7 +194,7 @@ services:
       AUTH_SESSION_COOKIE_DOMAIN: 'localhost.arxiv.org'
       AAA_URL: "http://localhost.arxiv.org:${NGINX_PORT}/aaa"
       LEGACY_AUTH_PROVIDER: "http://localhost.arxiv.org:${LEGACY_AUTH_PORT}"
-      MAIL_STORE_URL: "http://localhost.arxiv.org:${MAIL_API_PORT}"
+      MAIL_STORE_URL: "http://localhost.arxiv.org:${MAILSTORE_PORT}"
       ADMIN_API_URL: "http://localhost.arxiv.org:${NGINX_PORT}/admin-api"
 
     network_mode: host
@@ -235,11 +235,12 @@ services:
     container_name: test-mta
     ports:
       - "${SMTP_PORT}:${SMTP_PORT}"
-      - "${MAIL_API_PORT}:${MAIL_API_PORT}"
+      - "${MAILSTORE_PORT}:${MAILSTORE_PORT}"
     network_mode: host
     environment:
       SMTP_PORT: "${SMTP_PORT}"
-      MAIL_API_PORT: "${MAIL_API_PORT}"
+      MAIL_API_PORT: "${MAILSTORE_PORT}"
+      MAILSTORE_PORT: "${MAILSTORE_PORT}"
       
     
   keycloak-setup:

@@ -74,10 +74,10 @@ deploy:
 
 
 run:
-	docker run --rm -it --name legacy-auth-provider --network=host -e API_SECRET_KEY=$LEGACY_AUTH_API_TOKEN -e PORT=${LEGACY_AUTH_PORT} -e CLASSIC_DB_URI=mysql://arxiv:arxiv_password@127.0.0.1:${ARXIV_DB_PORT}/arXiv ${tag}:latest
+	docker run --rm -it --name legacy-auth-provider --network=host -e API_SECRET_KEY=${LEGACY_AUTH_API_TOKEN} -e PORT=${LEGACY_AUTH_PORT} -e CLASSIC_DB_URI=mysql://arxiv:arxiv_password@127.0.0.1:${ARXIV_DB_PORT}/arXiv ${tag}:latest
 
 sh:
-	docker run --rm -it --name legacy-auth-provider --network=host -e API_SECRET_KEY=$LEGACY_AUTH_API_TOKEN PORT=${LEGACY_AUTH_PORT} -e CLASSIC_DB_URI=mysql://arxiv:arxiv_password@127.0.0.1:${ARXIV_DB_PORT}/arXiv --entrypoint=/bin/bash ${tag}:latest
+	docker run --rm -it --name legacy-auth-provider --network=host -e API_SECRET_KEY=${LEGACY_AUTH_API_TOKEN} PORT=${LEGACY_AUTH_PORT} -e CLASSIC_DB_URI=mysql://arxiv:arxiv_password@127.0.0.1:${ARXIV_DB_PORT}/arXiv --entrypoint=/bin/bash ${tag}:latest
 
 login:
 	gcloud auth login
