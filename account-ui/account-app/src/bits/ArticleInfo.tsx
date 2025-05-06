@@ -3,12 +3,12 @@ import React, {useContext} from "react";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
-import AuthorIcon from "@mui/icons-material/Attribution";
-import NonAuthorIcon from "@mui/icons-material/SupervisedUserCircle";
 import { RuntimeContext } from "../RuntimeContext";
 // import {useNavigate} from "react-router-dom";
 import Link from "@mui/material/Link";
 import { Link as RouterLink } from 'react-router-dom';
+import AuthorInfoTable from "./AuthorInfoTable.tsx";
+import Typography from "@mui/material/Typography/Typography";
 
 interface ArticleInfoProps {
     ownerCount: number;
@@ -31,35 +31,39 @@ const ArticleInfo: React.FC<ArticleInfoProps> = ({
     // const navigate = useNavigate();
     return (
         <Card>
-            <CardHeader title={"Author Information"}  />
+            <CardHeader title={"Article Information"}  />
             <CardContent sx={{py: 0}}>
-                You own {ownerCount} article{ownerCount !== 1 ? "s" : ""}, have
-                submitted {submitCount} article{submitCount !== 1 ? "s" : ""} and are
-                registered as the author of {authorCount} article
-                {authorCount !== 1 ? "s" : ""}.
-
+                <AuthorInfoTable ownerCount={ownerCount} submitCount={submitCount}  authorCount={authorCount}  />
             <p>
                 Are you incorrectly registered as an author or a non-author of any
                 articles you own? If so, update the authorship status below.
-               <AuthorIcon sx={{fontSize: "20px"}}/> {"= owner, and "}<NonAuthorIcon  sx={{fontSize: "20px"}}/>{"= proxy submission."}
             </p>
 
-            <p>
-                Are there articles you are an author of on arXiv that are not listed
-                here?
-                <br />
-                If you have the paper password use
-
-                <Link component={RouterLink} to={runtimeProps.URLS.userClaimDocumentOwnership}> the Claim Ownership with a password form</Link>
-                <br />
-                If you do not have the paper password or are claiming multiple papers
-                use
-                <Link component={RouterLink} to={runtimeProps.URLS.userRequestDocumentOwnership}> the Claim Authorship form</Link>
-                <br />
-                For more information please see our help page on
-                <a href="https://info.arxiv.org/help/authority" target="_blank"> authority records</a>.
-            </p>
-
+                <Typography component="div" sx={{ mt: 2 }}>
+                    Are there articles you are an author of on arXiv that are not listed here?
+                    <ul style={{ paddingLeft: '1.5em', marginTop: 0 }}>
+                        <li>
+                            If you have the paper password, use&nbsp;
+                            <Link component={RouterLink} to={runtimeProps.URLS.userClaimDocumentOwnership}>
+                                the Claim Ownership with a password form
+                            </Link>
+                            .
+                        </li>
+                        <li>
+                            If you do not have the paper password or are claiming multiple papers, use&nbsp;
+                            <Link component={RouterLink} to={runtimeProps.URLS.userRequestDocumentOwnership}>
+                                the Claim Authorship form
+                            </Link>
+                            .
+                        </li>
+                        <li>
+                            For more information, please see our help page on&nbsp;
+                            <Link href="https://info.arxiv.org/help/authority" target="_blank" rel="noreferrer">
+                                authority records
+                            </Link>.
+                        </li>
+                    </ul>
+                </Typography>
             {authorId ? (
                 <p>
                     Your public author identifier is

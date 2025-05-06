@@ -480,12 +480,12 @@ const YourDocuments: React.FC = () => {
                 </Typography>
                 <Box flexGrow={1}/>
                 <Button id="authored_all" name="authored_all" variant="outlined" disabled={selectedRows.length === 0}
-                        onClick={() => updateAuthored(true)}
+                        onClick={() => updateAuthored(true)} startIcon={<AuthorIcon />}
                 >
                     I'm an author.
                 </Button>
                 <Button id="authored_none" name="authored_none" variant="outlined" disabled={selectedRows.length === 0}
-                        onClick={() => updateAuthored(false)}
+                        onClick={() => updateAuthored(false)}  startIcon={<NonAuthorIcon />}
                 >
                     I am not an author.
                 </Button>
