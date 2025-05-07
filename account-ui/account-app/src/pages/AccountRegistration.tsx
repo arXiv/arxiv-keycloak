@@ -361,7 +361,7 @@ const AccountRegistration = () => {
                     Create your arXiv account
                 </Typography>
                 <Box sx={{mx:2}}>
-                <Typography variant="body" color="black" align="left">
+                <Typography variant="subtitle2" color="black" align="left">
                     It is a violation of our policies to misrepresent your identity or
                     institutional affiliation. Claimed affiliation should be current in the
                     conventional sense: e.g., physical presence, funding, e-mail address,
