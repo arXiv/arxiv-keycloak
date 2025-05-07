@@ -232,8 +232,7 @@ const AccountRegistration = () => {
             } else {
                 setErrors((prev) => ({...prev, secondPassword: undefined}));
             }
-        }
-        else if (name === "privacyPolicy") {
+        } else if (name === "privacyPolicy") {
             const {checked} = e.target;
             if (checked) {
                 setErrors((prev) => ({...prev, privacyPolicy: undefined}));
@@ -357,26 +356,18 @@ const AccountRegistration = () => {
                 onSubmit={handleSubmit}
                 sx={{display: "flex", flexDirection: "column", gap: 1}}
             >
-                <Typography variant="h4" color="black"  align="left" sx={{fontWeight: "bold"}}>
+                <Typography variant="h4" color="black" align="left" sx={{fontWeight: "bold"}}>
                     Create your arXiv account
                 </Typography>
-                <Box sx={{mx:2}}>
+                <Box sx={{mx: 2}}>
 
                 </Box>
                 {/* Registration Form */}
                 <CardWithTitle title={"Account Credentials"}>
-                    <Box sx={{p:1, m: 1}}>
-                        <Typography variant="subtitle2" color="black" align="left">
-                            It is a violation of our policies to misrepresent your identity or
-                            institutional affiliation. Claimed affiliation should be current in the
-                            conventional sense: e.g., physical presence, funding, e-mail address,
-                            mention on institutional web pages, etc. Misrepresentation of identity or
-                            affiliation, for any reason, is possible grounds for immediate and
-                            permanent suspension.
-                        </Typography>
-                        <Box sx={{ display: "flex", gap: 1 }}>
-                            <Box sx={{ flex: 1 }}>
-                                <Typography fontWeight="bold" sx={{ mb: 1 }}>{"Email (required): "}</Typography>
+                    <Box sx={{p: 1, m: 1}}>
+                        <Box sx={{display: "flex", gap: 1}}>
+                            <Box sx={{flex: 1}}>
+                                <Typography fontWeight="bold" sx={{mb: 1}}>{"Email (required): "}</Typography>
                                 <TextField
                                     size="small"
                                     error={Boolean(errors.email)}
@@ -389,8 +380,8 @@ const AccountRegistration = () => {
                                 />
                             </Box>
 
-                            <Box sx={{ flex: 1 }}>
-                                <Typography fontWeight="bold" sx={{ mb: 1 }}>{"Username (required): "}</Typography>
+                            <Box sx={{flex: 1}}>
+                                <Typography fontWeight="bold" sx={{mb: 1}}>{"Username (required): "}</Typography>
                                 <TextField
                                     size="small"
                                     error={Boolean(errors.username)}
@@ -404,11 +395,11 @@ const AccountRegistration = () => {
                             </Box>
                         </Box>
 
-                        <Box sx={{ display: "flex", gap: 1 }}>
-                            <Box sx={{ flex: 1, pt: 2 }}>
+                        <Box sx={{display: "flex", gap: 1}}>
+                            <Box sx={{flex: 1, pt: 2}}>
 
                                 <Typography fontWeight={"bold"}
-                                        sx={{mb: 1}}>{"Password (required)"}</Typography>
+                                            sx={{mb: 1}}>{"Password (required)"}</Typography>
                                 <Tooltip title={<PasswordRequirements/>}>
                                     <TextField
                                         size="small"
@@ -424,7 +415,7 @@ const AccountRegistration = () => {
                                     />
                                 </Tooltip>
                             </Box>
-                            <Box sx={{ flex: 1, pt: 2 }}>
+                            <Box sx={{flex: 1, pt: 2}}>
 
                                 <Typography fontWeight={"bold"}
                                             sx={{mb: 1}}>{"Reenter password (required):  "}</Typography>
@@ -447,9 +438,19 @@ const AccountRegistration = () => {
                 </CardWithTitle>
 
                 <CardWithTitle title={"User Information"}>
-                    <Box sx={{p:1, m: 1}}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                        <Typography sx={{mt:0}} variant={"body2"}>Names accept pidgin TeX (\'o) for foreign characters</Typography>
+                    <Box sx={{p: 1, m: 1}}>
+                        <Typography variant="subtitle2" color="black" align="left" sx={{mb: 0, mx: 1}}>
+                            It is a violation of our policies to misrepresent your identity or
+                            institutional affiliation. Claimed affiliation should be current in the
+                            conventional sense: e.g., physical presence, funding, e-mail address,
+                            mention on institutional web pages, etc. Misrepresentation of identity or
+                            affiliation, for any reason, is possible grounds for immediate and
+                            permanent suspension.
+                        </Typography>
+
+                        <Box sx={{display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap'}}>
+                            <Typography sx={{mt: 0}} variant={"body2"}>Names accept pidgin TeX (\'o) for foreign
+                                characters</Typography>
                             {
                                 /*
                             <IconButton onClick={() => setExpanded((prev) => !prev)} size="small">
@@ -462,88 +463,90 @@ const AccountRegistration = () => {
                             </Collapse>
                                 */
                             }
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                            <Link
-                                sx={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: 0.5,
-                                    padding: '4px 8px',
-                                    whiteSpace: 'nowrap' // Prevent line break if you want it on one line
-                                }}
-                                href={runtimeContext.URLS.accentedCharactersGuide}
-                                target='_blank'
-                            >
-                                <LinkIcon sx={{ fontSize: 18 }} />
-                                Open Accented Characters Guide
-                            </Link>
-                        </Box>
+                            <Box sx={{display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap'}}>
+                                <Link
+                                    sx={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 0.5,
+                                        padding: '4px 8px',
+                                        whiteSpace: 'nowrap' // Prevent line break if you want it on one line
+                                    }}
+                                    href={runtimeContext.URLS.accentedCharactersGuide}
+                                    target='_blank'
+                                >
+                                    <LinkIcon sx={{fontSize: 18}}/>
+                                    Open Accented Characters Guide
+                                </Link>
+                            </Box>
                         </Box>
 
 
-                        <Box sx={{ display: "flex", gap: 1 }}>
-                            <Box sx={{ flex: 2 }}>
-                                <Box sx={{ flex: 1, pt: 2 }}>
+                        <Box sx={{display: "flex", gap: 1}}>
+                            <Box sx={{flex: 2}}>
+                                <Box sx={{flex: 1, pt: 2}}>
                                     <Typography fontWeight={"bold"} sx={{mb: 1}}>{"First name (required)"}</Typography>
-                                <TextField
-                                    size="small"
-                                    error={Boolean(errors.first_name)}
-                                    helperText={errors.first_name}
-                                    name="first_name"
-                                    value={formData.first_name}
-                                    variant="outlined"
-                                    fullWidth
-                                    onChange={handleChange}
-                                    sx={{flex: 3}} // Ensures both fields take equal width
-                                />
+                                    <TextField
+                                        size="small"
+                                        error={Boolean(errors.first_name)}
+                                        helperText={errors.first_name}
+                                        name="first_name"
+                                        value={formData.first_name}
+                                        variant="outlined"
+                                        fullWidth
+                                        onChange={handleChange}
+                                        sx={{flex: 3}} // Ensures both fields take equal width
+                                    />
                                 </Box>
                             </Box>
-                            <Box sx={{ flex: 2 }}>
-                                <Box sx={{ flex: 1, pt: 2 }}>
-                                    <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Sur name / Last name / Family name (required)"}</Typography>
+                            <Box sx={{flex: 2}}>
+                                <Box sx={{flex: 1, pt: 2}}>
+                                    <Typography fontWeight={"bold"}
+                                                sx={{mb: 1}}>{"Sur name / Last name / Family name (required)"}</Typography>
 
                                     <TextField
-                                    size="small"
-                                    error={Boolean(errors.last_name)}
-                                    helperText={errors.last_name}
-                                    name="last_name"
-                                    value={formData.last_name}
-                                    variant="outlined"
-                                    fullWidth
-                                    onChange={handleChange}
-                                    sx={{flex: 3}} // Ensures both fields take equal width
-                                />
+                                        size="small"
+                                        error={Boolean(errors.last_name)}
+                                        helperText={errors.last_name}
+                                        name="last_name"
+                                        value={formData.last_name}
+                                        variant="outlined"
+                                        fullWidth
+                                        onChange={handleChange}
+                                        sx={{flex: 3}} // Ensures both fields take equal width
+                                    />
                                 </Box> </Box>
-                            <Box sx={{ flex: 2 }}>
-                                <Box sx={{ flex: 1, pt: 2 }}>
+                            <Box sx={{flex: 2}}>
+                                <Box sx={{flex: 1, pt: 2}}>
                                     <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Suffix: "}
                                         <Typography variant={"caption"}>
                                             {"examples: Jr. , Sr. , Ph.D, etc."}
                                         </Typography>
                                     </Typography>
 
-                                <TextField
-                                    size="small"
-                                    error={Boolean(errors.suffix_name)}
-                                    helperText={errors.suffix_name}
-                                    name="suffix_name"
-                                    value={formData.suffix_name}
-                                    variant="outlined"
-                                    fullWidth
-                                    onChange={handleChange}
-                                    sx={{flex: 1}} // Ensures both fields take equal width
-                                />
+                                    <TextField
+                                        size="small"
+                                        error={Boolean(errors.suffix_name)}
+                                        helperText={errors.suffix_name}
+                                        name="suffix_name"
+                                        value={formData.suffix_name}
+                                        variant="outlined"
+                                        fullWidth
+                                        onChange={handleChange}
+                                        sx={{flex: 1}} // Ensures both fields take equal width
+                                    />
                                 </Box>
                             </Box>
                         </Box>
 
-                        <Box sx={{ display: "flex", gap: 1 }}>
-                            <Box sx={{ flex: 2 }}>
+                        <Box sx={{display: "flex", gap: 1}}>
+                            <Box sx={{flex: 2}}>
                                 <Typography fontWeight={"bold"} sx={{mb: 1, pt: 2}}>{"Country (required)"}</Typography>
                                 <CountrySelector onSelect={setCountry} selectedCountry={formData.country || ""}/>
                             </Box>
-                            <Box sx={{ flex: 2 }}>
-                                <Typography fontWeight={"bold"} sx={{mb: 1, pt: 2}}>{"Organization name (required)"}</Typography>
+                            <Box sx={{flex: 2}}>
+                                <Typography fontWeight={"bold"}
+                                            sx={{mb: 1, pt: 2}}>{"Organization name (required)"}</Typography>
                                 <TextField
                                     size="small"
                                     error={Boolean(errors.affiliation)}
@@ -557,7 +560,7 @@ const AccountRegistration = () => {
                                 />
                             </Box>
 
-                            <Box sx={{ flex: 2 }}>
+                            <Box sx={{flex: 2}}>
                                 <Typography fontWeight={"bold"}
                                             sx={{mb: 1, pt: 2}}>{"Career Stage (required)"}</Typography>
                                 <CareerStatusSelect onSelect={setCarrerStatus} careereStatus={formData.career_status}/>
@@ -580,21 +583,22 @@ const AccountRegistration = () => {
                     </Box>
                 </CardWithTitle>
                 <CardWithTitle title={"Submission Category"}>
-                    <Box sx={{p:1, m: 1}}>
+                    <Box sx={{p: 1, m: 1}}>
 
                         <CategoryGroupSelection selectedGroups={formData.groups as unknown as CategoryGroupType[]}
                                                 setSelectedGroups={setSelectedGroups}
                                                 isSmallScreen={isSmallScreen}
                         />
                         <Box sx={{pb: 1}}>
-                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Your default category (required)"}</Typography>
+                            <Typography fontWeight={"bold"}
+                                        sx={{mb: 1}}>{"Your default category (required)"}</Typography>
                             <CategoryChooser onSelect={setDefaultCategory}
                                              selectedCategory={formData.default_category}/>
                         </Box>
                     </Box>
                 </CardWithTitle>
                 <CardWithTitle title={"Verify and Submit"}>
-                    <Box sx={{p:1, m: 1}}>
+                    <Box sx={{p: 1, m: 1}}>
                         <Typography>To prevent misuse, let us know you are not a robot (required)</Typography>
                         <Box>
                             <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -616,14 +620,17 @@ const AccountRegistration = () => {
 
                         </Box>
                         <Box>
-                            <Button sx={{m: 1, fontSize: "10px"}} variant={"outlined"} onClick={resetCaptcha} startIcon={<RefreshIcon/>} title={"Load New Captcha"}>Load New Captcha</Button>
-                            <Button sx={{m: 1, fontSize: "10px"}} variant={"outlined"} onClick={speakCaptcha} aria-label="Listen to captcha value" startIcon={<HearingIcon/>}> Listen To Audio</Button>
+                            <Button sx={{m: 1, fontSize: "10px"}} variant={"outlined"} onClick={resetCaptcha}
+                                    startIcon={<RefreshIcon/>} title={"Load New Captcha"}>Load New Captcha</Button>
+                            <Button sx={{m: 1, fontSize: "10px"}} variant={"outlined"} onClick={speakCaptcha}
+                                    aria-label="Listen to captcha value" startIcon={<HearingIcon/>}> Listen To
+                                Audio</Button>
                         </Box>
                         <Box sx={{border: 1, my: 1}}></Box>
 
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                        <Box sx={{display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap'}}>
                             <FormControlLabel
-                                control={<Checkbox onChange={handleChange} name="privacyPolicy" />}
+                                control={<Checkbox onChange={handleChange} name="privacyPolicy"/>}
                                 label="I agree to the arXiv Privacy Policy."
                             />
                             <Link
@@ -639,18 +646,22 @@ const AccountRegistration = () => {
                                 }}
                                 href={runtimeContext.URLS.privacyPolicy}
                             >
-                                <LinkIcon sx={{ fontSize: 18 }} />
+                                <LinkIcon sx={{fontSize: 18}}/>
                                 Open Privacy Policy
                             </Link>
                         </Box>
                         <Box sx={{border: 1, my: 1}}></Box>
                         <Box>
                             <Typography>
-                                You should only register with arXiv once. arXiv associates papers that you have submitted with your user account. We must retain the information you submit for registration indefinitely in order to preserve the scholarly record, support academic integrity, and prevent abuse of our systems. If you register twice, with different accounts, your submission history will be inaccurate.
+                                You should only register with arXiv once. arXiv associates papers that you have
+                                submitted with your user account. We must retain the information you submit for
+                                registration indefinitely in order to preserve the scholarly record, support academic
+                                integrity, and prevent abuse of our systems. If you register twice, with different
+                                accounts, your submission history will be inaccurate.
                             </Typography>
                         </Box>
                         <Box sx={{display: "flex", justifyContent: "space-between", m: 2}}>
-                            <Box sx={{flex: 1}} />
+                            <Box sx={{flex: 1}}/>
                             <Button type="submit" variant="contained" disabled={invalidFormData} sx={{
                                 backgroundColor: "#1976d2",
                                 "&:hover": {
