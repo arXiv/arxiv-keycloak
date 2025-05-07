@@ -58,7 +58,7 @@ const CountrySelector: React.FC<CountrySelectProps> = ({ onSelect, selectedCount
                 value={countries.find((country) => country.code.toUpperCase() === selectedCountry?.toUpperCase())}
                 onChange={handleChange}
                 renderInput={(params) => (
-                    <TextField {...params} size="small" label="Country *" variant="outlined" />
+                    <TextField {...params} size="small" label="Country (required)" variant="outlined" />
                 )}
             />
         </Box>
