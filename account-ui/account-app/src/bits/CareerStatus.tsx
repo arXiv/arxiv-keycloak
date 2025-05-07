@@ -27,8 +27,6 @@ const CareerStatusSelect: React.FC<CareerStatusProps> = ({ onSelect, careereStat
         return option === "Unknown" ? "Please select" : option;
     };
 
-    const isRequired = careereStatus === "Unknown";
-
     return (
         <Box sx={{flex: 2}}>
             <Autocomplete
