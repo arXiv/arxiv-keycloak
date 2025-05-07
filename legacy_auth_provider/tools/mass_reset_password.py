@@ -3,23 +3,11 @@ import mysql.connector
 import random
 import string
 from arxiv.auth.legacy.passwords import hash_password
-import math
+from arxiv_bizlogic.randomness import generate_random_string
 
 
-def generate_random_password(length=10):
-    characters = string.ascii_letters + string.digits + "-_*()^%$#!{}[]+;:/"
-    char_count = len(characters)
-    
-    # Make a large enough random int to cover all of length
-    bits_needed = math.ceil(math.log2(char_count ** length))
-    rand_int = random.getrandbits(bits_needed)
-    
-    password = ""
-    for _ in range(length):
-        rand_int, index = divmod(rand_int, char_count)
-        password += characters[index]
-    
-    return password
+def generate_random_password(length: int = 10) -> str:
+    return generate_random_string(length=length)
 
 
 def hack_creds(database_url, start_id, count):

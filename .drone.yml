@@ -31,7 +31,38 @@ steps:
       - set
       - echo FOO=bar >> envvars
       - ls
-      - git fetch origin $DRONE_COMMIT_BEFORE
+      # Improved git fetch and diff logic that works for both direct pushes and PRs
+      - git fetch --all || echo "Failed to fetch all branches"
+      # Try to fetch the before commit, but don't fail if it doesn't exist
+      - git fetch origin $DRONE_COMMIT_BEFORE || echo "Could not fetch $DRONE_COMMIT_BEFORE directly"
+      # For PRs, ensure we have both source and target branches
+      - |
+        if [ ! -z "$DRONE_SOURCE_BRANCH" ] && [ ! -z "$DRONE_TARGET_BRANCH" ]; then
+          echo "This is a PR from $DRONE_SOURCE_BRANCH to $DRONE_TARGET_BRANCH"
+          git fetch origin $DRONE_SOURCE_BRANCH || echo "Could not fetch source branch"
+          git fetch origin $DRONE_TARGET_BRANCH || echo "Could not fetch target branch"
+        fi
+      # Choose the appropriate comparison based on what's available
+      - |
+        if git rev-parse --verify $DRONE_COMMIT_BEFORE >/dev/null 2>&1; then
+          echo "Comparing $DRONE_COMMIT_BEFORE → $DRONE_COMMIT_SHA"
+          git diff --name-only $DRONE_COMMIT_BEFORE $DRONE_COMMIT_SHA > changed_files.txt
+        elif [ ! -z "$DRONE_SOURCE_BRANCH" ] && [ ! -z "$DRONE_TARGET_BRANCH" ]; then
+          # For PRs, compare with merge-base of target branch
+          MERGE_BASE=$(git merge-base origin/$DRONE_TARGET_BRANCH $DRONE_COMMIT_SHA || echo "")
+          if [ ! -z "$MERGE_BASE" ]; then
+            echo "Using merge-base comparison: $MERGE_BASE → $DRONE_COMMIT_SHA"
+            git diff --name-only $MERGE_BASE $DRONE_COMMIT_SHA > changed_files.txt
+          else
+            # Ultimate fallback: just look at files changed in the current commit
+            echo "Falling back to single commit changes"
+            git show --name-only $DRONE_COMMIT_SHA > changed_files.txt
+          fi
+        else
+          # Try to use parent commit as base for comparison
+          echo "Trying parent commit comparison"
+          git diff --name-only $DRONE_COMMIT_SHA^ $DRONE_COMMIT_SHA > changed_files.txt || git show --name-only $DRONE_COMMIT_SHA > changed_files.txt
+        fi      
       - echo "Comparing $DRONE_COMMIT_BEFORE → $DRONE_COMMIT_SHA"
       - git diff --name-only $DRONE_COMMIT_BEFORE $DRONE_COMMIT_SHA > changed_files.txt
       - cat changed_files.txt
