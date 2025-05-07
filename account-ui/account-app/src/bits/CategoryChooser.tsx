@@ -81,7 +81,7 @@ const CategoryChooser: React.FC<CategoryChooserProps> = ({onSelect, selectedCate
             groupBy={(option) => (!option.isHeader ? option.group.toUpperCase() : "")}
             getOptionLabel={(option) => option.label ?? "Unknown Category"}
             isOptionEqualToValue={(option, value) => !option.isHeader && !value.isHeader && option.value && value.value && option.value.id === value.value.id}
-            renderInput={(params) => <TextField {...params} label="Your default category *" />}
+            renderInput={(params) => <TextField {...params}  />}
             renderOption={(props, option) => (
                 <li
                     {...props}

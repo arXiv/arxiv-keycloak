@@ -378,7 +378,7 @@ const UpdateProfile = () => {
                                                 isSmallScreen={isSmallScreen}
                                                 setSelectedGroups={setSelectedGroups} />
                         <Box>
-                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Your default category:  "}</Typography>
+                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Your default category (required):"}</Typography>
                             <CategoryChooser onSelect={setDefaultCategory} selectedCategory={formData.default_category} />
                         </Box>
                         <Box>

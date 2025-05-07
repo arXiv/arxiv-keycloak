@@ -24,7 +24,7 @@ const CareerStatusSelect: React.FC<CareerStatusProps> = ({ onSelect, careereStat
     };
 
     const displayLabel = (option: string) => {
-        return option === "Unknown" ? "" : option;
+        return option === "Unknown" ? "Please select" : option;
     };
 
     const isRequired = careereStatus === "Unknown";
@@ -38,13 +38,6 @@ const CareerStatusSelect: React.FC<CareerStatusProps> = ({ onSelect, careereStat
                 getOptionLabel={displayLabel}
                 renderInput={(params) => (
                     <TextField {...params} size="small" label="Career Status" variant="outlined"
-                               inputProps={{
-                                   ...params.inputProps,
-                                   style: {
-                                       color: isRequired ? "#909090" : "inherit",
-                                   },
-                               }}
-
                     />
                 )}
             />

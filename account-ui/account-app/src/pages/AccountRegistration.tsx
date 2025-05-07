@@ -361,25 +361,24 @@ const AccountRegistration = () => {
                     Create your arXiv account
                 </Typography>
                 <Box sx={{mx:2}}>
-                <Typography variant="subtitle2" color="black" align="left">
-                    It is a violation of our policies to misrepresent your identity or
-                    institutional affiliation. Claimed affiliation should be current in the
-                    conventional sense: e.g., physical presence, funding, e-mail address,
-                    mention on institutional web pages, etc. Misrepresentation of identity or
-                    affiliation, for any reason, is possible grounds for immediate and
-                    permanent suspension.
-                </Typography>
 
                 </Box>
                 {/* Registration Form */}
                 <CardWithTitle title={"Account Credentials"}>
                     <Box sx={{p:1, m: 1}}>
+                        <Typography variant="subtitle2" color="black" align="left">
+                            It is a violation of our policies to misrepresent your identity or
+                            institutional affiliation. Claimed affiliation should be current in the
+                            conventional sense: e.g., physical presence, funding, e-mail address,
+                            mention on institutional web pages, etc. Misrepresentation of identity or
+                            affiliation, for any reason, is possible grounds for immediate and
+                            permanent suspension.
+                        </Typography>
                         <Box sx={{ display: "flex", gap: 1 }}>
                             <Box sx={{ flex: 1 }}>
                                 <Typography fontWeight="bold" sx={{ mb: 1 }}>{"Email (required): "}</Typography>
                                 <TextField
                                     size="small"
-                                    label="Email (required)"
                                     error={Boolean(errors.email)}
                                     helperText={errors.email}
                                     name="email"
@@ -394,7 +393,6 @@ const AccountRegistration = () => {
                                 <Typography fontWeight="bold" sx={{ mb: 1 }}>{"Username (required): "}</Typography>
                                 <TextField
                                     size="small"
-                                    label="Username (required)"
                                     error={Boolean(errors.username)}
                                     helperText={errors.username}
                                     name="username"
@@ -414,7 +412,6 @@ const AccountRegistration = () => {
                                 <Tooltip title={<PasswordRequirements/>}>
                                     <TextField
                                         size="small"
-                                        label="Password (required)"
                                         error={Boolean(errors.password)}
                                         helperText={errors.password}
                                         name="password"
@@ -434,7 +431,6 @@ const AccountRegistration = () => {
 
                                 <TextField
                                     size="small"
-                                    label="Reenter Password (required)"
                                     error={Boolean(errors.secondPassword)}
                                     helperText={errors.secondPassword}
                                     name="secondPassword"
@@ -491,7 +487,6 @@ const AccountRegistration = () => {
                                     <Typography fontWeight={"bold"} sx={{mb: 1}}>{"First name (required)"}</Typography>
                                 <TextField
                                     size="small"
-                                    label="First name (required)"
                                     error={Boolean(errors.first_name)}
                                     helperText={errors.first_name}
                                     name="first_name"
@@ -509,7 +504,6 @@ const AccountRegistration = () => {
 
                                     <TextField
                                     size="small"
-                                    label="Last name (required)"
                                     error={Boolean(errors.last_name)}
                                     helperText={errors.last_name}
                                     name="last_name"
@@ -522,11 +516,14 @@ const AccountRegistration = () => {
                                 </Box> </Box>
                             <Box sx={{ flex: 2 }}>
                                 <Box sx={{ flex: 1, pt: 2 }}>
-                                    <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Suffix"}</Typography>
+                                    <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Suffix: "}
+                                        <Typography variant={"caption"}>
+                                            {"examples: Jr. , Sr. , Ph.D, etc."}
+                                        </Typography>
+                                    </Typography>
 
                                 <TextField
                                     size="small"
-                                    label="examples: Jr. , Sr. , Ph.D, etc."
                                     error={Boolean(errors.suffix_name)}
                                     helperText={errors.suffix_name}
                                     name="suffix_name"
@@ -549,7 +546,6 @@ const AccountRegistration = () => {
                                 <Typography fontWeight={"bold"} sx={{mb: 1, pt: 2}}>{"Organization name (required)"}</Typography>
                                 <TextField
                                     size="small"
-                                    label="Organization (required)"
                                     error={Boolean(errors.affiliation)}
                                     helperText={errors.affiliation}
                                     name="affiliation"
@@ -572,7 +568,6 @@ const AccountRegistration = () => {
                             <Typography fontWeight={"bold"} sx={{mb: 1, pt: 2}}>{"Home page URL"}</Typography>
                             <TextField
                                 size="small"
-                                label="Your Homepage URL"
                                 name="url"
                                 value={formData.url}
                                 variant="outlined"
@@ -592,7 +587,7 @@ const AccountRegistration = () => {
                                                 isSmallScreen={isSmallScreen}
                         />
                         <Box sx={{pb: 1}}>
-                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Your default category:  "}</Typography>
+                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Your default category (required)"}</Typography>
                             <CategoryChooser onSelect={setDefaultCategory}
                                              selectedCategory={formData.default_category}/>
                         </Box>
@@ -600,20 +595,20 @@ const AccountRegistration = () => {
                 </CardWithTitle>
                 <CardWithTitle title={"Verify and Submit"}>
                     <Box sx={{p:1, m: 1}}>
+                        <Typography>To prevent misuse, let us know you are not a robot (required)</Typography>
                         <Box>
                             <Box display="flex" justifyContent="space-between" alignItems="center">
                                 <img key={captchaUrl} alt={"captcha"} src={captchaUrl}/>
 
                                 <TextField
                                     size="small"
-                                    label="Captcha Respones *"
                                     name="captcha_value"
                                     value={formData.captcha_value}
                                     variant="outlined"
                                     helperText={errors.captcha_value}
                                     fullWidth
                                     onChange={handleChange}
-                                    sx={{width: "12em"}}
+                                    sx={{width: "13em", ml: 2}}
                                 />
                                 <Box sx={{flex: 1}}/>
 
