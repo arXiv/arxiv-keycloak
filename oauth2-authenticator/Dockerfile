@@ -1,9 +1,7 @@
-FROM python:3.12-bookworm
+FROM python:3.12-bookworm AS builder
 
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 0E98404D386FA1D9 6ED0E7B82643E131 F8D2585B8783D481 54404762BBB6E853 BDE6D2B9216EC7A8 ; exit 0
-
-RUN apt-get update -y -o APT::Get::AllowUnauthenticated=true && \
-    apt-get install -y --allow-unauthenticated --no-install-recommends build-essential gcc python3-dev default-libmysqlclient-dev pkg-config && \
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends build-essential gcc python3-dev default-libmysqlclient-dev pkg-config && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -27,6 +25,19 @@ RUN $VIRTUAL_ENV/bin/poetry install --no-ansi
 RUN $VIRTUAL_ENV/bin/pip install hypercorn
 RUN $VIRTUAL_ENV/bin/pip uninstall -y poetry
 
+# final image
+FROM python:3.12-slim-bookworm AS final
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends libmariadb3 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+WORKDIR /opt/arxiv/
+COPY --from=builder $VIRTUAL_ENV $VIRTUAL_ENV
+COPY app-logging.conf hypercorn-config.toml pyproject.toml ./
 COPY ./arxiv_oauth2 /opt/arxiv/arxiv_oauth2
 
 ENV WORKERS=8
