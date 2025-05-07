@@ -1,5 +1,3 @@
-import random
-
 from arxiv.auth.user_claims import ArxivUserClaims
 from pydantic import BaseModel
 import jwt
@@ -8,6 +6,7 @@ from typing import Optional
 # from sqlalchemy.orm import Session
 # from arxiv.auth import domain as xa_domain
 # from arxiv.auth.legacy.util import compute_capabilities, get_scopes
+from ..randomness import generate_random_string
 
 class NGClaims(BaseModel):
     """
@@ -23,8 +22,7 @@ class NGClaims(BaseModel):
 
 
 def generate_nonce(length: int = 8) -> str:
-    nonce = random.randint(0, 10 ** length - 1)
-    return f'{nonce:0{length}d}'
+    return generate_random_string(length=length, specials=False)
 
 NG_JWT_ALGO = "HS256"
 
