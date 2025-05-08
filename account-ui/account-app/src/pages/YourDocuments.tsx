@@ -10,7 +10,7 @@ import Link from "@mui/material/Link";
 import { Link as RouterLink } from 'react-router-dom';
 import AuthorInfoTable from "../bits/AuthorInfoTable";
 import Typography from "@mui/material/Typography/Typography";
-import NavigateLink from "../bits/NavigateLink";
+// import NavigateLink from "../bits/NavigateLink";
 
 interface ArticleInfoProps {
     ownerCount: number;
@@ -31,9 +31,9 @@ const ArticleInfo: React.FC<ArticleInfoProps> = ({
                 <AuthorInfoTable ownerCount={ownerCount} submitCount={submitCount}  authorCount={authorCount}  />
                 <p>
                     {"Are you incorrectly registered as an author or a non-author of any articles you own? If so, update the authorship status "}
-                    <NavigateLink to={"/user-account/owned-documents"} >
+                    <Link component={RouterLink} to={"/user-account/owned-documents"} >
                         here.
-                    </NavigateLink>
+                    </Link>
                 </p>
 
                 <Typography component="div" sx={{ mt: 2 }}>
@@ -49,7 +49,7 @@ const ArticleInfo: React.FC<ArticleInfoProps> = ({
                         <li>
                             If you do not have the paper password or are claiming multiple papers, use&nbsp;
                             <Link component={RouterLink} to={runtimeProps.URLS.userRequestDocumentOwnership}>
-                                the Claim Authorship form
+                                the Request Authorship form
                             </Link>
                             .
                         </li>
