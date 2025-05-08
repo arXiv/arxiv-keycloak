@@ -2,6 +2,8 @@
 
 """
 import base64
+import re
+from datetime import datetime, timezone
 import random
 import string
 from typing import Optional
@@ -18,7 +20,7 @@ from keycloak.exceptions import (KeycloakGetError, KeycloakError)
 
 from arxiv.base import logging
 from arxiv.auth.user_claims import ArxivUserClaims
-from arxiv.db.models import TapirUser, TapirNickname, TapirUsersPassword
+from arxiv.db.models import TapirUser, TapirNickname, TapirUsersPassword, OrcidIds, AuthorIds, Demographic
 from arxiv.auth.legacy import passwords
 
 from . import (get_current_user_or_none, get_db, get_keycloak_admin, stateless_captcha,
@@ -101,7 +103,7 @@ async def update_account_profile(
     #    career_status: Optional[CAREER_STATUS] = None
     #    tracking_cookie: Optional[str] = None
     #    veto_status: Optional[VetoStatusEnum] = None
-    #    
+    #
     #    id
     #    email_verified: Optional[bool] = None
     #    scopes: Optional
@@ -676,27 +678,342 @@ async def get_user_profile_with_query(
         token: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
         session: Session = Depends(get_db)
         ) -> AccountIdentifierModel:
-    tapir = None
-
-    if username or email:
-        # If you know an email or username, there is no security concern as both are equivalent
-        query = session.query(TapirUser, TapirNickname).join(TapirNickname, TapirUser.user_id == TapirNickname.user_id)
-        if username:
-            query = query.filter(TapirNickname.nickname == username)
-        else:
-            query = query.filter(TapirUser.email == email)
-
-        tapir = query.one_or_none()
-
-    if user_id:
-        if not is_authorized(token, None, user_id):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized. If you want to know your user id, use /current")
-        tapir = session.query(TapirUser, TapirNickname).join(TapirNickname, TapirUser.user_id == TapirNickname.user_id).filter(TapirUser.user_id == user_id).one_or_none()
-
-    if not tapir:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Username not found")
 
     user: TapirUser
     nick: TapirNickname
-    user, nick = tapir
-    return AccountIdentifierModel(user_id=str(user.user_id), username=nick.nickname, email=user.email)
+    demo: Demographic
+    orcid: OrcidIds
+    xauth: AuthorIds
+
+    if user_id is None:
+        if username or email:
+            # If you know an email or username, there is no security concern as both are equivalent
+            query = session.query(TapirUser, TapirNickname).join(TapirNickname, TapirUser.user_id == TapirNickname.user_id)
+            if username:
+                query = query.filter(TapirNickname.nickname == username)
+            else:
+                query = query.filter(TapirUser.email == email)
+
+            tapir_user = query.one_or_none()
+            if tapir_user:
+                user, nick = tapir_user
+                user_id = user.user_id
+
+    if user_id is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if not is_authorized(token, None, user_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized. If you want to know your user id, use /current")
+    user_data = (session.query(TapirUser, TapirNickname, Demographic, OrcidIds, AuthorIds)
+             .outerjoin(TapirNickname, TapirUser.user_id == TapirNickname.user_id)
+             .outerjoin(Demographic, TapirUser.user_id == Demographic.user_id)
+             .outerjoin(OrcidIds, TapirUser.user_id == OrcidIds.user_id)
+             .outerjoin(AuthorIds, TapirUser.user_id == AuthorIds.user_id)
+             .filter(TapirUser.user_id == user_id).one_or_none())
+    if not user_data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Username not found")
+    user, nick, demo, orcid, xauth = user_data
+    return AccountIdentifierModel(user_id=str(user.user_id), username=nick.nickname, email=user.email,
+                                  orcid=orcid.orcid, author_id=xauth.author_id)
+
+
+#
+# ORCID comes from logging into ORCID and get the ORCID back. This is done elsewhere atm.
+#
+class OrcidUpdateModel(BaseModel):
+    user_id: str
+    orcid: Optional[str] = None
+    orcid_auth: Optional[str] = None
+    authenticated: bool
+
+@router.put("/orcid/", description="Update ORCID", responses={
+    401: {
+        "description": "Not logged in",
+        "content": {
+            "application/json": {
+                "example": {"detail": "Not authenticated"}
+            }
+        },
+    },
+    403: {
+        "description": "Forbidden - not allowed to change the ORCID data",
+        "content": {
+            "application/json": {
+                "example": {"detail": "Not authorized to set the ORCID data"}
+            }
+        },
+    },
+    503: {
+        "description": "Error while updating Keycloak",
+        "content": {
+            "application/json": {
+                "example": {"detail": "Could not update Keycloak"}
+            }
+        },
+    },
+})
+def upsert_orcid(
+        request: Request,
+        body: EmailUpdateModel,
+        session: Session = Depends(get_db),
+        authn: Optional[ArxivUserClaims|ApiToken] = Depends(get_authn_or_none),
+        kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
+):
+    user_id = body.user_id
+    check_authnz(authn, None, user_id)
+
+    user: TapirUser | None = session.query(TapirUser).filter(TapirUser.email == body.email).one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Old email does not exist")
+
+    orcid_id: OrcidIds | None = session.query(OrcidIds).filter(OrcidIds.user_id == user_id).one_or_none()
+
+    try:
+        if body.orcid is not None:
+            # Validate ORCID format (ORCID is typically 4 blocks of 4 digits/characters with hyphens)
+            if not re.match(r'^\d{4}-\d{4}-\d{4}-\d{3}[0-9X]$', body.orcid):
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid ORCID format")
+
+            current_time = datetime.now(tz=timezone.utc)
+            authenticated = 1 if body.authenticated else 0
+
+            if orcid_id:
+                # Update existing record
+                orcid_id.orcid = body.orcid
+                orcid_id.authenticated = authenticated
+                orcid_id.updated = current_time
+            else:
+                # Create new record
+                new_orcid = OrcidIds(
+                    user_id=user_id,
+                    orcid=body.orcid,
+                    authenticated=authenticated,
+                    updated=current_time
+                )
+                session.add(new_orcid)
+
+            # Try to update Keycloak as well
+            # try:
+            #     # Assuming Keycloak needs ORCID info in the user attributes
+            #     user_id_str = str(user_id)
+            #     keycloak_user = kc_admin.get_user(user_id_str)
+            #
+            #     # Update the attributes
+            #     attributes = keycloak_user.get('attributes', {})
+            #     attributes['orcid'] = body.orcid
+            #     if body.orcid_auth:
+            #         attributes['orcid_auth'] = body.orcid_auth
+            #     attributes['orcid_authenticated'] = str(body.authenticated).lower()
+            #
+            #     kc_admin.update_user(user_id=user_id_str, payload={"attributes": attributes})
+            #
+            # except Exception as e:
+            #     logger.error(f"Failed to update Keycloak: {str(e)}")
+            #     # Rollback the database changes
+            #     session.rollback()
+            #     raise HTTPException(
+            #         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            #         detail="Could not update Keycloak"
+            #     )
+
+            # Commit the changes to the database
+            session.commit()
+
+            return {"detail": "ORCID updated successfully"}
+
+        elif orcid_id:
+            # If orcid is None and there's an existing record, remove it
+            session.delete(orcid_id)
+
+            # Try to remove ORCID info from Keycloak as well
+            # try:
+            #     user_id_str = str(user_id)
+            #     keycloak_user = kc_admin.get_user(user_id_str)
+            #
+            #     # Update the attributes to remove ORCID info
+            #     attributes = keycloak_user.get('attributes', {})
+            #     if 'orcid' in attributes:
+            #         del attributes['orcid']
+            #     if 'orcid_auth' in attributes:
+            #         del attributes['orcid_auth']
+            #     if 'orcid_authenticated' in attributes:
+            #         del attributes['orcid_authenticated']
+            #
+            #     kc_admin.update_user(user_id=user_id_str, payload={"attributes": attributes})
+            #
+            # except Exception as e:
+            #     logger.error(f"Failed to update Keycloak: {str(e)}")
+            #     # Rollback the database changes
+            #     session.rollback()
+            #     raise HTTPException(
+            #         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            #         detail="Could not update Keycloak"
+            #     )
+
+            # Commit the changes to the database
+            session.commit()
+
+            return {"detail": "ORCID removed successfully"}
+
+        else:
+            # No change needed
+            return {"detail": "No changes to ORCID"}
+
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update ORCID: {str(e)}")
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update ORCID: {str(e)}"
+        )
+
+
+
+class AuthorIdUpdateModel(BaseModel):
+    user_id: str
+    author_id: Optional[str] = None
+
+
+@router.put("/author_id/", description="Update AUTHOR_ID", responses={
+    401: {
+        "description": "Not logged in",
+        "content": {
+            "application/json": {
+                "example": {"detail": "Not authenticated"}
+            }
+        },
+    },
+    403: {
+        "description": "Forbidden - not allowed to change the AUTHOR_ID data",
+        "content": {
+            "application/json": {
+                "example": {"detail": "Not authorized to set the AUTHOR_ID data"}
+            }
+        },
+    },
+    503: {
+        "description": "Error while updating Keycloak",
+        "content": {
+            "application/json": {
+                "example": {"detail": "Could not update Keycloak"}
+            }
+        },
+    },
+})
+def upsert_author_id(
+        request: Request,
+        body: EmailUpdateModel,
+        session: Session = Depends(get_db),
+        authn: Optional[ArxivUserClaims|ApiToken] = Depends(get_authn_or_none),
+        kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
+):
+    user_id = body.user_id
+    check_authnz(authn, None, user_id)
+
+    user: TapirUser | None = session.query(TapirUser).filter(TapirUser.email == body.email).one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Old email does not exist")
+
+    author_id: AuthorIds | None = session.query(AuthorIds).filter(AuthorIds.user_id == user_id).one_or_none()
+
+    try:
+        if body.author_id is not None:
+            current_time = datetime.now(tz=timezone.utc)
+            authenticated = 1 if body.authenticated else 0
+
+            if author_id:
+                # Update existing record
+                author_id.author_id = body.author_id
+                author_id.authenticated = authenticated
+                author_id.updated = current_time
+            else:
+                # Create new record
+                new_author_id = AuthorIds(
+                    user_id=user_id,
+                    author_id=body.author_id,
+                    authenticated=authenticated,
+                    updated=current_time
+                )
+                session.add(new_author_id)
+
+            # Try to update Keycloak as well
+            # try:
+            #     # Assuming Keycloak needs AUTHOR_ID info in the user attributes
+            #     user_id_str = str(user_id)
+            #     keycloak_user = kc_admin.get_user(user_id_str)
+            #
+            #     # Update the attributes
+            #     attributes = keycloak_user.get('attributes', {})
+            #     attributes['author_id'] = body.author_id
+            #     if body.author_id_auth:
+            #         attributes['author_id_auth'] = body.author_id_auth
+            #     attributes['author_id_authenticated'] = str(body.authenticated).lower()
+            #
+            #     kc_admin.update_user(user_id=user_id_str, payload={"attributes": attributes})
+            #
+            # except Exception as e:
+            #     logger.error(f"Failed to update Keycloak: {str(e)}")
+            #     # Rollback the database changes
+            #     session.rollback()
+            #     raise HTTPException(
+            #         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            #         detail="Could not update Keycloak"
+            #     )
+
+            # Commit the changes to the database
+            session.commit()
+
+            return {"detail": "AUTHOR_ID updated successfully"}
+
+        elif author_id:
+            # If author_id is None and there's an existing record, remove it
+            session.delete(author_id)
+
+            # Try to remove AUTHOR_ID info from Keycloak as well
+            # try:
+            #     user_id_str = str(user_id)
+            #     keycloak_user = kc_admin.get_user(user_id_str)
+            #
+            #     # Update the attributes to remove AUTHOR_ID info
+            #     attributes = keycloak_user.get('attributes', {})
+            #     if 'author_id' in attributes:
+            #         del attributes['author_id']
+            #     if 'author_id_auth' in attributes:
+            #         del attributes['author_id_auth']
+            #     if 'author_id_authenticated' in attributes:
+            #         del attributes['author_id_authenticated']
+            #
+            #     kc_admin.update_user(user_id=user_id_str, payload={"attributes": attributes})
+            #
+            # except Exception as e:
+            #     logger.error(f"Failed to update Keycloak: {str(e)}")
+            #     # Rollback the database changes
+            #     session.rollback()
+            #     raise HTTPException(
+            #         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            #         detail="Could not update Keycloak"
+            #     )
+
+            # Commit the changes to the database
+            session.commit()
+
+            return {"detail": "AUTHOR_ID removed successfully"}
+
+        else:
+            # No change needed
+            return {"detail": "No changes to AUTHOR_ID"}
+
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update AUTHOR_ID: {str(e)}")
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update AUTHOR_ID: {str(e)}"
+        )
+

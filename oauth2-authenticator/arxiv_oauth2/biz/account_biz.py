@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 import httpx
 from arxiv.auth.openid.oidc_idp import ArxivOidcIdpClient
 from arxiv.base import logging
-from arxiv.db.models import TapirNickname, TapirUsersPassword, TapirUser, Demographic, Category
+from arxiv.db.models import TapirNickname, TapirUsersPassword, TapirUser, Demographic, Category, OrcidIds, AuthorIds
 from arxiv.auth.legacy.exceptions import RegistrationFailed
 from arxiv.auth.legacy import passwords
 from arxiv_bizlogic.bizmodels.tapir_to_kc_mapping import AuthResponse
@@ -116,11 +116,13 @@ class CategoryModel(CategoryIdModel):
 
 class AccountIdentifierModel(BaseModel):
     """
-    Mapping ot 3 identifier that can point to a user
+    Mapping ot the identifiers that can point to a user
     """
     user_id: Optional[str]
     email: Optional[str]
     username: Optional[str]
+    orcid: Optional[str] = None
+    author_id: Optional[str] = None
 
 
 class AccountInfoBaseModel(BaseModel):
@@ -192,6 +194,9 @@ class AccountInfoModel(AccountInfoBaseModel):
     id: str  # user id
     email_verified: Optional[bool] = None
     scopes: Optional[List[str]] = None
+    orcid: Optional[str] = None
+    orcid_authenticated: Optional[bool] = None
+    author_id: Optional[str] = None
 
     def to_user_model_data(self, **kwargs) -> dict[str, Any]:
         return super().to_user_model_data(**kwargs)
@@ -404,6 +409,9 @@ def get_account_info(session: Session, user_id: str) -> Optional[AccountInfoMode
                 else:
                     scopes.append(flag)
 
+        orcid_id: OrcidIds | None = session.query(OrcidIds).filter(OrcidIds.user_id == um.id).one_or_none()
+        arxiv_author_id: AuthorIds | None = session.query(AuthorIds).filter(AuthorIds.user_id == um.id).one_or_none()
+
         account = AccountInfoModel(
             id = str(um.id),
             username = um.username,
@@ -423,6 +431,9 @@ def get_account_info(session: Session, user_id: str) -> Optional[AccountInfoMode
             career_status = get_career_status(um.type),
             tracking_cookie=um.tracking_cookie,
             veto_status=um.veto_status,
+            orcid = orcid_id.orcid if orcid_id else None,
+            orcid_authenticated = True if orcid_id and orcid_id.authenticated else False,
+            author_id = arxiv_author_id.author_id if arxiv_author_id else None,
         )
         return account
     return None

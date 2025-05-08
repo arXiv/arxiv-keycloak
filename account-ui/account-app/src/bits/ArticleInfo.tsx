@@ -14,18 +14,12 @@ interface ArticleInfoProps {
     ownerCount: number;
     submitCount: number;
     authorCount: number;
-    authorId?: string | null;
-    orcidId?: string | null;
-    orcidAuth?: boolean;
 }
 
 const ArticleInfo: React.FC<ArticleInfoProps> = ({
                                                    ownerCount,
                                                    submitCount,
                                                    authorCount,
-                                                   authorId,
-                                                   orcidId,
-                                                   orcidAuth,
                                                }) => {
     const runtimeProps = useContext(RuntimeContext);
     // const navigate = useNavigate();
@@ -64,56 +58,7 @@ const ArticleInfo: React.FC<ArticleInfoProps> = ({
                         </li>
                     </ul>
                 </Typography>
-            {authorId ? (
-                <p>
-                    Your public author identifier is
-                    <a href={`https://arxiv.org/a/${authorId}`} target="_blank"> {authorId}</a> and may be used by other services
-                    to access the list of articles authored by you, see
-                    <a href="https://info.arxiv.org/help/author_identifiers" target="_blank">
-                        author identifier help
-                    </a>
-                    .
-                </p>
-            ) : authorCount >= 1 ? (
-                <p>
-                    No public author identifier has been set for your account, see
-                    <a href="https://info.arxiv.org/help/author_identifiers" target="_blank">
-                        author identifier help
-                    </a>
-                    or you may <a href="/set_author_id">set a public author identifier</a>.
-                </p>
-            ) : null}
 
-            {orcidId && orcidAuth ? (
-                <p>
-                    Your <a href="https://info.arxiv.org/help/orcid" target="_blank">ORCID iD</a>{" is "}
-                    <a href={`https://arxiv.org/a/${orcidId}`}>{orcidId}</a>.
-                </p>
-            ) : (
-                <p>
-                    You are encouraged to associate your
-                    <a href="https://info.arxiv.org/help/orcid"> ORCID</a> with your
-                    arXiv account. ORCID iDs are standard, persistent identifiers for
-                    research authors.
-                    {orcidId && !orcidAuth ? (
-                        <>
-                            Our search indicates that you may already have an
-                            <a href="https://info.arxiv.org/help/orcid"> ORCID</a>:
-                            <a href={`https://arxiv.org/a/${orcidId}`}> {orcidId}</a>. If this is the wrong iD, you may
-                            change it below.
-                        </>
-                    ) : null}
-                    ORCID iDs will gradually supersede the role of the arXiv
-                    <a href="https://info.arxiv.org/help/author_identifiers">
-                        author identifier
-                    </a>
-                    . To associate your ORCID iD with your arXiv account, please
-                    <a href="/user/confirm_orcid_id">
-                        confirm {orcidId && !orcidAuth ? "or correct" : ""} your ORCID iD
-                    </a>
-                    .
-                </p>
-            )}
             </CardContent>
         </Card>
     );

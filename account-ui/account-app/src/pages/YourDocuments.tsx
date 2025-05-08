@@ -45,7 +45,7 @@ import {fetchPlus} from "../fetchPlus.ts";
 
 // type DocumentType = adminApi['/v1/documents/{id}']['get']['responses']['200']['content']['application/json'];
 // type DocumentsType = adminApi['/v1/documents/']['get']['responses']['200']['content']['application/json'];
-type DemographicType = adminApi['/v1/demographics/{id}']['get']['responses']['200']['content']['application/json'];
+// type DemographicType = adminApi['/v1/demographics/{id}']['get']['responses']['200']['content']['application/json'];
 type PaperPasswordResponseType = adminApi['/v1/paper-pw/{id}']['get']['responses']['200']['content']['application/json'];
 type PaperAuthoredRequestType = adminApi['/v1/paper_owners/update-authorship']['post']['requestBody']['content']['application/json'];
 // type PaperOwnerListRequestType = adminApi['/v1/paper_owners/']['get']['requestBody'];
@@ -137,8 +137,8 @@ const YourDocuments: React.FC = () => {
     const {showMessageDialog, showNotification} = useNotification();
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isSubmissionLoading, setIsSubmissionLoading] = useState<boolean>(false);
-    const [isDemographicLoading, setIsDemographicLoading] = useState<boolean>(false);
-    const [demographic, setDemographic] = useState<DemographicType | null>(null);
+    // const [isDemographicLoading, setIsDemographicLoading] = useState<boolean>(false);
+    // const [demographic, setDemographic] = useState<DemographicType | null>(null);
     const [papers, setPapers] = useState<PaperOwnerListResponseType>([]);
     const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
         page: 0, // starts at page 0
@@ -156,6 +156,8 @@ const YourDocuments: React.FC = () => {
     const [menuPosition, setMenuPosition] = useState<{ mouseX: number, mouseY: number } | null>(null);
     const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
     const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>([]);
+    const [paperCount, setPaperCount] = useState<number>(0);
+    const [allPaperCount, setAllPaperCount] = useState<number>(0);
 
 
     useEffect(() => {
@@ -187,7 +189,7 @@ const YourDocuments: React.FC = () => {
         fetchSubmissions();
     }, [runtimeProps.currentUser]);
 
-
+    /*
     useEffect(() => {
         async function fetchDemographic() {
             if (!runtimeProps.currentUser)
@@ -209,10 +211,10 @@ const YourDocuments: React.FC = () => {
 
         fetchDemographic();
     }, [runtimeProps.currentUser]);
+     */
 
 
     // Pagination state
-    const [totalCount, setTotalCount] = useState<number>(0);
 
 /*
     useEffect(() => {
@@ -290,7 +292,7 @@ const YourDocuments: React.FC = () => {
             }
             const myPapers: PaperOwnerListResponseType = await response1.json();
             const total = parseInt(response1.headers.get("X-Total-Count") || "0", 10);
-            setTotalCount(total);
+            setPaperCount(total);
             setPapers(myPapers);
         } catch (err) {
             console.error("Error fetching documents:", err);
@@ -300,10 +302,47 @@ const YourDocuments: React.FC = () => {
         }
     }, [paginationModel, filterModel, sortModel, runtimeProps.currentUser]);
 
-
     useEffect(() => {
         fetchMyPapers();
     }, [fetchMyPapers]);
+
+
+    const fetchAllMyPapers = useCallback(async () => {
+        if (!runtimeProps.currentUser)
+            return;
+
+        try {
+            const start = 1;
+            const end = 2;
+            const query = new URLSearchParams();
+
+            query.append("user_id", runtimeProps.currentUser.id);
+            query.append("_start", start.toString());
+            query.append("_end", end.toString());
+
+            const response1 = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL  + `/paper_owners/?${query.toString()}`);
+            if (!response1.ok) {
+                if (response1.status >= 500) {
+                    showNotification("Data service is not responding", "warning");
+                    return;
+                }
+                const message = await response1.text();
+                showNotification(message, "warning");
+                return;
+            }
+            const total = parseInt(response1.headers.get("X-Total-Count") || "0", 10);
+            setAllPaperCount(total);
+        } catch (err) {
+            console.error("Error fetching documents:", err);
+        }
+        finally {
+            setIsLoading(false);
+        }
+    }, [runtimeProps.currentUser]);
+
+    useEffect(() => {
+        fetchAllMyPapers();
+    }, [fetchAllMyPapers]);
 
 
     const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, rowId: string) => {
@@ -440,7 +479,7 @@ const YourDocuments: React.FC = () => {
     ];
 
     const CustomPagination = DatagridPaginationMaker(
-        () => totalCount,
+        () => paperCount,
         () => paginationModel,
         setPaginationModel,
         () => PAGE_SIZES
@@ -468,10 +507,7 @@ const YourDocuments: React.FC = () => {
 
 
     return (<>
-        <ArticleInfo key="article-info"
-                     authorCount={totalSubmissions}
-                     authorId={demographic?.author_id}
-                     ownerCount={totalCount} submitCount={totalSubmissions} orcidId={demographic?.orcid} orcidAuth={true} />
+            <ArticleInfo key="article-info" authorCount={totalSubmissions} ownerCount={allPaperCount} submitCount={0} />
 
         <Paper elevation={3} sx={{p: 3, mt: 4}}>
             <Box display="flex" gap={2} justifyContent="flex-start" mb={1}>
@@ -494,7 +530,7 @@ const YourDocuments: React.FC = () => {
             <Box display="flex" gap={0} mb={0}>
 
                 <DataGrid<PaperOwnerType>
-                    loading={isLoading || isDemographicLoading || isSubmissionLoading}
+                    loading={isLoading || isSubmissionLoading}
                     filterModel={filterModel}
                     filterMode="server"
                     filterDebounceMs={1000}
@@ -509,7 +545,7 @@ const YourDocuments: React.FC = () => {
 
                     columns={columns}
                     rows={papers}
-                    rowCount={totalCount}
+                    rowCount={paperCount}
 
                     checkboxSelection
                     disableRowSelectionOnClick

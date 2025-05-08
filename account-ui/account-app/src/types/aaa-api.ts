@@ -403,6 +403,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/account/orcid/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Upsert Orcid
+         * @description Update ORCID
+         */
+        put: operations["upsert_orcid_account_orcid__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/account/author_id/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Upsert Author Id
+         * @description Update AUTHOR_ID
+         */
+        put: operations["upsert_author_id_account_author_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/captcha/image": {
         parameters: {
             query?: never;
@@ -534,7 +574,7 @@ export interface components {
     schemas: {
         /**
          * AccountIdentifierModel
-         * @description Mapping ot 3 identifier that can point to a user
+         * @description Mapping ot the identifiers that can point to a user
          */
         AccountIdentifierModel: {
             /** User Id */
@@ -543,6 +583,10 @@ export interface components {
             email: string | null;
             /** Username */
             username: string | null;
+            /** Orcid */
+            orcid?: string | null;
+            /** Author Id */
+            author_id?: string | null;
         };
         /** AccountInfoModel */
         AccountInfoModel: {
@@ -579,6 +623,12 @@ export interface components {
             email_verified?: boolean | null;
             /** Scopes */
             scopes?: string[] | null;
+            /** Orcid */
+            orcid?: string | null;
+            /** Orcid Authenticated */
+            orcid_authenticated?: boolean | null;
+            /** Author Id */
+            author_id?: string | null;
         };
         /** AccountRegistrationError */
         AccountRegistrationError: {
@@ -1485,6 +1535,126 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upsert_orcid_account_orcid__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailUpdateModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Not logged in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Forbidden - not allowed to change the ORCID data */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Error while updating Keycloak */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    upsert_author_id_account_author_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailUpdateModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Not logged in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Forbidden - not allowed to change the AUTHOR_ID data */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Error while updating Keycloak */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };
