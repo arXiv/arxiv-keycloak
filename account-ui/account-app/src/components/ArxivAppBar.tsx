@@ -26,11 +26,15 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import RouteBreadcrumbs from "../bits/RouteBreadcrumbs.tsx";
 
 const ownershipOptions = [
-    { label: "Your Articles", link: "/user-account/owned-documents" },
+    { label: "Your Articles", link: "/user-account/article-information" },
+    { label: "Manage Articles", link: "/user-account/owned-documents" },
     { label: "Claim Ownership", link: "/user-account/claim-document-ownership" },
     { label: "Request Ownership", link: "/user-account/request-document-ownership" },
 ];
-
+/*
+                                <Route path="/user-account/article-information" element={<YourDocuments/>}/>
+                                <Route path="/user-account/owned-documents" element={<ArticlesYouOwn/>}/>
+ */
 
 const ArxivAppBar = () => {
     const runtimeProps = useContext(RuntimeContext);

@@ -17,11 +17,16 @@ const breadcrumbNameMap: Record<string, string> = {
     'change-password': 'Change Password',
     'change-email': 'Change Email',
     'endorse': 'Enter Endorsement Code',
-    'owned-documents': 'Your Documents',
+    'article-information': 'Article Summary',
+    'owned-documents': 'Manage Articles',
     'claim-document-ownership': 'Claim Paper Ownership',
     'reset-password': 'Reset Password',
 };
+/*
+                                <Route path="/user-account/article-information" element={<YourDocuments/>}/>
+                                <Route path="/user-account/owned-documents" element={<ArticlesYouOwn/>}/>
 
+ */
 const RouteBreadcrumbs: React.FC = () => {
     const location = useLocation();
     const pathnames = location.pathname.split('/').filter((x) => x);

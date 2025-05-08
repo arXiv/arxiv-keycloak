@@ -27,6 +27,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import ClaimPaperOwnership from "./pages/ClaimPaperOwnership.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import {GlobalAuthHandler} from "./fetchPlus.ts";
+import ArticlesYouOwn from "./pages/DocumentOwnershipManagement.tsx";
 
 const queryClient = new QueryClient();
 
@@ -62,7 +63,8 @@ const App: React.FC = () => {
                                 <Route path="/user-account/change-password" element={<ChangePassword/>}/>
                                 <Route path="/user-account/change-email" element={<ChangeEmail/>}/>
                                 <Route path="/user-account/endorse" element={<EnterEndorsementCode/>}/>
-                                <Route path="/user-account/owned-documents" element={<YourDocuments/>}/>
+                                <Route path="/user-account/article-information" element={<YourDocuments/>}/>
+                                <Route path="/user-account/owned-documents" element={<ArticlesYouOwn/>}/>
                                 <Route path="/user-account/claim-document-ownership" element={<ClaimPaperOwnership/>}/>
                                 <Route path="/user-account/reset-password" element={<ResetPassword />}/>
                                 <Route path="*" element={<NotFound404/>}/>
