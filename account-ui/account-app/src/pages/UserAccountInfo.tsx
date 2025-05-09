@@ -34,6 +34,7 @@ import {fetchPlus} from "../fetchPlus.ts";
 import EndorsedCategories from "../bits/EndorsedCategories.tsx";
 import {useNavigate} from "react-router-dom";
 import CategoryGroup from "../bits/CategoryGroup.tsx";
+import CountryName from "../bits/CountryName.tsx";
 
 type EndorsementListType = adminApi["/v1/endorsements/"]["get"]['responses']["200"]['content']['application/json'];
 // type DemographicType = adminApi['/v1/demographics/{id}']['get']['responses']['200']['content']['application/json'];
@@ -277,7 +278,7 @@ const UserAccountInfo = () => {
                         {roles}
                         <Typography variant="body1"><b>{"Affiliation: "}</b>{user?.affiliation}</Typography>
                         <Typography variant="body1"><b>{"URL: "}</b> <Link href={url} target="_blank">{user?.url}</Link></Typography>
-                        <Typography variant="body1"><b>{"Country: "}</b>{user?.country}</Typography>
+                        <Typography variant="body1"><b>{"Country: "}</b><CountryName countryId={user?.country || ""} component="span" /></Typography>
                         <Typography variant="body1"><b>{"Career Status: "}</b>{user?.career_status}</Typography>
                         <Typography variant="body1"><b>{"ORCID: "}</b>{user?.orcid}</Typography>
                         <Typography variant="body1"><b>{"arXiv author ID: "}</b>{user?.author_id}</Typography>
