@@ -469,8 +469,11 @@ def make_cookie_response(request: Request,
                             domain=domain, path="/", secure=secure, samesite=samesite)
         response.set_cookie(keycloak_key, user_claims.access_token,  max_age=cookie_max_age,
                             domain=domain, path="/", secure=secure, samesite=samesite)
-        response.set_cookie(ng_cookie_key, ng_cookie_encode(create_ng_claims(user_claims), secret),
-                            max_age=cookie_max_age, domain=domain, path="/", secure=secure, samesite=samesite)
+        try:
+            response.set_cookie(ng_cookie_key, ng_cookie_encode(create_ng_claims(user_claims), secret),
+                max_age=cookie_max_age, domain=domain, path="/", secure=secure, samesite=samesite)
+        except:
+            pass
 
     else:
         for key in [session_cookie_key, keycloak_key, ng_cookie_key]:

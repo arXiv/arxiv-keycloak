@@ -24,9 +24,11 @@ COPY ./keycloak_migration/keycloak-user-migration/target/keycloak-rest-provider-
 COPY ./pubsub-listener/keycloak-to-pubsub-jar-with-dependencies.jar /opt/keycloak/providers/
 
 # Themes
-# COPY ./arxiv-theme/  /opt/keycloak/themes/arxiv-theme/
-# COPY ./keycloakify-arxiv/dist_keycloak/keycloak-theme-for-kc-22-and-above.jar /opt/keycloak/providers/keycloakify-arxiv-theme.jar
 COPY ./kcfy-arxiv/dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar /opt/keycloak/providers/kc-arXiv-react-theme.jar
+
+# Username with "#" validator SPI
+COPY ./arxiv-username-validator/target/arxiv-username-validator-1.0.0.jar /opt/keycloak/providers/arxiv-username-validator-1.0.0.jar
+
 RUN chown -R keycloak /home/keycloak /opt/keycloak/providers /opt/keycloak/themes/
 
 USER keycloak

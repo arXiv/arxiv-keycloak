@@ -33,6 +33,7 @@ import MathJaxToggle from "../bits/MathJaxToggle.tsx";
 import {fetchPlus} from "../fetchPlus.ts";
 import EndorsedCategories from "../bits/EndorsedCategories.tsx";
 import {useNavigate} from "react-router-dom";
+import CategoryGroup from "../bits/CategoryGroup.tsx";
 
 type EndorsementListType = adminApi["/v1/endorsements/"]["get"]['responses']["200"]['content']['application/json'];
 // type DemographicType = adminApi['/v1/demographics/{id}']['get']['responses']['200']['content']['application/json'];
@@ -263,7 +264,11 @@ const UserAccountInfo = () => {
                         <Typography
                             variant="body1"><b>{"Default Category: "}</b>{user?.default_category?.archive}.{user?.default_category?.subject_class}
                         </Typography>
-                        <Typography variant="body1"><b>{"Groups: "}</b>{user?.groups}</Typography>
+                        <Typography variant="body1" component="div"><b>{"Groups: "}</b>
+                                {user?.groups?.map((group) => (
+                                    <CategoryGroup key={group} groupId={group} component="span" />
+                                ))}
+                        </Typography>
                         <Typography variant="body1" component="div"><b>{"Endorsed categories: "}</b>{endorsedCategories}
                         </Typography>
                     </Box>

@@ -1364,6 +1364,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/taxonomy/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Category Groups */
+        get: operations["list_category_groups_v1_taxonomy_groups_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/taxonomy/groups/{group_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Group */
+        get: operations["get_group_v1_taxonomy_groups__group_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/taxonomy/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Categories */
+        get: operations["list_categories_v1_taxonomy_categories_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/taxonomy/categories/{category_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Category */
+        get: operations["get_category_v1_taxonomy_categories__category_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/taxonomy/archives": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Archives */
+        get: operations["list_archives_v1_taxonomy_archives_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/taxonomy/archives/{archive_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Archive */
+        get: operations["get_archive_v1_taxonomy_archives__archive_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/ping": {
         parameters: {
             query?: never;
@@ -1431,6 +1533,49 @@ export interface components {
             submission_id?: number | null;
             /** Notify */
             notify?: number | null;
+        };
+        /**
+         * Archive
+         * @description Represents an arXiv archive--the middle level of the taxonomy.
+         */
+        Archive: {
+            /** Id */
+            id: string;
+            /** Full Name */
+            full_name: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Alt Name */
+            alt_name?: string | null;
+            /** In Group */
+            in_group: string;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** End Date */
+            end_date?: string | null;
+        };
+        /**
+         * Category
+         * @description Represents an arXiv category.
+         */
+        Category: {
+            /** Id */
+            id: string;
+            /** Full Name */
+            full_name: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Alt Name */
+            alt_name?: string | null;
+            /** In Archive */
+            in_archive: string;
+            /** Is General */
+            is_general: boolean;
+            /** Description */
+            description?: string | null;
         };
         /** CategoryModel */
         CategoryModel: {
@@ -1712,6 +1857,26 @@ export interface components {
          * @enum {string}
          */
         EndorserCapabilityType: "unknown" | "credited" | "uncredited" | "prohibited" | "oneself";
+        /**
+         * Group
+         * @description Represents an arXiv group--the highest (most general) taxonomy level.
+         */
+        Group: {
+            /** Id */
+            id: string;
+            /** Full Name */
+            full_name: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Alt Name */
+            alt_name?: string | null;
+            /** Start Year */
+            start_year: number;
+            /** Default Archive */
+            default_archive?: string | null;
+            /** Is Test */
+            is_test?: boolean | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -5565,6 +5730,213 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TapirAdminAuditModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_category_groups_v1_taxonomy_groups_get: {
+        parameters: {
+            query?: {
+                /** @description ID */
+                _sort?: string | null;
+                /** @description sort order */
+                _order?: string | null;
+                _start?: number | null;
+                _end?: number | null;
+                /** @description List of IDs to filter by */
+                id?: string[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Group"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_group_v1_taxonomy_groups__group_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Group"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_categories_v1_taxonomy_categories_get: {
+        parameters: {
+            query?: {
+                /** @description keys */
+                _sort?: string | null;
+                /** @description sort order */
+                _order?: string | null;
+                _start?: number | null;
+                _end?: number | null;
+                /** @description List of IDs to filter by */
+                id?: string[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_category_v1_taxonomy_categories__category_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_archives_v1_taxonomy_archives_get: {
+        parameters: {
+            query?: {
+                /** @description keys */
+                _sort?: string | null;
+                /** @description sort order */
+                _order?: string | null;
+                _start?: number | null;
+                _end?: number | null;
+                /** @description List of IDs to filter by */
+                id?: string[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Archive"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_archive_v1_taxonomy_archives__archive_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                archive_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Archive"];
                 };
             };
             /** @description Validation Error */

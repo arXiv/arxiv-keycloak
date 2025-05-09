@@ -2,7 +2,7 @@ include ../.env
 export $(shell sed 's/=.*//' ../.env)
 
 DOCKER_DIRS := tools
-ALL_DIRS := $(DOCKER_DIRS)
+ALL_DIRS := $(DOCKER_DIRS) 
 
 
 tag := ${KC_DOCKER_TAG}
@@ -89,7 +89,9 @@ sh:
 #-#
 #-# docker-image:
 #-#   builds docker image
-docker-image: keycloak_migration/keycloak-user-migration/target/keycloak-rest-provider-5.0.1-SNAPSHOT.jar pubsub-listener/keycloak-to-pubsub-jar-with-dependencies.jar
+docker-image: keycloak_migration/keycloak-user-migration/target/keycloak-rest-provider-5.0.1-SNAPSHOT.jar \
+              pubsub-listener/keycloak-to-pubsub-jar-with-dependencies.jar \
+              arxiv-username-validator/target/arxiv-username-validator-1.0.0.jar
 	docker build --progress plain -t ${tag}:latest .
 	$(call run_in_docker_dirs,docker-image)
 
@@ -99,6 +101,10 @@ keycloak_migration/keycloak-user-migration/target/keycloak-rest-provider-5.0.1-S
 # keycloak-to-pubsub-1.0.0.jar
 pubsub-listener/keycloak-to-pubsub-jar-with-dependencies.jar:
 	cd pubsub-listener && $(MAKE)
+
+arxiv-username-validator/target/arxiv-username-validator-1.0.0.jar:
+	cd arxiv-username-validator && $(MAKE)
+
 
 #-#
 #-# proxy:
