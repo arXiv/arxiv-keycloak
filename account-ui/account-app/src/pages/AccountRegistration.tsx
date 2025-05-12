@@ -599,24 +599,21 @@ const AccountRegistration = () => {
                 </CardWithTitle>
                 <CardWithTitle title={"Verify and Submit"}>
                     <Box sx={{p: 1, m: 1}}>
-                        <Typography>To prevent misuse, let us know you are not a robot (required)</Typography>
-                        <Box>
-                            <Box display="flex" justifyContent="space-between" alignItems="center">
-                                <img key={captchaUrl} alt={"captcha"} src={captchaUrl}/>
-
-                                <TextField
-                                    size="small"
-                                    name="captcha_value"
-                                    value={formData.captcha_value}
-                                    variant="outlined"
-                                    helperText={errors.captcha_value}
-                                    fullWidth
-                                    onChange={handleChange}
-                                    sx={{width: "13em", ml: 2}}
-                                />
-                                <Box sx={{flex: 1}}/>
-
-                            </Box>
+                        <Typography>To prevent misuse let us know you are not a robot (required)</Typography>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" sx={{mt: 1}}>
+                            <img key={captchaUrl} alt={"captcha"} src={captchaUrl}/>
+                            <Typography sx={{ml: 2, mr: 1}}>{"Type captcha response: "}</Typography>
+                            <TextField
+                                size="small"
+                                name="captcha_value"
+                                value={formData.captcha_value}
+                                variant="outlined"
+                                helperText={errors.captcha_value}
+                                fullWidth
+                                onChange={handleChange}
+                                sx={{width: "13em"}}
+                            />
+                            <Box sx={{flex: 1}}/>
 
                         </Box>
                         <Box>
@@ -645,6 +642,7 @@ const AccountRegistration = () => {
                                     whiteSpace: 'nowrap' // Prevent line break if you want it on one line
                                 }}
                                 href={runtimeContext.URLS.privacyPolicy}
+                                target="_blank"
                             >
                                 <LinkIcon sx={{fontSize: 18}}/>
                                 Open Privacy Policy
