@@ -235,6 +235,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/users/{user_id}/document-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User Document Summary */
+        get: operations["get_user_document_summary_v1_users__user_id__document_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/email_templates/": {
         parameters: {
             query?: never;
@@ -2321,6 +2338,15 @@ export interface components {
             /** Close Session */
             close_session: boolean;
         };
+        /** UserDocumentSummary */
+        UserDocumentSummary: {
+            /** Submitted Count */
+            submitted_count: number;
+            /** Owns Count */
+            owns_count: number;
+            /** Authored Count */
+            authored_count: number;
+        };
         /** UserModel */
         UserModel: {
             /** Id */
@@ -3314,6 +3340,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserModel"];
+                };
+            };
+        };
+    };
+    get_user_document_summary_v1_users__user_id__document_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDocumentSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

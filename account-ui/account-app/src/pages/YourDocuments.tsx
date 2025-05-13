@@ -11,24 +11,22 @@ import { Link as RouterLink } from 'react-router-dom';
 import AuthorInfoTable from "../bits/AuthorInfoTable";
 import Typography from "@mui/material/Typography/Typography";
 // import NavigateLink from "../bits/NavigateLink";
+import {paths as adminApi} from "../types/admin-api";
 
-interface ArticleInfoProps {
-    ownerCount: number;
-    submitCount: number;
-    authorCount: number;
-}
+type DocumentSummaryProps = adminApi['/v1/users/{user_id}/document-summary']['get']['responses']['200']['content']['application/json'];
 
-const ArticleInfo: React.FC<ArticleInfoProps> = ({
-                                                     ownerCount,
-                                                     submitCount,
-                                                     authorCount,
+
+const ArticleInfo: React.FC<DocumentSummaryProps> = ({
+                                                     owns_count,
+                                                     submitted_count,
+                                                     authored_count,
                                                  }) => {
     const runtimeProps = useContext(RuntimeContext);
     return (
         <Card>
             <CardHeader title={"Article Information"}  />
             <CardContent sx={{py: 0}}>
-                <AuthorInfoTable ownerCount={ownerCount} submitCount={submitCount}  authorCount={authorCount}  />
+                <AuthorInfoTable ownerCount={owns_count} submitCount={submitted_count}  authorCount={authored_count}  />
                 <p>
                     {"Are you incorrectly registered as an author or a non-author of any articles you own? If so, update the authorship status "}
                     <Link component={RouterLink} to={"/user-account/owned-documents"} >
@@ -71,54 +69,18 @@ const ArticleInfo: React.FC<ArticleInfoProps> = ({
 const YourDocuments: React.FC = () => {
     const runtimeProps = useContext(RuntimeContext);
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [isSubmissionLoading, setIsSubmissionLoading] = useState<boolean>(false);
-    const [allPaperCount, setAllPaperCount] = useState<number>(0);
-    const [totalSubmissions, setTotalSubmissions] = useState<number>(0);
+    const [documentSummary, setDocumentSummary] = useState<DocumentSummaryProps>({
+        owns_count: 0, submitted_count: 0, authored_count: 0
+    });
     const {showNotification} = useNotification();
 
-    useEffect(() => {
-        async function fetchSubmissions() {
-            if (!runtimeProps.currentUser)
-                return;
 
-            // const interestedIds = Object.values(submissinStatusList).filter(status => status.group === "current" || status.group === "processing");
-            const start = 0;
-            const end = 1;
-            const query = new URLSearchParams();
-
-            query.append("submitter_id", runtimeProps.currentUser.id);
-            query.append("_start", start.toString());
-            query.append("_end", end.toString());
-
-            try {
-                setIsSubmissionLoading(true);
-                const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/submissions/?${query.toString()}`);
-                const total = parseInt(response.headers.get("X-Total-Count") || "0", 10);
-                setTotalSubmissions(total);
-            } catch (err) {
-                console.error("Error fetching documents:", err);
-            } finally {
-                setIsSubmissionLoading(false);
-            }
-        }
-
-        fetchSubmissions();
-    }, [runtimeProps.currentUser]);
-
-    const fetchAllMyPapers = useCallback(async () => {
+    const fetchSummary = useCallback(async () => {
         if (!runtimeProps.currentUser)
             return;
-
+        const user_id = runtimeProps.currentUser.id;
         try {
-            const start = 1;
-            const end = 2;
-            const query = new URLSearchParams();
-
-            query.append("user_id", runtimeProps.currentUser.id);
-            query.append("_start", start.toString());
-            query.append("_end", end.toString());
-
-            const response1 = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL  + `/paper_owners/?${query.toString()}`);
+            const response1 = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL  + `/users/${user_id}/document-summary`);
             if (!response1.ok) {
                 if (response1.status >= 500) {
                     showNotification("Data service is not responding", "warning");
@@ -128,10 +90,10 @@ const YourDocuments: React.FC = () => {
                 showNotification(message, "warning");
                 return;
             }
-            const total = parseInt(response1.headers.get("X-Total-Count") || "0", 10);
-            setAllPaperCount(total);
+            const summary: DocumentSummaryProps = await response1.json();
+            setDocumentSummary(summary);
         } catch (err) {
-            console.error("Error fetching documents:", err);
+            console.error("Error fetching document summary:", err);
         }
         finally {
             setIsLoading(false);
@@ -139,11 +101,11 @@ const YourDocuments: React.FC = () => {
     }, [runtimeProps.currentUser]);
 
     useEffect(() => {
-        fetchAllMyPapers();
-    }, [fetchAllMyPapers]);
+        fetchSummary();
+    }, [fetchSummary]);
 
-    const info = isLoading || isSubmissionLoading ? (<CircularProgress color="secondary" />) : (
-        <ArticleInfo key="article-info" authorCount={totalSubmissions} ownerCount={allPaperCount} submitCount={0} />);
+    const info = isLoading ? (<CircularProgress color="secondary" />) : (
+        <ArticleInfo key="article-info" authored_count={documentSummary.authored_count} owns_count={documentSummary.owns_count} submitted_count={documentSummary.submitted_count} />);
     return (info);
 }
 
