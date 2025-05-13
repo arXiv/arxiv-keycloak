@@ -22,49 +22,55 @@ class DroneBuild:
         self.commit: str = commit
         self.nr: int|None = None
 
-    def trigger(self) -> None:
-        """Trigger a build for the specified repository and branch in Drone CI."""
-        url = f"{DRONE_SERVER}/api/repos/{self.namespace}/{self.repo}/builds"
+    def _send_request(self, component, method='GET', params=None):
+        """Send a request to the Drone API.
+
+        Args:
+            component (str): The API sub-component (after /api/repos/NS/REPO/) to call.
+            method (str): The HTTP method to use (GET, POST).
+            params (dict): The parameters to send with the request.
+        """
+        url = f"{DRONE_SERVER}/api/repos/{self.namespace}/{self.repo}/{component}"
         headers = {
             'Authorization': f'Bearer {DRONE_TOKEN}',
             'Content-Type': 'application/json'
         }
+
+        if method == 'GET':
+            method = requests.get
+        elif method == 'POST':
+            method = requests.post
+        else:
+            raise ValueError(f"Unsupported HTTP method: {method}")
+        response = method(url, headers=headers, params=params)
+
+        if response.status_code == 200:
+            return response
+        else:
+            logging.error(f"Failed to call API: {response.status_code} - {response.text}")
+            raise Exception("Failed to trigger build")
+
+
+    def trigger(self) -> None:
+        """Trigger a build for the specified repository and branch in Drone CI."""
         params = {}
         if self.branch:
             params['branch'] = self.branch
         if self.commit:
             params['commit'] = self.commit
+        response = self._send_request('builds', method='POST', params=params)
+        self.nr = response.json()['number']
 
-        response = requests.post(url, headers=headers, params=params)
-
-        if response.status_code == 200:
-            logging.debug(f"Build triggered successfully for {self.repo} with params {params}.")
-            logging.debug(f"Response: {response.json()}")
-            self.nr = response.json()['number']
-        else:
-            logging.error(f"Failed to trigger build: {response.status_code} - {response.text}")
-            raise Exception("Failed to trigger build")
 
     def is_running(self) -> bool:
         """Check if the build is currently running."""
         if self.nr is None:
             raise ValueError("Build number is not set. Trigger the build first.")
+        response = self._send_request(f"builds/{self.nr}", method='GET')
+        status = response.json()['status']
+        logging.debug(f"Build status: {status}")
+        return status == 'running'
 
-        url = f"{DRONE_SERVER}/api/repos/{self.namespace}/{self.repo}/builds/{self.nr}"
-        headers = {
-            'Authorization': f'Bearer {DRONE_TOKEN}',
-            'Content-Type': 'application/json'
-        }
-
-        response = requests.get(url, headers=headers)
-
-        if response.status_code == 200:
-            status = response.json()['status']
-            logging.debug(f"Build status: {status}")
-            return status == 'running'
-        else:
-            logging.error(f"Failed to get build status: {response.status_code} - {response.text}")
-            raise Exception("Failed to get build status")
 
     def wait_until_finished(self, timeout=600) -> None:
         """Wait until the build is finished."""
