@@ -623,6 +623,12 @@ export interface components {
             email_verified?: boolean | null;
             /** Scopes */
             scopes?: string[] | null;
+            /** Orcid */
+            orcid?: string | null;
+            /** Orcid Authenticated */
+            orcid_authenticated?: boolean | null;
+            /** Author Id */
+            author_id?: string | null;
         };
         /** AccountRegistrationError */
         AccountRegistrationError: {
