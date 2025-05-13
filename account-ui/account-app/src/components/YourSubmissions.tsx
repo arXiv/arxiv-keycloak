@@ -21,6 +21,7 @@ import Box from "@mui/material/Box";
 import EditIcon from "@mui/icons-material/Edit";
 import DatagridPaginationMaker from "../bits/DataGridPagination.tsx";
 import {fetchPlus} from "../fetchPlus.ts";
+import {vetoedMessage} from "../bits/messages.ts";
 
 
 type SubmissionType = adminApi['/v1/submissions/{id}']['get']['responses']['200']['content']['application/json'];
@@ -35,7 +36,7 @@ type SubmissionStatusRecordType = Record<SubmissionStatusIdType, SubmissionsStat
 
 const PAGE_SIZES = [5, 20, 100];
 
-const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimeProps}) => {
+const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps, vetoed: boolean }> = ({runtimeProps, vetoed}) => {
     const [isLoading, setIsLoading] = useState(false);
     const [submissions, setSubmissions] = useState<SubmissionsType>([]);
     const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
@@ -201,6 +202,12 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimeProps
         () => PAGE_SIZES
     );
 
+    const vetoedOrNot = vetoed ? (
+        <Typography variant="body1" sx={{fontWeight: "bold"}}>
+            {vetoedMessage}
+        </Typography>
+        )
+        : null;
 
     return (
         <Paper elevation={3} sx={{p: 3, mt: 4}}>
@@ -268,13 +275,16 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimeProps
             </Box>
 
             <Box display="flex" gap={2} justifyContent="flex-start" mt={1}>
-                <Box flexGrow={1}/>
+                <Box flexGrow={1}>
+                    {vetoedOrNot}
+                </Box>
                 <Button
-                    disabled={runtimeProps.currentUser === null}
+                    disabled={vetoed || runtimeProps.currentUser === null}
                     variant="contained"
                     startIcon={<EditIcon/>}
                     href={runtimeProps.URLS.newSubmissionURL}
                     sx={{
+                        minWidth: "fit-content",
                         color: "white", // Default text color
                         "&:hover": {
                             color: "white", // Keep text white on hover

@@ -35,6 +35,7 @@ import EndorsedCategories from "../bits/EndorsedCategories.tsx";
 import {useNavigate} from "react-router-dom";
 import CategoryGroup from "../bits/CategoryGroup.tsx";
 import CountryName from "../bits/CountryName.tsx";
+import {vetoedMessage} from "../bits/messages.ts";
 
 type EndorsementListType = adminApi["/v1/endorsements/"]["get"]['responses']["200"]['content']['application/json'];
 // type DemographicType = adminApi['/v1/demographics/{id}']['get']['responses']['200']['content']['application/json'];
@@ -168,7 +169,8 @@ const UserAccountInfo = () => {
     }, [runtimeProps.currentUser]);
     */
 
-    const vetoStatus = runtimeProps.currentUser?.veto_status && runtimeProps.currentUser?.veto_status !== "ok" ? (
+    const vetoed = !!(runtimeProps.currentUser?.veto_status && runtimeProps.currentUser?.veto_status !== "ok");
+    const vetoStatus = vetoed ? (
         <Typography variant="body1" component="div"><b>{"Account Status: "} </b>
             {runtimeProps.currentUser?.veto_status === "no-endorse" ? (
                 <Tooltip slotProps={{tooltip: {sx: {fontSize: "1.2em"}}}}
@@ -183,7 +185,7 @@ const UserAccountInfo = () => {
             ) : null}
             {runtimeProps.currentUser?.veto_status === "no-upload" ? (
                 <Tooltip slotProps={{tooltip: {sx: {fontSize: "1.2em"}}}}
-                         title={"Your ability to submit papers to arXiv has been suspended by administrative action. Contact moderation@arxiv.org for more information."}>
+                         title={vetoedMessage}>
                     <span>
                         <WarningIcon/>
                         <Typography variant="body1" component="span">No Upload</Typography>
@@ -192,7 +194,7 @@ const UserAccountInfo = () => {
             ) : null}
             {runtimeProps.currentUser?.veto_status === "no-replace" ? (
                 <Tooltip slotProps={{tooltip: {sx: {fontSize: "1.2em"}}}}
-                         title={"Your ability to submit papers to arXiv has been suspended by administrative action. Contact moderation@arxiv.org for more information."}>
+                         title={vetoedMessage}>
                     <span>
                         <WarningIcon/>
                         <Typography variant="body1" component="span">Replace</Typography>
@@ -305,7 +307,7 @@ const UserAccountInfo = () => {
                 </Box>
             </Paper>
 
-            <YourSubmissions runtimeProps={runtimeProps}/>
+            <YourSubmissions runtimeProps={runtimeProps} vetoed={vetoed}/>
 
             <PreflightChecklist runtimeProps={runtimeProps}/>
         </Container>
