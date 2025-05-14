@@ -21,7 +21,6 @@ import Box from "@mui/material/Box";
 import EditIcon from "@mui/icons-material/Edit";
 import DatagridPaginationMaker from "../bits/DataGridPagination.tsx";
 import {fetchPlus} from "../fetchPlus.ts";
-import {vetoedMessage} from "../bits/messages.ts";
 
 
 type SubmissionType = adminApi['/v1/submissions/{id}']['get']['responses']['200']['content']['application/json'];
@@ -202,12 +201,9 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps, vetoed: boolean }>
         () => PAGE_SIZES
     );
 
-    const vetoedOrNot = vetoed ? (
-        <Typography variant="body1" sx={{fontWeight: "bold"}}>
-            {vetoedMessage}
-        </Typography>
-        )
-        : null;
+    /* No veto status shown
+    const vetoedOrNot = null;
+    */
 
     return (
         <Paper elevation={3} sx={{p: 3, mt: 4}}>
@@ -275,9 +271,7 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps, vetoed: boolean }>
             </Box>
 
             <Box display="flex" gap={2} justifyContent="flex-start" mt={1}>
-                <Box flexGrow={1}>
-                    {vetoedOrNot}
-                </Box>
+                <Box flexGrow={1} > {/* vetoedOrNot */} </Box>
                 <Button
                     disabled={vetoed || runtimeProps.currentUser === null}
                     variant="contained"

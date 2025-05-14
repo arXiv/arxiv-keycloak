@@ -13,7 +13,7 @@ import VerifiedUser from "@mui/icons-material/VerifiedUser";
 import Edit from "@mui/icons-material/Edit";
 import Email from "@mui/icons-material/Email";
 import PasswordIcon from "@mui/icons-material/Password";
-import WarningIcon from "@mui/icons-material/Warning";
+// import WarningIcon from "@mui/icons-material/Warning";
 // import LinkIcon from "@mui/icons-material/Link";
 import NofificationIcon from "@mui/icons-material/Notifications";
 import AdminIcon from "@mui/icons-material/Check";
@@ -35,7 +35,6 @@ import EndorsedCategories from "../bits/EndorsedCategories.tsx";
 import {useNavigate} from "react-router-dom";
 import CategoryGroup from "../bits/CategoryGroup.tsx";
 import CountryName from "../bits/CountryName.tsx";
-import {vetoedMessage} from "../bits/messages.ts";
 
 type EndorsementListType = adminApi["/v1/endorsements/"]["get"]['responses']["200"]['content']['application/json'];
 // type DemographicType = adminApi['/v1/demographics/{id}']['get']['responses']['200']['content']['application/json'];
@@ -170,6 +169,7 @@ const UserAccountInfo = () => {
     */
 
     const vetoed = !!(runtimeProps.currentUser?.veto_status && runtimeProps.currentUser?.veto_status !== "ok");
+    /*
     const vetoStatus = vetoed ? (
         <Typography variant="body1" component="div"><b>{"Account Status: "} </b>
             {runtimeProps.currentUser?.veto_status === "no-endorse" ? (
@@ -203,6 +203,7 @@ const UserAccountInfo = () => {
             ) : null}
         </Typography>
     ) : null;
+    */
 
     const roles = runtimeProps.isAdmin || runtimeProps.isMod || runtimeProps.isCanLock || runtimeProps.isSystem ? (
         <Typography variant="body1"><b>{"Role: "} </b>
@@ -276,7 +277,7 @@ const UserAccountInfo = () => {
                         </Typography>
                     </Box>
                     <Box sx={{flex: 1}}>
-                        {vetoStatus}
+                        {/* vetoStatus */}
                         {roles}
                         <Typography variant="body1"><b>{"Affiliation: "}</b>{user?.affiliation}</Typography>
                         <Typography variant="body1"><b>{"URL: "}</b> <Link href={url} target="_blank">{user?.url}</Link></Typography>
