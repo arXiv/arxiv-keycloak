@@ -369,6 +369,8 @@ const AccountRegistration = () => {
                             <Box sx={{flex: 1}}>
                                 <Typography fontWeight="bold" sx={{mb: 1}}>{"Email (required): "}</Typography>
                                 <TextField
+                                    label="email"
+                                    aria-label="Email address, required"
                                     size="small"
                                     error={Boolean(errors.email)}
                                     helperText={errors.email}
@@ -383,6 +385,8 @@ const AccountRegistration = () => {
                             <Box sx={{flex: 1}}>
                                 <Typography fontWeight="bold" sx={{mb: 1}}>{"Username (required): "}</Typography>
                                 <TextField
+                                    label="Uesrname"
+                                    aria-label="User name for login, required"
                                     size="small"
                                     error={Boolean(errors.username)}
                                     helperText={errors.username}
@@ -393,6 +397,7 @@ const AccountRegistration = () => {
                                     onChange={handleChange}
                                 />
                             </Box>
+
                         </Box>
 
                         <Box sx={{display: "flex", gap: 1}}>
@@ -402,6 +407,8 @@ const AccountRegistration = () => {
                                             sx={{mb: 1}}>{"Password (required)"}</Typography>
                                 <Tooltip title={<PasswordRequirements/>}>
                                     <TextField
+                                        label="Password"
+                                        aria-label="Login password, required"
                                         size="small"
                                         error={Boolean(errors.password)}
                                         helperText={errors.password}
@@ -421,6 +428,8 @@ const AccountRegistration = () => {
                                             sx={{mb: 1}}>{"Reenter password (required):  "}</Typography>
 
                                 <TextField
+                                    label="Reenter password"
+                                    aria-label="Re-enter password for password verification"
                                     size="small"
                                     error={Boolean(errors.secondPassword)}
                                     helperText={errors.secondPassword}
@@ -487,6 +496,8 @@ const AccountRegistration = () => {
                                 <Box sx={{flex: 1, pt: 2}}>
                                     <Typography fontWeight={"bold"} sx={{mb: 1}}>{"First name (required)"}</Typography>
                                     <TextField
+                                        label="First name"
+                                        aria-label="First name or given name, required"
                                         size="small"
                                         error={Boolean(errors.first_name)}
                                         helperText={errors.first_name}
@@ -505,6 +516,8 @@ const AccountRegistration = () => {
                                                 sx={{mb: 1}}>{"Sur name / Last name / Family name (required)"}</Typography>
 
                                     <TextField
+                                        label="Last name"
+                                        aria-label="Sur name, Last name, Family name, required"
                                         size="small"
                                         error={Boolean(errors.last_name)}
                                         helperText={errors.last_name}
@@ -520,11 +533,13 @@ const AccountRegistration = () => {
                                 <Box sx={{flex: 1, pt: 2}}>
                                     <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Suffix: "}
                                         <Typography variant={"caption"}>
-                                            {"examples: Jr. , Sr. , Ph.D, etc."}
+                                            {"Jr, Sr, II, III, IV, ..."}
                                         </Typography>
                                     </Typography>
 
                                     <TextField
+                                        label="Suffix name"
+                                        aria-label="Suffix name such as junior or second, optional"
                                         size="small"
                                         error={Boolean(errors.suffix_name)}
                                         helperText={errors.suffix_name}
@@ -548,6 +563,8 @@ const AccountRegistration = () => {
                                 <Typography fontWeight={"bold"}
                                             sx={{mb: 1, pt: 2}}>{"Organization name (required)"}</Typography>
                                 <TextField
+                                    label="Affiliation"
+                                    aria-label="Your organization name, required"
                                     size="small"
                                     error={Boolean(errors.affiliation)}
                                     helperText={errors.affiliation}
@@ -570,6 +587,8 @@ const AccountRegistration = () => {
                         <Box>
                             <Typography fontWeight={"bold"} sx={{mb: 1, pt: 2}}>{"Home page URL"}</Typography>
                             <TextField
+                                label="Home page URL"
+                                aria-label="Home page URL, optional"
                                 size="small"
                                 name="url"
                                 value={formData.url}
@@ -604,6 +623,8 @@ const AccountRegistration = () => {
                             <img key={captchaUrl} alt={"captcha"} src={captchaUrl}/>
                             <Typography sx={{ml: 2, mr: 1}}>{"Type captcha response: "}</Typography>
                             <TextField
+                                label="Captcha reply"
+                                aria-label="Captcha reply, required"
                                 size="small"
                                 name="captcha_value"
                                 value={formData.captcha_value}
@@ -618,6 +639,7 @@ const AccountRegistration = () => {
                         </Box>
                         <Box>
                             <Button sx={{m: 1, fontSize: "10px"}} variant={"outlined"} onClick={resetCaptcha}
+                                    aria-label="Load new captcha"
                                     startIcon={<RefreshIcon/>} title={"Load New Captcha"}>Load New Captcha</Button>
                             <Button sx={{m: 1, fontSize: "10px"}} variant={"outlined"} onClick={speakCaptcha}
                                     aria-label="Listen to captcha value" startIcon={<HearingIcon/>}> Listen To

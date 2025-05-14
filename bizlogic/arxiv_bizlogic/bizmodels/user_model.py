@@ -123,7 +123,7 @@ class UserModel(BaseModel):
 
     orcid_id: Optional[str] = None
 
-    @field_validator('first_name', 'last_name', 'suffix_name', 'username', 'country', 'affiliation', 'url'
+    @field_validator('first_name', 'last_name', 'suffix_name', 'username', 'country', 'affiliation', 'url',
                      'archive', 'subject_class', 'original_subject_classes', 'orcid_id',)
     @classmethod
     def strip_field_value(cls, value: str | None) -> str | None:

@@ -25,6 +25,7 @@ captcha = "^0.6.0"
 lameenc = "^1.8.1"
 arxiv-bizlogic = {git = "https://github.com/arXiv/arxiv-keycloak.git", rev = "master", subdirectory = "bizlogic"}
 asgi-correlation-id = "^4.3.4"
+pydantic = {extras = ["email"], version = "^2.11.4"}
 
 [tool.poetry.group.dev.dependencies]
 uvicorn = "*"

@@ -81,7 +81,13 @@ const CategoryChooser: React.FC<CategoryChooserProps> = ({onSelect, selectedCate
             groupBy={(option) => (!option.isHeader ? option.group.toUpperCase() : "")}
             getOptionLabel={(option) => option.label ?? "Unknown Category"}
             isOptionEqualToValue={(option, value) => !option.isHeader && !value.isHeader && option.value && value.value && option.value.id === value.value.id}
-            renderInput={(params) => <TextField {...params}  />}
+            renderInput={(params) => <TextField
+                {...params}
+                label="Default category for new submission"
+                slotProps={{
+                    input: {'aria-label': 'Default Category for new submission'}
+                }}
+            />}
             renderOption={(props, option) => (
                 <li
                     {...props}
