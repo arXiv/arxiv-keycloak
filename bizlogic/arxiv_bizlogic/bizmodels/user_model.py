@@ -10,7 +10,7 @@ from typing import Optional, List
 from sqlalchemy import select, case, exists, cast, LargeBinary #, func
 from sqlalchemy.orm import Session
 from sqlalchemy.engine.row import Row
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, field_validator
 
 from arxiv.db.models import (TapirUser, TapirNickname, t_arXiv_moderators, Demographic, OrcidIds)
 from logging import getLogger
@@ -52,7 +52,7 @@ class UserModel(BaseModel):
         from_attributes = True
 
     id: Optional[int] = None
-    email: str
+    email: EmailStr
     first_name: str
     last_name: str
     suffix_name: Optional[str] = None
@@ -121,7 +121,14 @@ class UserModel(BaseModel):
 
     tapir_policy_classes: Optional[List[int]] = None
 
-    orcid: Optional[str] = None
+    orcid_id: Optional[str] = None
+
+    @field_validator('first_name', 'last_name', 'suffix_name', 'username', 'country', 'affiliation', 'url'
+                     'archive', 'subject_class', 'original_subject_classes', 'orcid_id',)
+    @classmethod
+    def strip_field_value(cls, value: str | None) -> str | None:
+        return value.strip() if value else value
+
 
     @staticmethod
     def base_select(session: Session):

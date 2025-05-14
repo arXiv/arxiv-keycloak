@@ -154,10 +154,12 @@ async def register_account(
     if host is None:
         raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="The request requires a client host")
 
-    if not registration.email:
+    if not registration.email.strip():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="email is required")
-    if not registration.username:
+    if not registration.username.strip():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="username is required")
+
+    registration = sanitize_model_data(registration)
 
     if is_super_user(token):
         logger.info("API based user registration %s", describe_super_user(token))
@@ -697,7 +699,7 @@ async def get_user_profile_with_query(
             tapir_user = query.one_or_none()
             if tapir_user:
                 user, nick = tapir_user
-                user_id = user.user_id
+                user_id = str(user.user_id)
 
     if user_id is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -754,7 +756,7 @@ class OrcidUpdateModel(BaseModel):
 })
 def upsert_orcid(
         request: Request,
-        body: EmailUpdateModel,
+        body: OrcidUpdateModel,
         session: Session = Depends(get_db),
         authn: Optional[ArxivUserClaims|ApiToken] = Depends(get_authn_or_none),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
@@ -762,7 +764,7 @@ def upsert_orcid(
     user_id = body.user_id
     check_authnz(authn, None, user_id)
 
-    user: TapirUser | None = session.query(TapirUser).filter(TapirUser.email == body.email).one_or_none()
+    user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Old email does not exist")
 
@@ -905,7 +907,7 @@ class AuthorIdUpdateModel(BaseModel):
 })
 def upsert_author_id(
         request: Request,
-        body: EmailUpdateModel,
+        body: AuthorIdUpdateModel,
         session: Session = Depends(get_db),
         authn: Optional[ArxivUserClaims|ApiToken] = Depends(get_authn_or_none),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
@@ -913,7 +915,7 @@ def upsert_author_id(
     user_id = body.user_id
     check_authnz(authn, None, user_id)
 
-    user: TapirUser | None = session.query(TapirUser).filter(TapirUser.email == body.email).one_or_none()
+    user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Old email does not exist")
 
@@ -922,19 +924,16 @@ def upsert_author_id(
     try:
         if body.author_id is not None:
             current_time = datetime.now(tz=timezone.utc)
-            authenticated = 1 if body.authenticated else 0
 
             if author_id:
                 # Update existing record
                 author_id.author_id = body.author_id
-                author_id.authenticated = authenticated
                 author_id.updated = current_time
             else:
                 # Create new record
                 new_author_id = AuthorIds(
                     user_id=user_id,
                     author_id=body.author_id,
-                    authenticated=authenticated,
                     updated=current_time
                 )
                 session.add(new_author_id)
@@ -1017,3 +1016,88 @@ def upsert_author_id(
             detail=f"Failed to update AUTHOR_ID: {str(e)}"
         )
 
+
+#
+class UserStatusModel(BaseModel):
+    user_id: str
+    deleted: Optional[bool]
+    banned: Optional[bool]
+    # maybe add more
+
+
+@router.put("/status/", description="Update User flags", responses={
+    401: {
+        "description": "Not logged in",
+        "content": {
+            "application/json": {
+                "example": {"detail": "Not authenticated"}
+            }
+        },
+    },
+    403: {
+        "description": "Forbidden - not allowed to change the ORCID data",
+        "content": {
+            "application/json": {
+                "example": {"detail": "Not authorized to set the ORCID data"}
+            }
+        },
+    },
+    503: {
+        "description": "Error while updating Keycloak",
+        "content": {
+            "application/json": {
+                "example": {"detail": "Could not update Keycloak"}
+            }
+        },
+    },
+})
+def update_user_status(
+        body: UserStatusModel,
+        session: Session = Depends(get_db),
+        authn: Optional[ArxivUserClaims|ApiToken] = Depends(get_authn_or_none),
+        kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
+):
+    user_id = body.user_id
+    check_authnz(authn, None, user_id)
+
+    user: UserModel | None = UserModel.one_user(session, user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User {user_id} does not exist")
+
+    tapir_user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
+    if not tapir_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User {user_id} does not exist")
+
+    if body.deleted is not None:
+        if tapir_user.flag_deleted != body.deleted:
+            tapir_user.flag_deleted = body.deleted
+
+    if body.banned is not None:
+        if tapir_user.flag_banned != body.banned:
+            tapir_user.flag_banned = body.banned
+
+    if session.is_modified(tapir_user):
+        # The source of truth shall be updated
+        session.commit()
+
+        user_enabled = not (tapir_user.flag_banned or tapir_user.flag_deleted)
+        kc_user = None
+        try:
+            # Get the Keycloak user
+            kc_user = kc_admin.get_user(user_id)
+        except Exception as e:
+            logger.error(f"Failed to update Keycloak: {str(e)}")
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Failed to update Keycloak: {str(e)}")
+
+        if kc_user:
+            # if kc user does not exist, no worries. User migration will take care of it
+            try:
+                # Enable or disable the user in Keycloak
+                kc_admin.update_user(user_id, {"enabled": user_enabled})
+                logger.info(f"Disabled user {user_id} in Keycloak")
+
+            except Exception as e:
+                raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                                    detail=f"Failed to update Keycloak: {str(e)}")
+
+    return

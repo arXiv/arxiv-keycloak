@@ -6,6 +6,7 @@ from dataclasses import asdict
 from typing import Optional, Literal, Any, Dict
 
 import jwt
+from arxiv.db.models import TapirUser
 from arxiv_bizlogic.bizmodels.user_model import UserModel
 from arxiv_bizlogic.fastapi_helpers import get_client_host
 # from arxiv_bizlogic.ng_auth import ng_cookie
@@ -28,6 +29,7 @@ from starlette.datastructures import URL
 # from arxiv.auth import domain
 
 from . import get_current_user_or_none, get_db, COOKIE_ENV_NAMES
+from .biz.account_biz import is_user_banned
 # from .account import AccountRegistrationModel
 
 from .sessions import create_tapir_session
@@ -92,7 +94,7 @@ async def login(request: Request,
 
 @router.get('/callback')
 async def oauth2_callback(request: Request,
-                          _db = Depends(get_db)
+                          session = Depends(get_db)
                           ) -> Response:
     """User can log in with username and password, or permanent token."""
     code = request.query_params.get('code')
@@ -108,6 +110,8 @@ async def oauth2_callback(request: Request,
     user_claims: Optional[ArxivUserClaims] = idp.from_code_to_user_claims(code, client_ipv4=client_ip)
 
     # session_cookie_key, classic_cookie_key, keycloak_key, domain, secure, samesite = cookie_params(request)
+    if user_claims and is_user_banned(session, user_claims.user_id):
+        user_claims = None
 
     if user_claims is None:
         logger.warning("Getting user claim failed. code: %s", repr(code))

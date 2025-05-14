@@ -19,7 +19,7 @@ from arxiv.auth.legacy import passwords
 from arxiv_bizlogic.bizmodels.tapir_to_kc_mapping import AuthResponse
 from fastapi import HTTPException, status
 from keycloak import KeycloakAdmin, KeycloakError, KeycloakAuthenticationError, KeycloakOpenID, KeycloakPostError
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy import and_
 from sqlalchemy.exc import IntegrityError
 
@@ -127,7 +127,7 @@ class AccountIdentifierModel(BaseModel):
 
 class AccountInfoBaseModel(BaseModel):
     username: str  # aka nickname in Tapir
-    email: Optional[str] = None
+    email: Optional[EmailStr] = None
     first_name: str
     last_name: str
     suffix_name: Optional[str] = None
@@ -141,6 +141,11 @@ class AccountInfoBaseModel(BaseModel):
     career_status: Optional[CAREER_STATUS] = None
     tracking_cookie: Optional[str] = None
     veto_status: Optional[VetoStatusEnum] = None
+
+    @field_validator('first_name', 'last_name', 'suffix_name', 'affiliation', 'oidc_id', 'tracking_cookie')
+    @classmethod
+    def strip_field_value(cls, value: str | None) -> str | None:
+        return value.strip() if value else value
 
     def to_user_model_data(self, **kwargs) -> dict[str, Any]:
         data = self.model_dump(**kwargs)
@@ -186,7 +191,6 @@ class AccountInfoBaseModel(BaseModel):
 
         if "joined_date" in result and isinstance(result["joined_date"], datetime):
             result["joined_date"] = datetime_to_epoch(None, result["joined_date"])
-
         return result
 
 
@@ -194,9 +198,14 @@ class AccountInfoModel(AccountInfoBaseModel):
     id: str  # user id
     email_verified: Optional[bool] = None
     scopes: Optional[List[str]] = None
-    orcid: Optional[str] = None
-    orcid_authenticated: Optional[bool] = None
     author_id: Optional[str] = None
+    orcid_id: Optional[str] = None
+    orcid_authenticated: Optional[bool] = None
+
+    @field_validator('author_id', 'orcid_id')
+    @classmethod
+    def strip_field_value(cls, value: str | None) -> str | None:
+        return value.strip() if value else value
 
     def to_user_model_data(self, **kwargs) -> dict[str, Any]:
         return super().to_user_model_data(**kwargs)
@@ -416,9 +425,9 @@ def get_account_info(session: Session, user_id: str) -> Optional[AccountInfoMode
             id = str(um.id),
             username = um.username,
             email = um.email,
+            oidc_id=None,
             email_verified = True if um.flag_email_verified else False,
             scopes = scopes,
-            oidc_id = None,
             first_name = um.first_name,
             last_name = um.last_name,
             suffix_name = um.suffix_name,
@@ -431,7 +440,7 @@ def get_account_info(session: Session, user_id: str) -> Optional[AccountInfoMode
             career_status = get_career_status(um.type),
             tracking_cookie=um.tracking_cookie,
             veto_status=um.veto_status,
-            orcid = orcid_id.orcid if orcid_id else None,
+            orcid_id = orcid_id.orcid if orcid_id else None,
             orcid_authenticated = True if orcid_id and orcid_id.authenticated else False,
             author_id = arxiv_author_id.author_id if arxiv_author_id else None,
         )
@@ -574,3 +583,10 @@ def create_kc_account(kc_admin: KeycloakAdmin, user: AuthResponse, exist_ok: boo
             if exist_ok:
                 return
         raise exc
+
+
+def is_user_banned(session: Session, user_id: str) -> bool:
+    tu = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
+    if tu:
+        return tu.flag_banned == 1
+    return False

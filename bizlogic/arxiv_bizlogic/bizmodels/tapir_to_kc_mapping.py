@@ -3,7 +3,7 @@ import os
 from datetime import datetime, timezone
 
 from typing import Tuple, List, Dict
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
 from arxiv.db.models import TapirUser, TapirUsersPassword, TapirNickname, Demographic, TapirPolicyClass
@@ -14,6 +14,7 @@ from .user_model import UserModel
 
 UserProfile = Tuple[TapirUser, TapirUsersPassword, TapirNickname, Demographic]
 logger = logging.getLogger(__name__)
+
 
 def authenticate_password(session: Session, user: TapirUser, password: str) -> bool:
     """
@@ -103,7 +104,7 @@ def get_tapir_user(session: Session, claim: str) -> TapirUser | None:
 class AuthResponse(BaseModel):
     id: str
     username: str
-    email: str
+    email: EmailStr
     firstName: str
     lastName: str
     enabled: bool
@@ -224,8 +225,8 @@ def user_model_to_auth_response(um: UserModel, tapir_user: TapirUser) -> AuthRes
     if um.url:
         attributes["url"] = [um.url]
 
-    if um.orcid:
-        attributes["orcid"] = [um.orcid]
+    if um.orcid_id:
+        attributes["orcid_id"] = [um.orcid_id]
 
     return AuthResponse(
         id=str(um.id),
@@ -233,7 +234,7 @@ def user_model_to_auth_response(um: UserModel, tapir_user: TapirUser) -> AuthRes
         email=um.email,
         firstName=um.first_name,
         lastName=um.last_name,
-        enabled=not um.flag_deleted,
+        enabled=not (um.flag_deleted or um.flag_banned),
         emailVerified=um.flag_email_verified != 0,
         attributes=attributes,
         roles=roles,
