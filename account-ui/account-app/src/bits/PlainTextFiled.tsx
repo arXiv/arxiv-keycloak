@@ -24,8 +24,8 @@ const PlainTextField: React.FC<TextFieldProps> = (props) => {
                     ...props.slotProps?.inputLabel,
                 },
                 input: {
-                    notched: false,
                     ...props.slotProps?.input,
+                    notched: false,
                 },
             }}
         />

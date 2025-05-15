@@ -1,6 +1,5 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-// import Card from "@mui/material/Card";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 import Checkbox from "@mui/material/Checkbox";
@@ -29,7 +28,11 @@ import CardWithTitle from "../bits/CardWithTitle.tsx";
 import FormControlLabel from "@mui/material/FormControlLabel";
 
 // import {useTheme} from "@mui/material";
+import TextField from "@mui/material/TextField";
 import PlainTextField from "../bits/PlainTextFiled.tsx";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import {Divider, ListItemText} from "@mui/material";
 /* import IconButton from '@mui/material/IconButton';
 import Collapse from '@mui/material/Collapse';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -69,6 +72,10 @@ const PostSubmitActionDialog: React.FC<PostSubmitDialogProps> = ({title, message
         </Dialog>
     );
 }
+
+const LineDivider = () => <Divider sx={{borderColor: '#666', my: 2, borderBottomWidth: '2px'}} />;
+const FlexOne = () => <Box sx={{flex: 1}} />
+
 
 const AccountRegistration = () => {
     const runtimeContext = useContext(RuntimeContext);
@@ -347,8 +354,14 @@ const AccountRegistration = () => {
     );
     const invalidFormData = hasErrors || formData.username.length < 2 || formData.password.length < 10 || formData.password !== secondPassword;
 
+    const passwordRequirements = [
+        "8 characters or more in length",
+        "May contain uppercase letters, lowercase letters, numbers and special characters",
+        "Must contain at least one special character"
+    ];
+
     return (
-        <Container maxWidth="md" sx={{mt: 2}}>
+        <Container maxWidth="md" sx={{my: 2}}>
             <Box
                 component="form"
                 onSubmit={handleSubmit}
@@ -375,7 +388,10 @@ const AccountRegistration = () => {
                                     onChange={handleChange}
                                 />
                             </Box>
+                            <FlexOne />
+                        </Box>
 
+                        <Box sx={{display: "flex", gap: 1}}>
                             <Box sx={{flex: 1}}>
                                 <PlainTextField
                                     label="Uesrname (required)"
@@ -390,6 +406,7 @@ const AccountRegistration = () => {
                                     onChange={handleChange}
                                 />
                             </Box>
+                            <FlexOne />
 
                         </Box>
 
@@ -397,7 +414,7 @@ const AccountRegistration = () => {
                             <Box sx={{flex: 1, pt: 2}}>
                                 <Tooltip title={<PasswordRequirements/>}>
                                     <PlainTextField
-                                        label="Password"
+                                        label="Password (required)"
                                         aria-label="Login password, required"
                                         size="small"
                                         error={Boolean(errors.password)}
@@ -408,13 +425,12 @@ const AccountRegistration = () => {
                                         variant="outlined"
                                         fullWidth
                                         onChange={handleChange}
-                                        sx={{flex: 1}} // Ensures both fields take equal width
                                     />
                                 </Tooltip>
                             </Box>
                             <Box sx={{flex: 1, pt: 2}}>
                                 <PlainTextField
-                                    label="Reenter password"
+                                    label="Reenter password (required)"
                                     aria-label="Re-enter password for password verification"
                                     size="small"
                                     error={Boolean(errors.secondPassword)}
@@ -425,15 +441,29 @@ const AccountRegistration = () => {
                                     variant="outlined"
                                     fullWidth
                                     onChange={handleChange}
-                                    sx={{flex: 1}} // Ensures both fields take equal width
                                 />
                             </Box>
                         </Box>
+                        <Typography sx={{mt: 2}}>
+                            Password requirements
+                                <List component="ol" sx={{ listStyleType: 'decimal', pl: 3, py: 0 }}>
+                                    {
+                                        passwordRequirements.map((paragraph) => (
+                                            <ListItem component="li" sx={{ display: 'list-item', pl: 0, py: 0 }} >
+                                                <ListItemText>
+                                                    {paragraph}
+                                                </ListItemText>
+                                            </ListItem>
+                                        ))
+                                    }
+                                </List>
+                        </Typography>
+
                     </Box>
                 </CardWithTitle>
 
                 <CardWithTitle title={"User Information"}>
-                    <Box sx={{p: 1, m: 1}}>
+                    <Box sx={{p: 1, m: 1,}}>
                         <Typography variant="subtitle2" color="black" align="left" sx={{mb: 0, mx: 1}}>
                             It is a violation of our policies to misrepresent your identity or
                             institutional affiliation. Claimed affiliation should be current in the
@@ -442,7 +472,7 @@ const AccountRegistration = () => {
                             affiliation, for any reason, is possible grounds for immediate and
                             permanent suspension.
                         </Typography>
-
+                        <LineDivider />
                         <Box sx={{display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap'}}>
                             <Typography sx={{mt: 0}} variant={"body2"}>Names accept pidgin TeX (\'o) for foreign
                                 characters</Typography>
@@ -476,65 +506,74 @@ const AccountRegistration = () => {
                             </Box>
                         </Box>
 
-
                         <Box sx={{display: "flex", gap: 1}}>
-                            <Box sx={{flex: 2}}>
-                                <Box sx={{flex: 1, pt: 2}}>
-                                    <PlainTextField
-                                        label="First name (required)"
-                                        aria-label="First name or given name, required"
-                                        size="small"
-                                        error={Boolean(errors.first_name)}
-                                        helperText={errors.first_name}
-                                        name="first_name"
-                                        value={formData.first_name}
-                                        variant="outlined"
-                                        fullWidth
-                                        onChange={handleChange}
-                                        sx={{flex: 3}} // Ensures both fields take equal width
-                                    />
-                                </Box>
+                            <Box sx={{flex: 1, pt: 2}}>
+                                <PlainTextField
+                                    label="First name (required)"
+                                    aria-label="First name or given name, required"
+                                    size="small"
+                                    error={Boolean(errors.first_name)}
+                                    helperText={errors.first_name}
+                                    name="first_name"
+                                    value={formData.first_name}
+                                    variant="outlined"
+                                    fullWidth
+                                    onChange={handleChange}
+                                />
                             </Box>
-                            <Box sx={{flex: 2}}>
-                                <Box sx={{flex: 1, pt: 2}}>
-                                    <PlainTextField
-                                        label="Sur name / Last name / Family name (required)"
-                                        aria-label="Sur name, Last name, Family name, required"
-                                        size="small"
-                                        error={Boolean(errors.last_name)}
-                                        helperText={errors.last_name}
-                                        name="last_name"
-                                        value={formData.last_name}
-                                        variant="outlined"
-                                        fullWidth
-                                        onChange={handleChange}
-                                        sx={{flex: 3}} // Ensures both fields take equal width
-                                    />
-                                </Box> </Box>
-                            <Box sx={{flex: 2}}>
-                                <Box sx={{flex: 1, pt: 2}}>
-                                    <PlainTextField
-                                        label="Suffix name: Jr, Sr, II, III, IV, ..."
-                                        aria-label="Suffix name such as junior or second, optional"
-                                        size="small"
-                                        error={Boolean(errors.suffix_name)}
-                                        helperText={errors.suffix_name}
-                                        name="suffix_name"
-                                        value={formData.suffix_name}
-                                        variant="outlined"
-                                        fullWidth
-                                        onChange={handleChange}
-                                        sx={{flex: 1}} // Ensures both fields take equal width
-                                    />
-                                </Box>
-                            </Box>
+                            <FlexOne />
                         </Box>
-
                         <Box sx={{display: "flex", gap: 1}}>
-                            <Box sx={{flex: 2}}>
+                            <Box sx={{flex: 1, pt: 2}}>
+                                <PlainTextField
+                                    label="Sur name / Last name / Family name (required)"
+                                    aria-label="Sur name, Last name, Family name, required"
+                                    size="small"
+                                    error={Boolean(errors.last_name)}
+                                    helperText={errors.last_name}
+                                    name="last_name"
+                                    value={formData.last_name}
+                                    variant="outlined"
+                                    fullWidth
+                                    onChange={handleChange}
+                                />
+                            </Box>
+                            <FlexOne />
+                        </Box>
+                        <Box sx={{display: "flex", gap: 1}}>
+                            <Box sx={{flex: 1, pt: 2}}>
+                                <Typography component="label" fontWeight="bold" htmlFor="suffix_name">
+                                    Suffix:
+                                </Typography>
+                                <Typography variant="caption" color="text.Secondary" sx={{ml: 1, mb: 0.5 }}>
+                                    Examples include Jr. Sr, II, etc. Do not input honorifics like Esquire or Ph.D.
+                                </Typography>
+                                <PlainTextField
+                                    id="suffix_name"
+                                    aria-label="Suffix,examples include Jr. Sr, II, etc. Do not input honorifics like Esequire or Ph.D."
+                                    size="small"
+                                    error={Boolean(errors.suffix_name)}
+                                    helperText={errors.suffix_name}
+                                    name="suffix_name"
+                                    value={formData.suffix_name}
+                                    variant="outlined"
+                                    fullWidth
+                                    onChange={handleChange}
+                                />
+                            </Box>
+                            <FlexOne />
+                        </Box>
+                        <LineDivider />
+                        <Box sx={{display: "flex", gap: 1}}>
+                            <Box sx={{flex: 1}}>
                                 <CountrySelector onSelect={setCountry} selectedCountry={formData.country || ""}/>
                             </Box>
-                            <Box sx={{flex: 2}}>
+                            <Box sx={{flex: 1}}>
+                                <CareerStatusSelect onSelect={setCarrerStatus} careereStatus={formData.career_status}/>
+                            </Box>
+                        </Box>
+                        <Box sx={{display: "flex", mt: 2}}>
+                            <Box sx={{flex: 1}}>
                                 <PlainTextField
                                     label="Organization name (required)"
                                     aria-label="Your organization name, required"
@@ -546,16 +585,11 @@ const AccountRegistration = () => {
                                     variant="outlined"
                                     fullWidth
                                     onChange={handleChange}
-                                    sx={{flex: 3}} // Ensures both fields take equal width
                                 />
-                            </Box>
-
-                            <Box sx={{flex: 2}}>
-                                <CareerStatusSelect onSelect={setCarrerStatus} careereStatus={formData.career_status}/>
                             </Box>
                         </Box>
 
-                        <Box>
+                        <Box sx={{display: "flex", mt: 2}}>
                             <PlainTextField
                                 label="Home page URL"
                                 aria-label="Home page URL, optional"
@@ -565,42 +599,52 @@ const AccountRegistration = () => {
                                 variant="outlined"
                                 fullWidth
                                 onChange={handleChange}
-                                sx={{flex: 1}}
                             />
                         </Box>
 
                     </Box>
                 </CardWithTitle>
+
                 <CardWithTitle title={"Submission Category"}>
                     <Box sx={{p: 1, m: 1}}>
-
                         <CategoryGroupSelection selectedGroups={formData.groups as unknown as CategoryGroupType[]}
                                                 setSelectedGroups={setSelectedGroups}
                         />
-                        <Box sx={{pb: 1}}>
+                        <Box sx={{pb: 1, mt: 2}}>
                             <CategoryChooser onSelect={setDefaultCategory}
                                              selectedCategory={formData.default_category}/>
                         </Box>
                     </Box>
                 </CardWithTitle>
+
                 <CardWithTitle title={"Verify and Submit"}>
                     <Box sx={{p: 1, m: 1}}>
                         <Typography>To prevent misuse let us know you are not a robot (required)</Typography>
-                        <Box display="flex" justifyContent="space-between" alignItems="center" sx={{mt: 1}}>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" sx={{mt: 1, gap: 1}}>
                             <img key={captchaUrl} alt={"captcha"} src={captchaUrl}/>
-                            <PlainTextField
-                                label="Type captcha response"
-                                aria-label="Captcha reply, required"
-                                size="small"
-                                name="captcha_value"
-                                value={formData.captcha_value}
-                                variant="outlined"
-                                helperText={errors.captcha_value}
-                                fullWidth
-                                onChange={handleChange}
-                                sx={{width: "13em"}}
-                            />
-                            <Box sx={{flex: 1}}/>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography component="label"
+                                    htmlFor="captcha_value"
+                                    sx={{
+                                        fontWeight: 'bold',
+                                        flexShrink: 0,
+                                    }}>
+                                    Type captcha response:
+                                </Typography>
+                                <TextField
+                                    aria-label="Captcha reply, required"
+                                    size="small"
+                                    id="captcha_value"
+                                    name="captcha_value"
+                                    value={formData.captcha_value}
+                                    variant="outlined"
+                                    helperText={errors.captcha_value}
+                                    fullWidth
+                                    onChange={handleChange}
+                                    sx={{width: "13em"}}
+                                />
+                            </Box>
+                            <FlexOne />
 
                         </Box>
                         <Box>
@@ -611,7 +655,7 @@ const AccountRegistration = () => {
                                     aria-label="Listen to captcha value" startIcon={<HearingIcon/>}> Listen To
                                 Audio</Button>
                         </Box>
-                        <Box sx={{border: 1, my: 1}}></Box>
+                        <LineDivider />
 
                         <Box sx={{display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap'}}>
                             <FormControlLabel
@@ -620,7 +664,7 @@ const AccountRegistration = () => {
                             />
                             <Link
                                 sx={{
-                                    border: 2,
+                                    border: 0,
                                     borderColor: "#aaa",
                                     borderRadius: '4px',
                                     display: 'inline-flex',
@@ -636,7 +680,7 @@ const AccountRegistration = () => {
                                 Open Privacy Policy
                             </Link>
                         </Box>
-                        <Box sx={{border: 1, my: 1}}></Box>
+                        <LineDivider />
                         <Box>
                             <Typography>
                                 You should only register with arXiv once. arXiv associates papers that you have

@@ -11,7 +11,7 @@ export type CategoryGroupType = "grp_physics" | "grp_math" | "grp_cs" | "grp_q-e
 
 const CategoryOption : React.FC<{ value: string, checked: boolean, label: string, callback: (event: React.ChangeEvent<HTMLInputElement>) => void }> = ({value, checked, label, callback}) => {
     return (
-        <FormControlLabel control={<Checkbox key={value} checked={checked} value={value} onChange={callback} />} label={label} />
+        <FormControlLabel id={label} control={<Checkbox key={value} checked={checked} value={value} onChange={callback} />} label={label} />
     );
 }
 
@@ -53,7 +53,7 @@ const CategoryGroupSelection : React.FC<{
                 }
             </Typography>
             <FormGroup
-                aria-label="archive groups"
+                aria-label="Categories you would like to submit to (required)"
                 sx={{
                     display: "grid",
                     gridTemplateColumns: "repeat(1, 1fr)",
@@ -63,7 +63,7 @@ const CategoryGroupSelection : React.FC<{
                     choices.map((choice) =>  (
                         <CategoryOption
                             checked={selectedGroups.includes(choice.value)}
-                                         value={choice.value} label={choice.label} callback={handleSelection} />))
+                            value={choice.value} label={choice.label} callback={handleSelection} />))
                 }
             </FormGroup>
         </Box>

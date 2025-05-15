@@ -1,9 +1,8 @@
 import React from "react";
-// import Box from "@mui/material/Box";
+import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
 
 import { paths } from "../types/aaa-api.ts";
-import PlainTextField from "./PlainTextFiled.tsx";
 
 export type AccountProfileType = paths["/account/profile/{user_id}"]["get"]["responses"]["200"]["content"]["application/json"];
 export type CareerStatusType = AccountProfileType['career_status'];
@@ -34,8 +33,27 @@ const CareerStatusSelect: React.FC<CareerStatusProps> = ({ onSelect, careereStat
                 onChange={handleChange}
                 getOptionLabel={displayLabel}
                 renderInput={(params) => (
-                    <PlainTextField {...params} size="small" variant="outlined"
+                    <TextField {...params} size="small" variant="outlined"
                         label="Career Stage (required)"
+                               slotProps={{
+                                   inputLabel: {
+                                       shrink: true,
+                                       sx: {
+                                           ...params.InputLabelProps,
+                                           position: 'static',
+                                           transform: 'none',
+                                           fontSize: '1em',
+                                           color: 'black',
+                                           fontWeight: 'bold',
+                                           pb: '3px',
+                                       },
+                                   },
+                                   input: {
+                                       ...params.InputProps,
+                                       notched: false,
+                                   }
+                               }}
+
                     />
                 )}
             />
