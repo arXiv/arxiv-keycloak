@@ -55,7 +55,7 @@ interface CardWithTitleProps {
 const CardWithTitle: React.FC<CardWithTitleProps> = ({
                                                          title,
                                                          children,
-                                                         borderColor = "#BBB",
+                                                         borderColor = "#cecece",
                                                          titleBgColor = "white",
                                                          titleColor = "#333",
                                                          textColor = "black",
@@ -67,13 +67,13 @@ const CardWithTitle: React.FC<CardWithTitleProps> = ({
                 position: "absolute",
                 top: "-12px",
                 left: "16px",
-                zIndex: 2,  // Higher z-index to ensure visibility
+                zIndex: 2,
                 backgroundColor: titleBgColor,
                 px: 1,
             }}
         >
             <Typography
-                variant="h5"
+                variant="h2"
                 sx={{
                     color: titleColor,
                     fontWeight: 500,
@@ -90,7 +90,7 @@ const CardWithTitle: React.FC<CardWithTitleProps> = ({
                 borderRadius: "6px",
                 p: 2,
                 pt: 2.5,
-                position: "relative",  // Ensure content is positioned properly
+                position: "relative",
                 boxShadow: "0px 3px 6px rgba(0, 0, 0, 0.16)",
             }}
         >

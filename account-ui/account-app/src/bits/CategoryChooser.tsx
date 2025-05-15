@@ -1,12 +1,12 @@
 import React, {useContext, useEffect, useState} from "react";
 import Autocomplete from "@mui/material/Autocomplete";
+import TextField from "@mui/material/TextField";
 //  import { paths } from "../types/aaa-api.ts";
 import { paths as adminApi } from "../types/admin-api";
 import {RuntimeContext} from "../RuntimeContext";
 import arxivCategories from "./arxivCategories"
 import {paths} from "../types/aaa-api.ts";
 import {fetchPlus} from "../fetchPlus.ts";
-import PlainTextField from "./PlainTextFiled.tsx";
 
 export type CategoryType = adminApi["/v1/categories/{id}"]["get"]["responses"]["200"]["content"]["application/json"];
 export type SubmitRequestType = paths["/account/register/"]['post']['requestBody']['content']['application/json'];
@@ -81,11 +81,28 @@ const CategoryChooser: React.FC<CategoryChooserProps> = ({onSelect, selectedCate
             groupBy={(option) => (!option.isHeader ? option.group.toUpperCase() : "")}
             getOptionLabel={(option) => option.label ?? "Unknown Category"}
             isOptionEqualToValue={(option, value) => !option.isHeader && !value.isHeader && option.value && value.value && option.value.id === value.value.id}
-            renderInput={(params) => <PlainTextField
+            renderInput={(params) => <TextField
                 {...params}
                 label="Your default category (required)"
+
                 slotProps={{
-                    input: {'aria-label': 'Default Category for new submission'}
+                    inputLabel: {
+                        shrink: true,
+                        sx: {
+                            ...params.InputLabelProps,
+                            position: 'static',
+                            transform: 'none',
+                            fontSize: '1em',
+                            color: 'black',
+                            fontWeight: 'bold',
+                            pb: '3px',
+                        },
+                    },
+                    input: {
+                        ...params.InputProps,
+                        notched: false,
+                        'aria-label': 'Default Category for new submission'
+                    }
                 }}
             />}
             renderOption={(props, option) => (
