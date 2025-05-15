@@ -18,7 +18,6 @@ import {paths} from "../types/aaa-api.ts";
 import {emailValidator} from "../bits/validators.ts";
 import {fetchPlus} from "../fetchPlus.ts";
 import {useNavigate} from "react-router-dom";
-import {useMediaQuery, useTheme} from "@mui/material";
 
 type AccountProfileRequest = paths["/account/profile/{user_id}"]['get']['responses']['200']['content']['application/json'];
 type UpdateProfileRequest = paths["/account/profile/"]['put']['requestBody']['content']['application/json'];
@@ -36,10 +35,6 @@ const UpdateProfile = () => {
     const runtimeProps = useContext(RuntimeContext);
     const [user, setUser] = useState<typeof runtimeProps.currentUser>( runtimeProps.currentUser) ;
     const navigate = useNavigate();
-    const theme = useTheme();
-
-    const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm")); // 'sm' is ~600px
-
 
     // State to store input values
     const [formData, setFormData] = useState<UpdateProfileRequest>({
@@ -375,7 +370,6 @@ const UpdateProfile = () => {
                             </Box>
                         </Box>
                         <CategoryGroupSelection selectedGroups={formData.groups as unknown as CategoryGroupType[]}
-                                                isSmallScreen={isSmallScreen}
                                                 setSelectedGroups={setSelectedGroups} />
                         <Box>
                             <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Your default category (required):"}</Typography>

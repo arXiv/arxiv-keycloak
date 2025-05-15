@@ -1,7 +1,7 @@
 import React from "react";
 import Box from "@mui/material/Box";
 import Autocomplete from "@mui/material/Autocomplete";
-import TextField from "@mui/material/TextField";
+import PlainTextField from "./PlainTextFiled.tsx";
 
 // Define a type for country options
 interface Country {
@@ -58,7 +58,7 @@ const CountrySelector: React.FC<CountrySelectProps> = ({ onSelect, selectedCount
                 value={countries.find((country) => country.code.toUpperCase() === selectedCountry?.toUpperCase())}
                 onChange={handleChange}
                 renderInput={(params) => (
-                    <TextField {...params} size="small" variant="outlined" />
+                    <PlainTextField {...params} size="small" variant="outlined" label="Country (required)" />
                 )}
             />
         </Box>

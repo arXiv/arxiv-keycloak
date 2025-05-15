@@ -18,8 +18,7 @@ const CategoryOption : React.FC<{ value: string, checked: boolean, label: string
 const CategoryGroupSelection : React.FC<{
     selectedGroups: CategoryGroupType[],
     setSelectedGroups: (groups: CategoryGroupType[]) => void,
-    isSmallScreen: boolean,
-}> = ({selectedGroups, setSelectedGroups, isSmallScreen}) => {
+}> = ({selectedGroups, setSelectedGroups}) => {
 
     const handleSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
         const checked = event.target.checked;
@@ -57,9 +56,8 @@ const CategoryGroupSelection : React.FC<{
                 aria-label="archive groups"
                 sx={{
                     display: "grid",
-                    gridTemplateColumns: isSmallScreen ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
-                    gap: 1,
-                    p:1 }}
+                    gridTemplateColumns: "repeat(1, 1fr)",
+                    px: 1 }}
             >
                 {
                     choices.map((choice) =>  (

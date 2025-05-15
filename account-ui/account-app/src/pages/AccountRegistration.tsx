@@ -2,7 +2,6 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 // import Card from "@mui/material/Card";
 import Container from "@mui/material/Container";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import Checkbox from "@mui/material/Checkbox";
 import Link from "@mui/material/Link";
@@ -29,7 +28,8 @@ import {fetchPlus} from "../fetchPlus.ts";
 import CardWithTitle from "../bits/CardWithTitle.tsx";
 import FormControlLabel from "@mui/material/FormControlLabel";
 
-import {useMediaQuery, useTheme} from "@mui/material";
+// import {useTheme} from "@mui/material";
+import PlainTextField from "../bits/PlainTextFiled.tsx";
 /* import IconButton from '@mui/material/IconButton';
 import Collapse from '@mui/material/Collapse';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -73,7 +73,7 @@ const PostSubmitActionDialog: React.FC<PostSubmitDialogProps> = ({title, message
 const AccountRegistration = () => {
     const runtimeContext = useContext(RuntimeContext);
     const {showNotification} = useNotification();
-    const theme = useTheme();
+    // const theme = useTheme();
     // const [expanded, setExpanded] = useState(false);
 
     // State to store input values
@@ -347,8 +347,6 @@ const AccountRegistration = () => {
     );
     const invalidFormData = hasErrors || formData.username.length < 2 || formData.password.length < 10 || formData.password !== secondPassword;
 
-    const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm")); // 'sm' is ~600px
-
     return (
         <Container maxWidth="md" sx={{mt: 2}}>
             <Box
@@ -356,20 +354,16 @@ const AccountRegistration = () => {
                 onSubmit={handleSubmit}
                 sx={{display: "flex", flexDirection: "column", gap: 1}}
             >
-                <Typography variant="h4" color="black" align="left" sx={{fontWeight: "bold"}}>
+                <Typography variant="h1" color="black" align="left" sx={{fontSize: "2.6em", fontWeight: "bold"}}>
                     Create your arXiv account
                 </Typography>
-                <Box sx={{mx: 2}}>
-
-                </Box>
                 {/* Registration Form */}
                 <CardWithTitle title={"Account Credentials"}>
                     <Box sx={{p: 1, m: 1}}>
                         <Box sx={{display: "flex", gap: 1}}>
                             <Box sx={{flex: 1}}>
-                                <Typography fontWeight="bold" sx={{mb: 1}}>{"Email (required): "}</Typography>
-                                <TextField
-                                    label="email"
+                                <PlainTextField
+                                    label="Email (required)"
                                     aria-label="Email address, required"
                                     size="small"
                                     error={Boolean(errors.email)}
@@ -383,9 +377,8 @@ const AccountRegistration = () => {
                             </Box>
 
                             <Box sx={{flex: 1}}>
-                                <Typography fontWeight="bold" sx={{mb: 1}}>{"Username (required): "}</Typography>
-                                <TextField
-                                    label="Uesrname"
+                                <PlainTextField
+                                    label="Uesrname (required)"
                                     aria-label="User name for login, required"
                                     size="small"
                                     error={Boolean(errors.username)}
@@ -402,11 +395,8 @@ const AccountRegistration = () => {
 
                         <Box sx={{display: "flex", gap: 1}}>
                             <Box sx={{flex: 1, pt: 2}}>
-
-                                <Typography fontWeight={"bold"}
-                                            sx={{mb: 1}}>{"Password (required)"}</Typography>
                                 <Tooltip title={<PasswordRequirements/>}>
-                                    <TextField
+                                    <PlainTextField
                                         label="Password"
                                         aria-label="Login password, required"
                                         size="small"
@@ -423,11 +413,7 @@ const AccountRegistration = () => {
                                 </Tooltip>
                             </Box>
                             <Box sx={{flex: 1, pt: 2}}>
-
-                                <Typography fontWeight={"bold"}
-                                            sx={{mb: 1}}>{"Reenter password (required):  "}</Typography>
-
-                                <TextField
+                                <PlainTextField
                                     label="Reenter password"
                                     aria-label="Re-enter password for password verification"
                                     size="small"
@@ -494,9 +480,8 @@ const AccountRegistration = () => {
                         <Box sx={{display: "flex", gap: 1}}>
                             <Box sx={{flex: 2}}>
                                 <Box sx={{flex: 1, pt: 2}}>
-                                    <Typography fontWeight={"bold"} sx={{mb: 1}}>{"First name (required)"}</Typography>
-                                    <TextField
-                                        label="First name"
+                                    <PlainTextField
+                                        label="First name (required)"
                                         aria-label="First name or given name, required"
                                         size="small"
                                         error={Boolean(errors.first_name)}
@@ -512,11 +497,8 @@ const AccountRegistration = () => {
                             </Box>
                             <Box sx={{flex: 2}}>
                                 <Box sx={{flex: 1, pt: 2}}>
-                                    <Typography fontWeight={"bold"}
-                                                sx={{mb: 1}}>{"Sur name / Last name / Family name (required)"}</Typography>
-
-                                    <TextField
-                                        label="Last name"
+                                    <PlainTextField
+                                        label="Sur name / Last name / Family name (required)"
                                         aria-label="Sur name, Last name, Family name, required"
                                         size="small"
                                         error={Boolean(errors.last_name)}
@@ -531,14 +513,8 @@ const AccountRegistration = () => {
                                 </Box> </Box>
                             <Box sx={{flex: 2}}>
                                 <Box sx={{flex: 1, pt: 2}}>
-                                    <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Suffix: "}
-                                        <Typography variant={"caption"}>
-                                            {"Jr, Sr, II, III, IV, ..."}
-                                        </Typography>
-                                    </Typography>
-
-                                    <TextField
-                                        label="Suffix name"
+                                    <PlainTextField
+                                        label="Suffix name: Jr, Sr, II, III, IV, ..."
                                         aria-label="Suffix name such as junior or second, optional"
                                         size="small"
                                         error={Boolean(errors.suffix_name)}
@@ -556,14 +532,11 @@ const AccountRegistration = () => {
 
                         <Box sx={{display: "flex", gap: 1}}>
                             <Box sx={{flex: 2}}>
-                                <Typography fontWeight={"bold"} sx={{mb: 1, pt: 2}}>{"Country (required)"}</Typography>
                                 <CountrySelector onSelect={setCountry} selectedCountry={formData.country || ""}/>
                             </Box>
                             <Box sx={{flex: 2}}>
-                                <Typography fontWeight={"bold"}
-                                            sx={{mb: 1, pt: 2}}>{"Organization name (required)"}</Typography>
-                                <TextField
-                                    label="Affiliation"
+                                <PlainTextField
+                                    label="Organization name (required)"
                                     aria-label="Your organization name, required"
                                     size="small"
                                     error={Boolean(errors.affiliation)}
@@ -578,15 +551,12 @@ const AccountRegistration = () => {
                             </Box>
 
                             <Box sx={{flex: 2}}>
-                                <Typography fontWeight={"bold"}
-                                            sx={{mb: 1, pt: 2}}>{"Career Stage (required)"}</Typography>
                                 <CareerStatusSelect onSelect={setCarrerStatus} careereStatus={formData.career_status}/>
                             </Box>
                         </Box>
 
                         <Box>
-                            <Typography fontWeight={"bold"} sx={{mb: 1, pt: 2}}>{"Home page URL"}</Typography>
-                            <TextField
+                            <PlainTextField
                                 label="Home page URL"
                                 aria-label="Home page URL, optional"
                                 size="small"
@@ -606,11 +576,8 @@ const AccountRegistration = () => {
 
                         <CategoryGroupSelection selectedGroups={formData.groups as unknown as CategoryGroupType[]}
                                                 setSelectedGroups={setSelectedGroups}
-                                                isSmallScreen={isSmallScreen}
                         />
                         <Box sx={{pb: 1}}>
-                            <Typography fontWeight={"bold"}
-                                        sx={{mb: 1}}>{"Your default category (required)"}</Typography>
                             <CategoryChooser onSelect={setDefaultCategory}
                                              selectedCategory={formData.default_category}/>
                         </Box>
@@ -621,9 +588,8 @@ const AccountRegistration = () => {
                         <Typography>To prevent misuse let us know you are not a robot (required)</Typography>
                         <Box display="flex" justifyContent="space-between" alignItems="center" sx={{mt: 1}}>
                             <img key={captchaUrl} alt={"captcha"} src={captchaUrl}/>
-                            <Typography sx={{ml: 2, mr: 1}}>{"Type captcha response: "}</Typography>
-                            <TextField
-                                label="Captcha reply"
+                            <PlainTextField
+                                label="Type captcha response"
                                 aria-label="Captcha reply, required"
                                 size="small"
                                 name="captcha_value"
