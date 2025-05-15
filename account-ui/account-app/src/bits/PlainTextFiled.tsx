@@ -1,5 +1,5 @@
 import React from 'react';
-import TextField, { TextFieldProps } from '@mui/material/TextField';
+import TextField, {TextFieldProps } from '@mui/material/TextField';
 import { styled } from '@mui/material/styles';
 
 const StyledTextField = styled(TextField)({
@@ -30,6 +30,9 @@ const StyledTextField = styled(TextField)({
     '& .MuiInputBase-input': {
         padding: 0,
     },
+    '& .MuiOutlinedInput-notchedOutline': {
+        border: 'none',
+    },
 });
 
 const PlainTextField: React.FC<TextFieldProps> = (props) => {
@@ -44,7 +47,6 @@ const PlainTextField: React.FC<TextFieldProps> = (props) => {
                 },
                 input: {
                     ...props.slotProps?.input,
-                    notched: false,
                     disableUnderline: true,
                 },
             }}
