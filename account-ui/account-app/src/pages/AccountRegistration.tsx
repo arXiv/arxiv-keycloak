@@ -27,7 +27,6 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 
 // import {useTheme} from "@mui/material";
 import TextField from "@mui/material/TextField";
-import PlainTextField from "../bits/PlainTextFiled.tsx";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import {Divider, ListItemText} from "@mui/material";
@@ -373,7 +372,7 @@ const AccountRegistration = () => {
                 <CardWithTitle title={"Account Credentials"}>
                     <Box sx={{p: 1, m: 1}}>
                         <Box sx={{display: "flex", gap: 1}}>
-                            <PlainTextField
+                            <TextField
                                 label="Email (required)"
                                 aria-label="Email address, required"
                                 size="small"
@@ -389,7 +388,7 @@ const AccountRegistration = () => {
                         </Box>
 
                         <Box sx={{display: "flex", gap: 1, pt: 2}}>
-                            <PlainTextField
+                            <TextField
                                 label="Uesrname (required)"
                                 aria-label="User name for login, required"
                                 size="small"
@@ -407,7 +406,7 @@ const AccountRegistration = () => {
 
                         <Box sx={{display: "flex", gap: 1,pt: 2}}>
                             <PasswordWrapper>
-                                <PlainTextField
+                                <TextField
                                     label="Password (required)"
                                     aria-label="Login password, required"
                                     size="small"
@@ -422,7 +421,7 @@ const AccountRegistration = () => {
                             </PasswordWrapper>
 
                             <PasswordWrapper>
-                                <PlainTextField
+                                <TextField
                                     label="Reenter password (required)"
                                     aria-label="Re-enter password for password verification"
                                     size="small"
@@ -499,7 +498,7 @@ const AccountRegistration = () => {
                         </Box>
 
                         <Box sx={{display: "flex", gap: 1, pt: 2}}>
-                            <PlainTextField
+                            <TextField
                                 label="First name (required)"
                                 aria-label="First name or given name, required"
                                 size="small"
@@ -514,7 +513,7 @@ const AccountRegistration = () => {
                         </Box>
 
                         <Box sx={{display: "flex", gap: 1, pt: 2}}>
-                            <PlainTextField
+                            <TextField
                                 label="Sur name / Last name / Family name (required)"
                                 aria-label="Sur name, Last name, Family name, required"
                                 size="small"
@@ -535,7 +534,7 @@ const AccountRegistration = () => {
                                 <Typography variant="body2" color="text.Secondary" sx={{ml: 1, mb: 0.5 }}>
                                     Examples include Jr. Sr, II, etc. Do not input honorifics like Esquire or Ph.D.
                                 </Typography>
-                                <PlainTextField
+                                <TextField
                                     id="suffix_name"
                                     aria-label="Suffix,examples include Jr. Sr, II, etc. Do not input honorifics like Esequire or Ph.D."
                                     size="small"
@@ -559,7 +558,7 @@ const AccountRegistration = () => {
                             </Box>
                         </Box>
                         <Box sx={{display: "flex", pt: 2}}>
-                            <PlainTextField
+                            <TextField
                                 label="Organization name (required)"
                                 aria-label="Your organization name, required"
                                 size="small"
@@ -574,7 +573,7 @@ const AccountRegistration = () => {
                         </Box>
 
                         <Box sx={{display: "flex", pt: 2}}>
-                            <PlainTextField
+                            <TextField
                                 label="Home page URL"
                                 aria-label="Home page URL, optional"
                                 size="small"

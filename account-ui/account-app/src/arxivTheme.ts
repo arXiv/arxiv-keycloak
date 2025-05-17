@@ -42,6 +42,66 @@ const arxivTheme = createTheme({
             color: "#2d2d2d",
         },
     },
+    components: {
+        MuiTextField: {
+            defaultProps: {
+                variant: 'standard',
+                slotProps: {
+                    inputLabel: {
+                        shrink: true
+                    }
+                },
+            },
+        },
+        MuiInputLabel: {
+            styleOverrides: {
+                root: {
+                    position: 'static',
+                    transform: 'none',
+                    fontSize: '1em',
+                    color: 'black',
+                    padding: '0px',
+                    fontWeight: 'bold',
+                },
+            },
+        },
+        MuiInput: {
+            styleOverrides: {
+                root: {
+                    border: '1px solid rgba(0, 0, 0, 0.23)',
+                    borderRadius: '4px',
+                    padding: '6px 8px',
+                    marginTop: '6px',
+                    backgroundColor: 'white',
+                    transition: 'border-color 0.2s',
+                    '&:hover': {
+                        borderColor: 'rgba(0, 0, 0, 0.87)',
+                        boxShadow: '0 0 0 2px rgba(0, 0, 0, 0.1)',
+                    },
+                    '&.Mui-focused': {
+                        borderColor: '#1976d2',
+                        borderWidth: '1px',
+                    },
+                    '&.MuiInput-root': {
+                        '&:not(:first-child)': {
+                            marginTop: '6px', // or whatever spacing you want
+                        },
+                    },
+                },
+                input: {
+                    padding: 0,
+                },
+                underline: {
+                    '&:before': {
+                        borderBottom: 'none !important',
+                    },
+                    '&:after': {
+                        borderBottom: 'none !important',
+                    },
+                },
+            },
+        },
+    },
 });
 
 

@@ -42,8 +42,8 @@ const PlainTextField: React.FC<TextFieldProps> = (props) => {
             slotProps={{
                 ...props.slotProps,
                 inputLabel: {
-                    shrink: true,
                     ...props.slotProps?.inputLabel,
+                    shrink: true,
                 },
                 input: {
                     ...props.slotProps?.input,
