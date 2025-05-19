@@ -23,6 +23,7 @@ import {useNotification} from "../NotificationContext.tsx";
 import {utcToNnewYorkDatePrinter} from "../bits/printer.ts";
 import {fetchPlus} from "../fetchPlus.ts";
 import YourOwnershipRequests from "../components/YourOwnershipRequests.tsx";
+import CardWithTitle from "../bits/CardWithTitle.tsx";
 
 type ArxivDocument = adminApi['/v1/documents/paper_id/{paper_id}']['get']['responses']['200']['content']['application/json'];
 type OwnershipRequestsRequest = adminApi['/v1/ownership_requests/']['post']['requestBody']['content']['application/json'];
@@ -266,16 +267,19 @@ const OwnershipRequest = () => {
     const runtimeProps: RuntimeProps = useContext(RuntimeContext);
 
     return (
-        <Container maxWidth="md" sx={{ mt: 3 }}>
-            <Paper elevation={3} sx={{ p: 3, mt: 4, width: "95%" }}>
-                <Typography variant="h5" gutterBottom>
-                    Ownership Request
+        <Container maxWidth={"md"} sx={{gap: "2em"}}>
+            <Box display="flex" flexDirection={"column"} sx={{my: "4em", gap: "2em"}}>
+                <Typography variant={"h1"}>
+                    Ownership Requests
                 </Typography>
-                <Typography>
-                    To process an ownership request, enter either the numeric request id.
-                </Typography>
-                <OwnershipRequstTable runtimeProps={runtimeProps} />
-            </Paper>
+
+                <CardWithTitle title={"Submit Request"}>
+                    <Typography>
+                        To process an ownership request, enter either the numeric request id.
+                    </Typography>
+                    <OwnershipRequstTable runtimeProps={runtimeProps} />
+                </CardWithTitle>
+            </Box>
 
             <YourOwnershipRequests runtimeProps={runtimeProps} />
         </Container>

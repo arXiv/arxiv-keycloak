@@ -3,8 +3,6 @@ import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
 import Container from "@mui/material/Container";
 
 import {RuntimeContext, User} from "../RuntimeContext";
@@ -22,7 +20,8 @@ import CardHeader from "@mui/material/CardHeader";
 import Link from "@mui/material/Link";
 import {printUserName} from "../bits/printer.ts";
 import {fetchPlus} from "../fetchPlus.ts";
-import { useLocation } from "react-router-dom";
+import {useLocation} from "react-router-dom";
+import CardWithTitle from "../bits/CardWithTitle.tsx";
 
 type EndorsementCodeRequest = adminApi["/v1/endorsements/endorse"]['post']['requestBody']['content']['application/json'];
 
@@ -94,8 +93,10 @@ const EnterEndorsementCode = () => {
                         {
                             method: "POST",
                             body: JSON.stringify(formData),
-                            headers: new Headers({"Content-Type": "application/json",
-                            })},);
+                            headers: new Headers({
+                                "Content-Type": "application/json",
+                            })
+                        },);
                     if (response.ok) {
                         setErrors({...errors, endorsement_code: ""});
                         const body: EndorsementOutcomeModel = await response.json();
@@ -104,8 +105,7 @@ const EnterEndorsementCode = () => {
                         setEndorsementOutcome(null);
                         if (response.status === 404) {
                             setErrors({...errors, endorsement_code: "Not Found"});
-                        }
-                        else if (response.status === 401) {
+                        } else if (response.status === 401) {
                             setErrors({...errors, endorsement_code: "Please login"});
                             showMessageDialog("Please re-login first.", "No User Information",
                                 () => {
@@ -196,8 +196,7 @@ const EnterEndorsementCode = () => {
                     contact {emailLink}.</p>
             </div>);
             showMessageDialog(msg, title);
-        }
-        else if (endorsementOutcome.endorser_capability === "credited" && endorsementOutcome.request_acceptable) {
+        } else if (endorsementOutcome.endorser_capability === "credited" && endorsementOutcome.request_acceptable) {
             setErrors({...errors, reason: ""});
         } else if (endorsementOutcome.endorser_capability === "prohibited") {
             setErrors({...errors, reason: endorsementOutcome?.reason || "You may not endorse."});
@@ -213,7 +212,8 @@ const EnterEndorsementCode = () => {
                 <p>You are not allowed to endorse arXiv users for category {categoryFullName}
                     {endorsementOutcome?.reason ? ` for the following reason: ${endorsementOutcome.reason}` : ""}.
                 </p>
-                <p>Please advise {endorseeName} to find another endorser. Please contact {emailLink} if you have any questions or comments.</p>
+                <p>Please advise {endorseeName} to find another endorser. Please contact {emailLink} if you have any
+                    questions or comments.</p>
             </div>);
             showMessageDialog(msg, title);
         } else if (endorsementOutcome.endorser_capability === "oneself") {
@@ -253,7 +253,7 @@ const EnterEndorsementCode = () => {
                 console.log(JSON.stringify(errorReply));
                 if (response.status === 405) {
                     const outcome = errorReply as unknown as Endorsement405Response;
-                    showMessageDialog((<span>{outcome?.reason  || "Reason not given"}</span>), "Endorsement failed");
+                    showMessageDialog((<span>{outcome?.reason || "Reason not given"}</span>), "Endorsement failed");
                 } else {
                     showNotification(errorReply.detail, "warning");
                 }
@@ -271,20 +271,20 @@ const EnterEndorsementCode = () => {
                         </>),
                         `Thank you for endorsing ${endorseeName}`
                         , () => setFormData(initialFormData), "Restart");
-                }
-                else {
+                } else {
                     showMessageDialog(
                         (<>
                             <p>Your vigilance helps us maintain the quality of arXiv submissions.</p>
 
                             <p>Your vote of no confidence will not result in any automatic action against {endorseeName};
-                                {endorseeName} will still be able to submit to the {categoryName} if they can find another
-                                endorser.  However, your feedback may help us detect massive abuse (users
+                                {endorseeName} will still be able to submit to the {categoryName} if they can find
+                                another
+                                endorser. However, your feedback may help us detect massive abuse (users
                                 who contact hundreds of arXiv users in the hope of finding someone who'll
                                 endorse them without thinking) and will direct our attention to possible
                                 problem submissions.</p>
 
-                            <p>{endorseeName} will not be informed of your feedback.  It is your
+                            <p>{endorseeName} will not be informed of your feedback. It is your
                                 responsibility to tell (or not tell) {endorseeName} of your decision.</p>
                         </>),
                         `Thank you for your feedback on ${endorseeName}`
@@ -292,8 +292,7 @@ const EnterEndorsementCode = () => {
 
                 }
                 return;
-            }
-            else {
+            } else {
                 const body = await response.json();
                 showNotification(`Unexpected respones ${response.statusText} -  ${body.detail}`, "warning");
             }
@@ -319,8 +318,7 @@ const EnterEndorsementCode = () => {
                     ...formData,
                     [name]: undefined,
                 })
-            }
-            else {
+            } else {
                 setFormData({
                     ...formData,
                     [name]: value === "true",
@@ -344,10 +342,10 @@ const EnterEndorsementCode = () => {
     );
 
     const endorsementLabel = endorsementRequest && endorsee ? (
-        <CardHeader title={`Endorsement of ${endorseeName} for ${categoryFullName}`} />
+        <CardHeader title={`Endorsement of ${endorseeName} for ${categoryFullName}`}/>
     ) : null;
 
-    const endorserInfo = (<Typography >
+    const endorserInfo = (<Typography>
             <Typography component={"span"} fontWeight={"bold"}> {"Endorser (You): "}</Typography>
             <Typography component={"span"}
                         sx={{textDecoration: "underline"}}>{endorser_name}</Typography>
@@ -355,13 +353,13 @@ const EnterEndorsementCode = () => {
     );
 
     const endorseeInfo = endorsee && endorsementRequest ? (
-        <Typography >
-            <Typography component="p" >
+        <Typography>
+            <Typography component="p">
                 {endorseeName} has requested your endorsement to submit papers to {printCategory(endorsementRequest)}
                 {" ("}{endorsementCategoryName}).
             </Typography>
-            <Typography component="p" sx={{p:2}}>
-                { endorsementOutcome?.request_acceptable ?
+            <Typography component="p" sx={{p: 2}}>
+                {endorsementOutcome?.request_acceptable ?
                     (
                         <Typography>
                             Acceptance reason:
@@ -372,7 +370,8 @@ const EnterEndorsementCode = () => {
                     (
                         <Typography>
                             Reject reason:
-                            <Typography sx={{fontStyle: "italic"}}>{endorsementOutcome.reason || "Endorsee cannot receive any endorsement."}</Typography>
+                            <Typography
+                                sx={{fontStyle: "italic"}}>{endorsementOutcome.reason || "Endorsee cannot receive any endorsement."}</Typography>
                         </Typography>
                     )
                 }
@@ -381,7 +380,8 @@ const EnterEndorsementCode = () => {
             <Typography component={"span"}
                         sx={{textDecoration: "underline"}}> {printUser(endorsee)}</Typography>
             {" for category "}
-            <Typography component={"span"} sx={{textDecoration: "underline"}}>{printCategory(endorsementRequest)}</Typography>
+            <Typography component={"span"}
+                        sx={{textDecoration: "underline"}}>{printCategory(endorsementRequest)}</Typography>
 
         </Typography>
     ) : null;
@@ -402,12 +402,12 @@ const EnterEndorsementCode = () => {
                     value={formData.positive ? "true" : "false"}
                     onChange={handleChange}
                 >
-                        <FormControlLabel tabIndex={3} value="true" control={<Radio/>}
-                                          label={`Endorse ${endorseeName} (Allow submitting to category)`}/>
-                        <FormControlLabel tabIndex={4} value="false" control={<Radio/>}
-                                          label={`Deny ${endorseeName} (Vote of no confidence, do not allow submitting to category)`}/>
-                        <FormControlLabel tabIndex={5} value="undefined" control={<Radio/>}
-                                          label={"I don't know."}/>
+                    <FormControlLabel tabIndex={3} value="true" control={<Radio/>}
+                                      label={`Endorse ${endorseeName} (Allow submitting to category)`}/>
+                    <FormControlLabel tabIndex={4} value="false" control={<Radio/>}
+                                      label={`Deny ${endorseeName} (Vote of no confidence, do not allow submitting to category)`}/>
+                    <FormControlLabel tabIndex={5} value="undefined" control={<Radio/>}
+                                      label={"I don't know."}/>
 
                 </RadioGroup>
             </FormControl>
@@ -425,113 +425,64 @@ const EnterEndorsementCode = () => {
                                                      key={"knows_personally"} onChange={handleChange}/>}
                                   label={"Knows personally"}/>
             </Box>
-        <Box>
-            <Typography component="span"  >
-                <Typography fontWeight={"bold"}>{"Comment: "}</Typography>
-                <Typography >{" (Optional) Enter any comments on why you would or would not endorse "}{endorseeName}</Typography>
-            </Typography>
-            <TextField name="comment" id="comment" label="Comment" multiline
-                       variant="outlined" fullWidth onChange={handleChange}
-                       error={Boolean(errors.comment)} helperText={errors.comment}
-                       sx={{mt: 1}}
-                       minRows={4} tabIndex={8}
-            />
-        </Box>
+            <Box>
+                <Typography component="span">
+                    <Typography fontWeight={"bold"}>{"Comment: "}</Typography>
+                    <Typography>{" (Optional) Enter any comments on why you would or would not endorse "}{endorseeName}</Typography>
+                </Typography>
+                <TextField name="comment" id="comment" label="Comment" multiline
+                           variant="outlined" fullWidth onChange={handleChange}
+                           error={Boolean(errors.comment)} helperText={errors.comment}
+                           sx={{mt: 1}}
+                           minRows={4} tabIndex={8}
+                />
+            </Box>
 
-    <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Button type="submit" variant="contained" tabIndex={8} sx={{
-            backgroundColor: "#1976d2",
-            "&:hover": {
-                backgroundColor: "#1420c0"
-            }
-        }} disabled={inProgress}>
-            Cancel
-        </Button>
+            <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Button type="submit" variant="contained" tabIndex={8} sx={{
+                    backgroundColor: "#1976d2",
+                    "&:hover": {
+                        backgroundColor: "#1420c0"
+                    }
+                }} disabled={inProgress}>
+                    Cancel
+                </Button>
 
-        <Button type="submit" variant="contained" tabIndex={9} sx={{
-            backgroundColor: "#1976d2",
-            "&:hover": {
-                backgroundColor: "#1420c0"
-            }
-        }} disabled={invalidFormData || inProgress}>
-            Submit
-        </Button>
-    </Box>
+                <Button type="submit" variant="contained" tabIndex={9} sx={{
+                    backgroundColor: "#1976d2",
+                    "&:hover": {
+                        backgroundColor: "#1420c0"
+                    }
+                }} disabled={invalidFormData || inProgress}>
+                    Submit
+                </Button>
+            </Box>
         </>
     ) : null;
 
 
     return (
-        <Container maxWidth="md" sx={{mt: 2}}>
-            <Typography variant={"h5"}>Login to arXiv.org </Typography>
+        <Container maxWidth={"md"} sx={{mt: 2}}>
+            <Box display="flex" flexDirection={"column"} sx={{my: "2em"}}>
+                <Typography variant={"h1"}>
+                    Endorse a submitter
+                </Typography>
 
-            {/* Endorse Form */}
-            <Card elevation={0}
-                  sx={{
-                      p: 2,
-                      position: 'relative',
-                      paddingTop: '48px', // Add padding to push content down
-                      paddingBottom: '48px', // Add padding to push content down
-                      marginTop: '24px', // Add margin to shift the entire card (including shadow)
+                <CardWithTitle title={"Endorsement"}>
 
-                      '&::before': {
-                          content: '""',
-                          position: 'absolute',
-                          top: '16px', // Push the border down by 24px
-                          left: 0,
-                          right: 0,
-                          height: '90%',
-                          backgroundColor: 'transparent',
-                          borderTop: '2px solid #ddd', // Add the border
-                          borderLeft: '2px solid #ddd', // Add the border
-                          borderRight: '2px solid #ddd', // Add the border
-                          borderBottom: '2px solid #ddd', // Add the border
-                      },
-                  }}>
-
-                <Box
-                    sx={{
-                        display: 'flex',
-                        justifyContent: 'left',
-                        alignItems: 'left',
-                        width: '100%',
-                        position: 'relative',
-                        marginTop: '-44px', // Adjust this to move the title up
-                        marginBottom: '16px',
-                    }}
-                >
-                    <Typography
-                        variant="h5"
-                        fontWeight="normal"
-                        sx={{
-                            backgroundColor: 'white',
-                            px: 2,
-                            zIndex: 1, // Ensure the text is above the border
-                        }}
-                    >
-                        Endorsement
-                    </Typography>
-                </Box>
-                {endorsementLabel}
-                <CardContent>
+                    {endorsementLabel}
                     <Box component="form" sx={{display: "flex", flexDirection: "column", gap: 2}}
                          onSubmit={handleSubmit}>
                         <input name="user_id" id="user_id" type="text" disabled={true} value={formData.endorser_id}
                                hidden={true}/>
                         <Box sx={{display: "flex", flexDirection: "row", gap: 2, alignItems: "center"}}>
-                            <Box>
-                                <Typography fontWeight={"bold"}
-                                            sx={{mb: 1}}>{"Endorsement code"}</Typography>
-                                <Box>
-                                    <TextField tabIndex={1}
-                                               sx={{width: "10em"}}
-                                               name="endorsement_code" id="endorsement_code" label="Endorsement code"
-                                               variant="outlined" onChange={handleChange}
-                                               value={formData.endorsement_code}
-                                               error={Boolean(errors.endorsement_code)}
-                                               helperText={errors.endorsement_code}/>
-                                </Box>
-                            </Box>
+                            <TextField tabIndex={1}
+                                       sx={{width: "10em"}}
+                                       name="endorsement_code" id="endorsement_code" label="Endorsement code"
+                                       onChange={handleChange}
+                                       value={formData.endorsement_code}
+                                       error={Boolean(errors.endorsement_code)}
+                                       helperText={errors.endorsement_code}/>
                         </Box>
 
                         {endorseeInfo}
@@ -541,8 +492,9 @@ const EnterEndorsementCode = () => {
                         {endorsementSelection}
                         {choices}
                     </Box>
-                </CardContent>
-            </Card>
+                </CardWithTitle>
+            </Box>
+
         </Container>
     );
 };

@@ -7,7 +7,7 @@ import {
     GridRenderCellParams,
     GridSortModel, GridRowSelectionModel,
 } from '@mui/x-data-grid';
-import { GridFilterOperator } from "@mui/x-data-grid/models/gridFilterOperator";
+import {GridFilterOperator} from "@mui/x-data-grid/models/gridFilterOperator";
 import {RuntimeContext} from "../RuntimeContext.tsx";
 import {paths as adminApi} from "../types/admin-api";
 import UnlockIcon from "@mui/icons-material/LockOpen";
@@ -18,11 +18,11 @@ import NonAuthorIcon from "@mui/icons-material/SupervisedUserCircle";
 // import Container from '@mui/material/Container'
 import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
-import Paper from "@mui/material/Paper";
 import Box from "@mui/material/Box";
 // import Checkbox from "@mui/material/Checkbox";
 // import PaperPassword from "../bits/PaperPassword.tsx";
 import IconButton from "@mui/material/IconButton";
+import Container from "@mui/material/Container";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
@@ -40,6 +40,7 @@ import LinkCodeDataIcon from "../assets/images/pwc_logo.png";
 import DatagridPaginationMaker from "../bits/DataGridPagination.tsx";
 import Button from "@mui/material/Button";
 import {fetchPlus} from "../fetchPlus.ts";
+import CardWithTitle from "../bits/CardWithTitle.tsx";
 
 
 // type DocumentType = adminApi['/v1/documents/{id}']['get']['responses']['200']['content']['application/json'];
@@ -56,25 +57,25 @@ const PAGE_SIZES = [5, 20, 100];
 
 const ImageIcon = (image: string) => (
     <Box
-    component="span"
-    sx={{
-        width: 24,
-        height: 24,
-        display: "inline-block",
-        backgroundImage: `url(${image})`,
-        backgroundSize: "contain",
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "center",
-    }}
-/>);
+        component="span"
+        sx={{
+            width: 24,
+            height: 24,
+            display: "inline-block",
+            backgroundImage: `url(${image})`,
+            backgroundSize: "contain",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center",
+        }}
+    />);
 
 const menuActions = [
-    { label: "Replace", icon: ImageIcon(ReplaceIcon) },
-    { label: "Withdraw", icon: ImageIcon(WithdrawIcon) },
-    { label: "Cross list", icon: ImageIcon(CrossListIcon) },
-    { label: "Journal reference", icon: ImageIcon(JournalReferenceIcon) },
-    { label: "Link code & data", icon: ImageIcon(LinkCodeDataIcon) },
-    { label: "Paper Password", icon: <UnlockIcon />}
+    {label: "Replace", icon: ImageIcon(ReplaceIcon)},
+    {label: "Withdraw", icon: ImageIcon(WithdrawIcon)},
+    {label: "Cross list", icon: ImageIcon(CrossListIcon)},
+    {label: "Journal reference", icon: ImageIcon(JournalReferenceIcon)},
+    {label: "Link code & data", icon: ImageIcon(LinkCodeDataIcon)},
+    {label: "Paper Password", icon: <UnlockIcon/>}
 ];
 
 const ActionMenu: React.FC<{
@@ -82,7 +83,7 @@ const ActionMenu: React.FC<{
     anchorEl: null | HTMLElement;
     position: { mouseX: number, mouseY: number } | null;
     onClose: (rowId: string, action: string) => void;
-}> = ({ rowId, anchorEl, position, onClose }) => {
+}> = ({rowId, anchorEl, position, onClose}) => {
     const open = Boolean(anchorEl || position);
 
     const handleAction = (action: string) => {
@@ -96,14 +97,14 @@ const ActionMenu: React.FC<{
             open={open}
             onClose={onClose}
             anchorReference={position ? "anchorPosition" : "anchorEl"}
-            anchorPosition={position ? { top: position.mouseY, left: position.mouseX } : undefined}
+            anchorPosition={position ? {top: position.mouseY, left: position.mouseX} : undefined}
         >
             {menuActions.map((action) => (
                 <MenuItem key={action.label} onClick={() => handleAction(action.label)}>
                     <ListItemIcon>
                         {action.icon}
                     </ListItemIcon>
-                    <ListItemText primary={action.label} />
+                    <ListItemText primary={action.label}/>
                 </MenuItem>
             ))}
         </Menu>
@@ -116,7 +117,7 @@ const dateFilterOperators: GridFilterOperator[] = [
         value: "between",
         getApplyFilterFn: (filterItem) => {
             if (!filterItem.value || filterItem.value.length !== 2) return null;
-            return ({ value }) => {
+            return ({value}) => {
                 if (!value) return false;
                 const [startDate, endDate] = filterItem.value;
                 const rowDate = new Date(value);
@@ -128,7 +129,7 @@ const dateFilterOperators: GridFilterOperator[] = [
 ];
 
 const Author: React.FC<{ yes: boolean }> = ({yes}) => {
-    return yes ? <AuthorIcon sx={{scale: "1.5"}} /> : <NonAuthorIcon sx={{scale: "1.5"}} />;
+    return yes ? <AuthorIcon sx={{scale: "1.5"}}/> : <NonAuthorIcon sx={{scale: "1.5"}}/>;
 };
 
 const YourDocuments: React.FC = () => {
@@ -149,10 +150,10 @@ const YourDocuments: React.FC = () => {
     );
     const [sortModel, setSortModel] = useState<GridSortModel>([]);
 
-/*
-    const [totalSubmissions, setTotalSubmissions] = useState<number>(0);
-    const [allPaperCount, setAllPaperCount] = useState<number>(0);
- */
+    /*
+        const [totalSubmissions, setTotalSubmissions] = useState<number>(0);
+        const [allPaperCount, setAllPaperCount] = useState<number>(0);
+     */
 
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
     const [menuPosition, setMenuPosition] = useState<{ mouseX: number, mouseY: number } | null>(null);
@@ -216,38 +217,38 @@ const YourDocuments: React.FC = () => {
 
     // Pagination state
 
-/*
-    useEffect(() => {
-        if (!runtimeProps.currentUser)
-            return;
-
-        const query = new URLSearchParams();
-        query.append("id", papers.map((paper) => paper.document_id));
-
-        try {
-            setIsLoading(true);
-            const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL  + `/documents/?${query.toString()}`);
-            if (!response.ok) {
-                if (response.status >= 500) {
-                    showNotification("Data service is not responding", "warning");
-                }
+    /*
+        useEffect(() => {
+            if (!runtimeProps.currentUser)
                 return;
+
+            const query = new URLSearchParams();
+            query.append("id", papers.map((paper) => paper.document_id));
+
+            try {
+                setIsLoading(true);
+                const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL  + `/documents/?${query.toString()}`);
+                if (!response.ok) {
+                    if (response.status >= 500) {
+                        showNotification("Data service is not responding", "warning");
+                    }
+                    return;
+                }
+                const docs: DocumentType[] = await response.json();
+                setDocuments(
+                    docs.reduce((result, doc) => {
+                        result[String(doc.id)] = doc;
+                        return result;
+                    }, {} as { [key: string]: DocumentType })
+                );
+            } catch (err) {
+                console.error("Error fetching documents:", err);
             }
-            const docs: DocumentType[] = await response.json();
-            setDocuments(
-                docs.reduce((result, doc) => {
-                    result[String(doc.id)] = doc;
-                    return result;
-                }, {} as { [key: string]: DocumentType })
-            );
-        } catch (err) {
-            console.error("Error fetching documents:", err);
-        }
-        finally {
-            setIsLoading(false);
-        }
-    }, [papers]);
-*/
+            finally {
+                setIsLoading(false);
+            }
+        }, [papers]);
+    */
 
     const fetchMyPapers = useCallback(async () => {
         if (!runtimeProps.currentUser)
@@ -280,7 +281,7 @@ const YourDocuments: React.FC = () => {
             });
 
             setIsLoading(true);
-            const response1 = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL  + `/paper_owners/?${query.toString()}`);
+            const response1 = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/paper_owners/?${query.toString()}`);
             if (!response1.ok) {
                 if (response1.status >= 500) {
                     showNotification("Data service is not responding", "warning");
@@ -296,8 +297,7 @@ const YourDocuments: React.FC = () => {
             setPapers(myPapers);
         } catch (err) {
             console.error("Error fetching documents:", err);
-        }
-        finally {
+        } finally {
             setIsLoading(false);
         }
     }, [paginationModel, filterModel, sortModel, runtimeProps.currentUser]);
@@ -334,31 +334,28 @@ const YourDocuments: React.FC = () => {
             async function showPaperPassword() {
                 try {
                     setIsLoading(true);
-                    const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + "/paper-pw/" + rowId );
+                    const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + "/paper-pw/" + rowId);
                     if (response.ok) {
                         const body: PaperPasswordResponseType = await response.json();
                         showMessageDialog(body.password_enc, "Paper Password");
-                    }
-                    else {
+                    } else {
                         const body = await response.json();
                         showMessageDialog(body.detail, "Paper Password Not Found");
                     }
-                }
-                catch (error) {
+                } catch (error) {
                     console.error("Error fetching user:", error);
-                }
-                finally {
+                } finally {
                     setIsLoading(false);
                 }
             }
+
             showPaperPassword();
-        }
-        else if (action !== "") {
+        } else if (action !== "") {
             showMessageDialog(`Action: ${action} of document ID ${rowId}`, `${action} not implemented yet`);
         }
     };
 
-    const updateAuthored = useCallback( async (authored: boolean) => {
+    const updateAuthored = useCallback(async (authored: boolean) => {
         if (!runtimeProps?.currentUser)
             return;
         const docIds: string[] = selectedRows.map((row) => String(row));
@@ -375,8 +372,7 @@ const YourDocuments: React.FC = () => {
             });
         if (response.ok) {
             await fetchMyPapers();
-        }
-        else {
+        } else {
             console.log(await response.text());
         }
     }, [selectedRows, runtimeProps?.currentUser, papers, runtimeProps.ADMIN_API_BACKEND_URL]);
@@ -388,7 +384,7 @@ const YourDocuments: React.FC = () => {
             headerName: 'Author',
             width: 40,
             sortable: true,
-            renderCell: (cell: GridRenderCellParams) => <Author yes={cell.value} />
+            renderCell: (cell: GridRenderCellParams) => <Author yes={cell.value}/>
         },
         {
             field: 'document.paper_id',
@@ -432,9 +428,9 @@ const YourDocuments: React.FC = () => {
             headerName: 'Actions',
             width: 60,
             sortable: false,
-            renderCell:  (params) => (
+            renderCell: (params) => (
                 <IconButton onClick={(event) => handleMenuOpen(event, params.row.id)} size="small">
-                    <MoreVertIcon />
+                    <MoreVertIcon/>
                 </IconButton>
             )
         },
@@ -469,64 +465,70 @@ const YourDocuments: React.FC = () => {
 
 
     return (
-
-        <Paper elevation={3} sx={{p: 3, mt: 4}}>
-            <Box display="flex" gap={2} justifyContent="flex-start" mb={1}>
-                <Typography variant="h5" gutterBottom>
-                    Articles You Own
+        <Container maxWidth={"md"}>
+            <Box display="flex" flexDirection={"column"} sx={{my: "2em"}}>
+                <Typography variant={"h1"}>
+                    Manage Ownership
                 </Typography>
-                <Box flexGrow={1}/>
-                <Button id="authored_all" name="authored_all" variant="outlined" disabled={selectedRows.length === 0}
-                        onClick={() => updateAuthored(true)} startIcon={<AuthorIcon />}
-                >
-                    I'm an author.
-                </Button>
-                <Button id="authored_none" name="authored_none" variant="outlined" disabled={selectedRows.length === 0}
-                        onClick={() => updateAuthored(false)}  startIcon={<NonAuthorIcon />}
-                >
-                    I am not an author.
-                </Button>
+
+                <CardWithTitle title={"Articles You Own"}>
+                    <Box display={"flex"} flexDirection={"row"} sx={{gap: 1, m: 1}}>
+                        <Box flexGrow={1}/>
+                        <Button id="authored_all" name="authored_all" variant="outlined"
+                                disabled={selectedRows.length === 0}
+                                onClick={() => updateAuthored(true)} startIcon={<AuthorIcon/>}
+                        >
+                            I'm an author.
+                        </Button>
+                        <Button id="authored_none" name="authored_none" variant="outlined"
+                                disabled={selectedRows.length === 0}
+                                onClick={() => updateAuthored(false)} startIcon={<NonAuthorIcon/>}
+                        >
+                            I am not an author.
+                        </Button>
+                    </Box>
+
+                    <Box display="flex" gap={0} mb={0}>
+
+                        <DataGrid<PaperOwnerType>
+                            loading={isLoading}
+                            filterModel={filterModel}
+                            filterMode="server"
+                            filterDebounceMs={1000}
+                            onFilterModelChange={setFilterModel}
+
+                            initialState={{pagination: {paginationModel: {pageSize: PAGE_SIZES[0]}}}}
+                            pageSizeOptions={PAGE_SIZES}
+                            paginationMode="server"
+                            onPaginationModelChange={setPaginationModel}
+                            sortingMode="server"
+                            onSortModelChange={setSortModel}
+
+                            columns={columns}
+                            rows={papers}
+                            rowCount={paperCount}
+
+                            checkboxSelection
+                            disableRowSelectionOnClick
+                            onRowSelectionModelChange={(newSelection) => setSelectedRows(newSelection)}
+
+                            slots={{
+                                pagination: CustomPagination
+                            }}
+                        />
+
+                        {selectedRowId !== null && (
+                            <ActionMenu
+                                rowId={selectedRowId}
+                                anchorEl={menuAnchor}
+                                position={menuPosition}
+                                onClose={handleMenuClose}
+                            />
+                        )}
+                    </Box>
+                </CardWithTitle>
             </Box>
-
-            <Box display="flex" gap={0} mb={0}>
-
-                <DataGrid<PaperOwnerType>
-                    loading={isLoading}
-                    filterModel={filterModel}
-                    filterMode="server"
-                    filterDebounceMs={1000}
-                    onFilterModelChange={setFilterModel}
-
-                    initialState={{pagination: {paginationModel: {pageSize: PAGE_SIZES[0]}}}}
-                    pageSizeOptions={PAGE_SIZES}
-                    paginationMode="server"
-                    onPaginationModelChange={setPaginationModel}
-                    sortingMode="server"
-                    onSortModelChange={setSortModel}
-
-                    columns={columns}
-                    rows={papers}
-                    rowCount={paperCount}
-
-                    checkboxSelection
-                    disableRowSelectionOnClick
-                    onRowSelectionModelChange={(newSelection) => setSelectedRows(newSelection)}
-
-                    slots={{
-                        pagination: CustomPagination
-                    }}
-                />
-
-                {selectedRowId !== null && (
-                    <ActionMenu
-                        rowId={selectedRowId}
-                        anchorEl={menuAnchor}
-                        position={menuPosition}
-                        onClose={handleMenuClose}
-                    />
-                )}
-            </Box>
-        </Paper>
+        </Container>
     );
 }
 

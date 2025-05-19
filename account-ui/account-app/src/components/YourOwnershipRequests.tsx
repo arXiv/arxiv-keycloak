@@ -12,8 +12,6 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import UndoIcon from "@mui/icons-material/Undo";
 // import Container from '@mui/material/Container'
 import RefreshIcon from '@mui/icons-material/Refresh';
-import Typography from "@mui/material/Typography";
-import Paper from "@mui/material/Paper";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 // import Checkbox from "@mui/material/Checkbox";
@@ -23,6 +21,7 @@ import DatagridPaginationMaker from "../bits/DataGridPagination.tsx";
 import {fetchPlus} from "../fetchPlus.ts";
 import {utcToNnewYorkDatePrinter} from "../bits/printer.ts";
 import IconButton from '@mui/material/IconButton';
+import CardWithTitle from "../bits/CardWithTitle.tsx";
 
 type OwnershipRequestType = adminApi['/v1/ownership_requests/{id}']['get']['responses']['200']['content']['application/json'];
 type OwnershipRequestsType = adminApi['/v1/ownership_requests/']['get']['responses']['200']['content']['application/json'];
@@ -157,11 +156,8 @@ const YourOwnershipRequests: React.FC<{ runtimeProps: RuntimeProps }> = ({runtim
 
 
     return (
-        <Paper elevation={3} sx={{p: 3, mt: 4}}>
+        <CardWithTitle title={"Your Ownership Requests"}>
             <Box display="flex" gap={2} justifyContent="flex-start" mb={1}>
-                <Typography variant="h5" gutterBottom>
-                    Your Ownership Requests
-                </Typography>
                 <Box flexGrow={1}/>
                 <IconButton onClick={fetchOwnershipRequests} title="Refresh" disabled={isLoading} >
                     <RefreshIcon />
@@ -214,7 +210,7 @@ const YourOwnershipRequests: React.FC<{ runtimeProps: RuntimeProps }> = ({runtim
                     slots={{pagination: CustomPagination}}
                 />
             </Box>
-        </Paper>
+        </CardWithTitle>
     );
 }
 
