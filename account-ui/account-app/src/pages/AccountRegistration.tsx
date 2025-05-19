@@ -27,10 +27,9 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 
 // import {useTheme} from "@mui/material";
 import TextField from "@mui/material/TextField";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import {Divider, ListItemText} from "@mui/material";
+import Divider from "@mui/material/Divider";
 import PasswordWrapper from "../bits/PasswordWrapper.tsx";
+import PasswordRequirements from "../bits/PasswordRequirements.tsx";
 /* import IconButton from '@mui/material/IconButton';
 import Collapse from '@mui/material/Collapse';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -352,11 +351,6 @@ const AccountRegistration = () => {
     );
     const invalidFormData = hasErrors || formData.username.length < 2 || formData.password.length < 10 || formData.password !== secondPassword;
 
-    const passwordRequirements = [
-        "8 characters or more in length",
-        "May contain uppercase letters, lowercase letters, numbers and special characters",
-        "Must contain at least one special character"
-    ];
 
     return (
         <Container maxWidth="md" sx={{my: "4em"}} >
@@ -435,20 +429,7 @@ const AccountRegistration = () => {
                                 />
                             </PasswordWrapper>
                         </Box>
-                        <Typography sx={{mt: 2}}>
-                            Password requirements
-                                <List component="ol" sx={{ listStyleType: 'decimal', pl: 3, py: 0 }}>
-                                    {
-                                        passwordRequirements.map((paragraph) => (
-                                            <ListItem component="li" sx={{ display: 'list-item', pl: 0, py: 0 }} >
-                                                <ListItemText>
-                                                    {paragraph}
-                                                </ListItemText>
-                                            </ListItem>
-                                        ))
-                                    }
-                                </List>
-                        </Typography>
+                        <PasswordRequirements />
 
                     </Box>
                 </CardWithTitle>

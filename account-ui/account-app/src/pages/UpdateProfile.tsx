@@ -1,9 +1,7 @@
 import Box from "@mui/material/Box";
-import Button  from "@mui/material/Button";
+import Button from "@mui/material/Button";
 // import IconButton from "@mui/material/IconButton";
-import { useNotification } from "../NotificationContext";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
+import {useNotification} from "../NotificationContext";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
@@ -18,6 +16,7 @@ import {paths} from "../types/aaa-api.ts";
 import {emailValidator} from "../bits/validators.ts";
 import {fetchPlus} from "../fetchPlus.ts";
 import {useNavigate} from "react-router-dom";
+import CardWithTitle from "../bits/CardWithTitle.tsx";
 
 type AccountProfileRequest = paths["/account/profile/{user_id}"]['get']['responses']['200']['content']['application/json'];
 type UpdateProfileRequest = paths["/account/profile/"]['put']['requestBody']['content']['application/json'];
@@ -33,13 +32,13 @@ User registration and profile update shares a lot of similarity. NEEDS REFACTOR.
 const UpdateProfile = () => {
     const {showNotification, showMessageDialog} = useNotification();
     const runtimeProps = useContext(RuntimeContext);
-    const [user, setUser] = useState<typeof runtimeProps.currentUser>( runtimeProps.currentUser) ;
+    const [user, setUser] = useState<typeof runtimeProps.currentUser>(runtimeProps.currentUser);
     const navigate = useNavigate();
 
     // State to store input values
     const [formData, setFormData] = useState<UpdateProfileRequest>({
         id: user?.id || "",
-        username: user?.username ||  "",
+        username: user?.username || "",
         email: user?.email || "",
         first_name: user?.first_name || "",
         last_name: user?.last_name || "",
@@ -49,11 +48,14 @@ const UpdateProfile = () => {
         career_status: user?.career_status || "Unknown",
         groups: user?.groups || [],
         url: user?.url || "",
-        default_category: {archive: user?.default_category?.archive || "", subject_class: user?.default_category?.subject_class || ""},
+        default_category: {
+            archive: user?.default_category?.archive || "",
+            subject_class: user?.default_category?.subject_class || ""
+        },
         oidc_id: user?.oidc_id || "",
         email_verified: user?.email_verified || null,
         joined_date: user?.joined_date || null,
-        scopes: user?.scopes ||null,
+        scopes: user?.scopes || null,
     });
 
     const [errors, setErrors] = useState<{
@@ -99,45 +101,43 @@ const UpdateProfile = () => {
                         url: profile.url,
                     }
                 ));
-            }
-            catch (e) {
+            } catch (e) {
 
             }
         }
+
         doFetchCurrentUser();
     }, [])
 
     const setSelectedGroups = (groups: CategoryGroupType[]) => {
         setFormData({...formData, groups: groups});
         if (groups.length > 0) {
-            setErrors({ ...errors, groups: "" });
-        }
-        else {
-            setErrors({ ...errors, groups: "Please select at least one group" });
+            setErrors({...errors, groups: ""});
+        } else {
+            setErrors({...errors, groups: "Please select at least one group"});
         }
     }
 
     const validators: Record<string, (value: string) => void> = {
         "email": (value: string) => {
             if (!emailValidator(value)) {
-                setErrors((prev) => ({ ...prev, email: "Invalid email format" }));
+                setErrors((prev) => ({...prev, email: "Invalid email format"}));
             } else {
-                setErrors((prev) => ({ ...prev, email: "" }));
+                setErrors((prev) => ({...prev, email: ""}));
             }
         },
         "last_name": (value: string) => {
             if (value) {
-                setErrors((prev) => ({ ...prev, last_name: "" }));
-            }
-            else {
-                setErrors((prev) => ({ ...prev, last_name: "Last name is required" }));
+                setErrors((prev) => ({...prev, last_name: ""}));
+            } else {
+                setErrors((prev) => ({...prev, last_name: "Last name is required"}));
             }
         }
     }
 
     // Handle text field changes
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
+        const {name, value} = e.target;
         console.log("change: " + name + " = " + value)
 
         setFormData({
@@ -166,7 +166,10 @@ const UpdateProfile = () => {
     const setDefaultCategory = (cat: SelectedCategoryType) => {
         if (cat) {
             console.log("sdc: " + JSON.stringify(cat));
-            setFormData({...formData, default_category: {archive: cat.archive, subject_class: cat.subject_class || ""}});
+            setFormData({
+                ...formData,
+                default_category: {archive: cat.archive, subject_class: cat.subject_class || ""}
+            });
         }
     }
 
@@ -190,19 +193,15 @@ const UpdateProfile = () => {
                 showNotification("Updated successfully", "success");
                 setUser(data);
                 runtimeProps.setCurrentUser(data);
-            }
-            else if (response.status === 400) {
+            } else if (response.status === 400) {
                 const message: RegistrationErrorReply = await response.json();
                 showMessageDialog(message.message, "Profile update Unsuccessful");
-            }
-            else if (response.status === 401) {
+            } else if (response.status === 401) {
                 showMessageDialog("You are not logged in, or the session has expired.", "Please log-in");
-            }
-            else if (response.status === 422) {
+            } else if (response.status === 422) {
                 const data = await response.json();
                 showMessageDialog(data.detail, "Failed to update your profile");
-            }
-            else {
+            } else {
                 const message = await response.text();
                 showMessageDialog(message, "Failed to update your profile");
             }
@@ -210,7 +209,7 @@ const UpdateProfile = () => {
             runtimeProps.updateCurrentUser();
         } catch (error) {
             console.error("Error:", error);
-            showMessageDialog(JSON.stringify(error) , "Profile update was unsuccessful");
+            showMessageDialog(JSON.stringify(error), "Profile update was unsuccessful");
             runtimeProps.updateCurrentUser();
         }
     };
@@ -220,190 +219,146 @@ const UpdateProfile = () => {
     );
 
     return (
-        <Container maxWidth="md" sx={{ mt: 3 }}>
+        <Container maxWidth="md" sx={{my: "4em"}}>
             {/* Registration Form */}
-            <Card elevation={0}
-                  sx={{
-                      p: 1,
-                      position: 'relative',
-                      paddingTop: '48px', // Add padding to push content down
-                      marginTop: '24px', // Add margin to shift the entire card (including shadow)
-
-                      '&::before': {
-                          content: '""',
-                          position: 'absolute',
-                          top: '16px', // Push the border down by 24px
-                          left: 0,
-                          right: 0,
-                          height: '95%',
-                          backgroundColor: 'transparent',
-                          border: '2px solid #ddd', // Add the border
-                      },
-                  }}>
+            <Typography variant="h1" sx={{mb: "2em"}}>
+                Edit Your User Information
+            </Typography>
+            <CardWithTitle title="Update">
 
                 <Box
-                    sx={{
-                        display: 'flex',
-                        justifyContent: 'left',
-                        alignItems: 'left',
-                        width: '100%',
-                        position: 'relative',
-                        marginTop: '-44px', // Adjust this to move the title up
-                        marginBottom: '16px',
-                    }}
+                    component="form"
+                    onSubmit={handleSubmit}
+                    sx={{display: "flex", flexDirection: "column", gap: 1, p: 1}}
                 >
-                    <Typography
-                        variant="h5"
-                        fontWeight="normal"
-                        sx={{
-                            backgroundColor: 'white',
-                            px: 2,
-                            zIndex: 1, // Ensure the text is above the border
-                        }}
-                    >
-                        Edit Your User Information
+                    <Typography variant={"body2"} fontWeight={"bold"}>
+                        Fields with * are required.
                     </Typography>
-                </Box>
 
-                <CardContent sx={{py: 0}} >
-                    <Box
-                        component="form"
-                        onSubmit={handleSubmit}
-                        sx={{ display: "flex", flexDirection: "column", gap: 1 }}
-                    >
-                        <Typography variant={"body2"} fontWeight={"bold"} >
-                            Fields with * are required.
+                    {
+                        /*
+                    <Box >
+                        <Typography fontWeight={"bold"}>{"Email: "}</Typography>
+                        <Typography sx={{paddingLeft: 3, mb: 1}}>{"You "}
+                            <Typography component="span" fontWeight="bold">{"must"}</Typography>
+                            {" able to receive mail at this address to register. We take "}
+                            <Link href={runtimeProps.URLS.emailProtection} target="_blank" rel="noopener" underline="hover">strong measure</Link>
+                            {" to protect your email address from viruses and spam. Do not register with an e-mail address that belongs to someone else: if we discover that you've done so, we will suspend your account."}
                         </Typography>
+                        <TextField label="Email *" sx={{ flex: 2 }}
+                                   error={Boolean(errors.email)}
+                                   helperText={errors.email}
+                                   name="email" value={formData.email} variant="outlined" fullWidth  onChange={handleChange} />
+                    </Box>
 
-                        {
-                            /*
-                        <Box >
-                            <Typography fontWeight={"bold"}>{"Email: "}</Typography>
-                            <Typography sx={{paddingLeft: 3, mb: 1}}>{"You "}
-                                <Typography component="span" fontWeight="bold">{"must"}</Typography>
-                                {" able to receive mail at this address to register. We take "}
-                                <Link href={runtimeProps.URLS.emailProtection} target="_blank" rel="noopener" underline="hover">strong measure</Link>
-                                {" to protect your email address from viruses and spam. Do not register with an e-mail address that belongs to someone else: if we discover that you've done so, we will suspend your account."}
+                    <Box>
+                        <Typography fontWeight={"bold"} sx={{mb: 1}}>{"User name: "}</Typography>
+                        <Box sx={{ display: "flex", gap: 2 }}>
+                            <TextField label="Username *" sx={{ flex: 1 }}
+                                       error={Boolean(errors.username)}
+                                       helperText={errors.username}
+                                       name="username" value={formData.username} variant="outlined" fullWidth  onChange={handleChange} />
+                        </Box>
+                    </Box>
+
+                         */
+                    }
+                    <Box sx={{display: "flex", gap: 2}}>
+                        <Typography variant={"body2"}>
+                            Please supply your correct name and affiliation.
+                            It is a violation of our policies to misrepresent your identity or institutional
+                            affiliation. Claimed affiliation should be current in the conventional sense: e.g., physical
+                            presence, funding, e-mail address, mention on institutional web pages, etc.
+                            Misrepresentation of identity or affiliation, for any reason, is possible grounds for
+                            immediate and permanent suspension.
+                            <Typography variant={"inherit"} sx={{fontWeight: "bold"}}>
+                                Names and Organization fields accept pidgin TeX (\'o) for foreign characters.
                             </Typography>
-                            <TextField label="Email *" sx={{ flex: 2 }}
-                                       error={Boolean(errors.email)}
-                                       helperText={errors.email}
-                                       name="email" value={formData.email} variant="outlined" fullWidth  onChange={handleChange} />
-                        </Box>
-
-                        <Box>
-                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"User name: "}</Typography>
-                            <Box sx={{ display: "flex", gap: 2 }}>
-                                <TextField label="Username *" sx={{ flex: 1 }}
-                                           error={Boolean(errors.username)}
-                                           helperText={errors.username}
-                                           name="username" value={formData.username} variant="outlined" fullWidth  onChange={handleChange} />
-                            </Box>
-                        </Box>
-
-                             */
-                        }
-                        <Box  sx={{ display: "flex", gap: 2 }}>
-                            <Typography variant={"body2"}>
-                                Please supply your correct name and affiliation.
-                                It is a violation of our policies to misrepresent your identity or institutional affiliation. Claimed affiliation should be current in the conventional sense: e.g., physical presence, funding, e-mail address, mention on institutional web pages, etc. Misrepresentation of identity or affiliation, for any reason, is possible grounds for immediate and permanent suspension.
-                                <Typography variant={"inherit"} sx={{fontWeight: "bold"}}>
-                                    Names and Organization fields accept pidgin TeX (\'o) for foreign characters.
-                                </Typography>
-                            </Typography>
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"First, Last and Sur name:  "}</Typography>
-                            <Box sx={{ display: "flex", gap: 2 }}>
-                                <TextField
-                                    label="First name *"
-                                    error={Boolean(errors.first_name)}
-                                    helperText={errors.first_name}
-                                    name="first_name"
-                                    value={formData.first_name}
-                                    variant="outlined"
-                                    fullWidth
-                                    onChange={handleChange}
-                                    sx={{ flex: 3 }} // Ensures both fields take equal width
-                                />
-                                <TextField
-                                    label="Last name *"
-                                    error={Boolean(errors.last_name)}
-                                    helperText={errors.last_name}
-                                    name="last_name"
-                                    value={formData.last_name}
-                                    variant="outlined"
-                                    fullWidth
-                                    onChange={handleChange}
-                                    sx={{ flex: 3 }} // Ensures both fields take equal width
-                                />
-                                <TextField
-                                    label="Sur name"
-                                    error={Boolean(errors.suffix_name)}
-                                    helperText={errors.suffix_name}
-                                    name="suffix_name"
-                                    value={formData.suffix_name}
-                                    variant="outlined"
-                                    fullWidth
-                                    onChange={handleChange}
-                                    sx={{ flex: 1 }} // Ensures both fields take equal width
-                                />
-                            </Box>
-                        </Box>
-
-                        <Box>
-                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Organization, Country and Career Status:  "}</Typography>
-                            <Box sx={{ display: "flex", gap: 2 }}>
-                                <TextField
-                                    label="Organization *"
-                                    error={Boolean(errors.affiliation)}
-                                    helperText={errors.affiliation}
-                                    name="affiliation"
-                                    value={formData.affiliation}
-                                    variant="outlined"
-                                    fullWidth
-                                    onChange={handleChange}
-                                    sx={{ flex: 3 }} // Ensures both fields take equal width
-                                />
-                                <CountrySelector onSelect={setCountry} selectedCountry={formData.country || ""}/>
-                                <CareerStatusSelect onSelect={setCarrierStatus} careereStatus={formData.career_status}/>
-                            </Box>
-                        </Box>
-                        <CategoryGroupSelection selectedGroups={formData.groups as unknown as CategoryGroupType[]}
-                                                setSelectedGroups={setSelectedGroups} />
-                        <Box>
-                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Your default category (required):"}</Typography>
-                            <CategoryChooser onSelect={setDefaultCategory} selectedCategory={formData.default_category} />
-                        </Box>
-                        <Box>
-                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Home page URL:  "}</Typography>
+                        </Typography>
+                    </Box>
+                    <Box>
+                        <Box sx={{display: "flex", gap: 2}}>
                             <TextField
-                                label="Your Homepage URL"
-                                name="url"
-                                value={formData.url}
-                                variant="outlined"
+                                label="First name *"
+                                error={Boolean(errors.first_name)}
+                                helperText={errors.first_name}
+                                name="first_name"
+                                value={formData.first_name}
                                 fullWidth
                                 onChange={handleChange}
-                                sx={{ flex: 1 }}
+                                sx={{flex: 3}} // Ensures both fields take equal width
+                            />
+                            <TextField
+                                label="Last name *"
+                                error={Boolean(errors.last_name)}
+                                helperText={errors.last_name}
+                                name="last_name"
+                                value={formData.last_name}
+                                fullWidth
+                                onChange={handleChange}
+                                sx={{flex: 3}} // Ensures both fields take equal width
+                            />
+                            <TextField
+                                label="Sur name"
+                                error={Boolean(errors.suffix_name)}
+                                helperText={errors.suffix_name}
+                                name="suffix_name"
+                                value={formData.suffix_name}
+                                fullWidth
+                                onChange={handleChange}
+                                sx={{flex: 1}} // Ensures both fields take equal width
                             />
                         </Box>
-                        <Box display="flex" justifyContent="space-between" alignItems="center" sx={{p:1}}>
-                            <Box sx={{flex: 1}} />
-                            <Button variant="outlined" onClick={() => navigate(runtimeProps.URLS.userAccountInfo)}>
-                                Cancel
-                            </Button>
-                            <Box sx={{width: "16px"}} />
-                            <Button type="submit" variant="contained" disabled={invalidFormData} sx={{
-                                backgroundColor: "#1976d2",
-                                "&:hover": { backgroundColor: "#1420c0"
-                                } }} >
-                                Submit
-                            </Button>
-                        </Box>
-
                     </Box>
-                </CardContent>
-            </Card>
+
+                    <Box>
+                        <Box sx={{display: "flex", gap: 2}}>
+                            <TextField
+                                label="Organization *"
+                                error={Boolean(errors.affiliation)}
+                                helperText={errors.affiliation}
+                                name="affiliation"
+                                value={formData.affiliation}
+                                fullWidth
+                                onChange={handleChange}
+                                sx={{flex: 2}} // Ensures both fields take equal width
+                            />
+                            <CountrySelector onSelect={setCountry} selectedCountry={formData.country || ""}/>
+                            <CareerStatusSelect onSelect={setCarrierStatus} careereStatus={formData.career_status}/>
+                        </Box>
+                    </Box>
+                    <CategoryGroupSelection selectedGroups={formData.groups as unknown as CategoryGroupType[]}
+                                            setSelectedGroups={setSelectedGroups}/>
+                    <Box>
+                        <CategoryChooser onSelect={setDefaultCategory} selectedCategory={formData.default_category}/>
+                    </Box>
+                    <Box>
+                        <TextField
+                            label="Homepage URL"
+                            name="url"
+                            value={formData.url}
+                            fullWidth
+                            onChange={handleChange}
+                            sx={{flex: 1}}
+                        />
+                    </Box>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" sx={{p: 1}}>
+                        <Box sx={{flex: 1}}/>
+                        <Button variant="outlined" onClick={() => navigate(runtimeProps.URLS.userAccountInfo)}>
+                            Cancel
+                        </Button>
+                        <Box sx={{width: "16px"}}/>
+                        <Button type="submit" variant="contained" disabled={invalidFormData} sx={{
+                            backgroundColor: "#1976d2",
+                            "&:hover": {
+                                backgroundColor: "#1420c0"
+                            }
+                        }}>
+                            Submit
+                        </Button>
+                    </Box>
+                </Box>
+            </CardWithTitle>
         </Container>
     );
 };

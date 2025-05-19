@@ -14,13 +14,13 @@ import UndoIcon from "@mui/icons-material/Undo";
 // import Container from '@mui/material/Container'
 import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
-import Paper from "@mui/material/Paper";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 // import Checkbox from "@mui/material/Checkbox";
 import EditIcon from "@mui/icons-material/Edit";
 import DatagridPaginationMaker from "../bits/DataGridPagination.tsx";
 import {fetchPlus} from "../fetchPlus.ts";
+import CardWithTitle from "../bits/CardWithTitle.tsx";
 
 
 type SubmissionType = adminApi['/v1/submissions/{id}']['get']['responses']['200']['content']['application/json'];
@@ -206,10 +206,10 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps, vetoed: boolean }>
     */
 
     return (
-        <Paper elevation={3} sx={{p: 3, mt: 4}}>
+        <CardWithTitle title={"Your Submissions"} >
             <Box display="flex" gap={2} justifyContent="flex-start" mb={1}>
                 <Typography variant="h5" gutterBottom>
-                    Your Submissions
+
                 </Typography>
                 <Box flexGrow={1}/>
                 <Button
@@ -289,7 +289,7 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps, vetoed: boolean }>
                     Start New Submission
                 </Button>
             </Box>
-        </Paper>
+        </CardWithTitle>
     );
 }
 

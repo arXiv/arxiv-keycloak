@@ -2,7 +2,6 @@ import React, {useCallback, useContext, useEffect, useState} from "react";
 import Container from '@mui/material/Container'
 import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
-import Paper from "@mui/material/Paper";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 // import Checkbox from "@mui/material/Checkbox";
@@ -35,6 +34,7 @@ import EndorsedCategories from "../bits/EndorsedCategories.tsx";
 import {useNavigate} from "react-router-dom";
 import CategoryGroup from "../bits/CategoryGroup.tsx";
 import CountryName from "../bits/CountryName.tsx";
+import CardWithTitle from "../bits/CardWithTitle.tsx";
 
 type EndorsementListType = adminApi["/v1/endorsements/"]["get"]['responses']["200"]['content']['application/json'];
 // type DemographicType = adminApi['/v1/demographics/{id}']['get']['responses']['200']['content']['application/json'];
@@ -246,11 +246,10 @@ const UserAccountInfo = () => {
     );
 
     return (
-        <Container maxWidth={"md"} sx={{mt: 0}}>
-            <Paper elevation={3} sx={{p: 3}}>
-                <Typography variant="h4" gutterBottom>
-                    Your arXiv.org Account
-                </Typography>
+        <Container maxWidth={"md"} sx={{my: "4em", gap: 2}}>
+            <Box display={"flex"} flexDirection={"column"} sx={{gap: "2em"}} >
+            <Typography variant={"h1"} >Welcome to arXiv</Typography>
+            <CardWithTitle title="Your Account Information">
                 <Box sx={{
                     backgroundColor: "#f2f2f8",
                     textAlign: "left",
@@ -306,11 +305,12 @@ const UserAccountInfo = () => {
                         <MathJaxToggle/>
                     </FormGroup>
                 </Box>
-            </Paper>
+            </CardWithTitle>
 
             <YourSubmissions runtimeProps={runtimeProps} vetoed={vetoed}/>
 
             <PreflightChecklist runtimeProps={runtimeProps}/>
+            </Box>
         </Container>
     );
 };
