@@ -9,7 +9,6 @@ import {
 } from '@mui/x-data-grid';
 import {GridFilterOperator} from "@mui/x-data-grid/models/gridFilterOperator";
 import {RuntimeContext} from "../RuntimeContext.tsx";
-import {paths as adminApi} from "../types/admin-api";
 import UnlockIcon from "@mui/icons-material/LockOpen";
 import AuthorIcon from "@mui/icons-material/Attribution";
 // import NonAuthorIcon from "@mui/icons-material/LocalShipping";
@@ -41,6 +40,7 @@ import DatagridPaginationMaker from "../bits/DataGridPagination.tsx";
 import Button from "@mui/material/Button";
 import {fetchPlus} from "../fetchPlus.ts";
 import CardWithTitle from "../bits/CardWithTitle.tsx";
+import {paths as adminApi} from "../types/admin-api";
 
 
 // type DocumentType = adminApi['/v1/documents/{id}']['get']['responses']['200']['content']['application/json'];
@@ -70,12 +70,12 @@ const ImageIcon = (image: string) => (
     />);
 
 const menuActions = [
-    {label: "Replace", icon: ImageIcon(ReplaceIcon)},
-    {label: "Withdraw", icon: ImageIcon(WithdrawIcon)},
-    {label: "Cross list", icon: ImageIcon(CrossListIcon)},
-    {label: "Journal reference", icon: ImageIcon(JournalReferenceIcon)},
-    {label: "Link code & data", icon: ImageIcon(LinkCodeDataIcon)},
-    {label: "Paper Password", icon: <UnlockIcon/>}
+    {label: "Replace", icon: ImageIcon(ReplaceIcon), action: "replace"},
+    {label: "Withdraw", icon: ImageIcon(WithdrawIcon),  action: "withdraw"},
+    {label: "Cross list", icon: ImageIcon(CrossListIcon),  action: "cross"},
+    {label: "Journal reference", icon: ImageIcon(JournalReferenceIcon),   action: "jref"},
+    {label: "Link code & data", icon: ImageIcon(LinkCodeDataIcon), action: "pwc_link"},
+    {label: "Paper Password", icon: <UnlockIcon/>, action: "paper_password"},
 ];
 
 const ActionMenu: React.FC<{
@@ -100,7 +100,7 @@ const ActionMenu: React.FC<{
             anchorPosition={position ? {top: position.mouseY, left: position.mouseX} : undefined}
         >
             {menuActions.map((action) => (
-                <MenuItem key={action.label} onClick={() => handleAction(action.label)}>
+                <MenuItem key={action.label} onClick={() => handleAction(action.action)}>
                     <ListItemIcon>
                         {action.icon}
                     </ListItemIcon>
@@ -330,7 +330,7 @@ const YourDocuments: React.FC = () => {
         setMenuAnchor(null);
         setMenuPosition(null);
 
-        if (action === "Paper Password") {
+        if (action === "paper_password") {
             async function showPaperPassword() {
                 try {
                     setIsLoading(true);
@@ -351,7 +351,15 @@ const YourDocuments: React.FC = () => {
 
             showPaperPassword();
         } else if (action !== "") {
-            showMessageDialog(`Action: ${action} of document ID ${rowId}`, `${action} not implemented yet`);
+            const match = rowId.match(/^user_(\d+)-doc_(\d+)$/);
+            if (match) {
+                const [, _user_id, doc_id] = match;
+                const url = runtimeProps.ADMIN_API_BACKEND_URL + `/documents/user-action/${doc_id}/${action.toLowerCase()}`;
+                window.open(url, '_blank');
+            }
+            else {
+                showMessageDialog(`Action: ${action} of document ID ${rowId}`, `${action} not implemented yet`);
+            }
         }
     };
 

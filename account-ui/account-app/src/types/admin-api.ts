@@ -986,6 +986,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/documents/user-action/{id}/{action}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Redirect To User Document Action */
+        get: operations["redirect_to_user_document_action_v1_documents_user_action__id___action__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/metadatas/": {
         parameters: {
             query?: never;
@@ -1723,6 +1740,11 @@ export interface components {
             /** Author Ids */
             author_ids?: number[] | null;
         };
+        /**
+         * DocumentUserAction
+         * @enum {string}
+         */
+        DocumentUserAction: "replace" | "withdraw" | "cross" | "jref" | "pwc_code";
         /** EmailTemplateModel */
         EmailTemplateModel: {
             /** Id */
@@ -5021,6 +5043,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DocumentModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    redirect_to_user_document_action_v1_documents_user_action__id___action__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                action: components["schemas"]["DocumentUserAction"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
