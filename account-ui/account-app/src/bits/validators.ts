@@ -7,13 +7,13 @@ export function passwordValidator(password: string): boolean {
     }
 
     const allowedPattern = /^[A-Za-z0-9_.+#\-=\/:;(){}\[\]%^'"?!@<>|]+$/;
-    const underscorePattern = /_/;
+    const specialPattern = /[_.+#\-=\/:;(){}\[\]%^'"?!@<>|]+/;
 
     if (!allowedPattern.test(password)) {
         return false;
     }
 
-    if (!underscorePattern.test(password)) {
+    if (!specialPattern.test(password)) {
         return false;
     }
 

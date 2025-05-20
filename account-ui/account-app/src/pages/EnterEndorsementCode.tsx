@@ -465,10 +465,10 @@ const EnterEndorsementCode = () => {
         <Container maxWidth={"md"} sx={{mt: 2}}>
             <Box display="flex" flexDirection={"column"} sx={{my: "2em"}}>
                 <Typography variant={"h1"}>
-                    Endorse a submitter
+                    Giving an endorsement
                 </Typography>
 
-                <CardWithTitle title={"Endorsement"}>
+                <CardWithTitle title={"Endorsement Form"}>
 
                     {endorsementLabel}
                     <Box component="form" sx={{display: "flex", flexDirection: "column", gap: 2}}

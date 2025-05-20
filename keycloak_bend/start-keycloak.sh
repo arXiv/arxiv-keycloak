@@ -111,6 +111,12 @@ else
 fi
 
 # -------------------------------------------------------------------------------------------
+# Network part 2
+#
+export KC_MANAGEMENT_PORT="${KC_MANAGEMENT_PORT:-9000}"
+echo "KC_MANAGEMENT_PORT=$KC_MANAGEMENT_PORT"
+
+# -------------------------------------------------------------------------------------------
 # Registration
 #
 
