@@ -4,32 +4,9 @@ import type { KcContext } from "./KcContext";
 import { useI18n } from "./i18n";
 import DefaultPage from "keycloakify/login/DefaultPage";
 import Template from "./Template";
-import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { ThemeProvider } from "@mui/material/styles";
 
-const theme = createTheme({
-    typography: {
-        fontFamily:
-            "\"Open Sans\", \"Lucida Grande\", \"Helvetica Neue\", Helvetica, Arial, sans-serif",
-        h1: {
-            fontWeight: 600,
-            fontSize: "1.75rem",
-            marginBottom: "0.8rem"
-        },
-        h2: {
-            fontWeight: 600,
-            fontSize: "1.5rem"
-        },
-        h5: {
-            fontWeight: 600,
-            fontSize: "1.1rem"
-        },
-        h6: {
-            fontWeight: 600,
-            fontSize: "1rem"
-        },
-
-    }
-});
+import arxivTheme from "../arxivTheme.ts";
 
 const UserProfileFormFields = lazy(() => import("./UserProfileFormFields"));
 
@@ -85,7 +62,7 @@ export default function KcPage(props: { kcContext: KcContext }) {
     const { i18n } = useI18n({ kcContext });
 
     return (
-        <ThemeProvider theme={theme}>
+        <ThemeProvider theme={arxivTheme}>
             <Suspense>
                 {(() => {
                     switch (kcContext.pageId) {

@@ -111,7 +111,7 @@ export default function ArxivLogin(props: PageProps<Extract<KcContext, { pageId:
                     <>
                         {realm.password && social?.providers && social?.providers?.length > 0 && (
                             <Box id="kc-social-providers" mt={3}>
-                                <Typography variant="h6">{msg("identity-provider-login-label")}</Typography>
+                                <Typography variant="h1">{msg("identity-provider-login-label")}</Typography>
                                 <Box
                                     component="ul"
                                     sx={{
@@ -230,16 +230,12 @@ export default function ArxivLogin(props: PageProps<Extract<KcContext, { pageId:
                                 >
                                     {!usernameHidden && (
                                         <React.Fragment>
-                                            <Typography variant={"h5"} sx={{ p: 1 }}>
-                                                {userNameLabelText}
-                                            </Typography>
                                             <TextField
                                                 id="username"
                                                 name="username"
                                                 defaultValue={login.username ?? ""}
                                                 label={userNameLabelText}
                                                 type="text"
-                                                variant="outlined"
                                                 autoFocus
                                                 autoComplete="username"
                                                 error={userNameHasError}
@@ -250,17 +246,14 @@ export default function ArxivLogin(props: PageProps<Extract<KcContext, { pageId:
                                             />
                                         </React.Fragment>
                                     )}
+                                    <Box sx={{m: "1em"}}></Box>
 
-                                    <Typography variant={"h5"} sx={{ p: 1 }}>
-                                        {msg("password")}
-                                    </Typography>
                                     <PasswordWrapper i18n={i18n} passwordInputId="password">
                                         <TextField
                                             id="password"
                                             name="password"
                                             type="password"
                                             label={msg("password")}
-                                            variant="outlined"
                                             autoComplete="current-password"
                                             tabIndex={3}
                                             aria-invalid={userNameHasError}
