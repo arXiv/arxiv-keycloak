@@ -7,7 +7,7 @@ import traceback
 from datetime import datetime
 from enum import Enum
 from traceback import TracebackException
-from typing import Optional, List, Any, Tuple
+from typing import Optional, List, Any, Tuple, Dict
 from urllib.parse import urlparse
 
 import httpx
@@ -192,6 +192,41 @@ class AccountInfoBaseModel(BaseModel):
         if "joined_date" in result and isinstance(result["joined_date"], datetime):
             result["joined_date"] = datetime_to_epoch(None, result["joined_date"])
         return result
+
+
+    @classmethod
+    def from_user_model_data(cls, data: Dict[str, Any]) -> "AccountInfoBaseModel":
+        values = data.copy()
+
+        if "archive" in values and "subject_class" in values:
+            values["default_category"] = CategoryIdModel(
+                archive=values.pop("archive"),
+                subject_class=values.pop("subject_class")
+            )
+
+        groups = []
+        for group in CategoryGroup:
+            flag = CategoryGroupToCategoryFlags[group.value]
+            if values.pop(flag, False):
+                groups.append(group)
+        values["groups"] = groups or None
+
+        if "type" in values:
+            values["career_status"] = get_career_status(values.pop("type"))
+
+        if "veto_status" in values:
+            try:
+                values["veto_status"] = VetoStatusEnum(values["veto_status"])
+            except ValueError:
+                logger.warning(f"Invalid veto_status value: {values['veto_status']}")
+                values["veto_status"] = VetoStatusEnum.ok
+
+        if isinstance(values.get("joined_date"), int):
+            values["joined_date"] = values["joined_date"]
+        elif isinstance(values.get("joined_date"), datetime):
+            values["joined_date"] = int(values["joined_date"].timestamp())
+
+        return cls(**values)
 
 
 class AccountInfoModel(AccountInfoBaseModel):

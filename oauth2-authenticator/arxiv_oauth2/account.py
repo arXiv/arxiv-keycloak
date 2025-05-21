@@ -120,7 +120,7 @@ async def update_account_profile(
         if field in updates:
             del updates[field]
 
-    scrubbed = AccountInfoModel.model_validate(updates)
+    scrubbed = AccountInfoModel.from_user_model_data(updates)
     tapir_user = update_tapir_account(session, scrubbed)
     if not isinstance(tapir_user, TapirUser):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Tapir User")
