@@ -272,8 +272,10 @@ const AccountRegistration = () => {
         if (cat) {
             setFormData(prev => ({
                 ...prev,
-                default_category: {archive: cat.archive, subject_class: cat.subject_class || "*"}
+                default_category: {archive: cat.archive, subject_class: cat.subject_class || ""}
             }));
+
+            console.log(`default_category - ${JSON.stringify(formData.default_category)}`);
         }
     }
 
