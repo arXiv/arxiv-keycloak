@@ -120,7 +120,21 @@ const AccountRegistration = () => {
         default_category?: string,
         captcha_value?: string,
         privacyPolicy?: string,
-    }>({groups: "Please select at least one group", captcha_value: "Please fill", privacyPolicy: "no"});
+    }>({
+        username: "Please enter login username",
+        email: "Please enter your email",
+        password: "Please enter your password",
+        secondPassword: "Please enter your password",
+        first_name: "First name is required",
+        last_name: "Last name is required",
+        affiliation: "The organization name is required",
+        country: "Country is required",
+        career_status: "Career status is required",
+        groups: "Please select at least one group",
+        default_category: "Default category is required",
+        captcha_value: "Please fill",
+        privacyPolicy: "no",
+    });
 
     const [captchaUrl, setCaptchaUrl] = useState<string | undefined>();
 
@@ -221,13 +235,34 @@ const AccountRegistration = () => {
                 console.log("O captcha_value = " + value);
                 setErrors((prev) => ({...prev, captcha_value: undefined}));
             }
-        }
+        },
+        "first_name": (value: string) => {
+            if (value) {
+                setErrors((prev) => ({...prev, first_name: ""}));
+            } else {
+                setErrors((prev) => ({...prev, first_name: "First name is required"}));
+            }
+        },
+        "last_name": (value: string) => {
+            if (value) {
+                setErrors((prev) => ({...prev, last_name: ""}));
+            } else {
+                setErrors((prev) => ({...prev, last_name: "Last name is required"}));
+            }
+        },
+        "affiliation": (value: string) => {
+            if (value && value.length > 1) {
+                setErrors((prev) => ({...prev, affiliation: ""}));
+            } else {
+                setErrors((prev) => ({...prev, affiliation: "The organization name is required"}));
+            }
+        },
     }
 
     // Handle text field changes
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const {name, value} = e.target;
-        console.log("change: " + name + " = " + value)
+        // console.log("change: " + name + " = " + value)
 
         if (name === "secondPassword") {
             setSecondPassword(value);
@@ -256,15 +291,27 @@ const AccountRegistration = () => {
         }
     };
 
-    const setCarrerStatus = (value: CareerStatusType | null) => {
-        if (value) {
+    const setCareerStatus = (value: CareerStatusType | null) => {
+        console.log("setCareerStatus: " + JSON.stringify(value));
+
+        if (value && value !== "Unknown") {
             setFormData(prev => ({...prev, career_status: value}));
+            setErrors((prev) => ({...prev, career_status: ""}));
+        } else {
+            setFormData(prev => ({...prev, career_status: "Unknown"}));
+            setErrors((prev) => ({...prev, career_status: "Career status is required"}));
         }
     };
 
     const setCountry = (value: string | null) => {
+        console.log("setCountry: " + JSON.stringify(value));
+
         if (value) {
+            setErrors((prev) => ({...prev, country: ""}));
             setFormData(prev => ({...prev, country: value}));
+        } else {
+            setErrors((prev) => ({...prev, country: "Country is required"}));
+            setFormData(prev => ({...prev, country: ""}));
         }
     };
 
@@ -276,6 +323,10 @@ const AccountRegistration = () => {
             }));
 
             console.log(`default_category - ${JSON.stringify(formData.default_category)}`);
+            setErrors((prev) => ({...prev, default_category: ""}));
+
+        } else {
+            setErrors((prev) => ({...prev, default_category: "The default category is required"}));
         }
     }
 
@@ -351,8 +402,7 @@ const AccountRegistration = () => {
     const hasErrors = Object.values(errors).some(value =>
         Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && value !== ''
     );
-    const invalidFormData = hasErrors || formData.username.length < 2 || formData.password.length < 10 || formData.password !== secondPassword;
-
+    const invalidFormData = hasErrors || formData.username.length < 2 || formData.password !== secondPassword;
 
     return (
         <Container maxWidth="md" sx={{my: "4em"}} >
@@ -385,7 +435,7 @@ const AccountRegistration = () => {
 
                         <Box sx={{display: "flex", gap: 1, pt: 2}}>
                             <TextField
-                                label="Uesrname (required)"
+                                label="Username (required)"
                                 aria-label="User name for login, required"
                                 size="small"
                                 error={Boolean(errors.username)}
@@ -537,7 +587,7 @@ const AccountRegistration = () => {
                                 <CountrySelector onSelect={setCountry} selectedCountry={formData.country || ""}/>
                             </Box>
                             <Box sx={{flex: 1}}>
-                                <CareerStatusSelect onSelect={setCarrerStatus} careereStatus={formData.career_status}/>
+                                <CareerStatusSelect onSelect={setCareerStatus} careereStatus={formData.career_status}/>
                             </Box>
                         </Box>
                         <Box sx={{display: "flex", pt: 2}}>
