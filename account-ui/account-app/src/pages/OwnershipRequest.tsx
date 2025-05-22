@@ -274,10 +274,14 @@ const OwnershipRequest = () => {
                 </Typography>
 
                 <CardWithTitle title={"Submit Request"}>
-                    <Typography>
+                    <Typography variant={"body1"}>
                         To process an ownership request, enter either the numeric request id.
                     </Typography>
                     <OwnershipRequstTable runtimeProps={runtimeProps} />
+                    <Typography variant={"body2"} sx={{fontWeight: "bold", mt: 2}}>
+                        {"If you have a large number of paper IDs to request, please contact "}
+                        {runtimeProps.URLS.arxivAdminContactEmail}
+                    </Typography>
                 </CardWithTitle>
             </Box>
 
