@@ -207,7 +207,7 @@ const UserAccountInfo = () => {
 
     const roles = runtimeProps.isAdmin || runtimeProps.isMod || runtimeProps.isCanLock || runtimeProps.isSystem ? (
         <Typography variant="body1"><b>{"Role: "} </b>
-            {runtimeProps.isMod ? <Tooltip title="Moderator" children={<ModIcon/>}/> : null}
+           {runtimeProps.isMod ? <Tooltip title="Moderator" children={<ModIcon/>}/> : null}
             {runtimeProps.isAdmin ? <Tooltip title="Administrator" children={<AdminIcon/>}/> : null}
             {runtimeProps.isSystem ? <Tooltip title="Sysadmin staff" children={<SystemIcon/>}/> : null}
             {runtimeProps.isCanLock ? <Tooltip title="Can Lock" children={<CanLockIcon/>}/> : null}

@@ -47,6 +47,9 @@ export interface ArxivSiteURLs {
     userSendEmailVerification: string;
     userClaimDocumentOwnership: string;
     userRequestDocumentOwnership: string;
+
+    // Moderator
+    moderatorHome: string;
 }
 
 export interface RuntimeProps
@@ -120,6 +123,9 @@ const defaultRuntimeProps : RuntimeProps = {
         userSendEmailVerification: "/send-email-verification",
         userClaimDocumentOwnership: "/user-account/claim-document-ownership",
         userRequestDocumentOwnership:  "/user-account/request-document-ownership",
+
+        /* Future home of arXiv Check URL */
+        moderatorHome: "https://arxiv.org/mod",
     },
     currentUser: null,
     isMod: false,

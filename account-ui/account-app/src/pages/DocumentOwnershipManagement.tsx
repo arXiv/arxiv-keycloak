@@ -10,9 +10,11 @@ import {
 import {GridFilterOperator} from "@mui/x-data-grid/models/gridFilterOperator";
 import {RuntimeContext} from "../RuntimeContext.tsx";
 import UnlockIcon from "@mui/icons-material/LockOpen";
-import AuthorIcon from "@mui/icons-material/Attribution";
+// import AuthorIcon from "@mui/icons-material/Attribution";
+import AuthorIcon from '../icons/AuthorIcon.tsx';
 // import NonAuthorIcon from "@mui/icons-material/LocalShipping";
-import NonAuthorIcon from "@mui/icons-material/SupervisedUserCircle";
+// import NonAuthorIcon from "@mui/icons-material/SupervisedUserCircle";
+import NonAuthorIcon from "../icons/NonAuthorIcon.tsx";
 // import UndoIcon from "@mui/icons-material/Undo";
 // import Container from '@mui/material/Container'
 import Typography from "@mui/material/Typography";
@@ -129,7 +131,7 @@ const dateFilterOperators: GridFilterOperator[] = [
 ];
 
 const Author: React.FC<{ yes: boolean }> = ({yes}) => {
-    return yes ? <AuthorIcon sx={{scale: "1.5"}}/> : <NonAuthorIcon sx={{scale: "1.5"}}/>;
+    return yes ? <AuthorIcon sx={{scale: "2.75", pt: "3px"}}/> : <NonAuthorIcon sx={{scale: "2.75", pt: "3px"}}/>;
 };
 
 const YourDocuments: React.FC = () => {

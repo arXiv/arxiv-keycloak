@@ -93,8 +93,8 @@ const ArxivAppBar = () => {
         {label: 'Endorsements', link: '/user-account/endorse'},
     ];
 
-    const modPages = runtimeProps.isMod ? [{label: 'Moderation', link: '/user-account/moderation'}] : [];
-    const adminPages = runtimeProps.isAdmin ? [{label: 'Administration', link: '/admin-console/'}] : [];
+    const modPages = runtimeProps.isMod ? [{label: 'Moderation', link: runtimeProps.URLS.moderatorHome}] : [];
+    const adminPages = runtimeProps.isAdmin ? [{label: 'Administration', link: runtimeProps.ADMIN_APP_ROOT}] : [];
     const pages = runtimeProps.currentUser ? commonPages.concat(modPages, adminPages) : [];
 
 
