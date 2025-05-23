@@ -5,8 +5,6 @@ import urllib.parse
 from dataclasses import asdict
 from typing import Optional, Literal, Any, Dict
 
-import jwt
-from arxiv.db.models import TapirUser
 from arxiv_bizlogic.bizmodels.user_model import UserModel
 from arxiv_bizlogic.fastapi_helpers import get_client_host
 # from arxiv_bizlogic.ng_auth import ng_cookie
@@ -29,7 +27,7 @@ from starlette.datastructures import URL
 # from arxiv.auth import domain
 
 from . import get_current_user_or_none, get_db, COOKIE_ENV_NAMES
-from .biz.account_biz import is_user_banned
+from .biz.account_biz import is_user_account_valid
 # from .account import AccountRegistrationModel
 
 from .sessions import create_tapir_session
@@ -110,7 +108,7 @@ async def oauth2_callback(request: Request,
     user_claims: Optional[ArxivUserClaims] = idp.from_code_to_user_claims(code, client_ipv4=client_ip)
 
     # session_cookie_key, classic_cookie_key, keycloak_key, domain, secure, samesite = cookie_params(request)
-    if user_claims and is_user_banned(session, user_claims.user_id):
+    if user_claims and (not is_user_account_valid(session, user_claims.user_id)):
         user_claims = None
 
     if user_claims is None:
@@ -147,6 +145,27 @@ async def impersonate(request: Request,
                       client_ip = Depends(get_client_host),
                       current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
                       ) -> Response:
+    """
+    Handles user impersonation by administrators to access and act on behalf of another user.
+    This involves retrieving user information from the database and Keycloak,
+    generating appropriate claims, managing cookies, and performing necessary Keycloak
+    impersonation API calls.
+
+    :param request: The incoming HTTP request.
+    :type request: Request
+    :param user_id: The user ID of the target user to impersonate.
+    :type user_id: str
+    :param session: Database session dependency used for fetching user data.
+    :type session: sqlalchemy.orm.Session
+    :param client_ip: Client IP address retrieved from the request.
+    :type client_ip: str
+    :param current_user: Current authenticated user making the impersonation request. This
+        parameter can be None, indicating that the user is not authenticated.
+    :type current_user: Optional[ArxivUserClaims]
+    :return: A Response object which includes cookies for the impersonated session and redirects
+        to a target URL if impersonation was successful.
+    :rtype: Response
+    """
     if current_user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
     if not current_user.is_admin:
@@ -429,9 +448,9 @@ def make_cookie_response(request: Request,
                          user_claims: Optional[ArxivUserClaims],
                          tapir_cookie: Optional[str],
                          next_page: Optional[str],
-                         content: Optional[Any] = None) -> Response:
+                         content: Optional[Any] = None) -> Response | JSONResponse | RedirectResponse:
 
-    # Create NG cookie
+    # Create the response with all of cookies made
     cparam = cookie_params(request)
     keycloak_key = cparam.arxiv_keycloak_cookie_name
     session_cookie_key = cparam.auth_session_cookie_name
@@ -476,7 +495,8 @@ def make_cookie_response(request: Request,
         try:
             response.set_cookie(ng_cookie_key, ng_cookie_encode(create_ng_claims(user_claims), secret),
                 max_age=cookie_max_age, domain=domain, path="/", secure=secure, samesite=samesite)
-        except:
+        except Exception as exc:
+            logger.warning("Setting NG cookie failed", exc_info=exc)
             pass
 
     else:
@@ -494,4 +514,3 @@ def make_cookie_response(request: Request,
                             domain=domain, path="/", secure=secure, samesite=samesite,
                             expires=1)
     return response
-

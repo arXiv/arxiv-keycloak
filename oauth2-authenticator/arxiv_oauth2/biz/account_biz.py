@@ -620,8 +620,20 @@ def create_kc_account(kc_admin: KeycloakAdmin, user: AuthResponse, exist_ok: boo
         raise exc
 
 
-def is_user_banned(session: Session, user_id: str) -> bool:
-    tu = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
+def is_user_account_valid(session: Session, user_id: str) -> bool:
+    """
+    Checks whether a user account is valid by evaluating if the user exists and is not
+    marked as banned or deleted.
+
+
+    :param session: A database session used to query user data.
+    :type session: Session
+    :param user_id: The unique identifier of the user being checked.
+    :type user_id: str
+    :return: A boolean indicating whether the user account is valid.
+    :rtype: bool
+    """
+    tu: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
     if tu:
-        return tu.flag_banned == 1
-    return False
+        return not (tu.flag_banned == 1 or tu.flag_deleted == 1)
+    return True
