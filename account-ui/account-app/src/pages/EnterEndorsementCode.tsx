@@ -425,18 +425,12 @@ const EnterEndorsementCode = () => {
                                                      key={"knows_personally"} onChange={handleChange}/>}
                                   label={"Knows personally"}/>
             </Box>
-            <Box>
-                <Typography component="span">
-                    <Typography fontWeight={"bold"}>{"Comment: "}</Typography>
-                    <Typography>{" (Optional) Enter any comments on why you would or would not endorse "}{endorseeName}</Typography>
-                </Typography>
-                <TextField name="comment" id="comment" label="Comment" multiline
-                           variant="outlined" fullWidth onChange={handleChange}
-                           error={Boolean(errors.comment)} helperText={errors.comment}
-                           sx={{mt: 1}}
-                           minRows={4} tabIndex={8}
-                />
-            </Box>
+            <TextField name="comment" id="comment" label="Comment: (Optional) Enter any comments on why you would or would not endorse " multiline
+                       fullWidth onChange={handleChange}
+                       error={Boolean(errors.comment)} helperText={errors.comment}
+                       sx={{mt: 1}}
+                       minRows={4} tabIndex={8}
+            />
 
             <Box display="flex" justifyContent="space-between" alignItems="center">
                 <Button type="submit" variant="contained" tabIndex={8} sx={{

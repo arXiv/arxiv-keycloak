@@ -33,7 +33,7 @@ const CareerStatusSelect: React.FC<CareerStatusProps> = ({ onSelect, careereStat
                 onChange={handleChange}
                 getOptionLabel={displayLabel}
                 renderInput={(params) => (
-                    <TextField {...params} size="small" variant="outlined"
+                    <TextField {...params} size="small"
                         label="Career Stage (required)"
                                slotProps={{
                                    inputLabel: {

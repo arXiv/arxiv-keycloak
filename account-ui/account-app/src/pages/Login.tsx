@@ -9,6 +9,11 @@ import Container from "@mui/material/Container";
 
 import {Link as RouterLink} from "react-router-dom";
 
+/*
+  Created as reference but the actual login is in Keycloakify
+
+ */
+
 const Login = () => {
     return (
         <Container maxWidth="sm" sx={{ mt: 2 }}>
@@ -73,8 +78,8 @@ const Login = () => {
 
                 <CardContent>
                     <Box component="form" sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                        <TextField label="Username or e-mail" variant="outlined" fullWidth />
-                        <TextField label="Password" type="password" variant="outlined" fullWidth />
+                        <TextField label="Username or e-mail" fullWidth />
+                        <TextField label="Password" type="password" fullWidth />
 
                         <Box display="flex" justifyContent="space-between" alignItems="center">
                             <Button variant="contained" sx={{

@@ -120,12 +120,9 @@ const ResetPassword = () => {
                     <Typography variant={"body1"} sx={{mb: 1}}>{"We will send you an email for password recovery. Follow the instructions in the email to reset the password."}</Typography>
 
                     <Box component="form" sx={{ display: "flex", flexDirection: "column", gap: 2 }} onSubmit={handleSubmit}>
-                        <Box>
-                            <Typography fontWeight={"bold"} sx={{mb: 1}}>{"Username or email"}</Typography>
-                            <TextField name="username_or_email" id="username_or_email" label="User name or email"
-                                       variant="outlined" fullWidth  value={formData.username_or_email}
-                                       onChange={handleChange} />
-                        </Box>
+                        <TextField name="username_or_email" id="username_or_email" label="User name or email"
+                                   fullWidth  value={formData.username_or_email}
+                                   onChange={handleChange} />
 
                         <Box display="flex" justifyContent="space-between" alignItems="center">
                             <Button type="submit" variant="contained" sx={{

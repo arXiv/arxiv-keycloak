@@ -127,7 +127,6 @@ const DocumentTable: React.FC<{runtimeProps: RuntimeProps}> = ({runtimeProps}) =
 
                 <TextField
                     label="Search by Title"
-                    variant="outlined"
                     size="small"
                     value={titleFilter}
                     onChange={(e) => setTitleFilter(e.target.value)}
