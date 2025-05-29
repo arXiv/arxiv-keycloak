@@ -32,6 +32,7 @@ from .biz.account_biz import (AccountInfoModel, get_account_info,
                               migrate_to_keycloak,
                               kc_validate_access_token, kc_send_verify_email, register_arxiv_account,
                               update_tapir_account, AccountIdentifierModel, kc_login_with_client_credential)
+from .biz.cold_migration import cold_migrate
 # from . import stateless_captcha
 from .captcha import CaptchaTokenReplyModel, get_captcha_token
 from .stateless_captcha import InvalidCaptchaToken, InvalidCaptchaValue
@@ -410,47 +411,8 @@ def change_email(
             raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=detail)
     else:
         # Force the issue, and create the account
-        #
-        # I cannot come up with anything better, so here it goes.
-        # 1. Save the current password data
-        # 2. Smash the existing password with temporary password
-        # 3. Using the temp password, migrate the user
-        # 4. Once the migration is complete, restore the original password to Tapir password
-        # 5. Purge the credentials from keycloak so the next login hits legacy auth provider and uses old password
-        um: UserModel | None = UserModel.one_user(session, str(user_id))  # Use UserModel to get username
-        if um is None:
-            # This should not happen. The tapir user exists and therefore, this must succeed.
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
-
-        tapir_password: TapirUsersPassword | None = session.query(TapirUsersPassword).filter(TapirUsersPassword.user_id == user_id).one_or_none()
-        if tapir_password is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User password does not exist")
-
-        current_password_enc = tapir_password.password_enc
-        try:
-            temp_password = ''.join(random.choices(string.ascii_letters, k=48))
-            tapir_password.password_enc = passwords.hash_password(temp_password)
-            session.commit()
-
-            account = AccountInfoModel(
-                id = str(um.id),
-                email_verified=False,
-                email = um.email,
-                username= um.username,
-                first_name = um.first_name,
-                last_name=um.last_name,
-            )
-            client_secret = request.app.extra['ARXIV_USER_SECRET']
-            migrate_to_keycloak(kc_admin, account, temp_password, client_secret)
-        finally:
-            tapir_password.password_enc = current_password_enc
-            session.commit()
-
-        credentials = kc_admin.get_credentials(str(user_id))
-        for credential in credentials:
-            credential_id = credential["id"]
-            kc_admin.delete_credential(user_id=str(user_id), credential_id=credential_id)
-        kc_user = kc_admin.get_user(str(user_id))
+        client_secret = request.app.extra['ARXIV_USER_SECRET']
+        kc_user = cold_migrate(kc_admin, session, user_id, client_secret)
 
     session.commit()
     if kc_user:

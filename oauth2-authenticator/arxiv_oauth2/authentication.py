@@ -3,7 +3,7 @@ import dataclasses
 import json
 import urllib.parse
 from dataclasses import asdict
-from typing import Optional, Literal, Any, Dict
+from typing import Optional, Literal, Any
 
 from arxiv_bizlogic.bizmodels.user_model import UserModel
 from arxiv_bizlogic.fastapi_helpers import get_client_host
@@ -11,14 +11,14 @@ from arxiv_bizlogic.fastapi_helpers import get_client_host
 from arxiv_bizlogic.ng_auth.ng_cookie import create_ng_claims, ng_cookie_encode  # NGClaims, generate_nonce,
 from fastapi import APIRouter, Depends, status, Request, HTTPException, Response
 from fastapi.responses import RedirectResponse, JSONResponse
-from keycloak import KeycloakAdmin, KeycloakError
+from keycloak import KeycloakAdmin, KeycloakError, KeycloakGetError
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from arxiv.auth.auth.exceptions import UnknownSession
 from arxiv.base import logging
-from arxiv.auth.user_claims import ArxivUserClaims
+from arxiv.auth.user_claims import ArxivUserClaims, ArxivUserClaimsModel
 from arxiv.auth.openid.oidc_idp import ArxivOidcIdpClient
 from arxiv.auth.legacy.sessions import invalidate as legacy_invalidate
 from starlette.datastructures import URL
@@ -28,6 +28,7 @@ from starlette.datastructures import URL
 
 from . import get_current_user_or_none, get_db, COOKIE_ENV_NAMES
 from .biz.account_biz import is_user_account_valid
+from .biz.cold_migration import cold_migrate
 # from .account import AccountRegistrationModel
 
 from .sessions import create_tapir_session
@@ -138,7 +139,7 @@ async def oauth2_callback(request: Request,
     return make_cookie_response(request, user_claims, tapir_cookie, next_page)
 
 
-@router.post('/impersonate/{user_id: str}')
+@router.post('/impersonate/{user_id:str}/')
 async def impersonate(request: Request,
                       user_id: str,
                       session = Depends(get_db),
@@ -177,32 +178,41 @@ async def impersonate(request: Request,
     if tapir_user is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User ID is not found")
 
+    kc_user = None
     try:
         kc_user = kc_admin.get_user(user_id, user_profile_metadata=True)
-        if not kc_user:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User ID is not found")
+    except KeycloakGetError as get_error:
+        error_detail = str(get_error)
+        if "User not found" not in error_detail:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(get_error)) from get_error
+        pass
+
     except KeycloakError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
+
+    if kc_user is None:
+        client_secret = request.app.extra['ARXIV_USER_SECRET']
+        kc_user = cold_migrate(kc_admin, session, user_id, client_secret)
 
     access_token = ""
     id_token = ""
     refresh_token = ""
     # https://www.keycloak.org/docs-api/latest/rest-api/index.html#UserRepresentation
-    claims: Dict[str, Any] = {
-        'sub': user_id,
-        'exp': current_user.expires_at,
-        'iat': current_user.issued_at,
-        'realm_access': kc_user.get("realmRoles", []),
-        'email_verified': kc_user.get("emailVerified", False),
-        'email': kc_user.get("email", ""),
-        "acc": access_token,
-        "idt": id_token,
-        "refresh": refresh_token,
-        "given_name": kc_user.get("firstName", ""),
-        "family_name": kc_user.get("lastName", ""),
-        "username": tapir_user.username,
-        "client_ipv4": client_ip,
-    }
+    claims: ArxivUserClaimsModel = ArxivUserClaimsModel(
+        sub=user_id,
+        exp=current_user._claims.exp,
+        iat=current_user._claims.iat,
+        roles=kc_user.get("realmRoles", []),
+        email_verified=kc_user.get("emailVerified", False),
+        email=kc_user.get("email", ""),
+        acc=access_token,
+        idt=id_token,
+        refresh=refresh_token,
+        first_name=kc_user.get("firstName", ""),
+        last_name=kc_user.get("lastName", ""),
+        username=tapir_user.username,
+        client_ipv4=client_ip,
+    )
 
     user_claims: ArxivUserClaims = ArxivUserClaims(claims)
     # session_cookie_key, classic_cookie_key, keycloak_key, domain, secure, samesite = cookie_params(request)
@@ -478,6 +488,7 @@ def make_cookie_response(request: Request,
             url = urllib.parse.urlunparse(parsed_url._replace(query=updated_query))
         else:
             url = next_page
+        # noinspection PyTypeChecker
         response = RedirectResponse(url=url, status_code=status.HTTP_303_SEE_OTHER)
     elif content:
         response = JSONResponse(content=content, status_code=status.HTTP_200_OK)
