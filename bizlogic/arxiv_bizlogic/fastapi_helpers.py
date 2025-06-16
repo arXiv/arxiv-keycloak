@@ -189,7 +189,8 @@ def verify_bearer_token(request: Request,
         token = credentials.credentials
         if not token:
             return None
-        if request.app.extra['API_SHARED_SECRET'] and token == request.app.extra['API_SHARED_SECRET']:
+        master_key = request.app.extra.get('API_SHARED_SECRET')
+        if master_key and token == master_key:
             return ApiToken(token = token)
         jwt_secret = request.app.extra['JWT_SECRET']
         return decode_user_claims(token, jwt_secret)
