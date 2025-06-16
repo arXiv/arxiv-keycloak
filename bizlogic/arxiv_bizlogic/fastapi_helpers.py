@@ -244,3 +244,13 @@ def get_authn_or_none(
         return cookie_user
 
     return None
+
+
+def get_authn(
+    request: Request,
+    cookie_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
+    credentials: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token)) -> ArxivUserClaims | ApiToken:
+    cred = get_authn_or_none(request, cookie_user, credentials)
+    if cred is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
+    return cred
