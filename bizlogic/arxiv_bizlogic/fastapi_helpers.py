@@ -155,23 +155,6 @@ def datetime_to_epoch(timestamp: datetime.datetime | datetime.date | None,
 VERY_OLDE = datetime.datetime(1981, 1, 1)
 
 
-async def is_admin_user(request: Request) -> bool:
-    # temporary - use user claims in base
-
-    user = await get_current_user(request)
-    if user:
-        if user.is_admin:
-            return True
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-
-
-async def is_any_user(request: Request) -> bool:
-    user = await get_current_user(request)
-    if user:
-        return True
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-
 
 def sha256_base64_encode(input_string: str) -> str:
     """Hash a string with SHA-256 and return the Base64-encoded result."""
@@ -213,7 +196,7 @@ def verify_bearer_token(request: Request,
     return None
 
 
-def get_authn_or_none(
+async def get_authn_or_none(
     request: Request,
     cookie_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
     credentials: Optional[ArxivUserClaims | ApiToken ] = Depends(verify_bearer_token)) -> ArxivUserClaims | ApiToken | None:
@@ -246,7 +229,7 @@ def get_authn_or_none(
     return None
 
 
-def get_authn(
+async def get_authn(
     request: Request,
     cookie_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
     credentials: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token)) -> ArxivUserClaims | ApiToken:
@@ -254,3 +237,20 @@ def get_authn(
     if cred is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
     return cred
+
+
+async def is_admin_user(request: Request) -> bool:
+    user = await get_authn_or_none(request)
+    if user:
+        if user.is_admin:
+            return True
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+
+
+async def is_any_user(request: Request) -> bool:
+    user = await get_authn_or_none(request)
+    if user:
+        return True
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+
