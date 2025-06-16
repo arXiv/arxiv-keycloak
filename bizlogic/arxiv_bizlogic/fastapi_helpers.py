@@ -7,7 +7,7 @@ import base64
 import socket
 import asyncio
 
-from fastapi import Request, HTTPException, status
+from fastapi import Request, HTTPException, status, Depends
 
 import jwt
 import jwcrypto
@@ -16,8 +16,16 @@ import datetime
 import time
 
 from arxiv.auth.user_claims import ArxivUserClaims
+from pydantic import BaseModel
 
 from .database import Database
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
+class ApiToken(BaseModel):
+    token: str
+
+
+HTTPBearer_security = HTTPBearer(auto_error=False)
 
 
 @dataclass(frozen=True)
@@ -169,3 +177,70 @@ def sha256_base64_encode(input_string: str) -> str:
     """Hash a string with SHA-256 and return the Base64-encoded result."""
     sha256_hash = hashlib.sha256(input_string.encode()).digest()
     return base64.b64encode(sha256_hash).decode()
+
+
+
+def verify_bearer_token(request: Request,
+                        credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer_security)) -> ArxivUserClaims | ApiToken | None:
+    """
+    Verifies the provided bearer token.
+
+    This function checks whether the provided bearer token is valid by
+    comparing it against a predefined shared secret or by decoding it using
+    a shared JWT secret. If the token is valid, it either returns an API token
+    object or user claims.
+
+    Args:
+        request (Request): The incoming FastAPI request.
+        credentials (Optional[HTTPAuthorizationCredentials]): The credentials
+            extracted from the HTTP Authorization header, provided by
+            FastAPI's `HTTPBearer_security`.
+
+    Returns:
+        ArxivUserClaims | ApiToken | None: Returns an `ApiToken` object if the
+        bearer token matches the shared secret, `ArxivUserClaims` if a valid
+        JWT token is decoded, or `None` if the token is invalid or not provided.
+    """
+
+    if credentials:
+        token = credentials.credentials
+        if not token:
+            return None
+        if request.app.extra['API_SHARED_SECRET'] and token == request.app.extra['API_SHARED_SECRET']:
+            return ApiToken(token = token)
+        jwt_secret = request.app.extra['JWT_SECRET']
+        return decode_user_claims(token, jwt_secret)
+    return None
+
+
+def get_authn_or_none(
+    request: Request,
+    cookie_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
+    credentials: Optional[ArxivUserClaims | ApiToken ] = Depends(verify_bearer_token)) -> ArxivUserClaims | ApiToken | None:
+    """
+    Determines the authentication credentials for the current request.
+
+    This function checks for user authentication by first verifying the
+    bearer token and falling back to user information from cookies if no
+    valid bearer token is found. If neither is present, it returns `None`.
+
+    Args:
+        request (Request): The incoming FastAPI request.
+        cookie_user (Optional[ArxivUserClaims]): User data extracted from
+            cookies, provided by `get_current_user_or_none`.
+        credentials (Optional[ArxivUserClaims | ApiToken]): Authentication
+            credentials (user claims or API token), provided by
+            `verify_bearer_token`.
+
+    Returns:
+        ArxivUserClaims | ApiToken | None: Returns authenticated `ArxivUserClaims`
+        or `ApiToken` if either the bearer token or cookie user is valid.
+        Returns `None` if no authentication credentials are present.
+    """
+
+    if credentials:
+        return credentials
+    elif cookie_user:
+        return cookie_user
+
+    return None
