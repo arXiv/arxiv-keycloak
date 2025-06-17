@@ -197,7 +197,7 @@ def verify_bearer_token(request: Request,
     return None
 
 
-async def get_authn_or_none(
+def get_authn_or_none(
     request: Request,
     cookie_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
     credentials: Optional[ArxivUserClaims | ApiToken ] = Depends(verify_bearer_token)) -> ArxivUserClaims | ApiToken | None:
@@ -241,7 +241,7 @@ async def get_authn(
 
 
 async def is_admin_user(request: Request) -> bool:
-    user = await get_authn_or_none(request)
+    user = get_authn_or_none(request)
     if user:
         if user.is_admin:
             return True
@@ -250,7 +250,7 @@ async def is_admin_user(request: Request) -> bool:
 
 
 async def is_any_user(request: Request) -> bool:
-    user = await get_authn_or_none(request)
+    user = get_authn_or_none(request)
     if user:
         return True
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
