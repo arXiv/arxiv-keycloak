@@ -240,8 +240,9 @@ async def get_authn(
     return cred
 
 
-async def is_admin_user(request: Request) -> bool:
-    user = get_authn_or_none(request)
+async def is_admin_user(request: Request,
+                        user : ArxivUserClaims | ApiToken | None = Depends(get_authn_or_none)
+                        ) -> bool:
     if user:
         if user.is_admin:
             return True
@@ -249,8 +250,9 @@ async def is_admin_user(request: Request) -> bool:
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
 
-async def is_any_user(request: Request) -> bool:
-    user = get_authn_or_none(request)
+async def is_any_user(request: Request,
+                      user: ArxivUserClaims | ApiToken | None = Depends(get_authn_or_none)
+                      ) -> bool:
     if user:
         return True
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
