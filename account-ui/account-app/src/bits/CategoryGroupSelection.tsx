@@ -47,10 +47,10 @@ const CategoryGroupSelection : React.FC<{
     return (
         <Box>
             <Typography variant="body1" sx={{ marginBottom: 1 }}>
-                Categorie(s) you would like to submit to (required):
-                {
-                    prompt
-                }
+                What categories would you like to appear as options during submission (required): {prompt}
+            </Typography>
+            <Typography>
+
             </Typography>
             <FormGroup
                 aria-label="Categories you would like to submit to (required)"
