@@ -11,6 +11,7 @@ from sqlalchemy import select, case, exists, cast, LargeBinary #, func
 from sqlalchemy.orm import Session
 from sqlalchemy.engine.row import Row
 from pydantic import BaseModel, EmailStr, field_validator
+from datetime import datetime
 
 from arxiv.db.models import (TapirUser, TapirNickname, t_arXiv_moderators, Demographic, OrcidIds)
 from logging import getLogger
@@ -62,7 +63,7 @@ class UserModel(BaseModel):
     share_email: int = 8
     email_bouncing: bool = False
     policy_class: int
-    joined_date: int
+    joined_date: datetime
     joined_ip_num: Optional[str] = None
     joined_remote_host: str
     flag_internal: bool = False
