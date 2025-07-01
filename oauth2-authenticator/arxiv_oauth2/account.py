@@ -3,6 +3,7 @@
 """
 import base64
 import re
+import secrets
 from datetime import datetime, timezone
 import random
 import string
@@ -10,7 +11,7 @@ from typing import Optional
 
 from arxiv_bizlogic.bizmodels.user_model import UserModel
 from arxiv_bizlogic.validation.email_validation import is_valid_email
-from arxiv_bizlogic.fastapi_helpers import  get_current_user_access_token
+from arxiv_bizlogic.fastapi_helpers import get_current_user_access_token, get_client_host_name
 from fastapi import APIRouter, Depends, status, HTTPException, Request, Response, Query
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -33,6 +34,7 @@ from .biz.account_biz import (AccountInfoModel, get_account_info,
                               kc_validate_access_token, kc_send_verify_email, register_arxiv_account,
                               update_tapir_account, AccountIdentifierModel, kc_login_with_client_credential)
 from .biz.cold_migration import cold_migrate
+from .biz.email_history_biz import EmailHistoryEntry, EmailHistories, generate_email_verify_token
 # from . import stateless_captcha
 from .captcha import CaptchaTokenReplyModel, get_captcha_token
 from .stateless_captcha import InvalidCaptchaToken, InvalidCaptchaValue
@@ -160,7 +162,7 @@ async def register_account(
     if not registration.username.strip():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="username is required")
 
-    registration = sanitize_model_data(registration)
+    # registration = sanitize_model_data(registration)
 
     if is_super_user(token):
         logger.info("API based user registration %s", describe_super_user(token))
@@ -281,6 +283,8 @@ def get_email_verified_status(
 def set_email_verified_status(
         body: EmailVerifiedStatus,
         authn: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
+        remote_host: str = Depends(get_client_host),
+        remote_hostname: str = Depends(get_client_host_name),
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ) -> EmailVerifiedStatus:
@@ -306,7 +310,13 @@ def set_email_verified_status(
         # Handle errors here
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(kce)) from kce
 
+    biz: EmailHistories = EmailHistories(session, user_id=user_id)
+
     user.flag_email_verified = 1 if body.email_verified else 0
+
+    if not biz.email_verified(remote_ip=remote_host, remote_host=remote_hostname):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is not verified.")
+
     session.commit()
     return EmailVerifiedStatus(email_verified=bool(user.flag_email_verified), user_id = user_id)
 
@@ -314,6 +324,7 @@ def set_email_verified_status(
 class EmailUpdateModel(EmailModel):
     user_id: str
     new_email: str
+    email_verified: Optional[bool] = None  # This is only useful when the admin wants to set the verify status
 
 
 @router.put("/email/", description="Request to change email", responses={
@@ -357,6 +368,14 @@ class EmailUpdateModel(EmailModel):
             }
         },
     },
+    429: {
+        "description": "Too many email change request",
+        "content": {
+            "application/json": {
+                "example": {"detail": "Too many email change request."}
+            }
+        },
+    },
     503: {
         "description": "Error while updating Keycloak",
         "content": {
@@ -370,6 +389,8 @@ def change_email(
         request: Request,
         body: EmailUpdateModel,
         session: Session = Depends(get_db),
+        client_host: str = Depends(get_client_host),
+        client_hostname: str = Depends(get_client_host_name),
         authn: Optional[ArxivUserClaims|ApiToken] = Depends(get_authn_or_none),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ):
@@ -389,9 +410,7 @@ def change_email(
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="New email already exists")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Old and new email are the same")
 
-    user.email = body.new_email
-    user.flag_email_verified = False
-
+    current_email = user.email
     kc_user = None
     try:
         kc_user = kc_admin.get_user(str(user_id))
@@ -399,6 +418,40 @@ def change_email(
         # The user has not been migrated yet
         logger.warning("Email change before user migration")
         pass
+
+    biz: EmailHistories = EmailHistories(session, user_id=user_id)
+    if is_super_user(authn):
+        # admin change email
+        # We can short circuit the rate limit, etc.
+        if body.email_verified is None:
+            body.email_verified = True
+
+        if kc_user:
+            # The user has not migrated to KC? Trying to log in should have done the migration
+            try:
+                kc_admin.update_user(kc_user["id"], payload={"email": body.new_email, "emailVerified": True})
+            except KeycloakError as e:
+                logger.error("Updating Keycloak user failed.", exc_info=e)
+                session.rollback()
+                detail = "Account service not available at the moment. Please contact help@arxiv.org: " + str(e)
+                raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=detail)
+        else:
+            # Force the issue, and create the account
+            client_secret = request.app.extra['ARXIV_USER_SECRET']
+            kc_user = cold_migrate(kc_admin, session, user_id, client_secret, email_verified=body.email_verified)
+        user.email = body.new_email
+        user.flag_email_verified = body.email_verified
+        session.commit()
+
+        if not body.email_verified and kc_user:
+            kc_send_verify_email(kc_admin, kc_user["id"], force_verify=True)
+        return
+
+    if biz.is_rate_exceeded():
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many email change request.")
+
+    user.email = body.new_email
+    user.flag_email_verified = False
 
     if kc_user:
         # The user has not migrated to KC? Trying to log in should have done the migration
@@ -413,6 +466,18 @@ def change_email(
         # Force the issue, and create the account
         client_secret = request.app.extra['ARXIV_USER_SECRET']
         kc_user = cold_migrate(kc_admin, session, user_id, client_secret)
+
+    entry = biz.add_email_change_request(
+        EmailHistoryEntry(
+            user_id=user_id,
+            email=current_email,
+            new_email=body.new_email,
+            secret="",  # This is filled by add_email_history
+            remote_addr=client_host,
+            remote_host=client_hostname,
+            used=False,
+        )
+    )
 
     session.commit()
     if kc_user:

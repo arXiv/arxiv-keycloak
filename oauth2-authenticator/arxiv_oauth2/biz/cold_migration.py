@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
-def cold_migrate(kc_admin: KeycloakAdmin, session: Session, user_id: str, client_secret: str) -> dict:
+def cold_migrate(kc_admin: KeycloakAdmin, session: Session, user_id: str, client_secret: str, email_verified: bool = False) -> dict:
     """
     Force the issue, and create the account
     I cannot come up with anything better, so here it goes.
@@ -30,6 +30,7 @@ def cold_migrate(kc_admin: KeycloakAdmin, session: Session, user_id: str, client
     :param session:
     :param user_id:
     :param client_secret: request.app.extra['ARXIV_USER_SECRET']
+    :param email_verified: bool, default False
 
     :return: dict of keycloak user
     """
@@ -54,7 +55,7 @@ def cold_migrate(kc_admin: KeycloakAdmin, session: Session, user_id: str, client
 
         account = AccountInfoModel(
             id=str(um.id),
-            email_verified=False,
+            email_verified=email_verified,
             email=um.email,
             username=um.username,
             first_name=um.first_name,
