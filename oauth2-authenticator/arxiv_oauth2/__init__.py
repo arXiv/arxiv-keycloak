@@ -39,8 +39,15 @@ def is_super_user(token: ArxivUserClaims | ApiToken | None) -> bool:
     return (token is not None) and (isinstance(token, ApiToken) or (isinstance(token, ArxivUserClaims) and token.is_admin))
 
 
+def get_super_user_id(token: ArxivUserClaims | ApiToken | None) -> str | None:
+    return str(token.user_id) if isinstance(token, ArxivUserClaims) and token.is_admin else None
+
+
 def is_authenticated(token: ApiToken | ArxivUserClaims | None, current_user: ArxivUserClaims | None) -> bool:
     return token is not None or current_user is not None
+
+def get_arxiv_user_claims(token: ArxivUserClaims | ApiToken | None) -> ArxivUserClaims | None:
+    return token if isinstance(token, ArxivUserClaims) else None
 
 
 def is_authorized(token: ApiToken | ArxivUserClaims | None, current_user: ArxivUserClaims | None, user_id: str) -> bool:

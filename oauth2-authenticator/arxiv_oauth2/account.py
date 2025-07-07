@@ -7,7 +7,7 @@ import secrets
 from datetime import datetime, timezone
 import random
 import string
-from typing import Optional
+from typing import Optional, List
 
 from arxiv_bizlogic.bizmodels.user_model import UserModel
 from arxiv_bizlogic.validation.email_validation import is_valid_email
@@ -25,16 +25,17 @@ from arxiv.db.models import TapirUser, TapirNickname, TapirUsersPassword, OrcidI
 from arxiv.auth.legacy import passwords
 
 from . import (get_current_user_or_none, get_db, get_keycloak_admin, stateless_captcha,
-               get_client_host, sha256_base64_encode,
+               get_client_host, sha256_base64_encode, get_super_user_id,
                verify_bearer_token, ApiToken, is_super_user, describe_super_user, check_authnz,
-               is_authorized, get_authn_or_none)  # , get_client_host
+               is_authorized, get_authn_or_none, get_arxiv_user_claims)  # , get_client_host
 from .biz.account_biz import (AccountInfoModel, get_account_info,
                               AccountRegistrationError, AccountRegistrationModel, validate_password,
                               migrate_to_keycloak,
                               kc_validate_access_token, kc_send_verify_email, register_arxiv_account,
                               update_tapir_account, AccountIdentifierModel, kc_login_with_client_credential)
 from .biz.cold_migration import cold_migrate
-from .biz.email_history_biz import EmailHistoryEntry, EmailHistories, generate_email_verify_token
+from .biz.email_history_biz import TapirEmailChangeTokenModel, EmailHistoryBiz, UserEmailHistory, add_admin_email_change_log, \
+    EmailChangeEntry
 # from . import stateless_captcha
 from .captcha import CaptchaTokenReplyModel, get_captcha_token
 from .stateless_captcha import InvalidCaptchaToken, InvalidCaptchaValue
@@ -310,7 +311,7 @@ def set_email_verified_status(
         # Handle errors here
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(kce)) from kce
 
-    biz: EmailHistories = EmailHistories(session, user_id=user_id)
+    biz: EmailHistoryBiz = EmailHistoryBiz(session, user_id=user_id)
 
     user.flag_email_verified = 1 if body.email_verified else 0
 
@@ -419,17 +420,16 @@ def change_email(
         logger.warning("Email change before user migration")
         pass
 
-    biz: EmailHistories = EmailHistories(session, user_id=user_id)
+    biz: EmailHistoryBiz = EmailHistoryBiz(session, user_id=user_id)
     if is_super_user(authn):
         # admin change email
         # We can short circuit the rate limit, etc.
-        if body.email_verified is None:
-            body.email_verified = True
+        email_verified = True if body.email_verified is None else body.email_verified
 
         if kc_user:
             # The user has not migrated to KC? Trying to log in should have done the migration
             try:
-                kc_admin.update_user(kc_user["id"], payload={"email": body.new_email, "emailVerified": True})
+                kc_admin.update_user(kc_user["id"], payload={"email": body.new_email, "emailVerified": email_verified})
             except KeycloakError as e:
                 logger.error("Updating Keycloak user failed.", exc_info=e)
                 session.rollback()
@@ -438,12 +438,25 @@ def change_email(
         else:
             # Force the issue, and create the account
             client_secret = request.app.extra['ARXIV_USER_SECRET']
-            kc_user = cold_migrate(kc_admin, session, user_id, client_secret, email_verified=body.email_verified)
-        user.email = body.new_email
-        user.flag_email_verified = body.email_verified
+            kc_user = cold_migrate(kc_admin, session, user_id, client_secret, email_verified=email_verified)
+
+        claims = get_arxiv_user_claims(authn)
+        tapir_session_id = None
+        if claims:
+            tapir_session_id = claims.session_id
+
+        biz.set_user_email_by_admin(
+            body.new_email,
+            admin_id=get_super_user_id(authn),
+            session_id=tapir_session_id,
+            remote_host=client_host,
+            remote_host_name=client_hostname,
+            comment=body.comment,
+            email_verified=email_verified,
+            )
         session.commit()
 
-        if not body.email_verified and kc_user:
+        if not email_verified and kc_user:
             kc_send_verify_email(kc_admin, kc_user["id"], force_verify=True)
         return
 
@@ -468,7 +481,7 @@ def change_email(
         kc_user = cold_migrate(kc_admin, session, user_id, client_secret)
 
     entry = biz.add_email_change_request(
-        EmailHistoryEntry(
+        TapirEmailChangeTokenModel(
             user_id=user_id,
             email=current_email,
             new_email=body.new_email,
@@ -483,6 +496,34 @@ def change_email(
     if kc_user:
         kc_send_verify_email(kc_admin, kc_user["id"], force_verify=True)
     return
+
+
+
+@router.get("/email/history/{user_id:str}/", description="Get the past email history")
+def get_email_history(
+        request: Request,
+        response: Response,
+        user_id: str,
+
+        _sort: Optional[str] = Query("id", description="sort by"),
+        _order: Optional[str] = Query("ASC", description="sort order"),
+        _start: Optional[int] = Query(0, alias="_start"),
+        _end: Optional[int] = Query(100, alias="_end"),
+
+        authn: Optional[ArxivUserClaims|ApiToken] = Depends(get_authn_or_none),
+        session: Session = Depends(get_db),
+) -> List[EmailChangeEntry]:
+    check_authnz(authn, None, user_id)
+    biz: EmailHistoryBiz = EmailHistoryBiz(session, user_id=user_id)
+    history = biz.list_email_history()
+
+    if _start is None:
+        _start = 0
+    if _end is None:
+        _end = len(history)
+
+    response.headers['X-Total-Count'] = str(len(history.change_history))
+    return history.change_history[_start:_end]
 
 
 class PasswordUpdateModel(BaseModel):
