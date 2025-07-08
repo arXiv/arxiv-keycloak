@@ -8,6 +8,8 @@ import socket
 import asyncio
 
 from fastapi import Request, HTTPException, status, Depends
+from fastapi.responses import Response
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 import jwt
 import jwcrypto
@@ -256,4 +258,69 @@ async def is_any_user(request: Request,
     if user:
         return True
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+
+
+class TapirCookieToUserClaimsMiddleware:
+    """
+    Middleware that checks for tapir cookie and creates ArxivUserClaims JWT token.
+    
+    If ArxivUserClaims cookie is missing but tapir cookie exists, this middleware
+    will create an ArxivUserClaims object from the tapir cookie and inject a JWT
+    token as Authorization Bearer header.
+    """
+    
+    def __init__(self, app: ASGIApp):
+        self.app = app
+    
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+            
+        request = Request(scope, receive)
+        
+        # Get cookie names from app config
+        auth_session_cookie_name = request.app.extra.get(COOKIE_ENV_NAMES.auth_session_cookie_env, "arxiv_oidc_session")
+        classic_cookie_name = request.app.extra.get(COOKIE_ENV_NAMES.classic_cookie_env, "tapir_session")
+        jwt_secret = request.app.extra.get('JWT_SECRET')
+        
+        # Check if ArxivUserClaims cookie already exists
+        arxiv_claims_cookie = request.cookies.get(auth_session_cookie_name)
+        
+        # If no ArxivUserClaims cookie but tapir cookie exists, create JWT token
+        if not arxiv_claims_cookie and jwt_secret:
+            tapir_cookie = request.cookies.get(classic_cookie_name)
+            if tapir_cookie:
+                try:
+                    # Import here to avoid circular imports
+                    from .bizmodels.tapir_to_user_claims import create_user_claims_from_tapir_cookie
+                    from .database import Database
+                    
+                    # Get database session
+                    db = Database.get_from_global()
+                    session_gen = db.get_session()
+                    session = next(session_gen)
+                    
+                    try:
+                        # Create ArxivUserClaims from tapir cookie
+                        user_claims: ArxivUserClaims = create_user_claims_from_tapir_cookie(session, tapir_cookie)
+                        
+                        if user_claims:
+                            # Create JWT token from user claims
+                            token = user_claims.encode_jwt_token(jwt_secret)
+                            
+                            # Add Authorization header to the request
+                            headers = dict(scope.get("headers", []))
+                            headers[b"authorization"] = f"Bearer {token}".encode()
+                            scope["headers"] = list(headers.items())
+                            
+                    finally:
+                        session.close()
+                        
+                except Exception as exc:
+                    # Log error but don't break the request
+                    logger = getLogger(__name__)
+                    logger.warning("Failed to create JWT from tapir cookie", exc_info=exc)
+        
+        await self.app(scope, receive, send)
 
