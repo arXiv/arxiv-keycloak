@@ -287,8 +287,12 @@ class TapirCookieToUserClaimsMiddleware:
         # Check if ArxivUserClaims cookie already exists
         arxiv_claims_cookie = request.cookies.get(auth_session_cookie_name)
         
-        # If no ArxivUserClaims cookie but tapir cookie exists, create JWT token
-        if not arxiv_claims_cookie and jwt_secret:
+        # Check if Authorization header already exists
+        headers = dict(scope.get("headers", []))
+        existing_auth = headers.get(b"authorization")
+        
+        # If no ArxivUserClaims cookie, no existing auth header, but tapir cookie exists, create JWT token
+        if not arxiv_claims_cookie and not existing_auth and jwt_secret:
             tapir_cookie = request.cookies.get(classic_cookie_name)
             if tapir_cookie:
                 try:
@@ -310,7 +314,6 @@ class TapirCookieToUserClaimsMiddleware:
                             token = user_claims.encode_jwt_token(jwt_secret)
                             
                             # Add Authorization header to the request
-                            headers = dict(scope.get("headers", []))
                             headers[b"authorization"] = f"Bearer {token}".encode()
                             scope["headers"] = list(headers.items())
                             
