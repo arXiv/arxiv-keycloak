@@ -471,7 +471,7 @@ def get_account_info(session: Session, user_id: str) -> Optional[AccountInfoMode
             url = um.url,
             default_category = category_model,
             groups = [CategoryGroup(group) for group in groups if group is not None],
-            joined_date = um.joined_date,
+            joined_date = datetime_to_epoch(None, um.joined_date),
             career_status = get_career_status(um.type),
             tracking_cookie=um.tracking_cookie,
             veto_status=um.veto_status,

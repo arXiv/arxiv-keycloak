@@ -27,6 +27,7 @@ from .app_logging import setup_logger
 from .mysql_retry import MySQLRetryMiddleware
 from . import get_db, COOKIE_ENV_NAMES, get_keycloak_admin
 from .biz.keycloak_audit import get_keycloak_dispatch_functions
+from arxiv_bizlogic.fastapi_helpers import TapirCookieToUserClaimsMiddleware
 
 #
 # Since this is not a flask app, the config needs to be in the os.environ
@@ -246,6 +247,8 @@ def create_app(*args, **kwargs) -> FastAPI:
     app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
 
     app.add_middleware(MySQLRetryMiddleware, engine=_classic_engine,  retry_attempts=3)
+
+    app.add_middleware(TapirCookieToUserClaimsMiddleware)
 
     app.include_router(authn_router)
     # app.include_router(authz_router)
