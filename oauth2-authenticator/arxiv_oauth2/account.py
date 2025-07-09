@@ -326,6 +326,7 @@ class EmailUpdateModel(EmailModel):
     user_id: str
     new_email: str
     email_verified: Optional[bool] = None  # This is only useful when the admin wants to set the verify status
+    comment: Optional[str] = None
 
 
 @router.put("/email/", description="Request to change email", responses={

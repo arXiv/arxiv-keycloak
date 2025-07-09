@@ -80,8 +80,8 @@ sphinx = ["sphinx", "sphinx-autodoc-typehints", "sphinxcontrib-websupport"]
 [package.source]
 type = "git"
 url = "https://github.com/arXiv/arxiv-base.git"
-reference = "9ca8d42b0fa85986e602875811c44735c1cbe4b8"
-resolved_reference = "9ca8d42b0fa85986e602875811c44735c1cbe4b8"
+reference = "d8fbd7bb6fd5d135a96812a0c36f1c50ec5dfe1c"
+resolved_reference = "d8fbd7bb6fd5d135a96812a0c36f1c50ec5dfe1c"
 
 [[package]]
 name = "arxiv-bizlogic"
@@ -2292,4 +2292,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "787cc2ce901be9ad43d61108e6e0a0d46f7ec2b0e0e10ddf7ad06685b4b0f517"
+content-hash = "bde0fe0b83058467909b40a1f60e34679a77e981d46b7fbdc4a91a26dfb2c713"

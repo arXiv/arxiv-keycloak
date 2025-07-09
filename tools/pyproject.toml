@@ -9,7 +9,7 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.11,<4.0"
-arxiv-base = {git = "https://github.com/arXiv/arxiv-base.git", rev = "9ca8d42b0fa85986e602875811c44735c1cbe4b8"}
+arxiv-base = {git = "https://github.com/arXiv/arxiv-base.git", rev = "d8fbd7bb6fd5d135a96812a0c36f1c50ec5dfe1c"}
 google-cloud-pubsub = "^2.27.2"
 pymysql = "^1.1.1"
 psycopg2-binary = "^2.9.10"
