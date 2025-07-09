@@ -21,7 +21,6 @@ APP_DOCKER_RUN := docker run --cpus ${ARXIV_PORTAL_APP_CPUS} --rm -p ${app_port}
 -e CLASSIC_COOKIE_NAME=tapir_session \
 -e JWT_SECRET=${JWT_SECRET} \
 -e AAA_TOKEN_REFRESH_URL=/aaa/refresh \
--e ARXIV_AUTH_DEBUG=True \
 -e DEFAULT_LOGIN_REDIRECT_URL=/user-account/ \
 -e DEFAULT_LOGOUT_REDIRECT_URL=/ \
 --name ${app_name} --security-opt="no-new-privileges=true"
