@@ -71,7 +71,7 @@ signal.signal(signal.SIGTERM, signal_handler)
 logger = logging.getLogger(__name__)
 
 
-async def post_to_keycloak_audit_to_aaa(api_url: str, api_token: str, audit_event: dict):
+async def post_keycloak_event_to_aaa(api_url: str, api_token: str, audit_event: dict):
     headers = {
         "Authorization": f"Bearer {api_token}",
         "Content-Type": "application/json"
@@ -146,7 +146,7 @@ def handle_keycloak_event(
         try:
             if token and url:
                 # This is the way to do
-                response_code = await post_to_keycloak_audit_to_aaa(url, token, kc_data)
+                response_code = await post_keycloak_event_to_aaa(url, token, kc_data)
                 if response_code == 200:
                     msg.ack()
                     logger.info("POST[%s](%s): ack %s", url, response_code, kc_data.get('id', '<no-id>'))

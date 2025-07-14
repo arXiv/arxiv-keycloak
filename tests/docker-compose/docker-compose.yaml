@@ -161,7 +161,7 @@ services:
       SUBSCRIPTION: ${KC_TAPIR_BRIDGE_SUBSCRIPTION}
       # CLASSIC_DB_URI: "mysql://arxiv:arxiv_password@arxiv-test-db:3306/arXiv"
       CLASSIC_DB_URI: ${CLASSIC_DB_URI}
-      AAA_API_URL: ${AAA_URL}
+      AAA_API_URL: ${AAA_URL}/keycloak/audit
       AAA_API_TOKEN: ${AAA_API_TOKEN}
     network_mode: host
     depends_on:
