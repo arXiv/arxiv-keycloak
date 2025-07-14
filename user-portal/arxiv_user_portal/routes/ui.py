@@ -110,10 +110,10 @@ def landing() -> Response:
     url = f"{EXTERNAL_URL_SCHEME}://{BASE_SERVER}"
     server: urllib.parse.ParseResult = urllib.parse.urlparse(url)
 
-    KEYCLOAK_SERVER_URL = os.environ.get("KEYCLOAK_SERVER_URL" , "https://localhost.arxiv.org:21520")
-    LEGACY_AUTH_PROVIDER = os.environ.get("LEGACY_AUTH_PROVIDER", f"{EXTERNAL_URL_SCHEME}://{server.hostname}:21505")
-    ADMIN_API_URL = os.environ.get("ADMIN_API_URL", f"{EXTERNAL_URL_SCHEME}://{server.hostname}:21510")
-    MAIL_STORE_URL = os.environ.get("MAIL_STORE_URL", f"{EXTERNAL_URL_SCHEME}://{server.hostname}:21512")
+    KEYCLOAK_SERVER_URL = os.environ.get("KEYCLOAK_SERVER_URL" , f"https://{server.hostname}:21520")
+    LEGACY_AUTH_PROVIDER = os.environ.get("LEGACY_AUTH_PROVIDER", f"http://{server.hostname}:21505")
+    ADMIN_API_URL = os.environ.get("ADMIN_API_URL", f"http://{server.hostname}:21510")
+    MAIL_STORE_URL = os.environ.get("MAIL_STORE_URL", f"http://{server.hostname}:21512")
     AAA_URL = os.environ.get("AAA_URL", f"{url}/aaa")
     ADMIN_CONSOLE_URL = os.environ.get("ADMIN_CONSOLE_URL", f"{url}/admin-console/")
 
