@@ -149,10 +149,16 @@ def datetime_to_epoch(timestamp: datetime.datetime | datetime.date | None,
     if timestamp is None:
         timestamp = default
     if isinstance(timestamp, datetime.date) and not isinstance(timestamp, datetime.datetime):
-        # Convert datetime.date to datetime.datetime at midnight
+        # Convert datetime.date to datetime.datetime at midnight UTC
         timestamp = datetime.datetime.combine(timestamp, datetime.time(hour, minute, second))
-    # Use time.mktime() to convert datetime.datetime to epoch time
-    return int(time.mktime(timestamp.timetuple()))
+
+    # Ensure the datetime is timezone-aware (UTC)
+    if timestamp.tzinfo is None:
+        timestamp = timestamp.replace(tzinfo=datetime.timezone.utc)
+
+    # Use timestamp() method which returns UTC epoch
+    return int(timestamp.timestamp())
+
 
 VERY_OLDE = datetime.datetime(1981, 1, 1)
 
@@ -246,16 +252,21 @@ async def is_admin_user(request: Request,
                         user : ArxivUserClaims | ApiToken | None = Depends(get_authn_or_none)
                         ) -> bool:
     if user:
+        if not isinstance(user, ArxivUserClaims):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="API token is not accepted")
+
         if user.is_admin:
             return True
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins are allowed")
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
 
 
 async def is_any_user(request: Request,
                       user: ArxivUserClaims | ApiToken | None = Depends(get_authn_or_none)
                       ) -> bool:
     if user:
+        if not isinstance(user, ArxivUserClaims):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="API token is not accepted")
         return True
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
