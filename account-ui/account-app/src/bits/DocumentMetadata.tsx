@@ -1,3 +1,6 @@
+/*
+Place holder - not used.
+
 import React, {useEffect, useState, useContext} from "react";
 import {paths as adminApi} from "../types/admin-api";
 import Typography from "@mui/material/Typography";
@@ -5,7 +8,7 @@ import {RuntimeContext} from "../RuntimeContext.tsx";
 import {fetchPlus} from "../fetchPlus.ts";
 
 // type DocumentType = adminApi['/v1/documents/{id}']['get']['responses']['200']['content']['application/json'];
-type MetadataType = adminApi['/v1/metadatas/{id}']['get']['responses']['200']['content']['application/json'];
+type MetadataType = adminApi['/v1/metadata/{id}']['get']['responses']['200']['content']['application/json'];
 
 
 interface DocumentMetadataProps  {
@@ -30,7 +33,7 @@ const DocumentMetadata: React.FC<DocumentMetadataProps> = ({arxivId}) => {
                     }
                 }
                 catch (error) {
-
+                    console.error("Failed to fetch metadata", error);
                 }
             }
         }
@@ -46,3 +49,4 @@ const DocumentMetadata: React.FC<DocumentMetadataProps> = ({arxivId}) => {
 };
 
 export default DocumentMetadata;
+*/

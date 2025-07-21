@@ -252,6 +252,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/users/{user_id}/can-submit-to": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User Can Submit To */
+        get: operations["get_user_can_submit_to_v1_users__user_id__can_submit_to_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/users/{user_id}/can-endorse-for": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User Can Endorse For */
+        get: operations["get_user_can_endorse_for_v1_users__user_id__can_endorse_for_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/email_templates/": {
         parameters: {
             query?: never;
@@ -301,7 +335,7 @@ export interface paths {
         put?: never;
         /**
          * Create Endorsement
-         * @description Create a new endorsement by admin
+         * @description Create a new endorsement (admin user only)
          */
         post: operations["create_endorsement_v1_endorsements__post"];
         delete?: never;
@@ -343,6 +377,26 @@ export interface paths {
          */
         post: operations["endorse_v1_endorsements_endorse_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/endorsements/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Endorsement
+         * @description Delete an endorsement (admin user only)
+         */
+        delete: operations["delete_endorsement_v1_endorsements__id___delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -514,9 +568,61 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
         /** Update Authorship */
-        post: operations["update_authorship_v1_paper_owners_update_authorship_post"];
+        put: operations["update_authorship_v1_paper_owners_update_authorship_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/paper_owners/update-paper-owners/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Paper Owners
+         * @description Handles the process of updating paper ownership by modifying existing ownership records or adding
+         *     new ones based on the provided data, user authentication, and permissions. This endpoint is
+         *     restricted to authenticated users, with additional constraints for non-admin users.
+         *
+         *     Parameters
+         *     ----------
+         *     id : identifier
+         *         The identifier of the paper to be updated. "upsert" is a special ID for bulk upsert
+         *     body : PaperOwnersUpdateRequest
+         *         The request payload containing document ID, ownership details, and optional flags.
+         *     session : Session, default: Depends(get_db)
+         *         The database session for querying and committing changes.
+         *     remote_addr : Optional[str], default: Depends(get_client_host)
+         *         The IP address of the client making the request.
+         *     remote_host : Optional[str], default: Depends(get_client_host_name)
+         *         The hostname of the client making the request.
+         *     tracking_cookie : Optional[str], default: Depends(get_tracking_cookie)
+         *         An optional tracking cookie for identifying the client.
+         *     current_user : ArxivUserClaims | ApiToken, default: Depends(get_authn)
+         *         The authenticated user making the request.
+         *
+         *     Raises
+         *     ------
+         *     HTTPException
+         *         If the user is not authenticated (401 Unauthorized).
+         *         If a non-admin user attempts to update ownership of a paper they don’t own (403 Forbidden).
+         *         If an API token is used to update ownership (403 Forbidden).
+         *
+         *     Returns
+         *     -------
+         *     None
+         *         react-admin update result is returned but it is not very kosher. It may come back to
+         *         bite me.
+         */
+        put: operations["update_paper_owners_v1_paper_owners_update_paper_owners__id__put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -540,7 +646,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/paper-pw/{id}": {
+    "/v1/paper_pw/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Paper Pw */
+        get: operations["list_paper_pw_v1_paper_pw__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/paper_pw/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -557,7 +680,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/paper-pw/paper/{arxiv_id}": {
+    "/v1/paper_pw/paper/{arxiv_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -574,7 +697,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/paper-pw/paper/{category}/{subject_class}": {
+    "/v1/paper_pw/paper/{category}/{subject_class}": {
         parameters: {
             query?: never;
             header?: never;
@@ -591,7 +714,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/paper-pw/renew/{document_id}": {
+    "/v1/paper_pw/renew/{document_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -753,6 +876,23 @@ export interface paths {
          *       "selected_documents":[2125897,2123675,2130529]}
          */
         put: operations["update_ownership_request_v1_ownership_requests__id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ownership_requests/navigate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Navigate */
+        get: operations["navigate_v1_ownership_requests_navigate_get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -1003,7 +1143,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/metadatas/": {
+    "/v1/metadata/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1011,7 +1151,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Metadatas */
-        get: operations["list_metadatas_v1_metadatas__get"];
+        get: operations["list_metadatas_v1_metadata__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1020,7 +1160,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/metadatas/paper_id/{paper_id}": {
+    "/v1/metadata/paper_id/{paper_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Metadata
+         * @description Get the metadata from paper id.
+         */
+        get: operations["get_metadata_v1_metadata_paper_id__paper_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/metadata/paper_id/{category}/{numeric_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Metadata
+         * @description Get the metadata from paper id.
+         */
+        get: operations["get_metadata_v1_metadata_paper_id__category___numeric_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/metadata/document_id/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Metadata From Document Id
+         * @description Display a paper.
+         */
+        get: operations["get_metadata_from_document_id_v1_metadata_document_id__document_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/metadata/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1031,27 +1231,7 @@ export interface paths {
          * Get Metadata
          * @description Display a paper.
          */
-        get: operations["get_metadata_v1_metadatas_paper_id__paper_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/metadatas/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Metadata
-         * @description Display a paper.
-         */
-        get: operations["get_metadata_v1_metadatas__id__get"];
+        get: operations["get_metadata_v1_metadata__id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1500,6 +1680,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/orcid_ids/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Membership Institutions */
+        get: operations["list_membership_institutions_v1_orcid_ids__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/orcid_ids/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Membership Institution Data */
+        get: operations["membership_institution_data_v1_orcid_ids__id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/author_ids/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Membership Institutions */
+        get: operations["list_membership_institutions_v1_author_ids__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/author_ids/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Membership Institution Data */
+        get: operations["membership_institution_data_v1_author_ids__id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/show_email_requests/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Show Email Requests */
+        get: operations["list_show_email_requests_v1_show_email_requests__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/licenses/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Licenses */
+        get: operations["list_licenses_v1_licenses__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/ping": {
         parameters: {
             query?: never;
@@ -1591,6 +1873,15 @@ export interface components {
             /** End Date */
             end_date?: string | null;
         };
+        /** AuthorIDModel */
+        AuthorIDModel: {
+            /** Id */
+            id: number | null;
+            /** Author Id */
+            author_id: string | null;
+            /** Updated */
+            updated: string | null;
+        };
         /**
          * Category
          * @description Represents an arXiv category.
@@ -1633,6 +1924,19 @@ export interface components {
             papers_to_endorse: number;
             /** Endorsement Domain */
             endorsement_domain: string | null;
+        };
+        /** CategoryYesNo */
+        CategoryYesNo: {
+            /** Id */
+            id: string;
+            /** Archive */
+            archive: string;
+            /** Subject Class */
+            subject_class: string;
+            /** Positive */
+            positive: boolean;
+            /** Reason */
+            reason: string;
         };
         /** CountryAlpha2Model */
         CountryAlpha2Model: {
@@ -1795,6 +2099,32 @@ export interface components {
             /** Seen Paper */
             seen_paper: boolean;
         };
+        /** EndorsementCreationModel */
+        EndorsementCreationModel: {
+            /** Endorser Id */
+            endorser_id: string;
+            /** Endorsee Id */
+            endorsee_id: string;
+            /** Archive */
+            archive: string;
+            /** Subject Class */
+            subject_class: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type_: "user" | "admin" | "auto";
+            /** Point Value */
+            point_value: number;
+            /** Flag Valid */
+            flag_valid: boolean;
+            /** Flag Seen Paper */
+            flag_seen_paper: boolean;
+            /** Flag Knows Personally */
+            flag_knows_personally: boolean;
+            /** Comment */
+            comment?: string | null;
+        };
         /** EndorsementModel */
         EndorsementModel: {
             /** Id */
@@ -1808,8 +2138,10 @@ export interface components {
             /** Subject Class */
             subject_class: string;
             /** Flag Valid */
-            flag_valid: number;
+            flag_valid: boolean;
             type?: components["schemas"]["EndorsementType"] | null;
+            /** Positive Endorsement */
+            positive_endorsement: boolean;
             /** Point Value */
             point_value: number;
             /**
@@ -1820,6 +2152,20 @@ export interface components {
             /** Request Id */
             request_id?: number | null;
             arXiv_category?: components["schemas"]["CategoryModel"] | null;
+            /** Session Id */
+            session_id?: number | null;
+            /** Comment */
+            comment?: string | null;
+            /** Remote Addr */
+            remote_addr?: string | null;
+            /** Remote Host */
+            remote_host?: string | null;
+            /** Tracking Cookie */
+            tracking_cookie?: string | null;
+            /** Flag Knows Personally */
+            flag_knows_personally?: boolean | null;
+            /** Flag Seen Paper */
+            flag_seen_paper?: boolean | null;
         };
         /** EndorsementOutcomeModel */
         EndorsementOutcomeModel: {
@@ -1830,11 +2176,13 @@ export interface components {
             /** Request Acceptable */
             request_acceptable: boolean;
             endorser_capability: components["schemas"]["EndorserCapabilityType"];
+            /** Endorser N Papers */
+            endorser_n_papers?: number | null;
             /** Reason */
             reason: string;
-            endorsement_request: components["schemas"]["EndorsementRequestModel"];
-            endorsee: components["schemas"]["PublicUserModel"] | null;
-            endorsement: components["schemas"]["EndorsementModel"] | null;
+            endorsement_request?: components["schemas"]["EndorsementRequestModel"] | null;
+            endorsee?: components["schemas"]["PublicUserModel"] | null;
+            endorsement?: components["schemas"]["EndorsementModel"] | null;
         };
         /** EndorsementRequestModel */
         EndorsementRequestModel: {
@@ -1921,6 +2269,19 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** LicenseModel */
+        LicenseModel: {
+            /** Id */
+            id: string;
+            /** Label */
+            label?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Note */
+            note?: string | null;
+            /** Sequence */
+            sequence?: number | null;
+        };
         /** MemberInstitutionModel */
         MemberInstitutionModel: {
             /** Id */
@@ -1950,18 +2311,12 @@ export interface components {
             document_id: number;
             /** Paper Id */
             paper_id: string;
-            /**
-             * Created
-             * Format: date-time
-             */
-            created: string;
-            /**
-             * Updated
-             * Format: date-time
-             */
-            updated: string;
+            /** Created */
+            created?: string | null;
+            /** Updated */
+            updated?: string | null;
             /** Submitter Id */
-            submitter_id: number;
+            submitter_id?: number | null;
             /** Submitter Name */
             submitter_name: string;
             /** Submitter Email */
@@ -1969,9 +2324,9 @@ export interface components {
             /** Source Size */
             source_size?: number | null;
             /** Source Format */
-            source_format: ("tex" | "ps" | "html" | "pdf" | "withdrawn" | "pdftex" | "docx") | null;
+            source_format?: ("tex" | "ps" | "html" | "pdf" | "withdrawn" | "pdftex" | "docx") | null;
             /** Source Flags */
-            source_flags: string | null;
+            source_flags?: string | null;
             /** Title */
             title?: string | null;
             /** Authors */
@@ -2003,7 +2358,7 @@ export interface components {
             /** Is Current */
             is_current?: number | null;
             /** Is Withdrawn */
-            is_withdrawn: number;
+            is_withdrawn: boolean;
         };
         /** ModeratorModel */
         ModeratorModel: {
@@ -2014,7 +2369,7 @@ export interface components {
             /** Archive */
             archive: string;
             /** Subject Class */
-            subject_class: string | null;
+            subject_class?: string | null;
             /** Is Public */
             is_public: boolean;
             /** No Email */
@@ -2025,6 +2380,17 @@ export interface components {
             no_reply_to: boolean;
             /** Daily Update */
             daily_update: boolean;
+        };
+        /** OrcidIDModel */
+        OrcidIDModel: {
+            /** Id */
+            id: number | null;
+            /** Orcid */
+            orcid: string | null;
+            /** Authenticated */
+            authenticated: boolean | null;
+            /** Updated */
+            updated: string | null;
         };
         /** OwnershipModel */
         OwnershipModel: {
@@ -2071,6 +2437,69 @@ export interface components {
             /** Paper Ids */
             paper_ids?: string[] | null;
         };
+        /** OwnershipRequestNavi */
+        OwnershipRequestNavi: {
+            /** First Request Id */
+            first_request_id: number | null;
+            /** Prev Request Ids */
+            prev_request_ids: number[];
+            /** Next Request Ids */
+            next_request_ids: number[];
+            /** Last Request Id */
+            last_request_id: number | null;
+        };
+        /**
+         * OwnershipRequestSubmit
+         * @example {
+         *       "document_ids": [
+         *         2123367,
+         *         2123675,
+         *         2125897,
+         *         2130529,
+         *         2134610,
+         *         2612674,
+         *         2618378
+         *       ],
+         *       "paper_ids": [
+         *         "2208.04373",
+         *         "2208.04681",
+         *         "2208.06903",
+         *         "2208.11535",
+         *         "2209.00613"
+         *       ],
+         *       "selected_documents": [
+         *         2125897,
+         *         2123675,
+         *         2130529
+         *       ],
+         *       "user_id": 1129053,
+         *       "workflow_status": "accepted"
+         *     }
+         */
+        OwnershipRequestSubmit: {
+            /**
+             * User Id
+             * @description The ID of the user associated with the ownership request.
+             */
+            user_id: number;
+            /** @description The status of the workflow ('pending', 'accepted', 'rejected'). */
+            workflow_status: components["schemas"]["WorkflowStatus"];
+            /**
+             * Document Ids
+             * @description List of IDs of the documents involved in the ownership request.
+             */
+            document_ids: number[];
+            /**
+             * Selected Documents
+             * @description Optional list of document IDs that were selected for approval.
+             */
+            selected_documents?: number[] | null;
+            /**
+             * Paper Ids
+             * @description Optional list of paper IDs associated with the ownership request.
+             */
+            paper_ids?: string[] | null;
+        };
         /** OwnershipRequestsAuditModel */
         OwnershipRequestsAuditModel: {
             /** Id */
@@ -2101,6 +2530,27 @@ export interface components {
             verify_id: boolean;
             /** Is Author */
             is_author: boolean;
+        };
+        /** PaperOwnersUpdateRequest */
+        PaperOwnersUpdateRequest: {
+            /** Document Id */
+            document_id: string;
+            /**
+             * Owners
+             * @default []
+             */
+            owners: string[];
+            /**
+             * Nonowners
+             * @default []
+             */
+            nonowners: string[];
+            /** Timestamp */
+            timestamp?: string | null;
+            /** Valid */
+            valid?: boolean | null;
+            /** Auto */
+            auto?: boolean | null;
         };
         /** PaperOwnershipDecisionModel */
         PaperOwnershipDecisionModel: {
@@ -2186,6 +2636,39 @@ export interface components {
             flag_group_eess: number | null;
             /** Flag Group Econ */
             flag_group_econ: number | null;
+        };
+        /** ReactAdminUpdateResult */
+        ReactAdminUpdateResult: {
+            /** Id */
+            id: string | number;
+            /**
+             * Data
+             * @default {}
+             */
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        /** ShowEmailRequestsModel */
+        ShowEmailRequestsModel: {
+            /** Id */
+            id: number;
+            /** Document Id */
+            document_id: number;
+            /** User Id */
+            user_id: number;
+            /** Session Id */
+            session_id: number;
+            /** Dated */
+            dated: number;
+            /** Flag Allowed */
+            flag_allowed: number;
+            /** Remote Addr */
+            remote_addr: string;
+            /** Remote Host */
+            remote_host: string;
+            /** Tracking Cookie */
+            tracking_cookie: string;
         };
         /** SubmissionCategoryModel */
         SubmissionCategoryModel: {
@@ -2373,14 +2856,17 @@ export interface components {
         UserModel: {
             /** Id */
             id?: number | null;
-            /** Email */
+            /**
+             * Email
+             * Format: email
+             */
             email: string;
             /** First Name */
             first_name: string;
             /** Last Name */
             last_name: string;
             /** Suffix Name */
-            suffix_name: string;
+            suffix_name?: string | null;
             /**
              * Share First Name
              * @default true
@@ -2405,8 +2891,11 @@ export interface components {
             email_bouncing: boolean;
             /** Policy Class */
             policy_class: number;
-            /** Joined Date */
-            joined_date: number;
+            /**
+             * Joined Date
+             * Format: date-time
+             */
+            joined_date: string;
             /** Joined Ip Num */
             joined_ip_num?: string | null;
             /** Joined Remote Host */
@@ -2503,23 +2992,30 @@ export interface components {
             veto_status?: components["schemas"]["VetoStatusEnum"] | null;
             /** Flag Is Mod */
             flag_is_mod?: boolean | null;
+            /** Moderated Categories */
+            moderated_categories?: string[] | null;
+            /** Moderated Archives */
+            moderated_archives?: string[] | null;
             /** Tapir Policy Classes */
             tapir_policy_classes?: number[] | null;
-            /** Orcid */
-            orcid?: string | null;
+            /** Orcid Id */
+            orcid_id?: string | null;
         };
         /** UserUpdateModel */
         UserUpdateModel: {
             /** Id */
             id?: number | null;
-            /** Email */
+            /**
+             * Email
+             * Format: email
+             */
             email: string;
             /** First Name */
             first_name: string;
             /** Last Name */
             last_name: string;
             /** Suffix Name */
-            suffix_name: string;
+            suffix_name?: string | null;
             /**
              * Share First Name
              * @default true
@@ -2544,8 +3040,11 @@ export interface components {
             email_bouncing: boolean;
             /** Policy Class */
             policy_class: number;
-            /** Joined Date */
-            joined_date: number;
+            /**
+             * Joined Date
+             * Format: date-time
+             */
+            joined_date: string;
             /** Joined Ip Num */
             joined_ip_num?: string | null;
             /** Joined Remote Host */
@@ -2642,10 +3141,14 @@ export interface components {
             veto_status?: components["schemas"]["VetoStatusEnum"] | null;
             /** Flag Is Mod */
             flag_is_mod?: boolean | null;
+            /** Moderated Categories */
+            moderated_categories?: string[] | null;
+            /** Moderated Archives */
+            moderated_archives?: string[] | null;
             /** Tapir Policy Classes */
             tapir_policy_classes?: number[] | null;
-            /** Orcid */
-            orcid?: string | null;
+            /** Orcid Id */
+            orcid_id?: string | null;
         };
         /**
          * UserVetoStatus
@@ -2690,6 +3193,7 @@ export interface operations {
                 _start?: number | null;
                 _end?: number | null;
                 submission_id?: number | null;
+                /** @description arXid Paper ID */
                 paper_id?: string | null;
                 /** @description Start date for filtering */
                 start_date?: string | null;
@@ -3397,6 +3901,68 @@ export interface operations {
             };
         };
     };
+    get_user_can_submit_to_v1_users__user_id__can_submit_to_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryYesNo"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_can_endorse_for_v1_users__user_id__can_endorse_for_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryYesNo"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_templates_v1_email_templates__get: {
         parameters: {
             query?: {
@@ -3566,12 +4132,21 @@ export interface operations {
                 end_date?: string | null;
                 /** @description user, auto, admin */
                 type?: string[] | string | null;
+                /** @description Valid endorsements only */
                 flag_valid?: boolean | null;
                 endorsee_id?: number | null;
                 endorser_id?: number | null;
+                by_suspect?: boolean | null;
+                positive_endorsement?: boolean | null;
                 /** @description List of user IDs to filter by */
                 id?: number[] | null;
                 request_id?: number | null;
+                /** @description Endorsee name. Last name, or first name + last name */
+                endorsee_name?: string | null;
+                /** @description Endorsee email */
+                endorsee_email?: string | null;
+                /** @description Category */
+                category?: string | null;
             };
             header?: never;
             path?: never;
@@ -3606,7 +4181,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndorsementCreationModel"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -3614,7 +4193,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EndorsementModel"];
+                    "application/json": components["schemas"]["EndorsementModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -3737,6 +4325,37 @@ export interface operations {
             };
         };
     };
+    delete_endorsement_v1_endorsements__id___delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_endorsement_requests_v1_endorsement_requests__get: {
         parameters: {
             query?: {
@@ -3754,8 +4373,8 @@ export interface operations {
                 /** @description End date for filtering */
                 end_date?: string | null;
                 flag_valid?: boolean | null;
-                /** @description Not positive point value */
-                not_positive?: boolean | null;
+                /** @description positive point value */
+                positive?: boolean | null;
                 /** @description Suspected user */
                 suspected?: boolean | null;
                 /** @description Endorsement request secret */
@@ -3766,6 +4385,10 @@ export interface operations {
                 endorsee_last_name?: string | null;
                 /** @description Endorsement request endorsee email */
                 endorsee_email?: string | null;
+                /** @description Endorsee username */
+                endorsee_username?: string | null;
+                /** @description Endorsement category */
+                category?: string | null;
                 /** @description Current ID - index position - for navigation */
                 current_id?: number | null;
             };
@@ -4234,7 +4857,7 @@ export interface operations {
             };
         };
     };
-    update_authorship_v1_paper_owners_update_authorship_post: {
+    update_authorship_v1_paper_owners_update_authorship_put: {
         parameters: {
             query?: never;
             header?: never;
@@ -4267,6 +4890,41 @@ export interface operations {
             };
         };
     };
+    update_paper_owners_v1_paper_owners_update_paper_owners__id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaperOwnersUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReactAdminUpdateResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     pwc_link_v1_paper_owners_pwc_link_get: {
         parameters: {
             query?: never;
@@ -4282,6 +4940,44 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_paper_pw_v1_paper_pw__get: {
+        parameters: {
+            query?: {
+                /** @description sort by */
+                _sort?: string | null;
+                /** @description sort order */
+                _order?: string | null;
+                _start?: number | null;
+                _end?: number | null;
+                /** @description List of paper owner */
+                id?: string[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperPwModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
@@ -4531,7 +5227,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OwnershipRequestSubmit"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -4540,6 +5240,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OwnershipRequestModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    navigate_v1_ownership_requests_navigate_get: {
+        parameters: {
+            query: {
+                id: number;
+                /** @description Workflow status */
+                workflow?: components["schemas"]["WorkflowStatus"] | null;
+                /** @description Number of prev/next IDs */
+                count?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnershipRequestNavi"];
                 };
             };
             /** @description Validation Error */
@@ -4671,11 +5406,15 @@ export interface operations {
                 _order?: string | null;
                 _start?: number | null;
                 _end?: number | null;
+                /** @description List of Moderator IDs. */
+                id?: string[] | null;
                 user_id?: number | null;
                 archive?: string | null;
                 subject_class?: string | null;
                 first_name?: string | null;
                 last_name?: string | null;
+                /** @description Moderator email */
+                email?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -4710,7 +5449,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModeratorModel"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -4719,6 +5462,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModeratorModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -5088,7 +5840,7 @@ export interface operations {
             };
         };
     };
-    list_metadatas_v1_metadatas__get: {
+    list_metadatas_v1_metadata__get: {
         parameters: {
             query?: {
                 /** @description sort by */
@@ -5104,6 +5856,8 @@ export interface operations {
                 start_date?: string | null;
                 /** @description End date for filtering */
                 end_date?: string | null;
+                /** @description Document ID */
+                document_id?: string | null;
                 /** @description arXiv ID */
                 paper_id?: string | null;
             };
@@ -5133,7 +5887,7 @@ export interface operations {
             };
         };
     };
-    get_metadata_v1_metadatas_paper_id__paper_id__get: {
+    get_metadata_v1_metadata_paper_id__paper_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -5164,7 +5918,70 @@ export interface operations {
             };
         };
     };
-    get_metadata_v1_metadatas__id__get: {
+    get_metadata_v1_metadata_paper_id__category___numeric_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category: string;
+                numeric_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetadataModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_metadata_from_document_id_v1_metadata_document_id__document_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetadataModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_metadata_v1_metadata__id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -6048,6 +6865,224 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Archive"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_membership_institutions_v1_orcid_ids__get: {
+        parameters: {
+            query?: {
+                /** @description sort by */
+                _sort?: string | null;
+                /** @description sort order */
+                _order?: string | null;
+                _start?: number | null;
+                _end?: number | null;
+                /** @description User ID */
+                id?: number[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrcidIDModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    membership_institution_data_v1_orcid_ids__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrcidIDModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_membership_institutions_v1_author_ids__get: {
+        parameters: {
+            query?: {
+                /** @description sort by */
+                _sort?: string | null;
+                /** @description sort order */
+                _order?: string | null;
+                _start?: number | null;
+                _end?: number | null;
+                /** @description User ID */
+                id?: string[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthorIDModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    membership_institution_data_v1_author_ids__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthorIDModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_show_email_requests_v1_show_email_requests__get: {
+        parameters: {
+            query?: {
+                /** @description sort by */
+                _sort?: string | null;
+                /** @description sort order */
+                _order?: string | null;
+                _start?: number | null;
+                _end?: number | null;
+                /** @description Document ID */
+                document_id?: number | null;
+                /** @description User ID */
+                user_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShowEmailRequestsModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_licenses_v1_licenses__get: {
+        parameters: {
+            query?: {
+                /** @description sort by */
+                _sort?: string | null;
+                /** @description sort order */
+                _order?: string | null;
+                _start?: number | null;
+                _end?: number | null;
+                /** @description List of licenses */
+                id?: string[] | null;
+                /** @description Active licenses */
+                active?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LicenseModel"][];
                 };
             };
             /** @description Validation Error */

@@ -26,7 +26,21 @@ from bizlogic.arxiv_bizlogic.audit_event import (
     AdminAudit_SuspendUser,
     AdminAudit_UnuspendUser,
     AdminAudit_ChangeStatus,
+
+    AdminAudit_SetGroupTest,
+    AdminAudit_SetProxy,
+    AdminAudit_SetSuspect,
+    AdminAudit_SetXml,
+    AdminAudit_SetEndorsementValid,
+    AdminAudit_SetPointValue,
+    AdminAudit_SetEndorsementRequestsValid,
+    AdminAudit_SetEmailBouncing,
+    AdminAudit_SetBanned,
+    AdminAudit_SetEditSystem,
+    AdminAudit_SetEditUsers,
+    AdminAudit_SetEmailVerified,
 )
+
 from bizlogic.arxiv_bizlogic.user_status import UserVetoStatus, UserFlags
 
 
@@ -422,11 +436,6 @@ class TestAdminAuditEventClasses:
         with pytest.raises(KeyError):
             AdminAudit_ChangeEmail("100", "200", "session123")
     
-    def test_set_flag_construction(self):
-        """Test SetFlag event requires flag and value."""
-        with pytest.raises(KeyError):
-            AdminAudit_SetFlag("100", "200", "session123")
-    
     def test_endorse_event_construction(self):
         """Test EndorseEvent requires endorser, endorsee, and category."""
         with pytest.raises(KeyError):
@@ -441,3 +450,181 @@ class TestAdminAuditEventClasses:
         """Test ChangeStatus event requires status_before and status_after."""
         with pytest.raises(KeyError):
             AdminAudit_ChangeStatus("100", "200", "session123")
+
+
+class TestAdminAuditEventSetFlagClasses:
+
+    def test_set_flag_construction_fail_1(self):
+        """Test SetFlag event requires flag and value."""
+        with pytest.raises(KeyError):
+            AdminAudit_SetBanned("100", "200", "session123")
+    
+    def test_set_group_test_event(self):
+        """Test creating AdminAudit_SetGroupTest event."""
+        audit_record = create_base_audit_record(
+            action=AdminActionEnum.FLIP_FLAG.value,
+            data="arXiv_demographics.flag_group_test=1",
+            comment="Set group test flag"
+        )
+        
+        event = create_admin_audit_event(audit_record)
+        
+        assert isinstance(event, AdminAudit_SetGroupTest)
+        assert event.action == AdminActionEnum.FLIP_FLAG
+        assert event.data == "arXiv_demographics.flag_group_test=1"
+        assert event.comment == "Set group test flag"
+    
+    def test_set_proxy_event(self):
+        """Test creating AdminAudit_SetProxy event."""
+        audit_record = create_base_audit_record(
+            action=AdminActionEnum.FLIP_FLAG.value,
+            data="arXiv_demographics.flag_proxy=0",
+            comment="Unset proxy flag"
+        )
+        
+        event = create_admin_audit_event(audit_record)
+        
+        assert isinstance(event, AdminAudit_SetProxy)
+        assert event.action == AdminActionEnum.FLIP_FLAG
+        assert event.data == "arXiv_demographics.flag_proxy=0"
+    
+    def test_set_suspect_event(self):
+        """Test creating AdminAudit_SetSuspect event."""
+        audit_record = create_base_audit_record(
+            action=AdminActionEnum.FLIP_FLAG.value,
+            data="arXiv_demographics.flag_suspect=1",
+            comment="Mark user as suspect"
+        )
+        
+        event = create_admin_audit_event(audit_record)
+        
+        assert isinstance(event, AdminAudit_SetSuspect)
+        assert event.action == AdminActionEnum.FLIP_FLAG
+        assert event.data == "arXiv_demographics.flag_suspect=1"
+    
+    def test_set_xml_event(self):
+        """Test creating AdminAudit_SetXml event."""
+        audit_record = create_base_audit_record(
+            action=AdminActionEnum.FLIP_FLAG.value,
+            data="arXiv_demographics.flag_xml=1",
+            comment="Enable XML flag"
+        )
+        
+        event = create_admin_audit_event(audit_record)
+        
+        assert isinstance(event, AdminAudit_SetXml)
+        assert event.action == AdminActionEnum.FLIP_FLAG
+        assert event.data == "arXiv_demographics.flag_xml=1"
+    
+    def test_set_endorsement_valid_event(self):
+        """Test creating AdminAudit_SetEndorsementValid event."""
+        audit_record = create_base_audit_record(
+            action=AdminActionEnum.FLIP_FLAG.value,
+            data="arXiv_endorsements.flag_valid=1",
+            comment="Mark endorsement as valid"
+        )
+        
+        event = create_admin_audit_event(audit_record)
+        
+        assert isinstance(event, AdminAudit_SetEndorsementValid)
+        assert event.action == AdminActionEnum.FLIP_FLAG
+        assert event.data == "arXiv_endorsements.flag_valid=1"
+    
+    def test_set_point_value_event(self):
+        """Test creating AdminAudit_SetPointValue event."""
+        audit_record = create_base_audit_record(
+            action=AdminActionEnum.FLIP_FLAG.value,
+            data="arXiv_endorsements.point_value=5",
+            comment="Set endorsement point value"
+        )
+        
+        event = create_admin_audit_event(audit_record)
+        
+        assert isinstance(event, AdminAudit_SetPointValue)
+        assert event.action == AdminActionEnum.FLIP_FLAG
+        assert event.data == "arXiv_endorsements.point_value=5"
+    
+    def test_set_endorsement_requests_valid_event(self):
+        """Test creating AdminAudit_SetEndorsementRequestsValid event."""
+        audit_record = create_base_audit_record(
+            action=AdminActionEnum.FLIP_FLAG.value,
+            data="arXiv_endorsement_requests.flag_valid=0",
+            comment="Mark endorsement requests as invalid"
+        )
+        
+        event = create_admin_audit_event(audit_record)
+        
+        assert isinstance(event, AdminAudit_SetEndorsementRequestsValid)
+        assert event.action == AdminActionEnum.FLIP_FLAG
+        assert event.data == "arXiv_endorsement_requests.flag_valid=0"
+    
+    def test_set_email_bouncing_event(self):
+        """Test creating AdminAudit_SetEmailBouncing event."""
+        audit_record = create_base_audit_record(
+            action=AdminActionEnum.FLIP_FLAG.value,
+            data="tapir_users.email_bouncing=1",
+            comment="Mark email as bouncing"
+        )
+        
+        event = create_admin_audit_event(audit_record)
+        
+        assert isinstance(event, AdminAudit_SetEmailBouncing)
+        assert event.action == AdminActionEnum.FLIP_FLAG
+        assert event.data == "tapir_users.email_bouncing=1"
+    
+    def test_set_banned_event(self):
+        """Test creating AdminAudit_SetBanned event."""
+        audit_record = create_base_audit_record(
+            action=AdminActionEnum.FLIP_FLAG.value,
+            data="tapir_users.flag_banned=1",
+            comment="Ban user"
+        )
+        
+        event = create_admin_audit_event(audit_record)
+        
+        assert isinstance(event, AdminAudit_SetBanned)
+        assert event.action == AdminActionEnum.FLIP_FLAG
+        assert event.data == "tapir_users.flag_banned=1"
+    
+    def test_set_edit_system_event(self):
+        """Test creating AdminAudit_SetEditSystem event."""
+        audit_record = create_base_audit_record(
+            action=AdminActionEnum.FLIP_FLAG.value,
+            data="tapir_users.flag_edit_system=1",
+            comment="Grant system edit privileges"
+        )
+        
+        event = create_admin_audit_event(audit_record)
+        
+        assert isinstance(event, AdminAudit_SetEditSystem)
+        assert event.action == AdminActionEnum.FLIP_FLAG
+        assert event.data == "tapir_users.flag_edit_system=1"
+    
+    def test_set_edit_users_event(self):
+        """Test creating AdminAudit_SetEditUsers event."""
+        audit_record = create_base_audit_record(
+            action=AdminActionEnum.FLIP_FLAG.value,
+            data="tapir_users.flag_edit_users=0",
+            comment="Revoke user edit privileges"
+        )
+        
+        event = create_admin_audit_event(audit_record)
+        
+        assert isinstance(event, AdminAudit_SetEditUsers)
+        assert event.action == AdminActionEnum.FLIP_FLAG
+        assert event.data == "tapir_users.flag_edit_users=0"
+    
+    def test_set_email_verified_event(self):
+        """Test creating AdminAudit_SetEmailVerified event."""
+        audit_record = create_base_audit_record(
+            action=AdminActionEnum.FLIP_FLAG.value,
+            data="tapir_users.flag_email_verified=1",
+            comment="Mark email as verified"
+        )
+        
+        event = create_admin_audit_event(audit_record)
+        
+        assert isinstance(event, AdminAudit_SetEmailVerified)
+        assert event.action == AdminActionEnum.FLIP_FLAG
+        assert event.data == "tapir_users.flag_email_verified=1"
+

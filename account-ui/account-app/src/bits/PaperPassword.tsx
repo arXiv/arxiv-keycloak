@@ -4,7 +4,7 @@ import Typography from "@mui/material/Typography";
 import {RuntimeContext} from "../RuntimeContext.tsx";
 import {fetchPlus} from "../fetchPlus.ts";
 
-type PaperPwType = adminApi['/v1/paper-pw/{id}']['get']['responses']['200']['content']['application/json'];
+type PaperPwType = adminApi['/v1/paper_pw/{id}']['get']['responses']['200']['content']['application/json'];
 
 
 interface PaperPasswordProps  {
@@ -29,13 +29,13 @@ const PaperPassword: React.FC<PaperPasswordProps> = ({documentId}) => {
                     }
                 }
                 catch (error) {
-
+                    console.error("Failed to fetch paper password", error);
                 }
             }
         }
 
         fetchpwpassword();
-    }, []);
+    }, [documentId, runtimeProps.ADMIN_API_BACKEND_URL]);
 
     return (
         <Typography >

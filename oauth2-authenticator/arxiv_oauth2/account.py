@@ -3,15 +3,14 @@
 """
 import base64
 import re
-import secrets
 from datetime import datetime, timezone
 import random
-import string
 from typing import Optional, List
 
 from arxiv_bizlogic.bizmodels.user_model import UserModel
 from arxiv_bizlogic.validation.email_validation import is_valid_email
 from arxiv_bizlogic.fastapi_helpers import get_current_user_access_token, get_client_host_name
+from arxiv_bizlogic.audit_event import admin_audit, AdminAudit_ChangeEmail, AdminAudit_ChangePassword
 from fastapi import APIRouter, Depends, status, HTTPException, Request, Response, Query
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -318,6 +317,9 @@ def set_email_verified_status(
     if not biz.email_verified(remote_ip=remote_host, remote_host=remote_hostname):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is not verified.")
 
+    if isinstance(authn, ArxivUserClaims) and authn.user_id != user_id:
+        admin_audit(AdminAudit_EmailVerified)
+
     session.commit()
     return EmailVerifiedStatus(email_verified=bool(user.flag_email_verified), user_id = user_id)
 
@@ -455,6 +457,8 @@ def change_email(
             comment=body.comment,
             email_verified=email_verified,
             )
+
+
         session.commit()
 
         if not email_verified and kc_user:
@@ -540,6 +544,7 @@ async def change_user_password(
         current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
         kc_access_token: Optional[str] = Depends( get_current_user_access_token),
         token: ApiToken | ArxivUserClaims | None = Depends(verify_bearer_token),
+        remote_ip: str = Depends(get_client_host),
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ):
@@ -618,6 +623,13 @@ async def change_user_password(
         # This should not happen. The tapir user exists and therefore, this must succeed.
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
 
+    if current_user.is_admin and current_user.user_id != data.user_id:
+        admin_audit(AdminAudit_ChangePassword(),
+                    user_id,
+                    current_user.user_id,
+                    session_id=current_user.session_id,
+                    remote_ip=remote_ip)
+
     client_secret = request.app.extra['ARXIV_USER_SECRET']
 
     if not kc_user:
@@ -654,6 +666,7 @@ async def change_user_password(
 
         pwd.password_enc = passwords.hash_password(data.new_password)
         session.commit()
+
 
     logger.info("User password changed successfully. Old password %s, new password %s",
                 sha256_base64_encode(data.old_password), sha256_base64_encode(data.new_password))

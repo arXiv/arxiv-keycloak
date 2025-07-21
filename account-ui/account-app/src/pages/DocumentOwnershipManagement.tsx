@@ -48,8 +48,8 @@ import {paths as adminApi} from "../types/admin-api";
 // type DocumentType = adminApi['/v1/documents/{id}']['get']['responses']['200']['content']['application/json'];
 // type DocumentsType = adminApi['/v1/documents/']['get']['responses']['200']['content']['application/json'];
 // type DemographicType = adminApi['/v1/demographics/{id}']['get']['responses']['200']['content']['application/json'];
-type PaperPasswordResponseType = adminApi['/v1/paper-pw/{id}']['get']['responses']['200']['content']['application/json'];
-type PaperAuthoredRequestType = adminApi['/v1/paper_owners/update-authorship']['post']['requestBody']['content']['application/json'];
+type PaperPasswordResponseType = adminApi['/v1/paper_pw/{id}']['get']['responses']['200']['content']['application/json'];
+type PaperAuthoredRequestType = adminApi['/v1/paper_owners/update-authorship']['put']['requestBody']['content']['application/json'];
 // type PaperOwnerListRequestType = adminApi['/v1/paper_owners/']['get']['requestBody'];
 type PaperOwnerListResponseType = adminApi['/v1/paper_owners/']['get']['responses']['200']['content']['application/json'];
 type PaperOwnerType = adminApi['/v1/paper_owners/{id}']['get']['responses']['200']['content']['application/json'];
@@ -302,7 +302,7 @@ const YourDocuments: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [paginationModel, filterModel, sortModel, runtimeProps.currentUser]);
+    }, [paginationModel, filterModel, sortModel, runtimeProps.currentUser, runtimeProps.ADMIN_API_BACKEND_URL, showNotification]);
 
     useEffect(() => {
         fetchMyPapers();
@@ -355,7 +355,7 @@ const YourDocuments: React.FC = () => {
         } else if (action !== "") {
             const match = rowId.match(/^user_(\d+)-doc_(\d+)$/);
             if (match) {
-                const [, _user_id, doc_id] = match;
+                const [, /*_user_id*/, doc_id] = match;
                 const url = runtimeProps.ADMIN_API_BACKEND_URL + `/documents/user-action/${doc_id}/${action.toLowerCase()}`;
                 window.open(url, '_blank');
             }
@@ -378,14 +378,14 @@ const YourDocuments: React.FC = () => {
 
         const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + "/paper_owners/update-authorship",
             {
-                method: "POST", headers: {"Content-Type": "application/json",}, body: JSON.stringify(body),
+                method: "PUT", headers: {"Content-Type": "application/json",}, body: JSON.stringify(body),
             });
         if (response.ok) {
             await fetchMyPapers();
         } else {
             console.log(await response.text());
         }
-    }, [selectedRows, runtimeProps?.currentUser, papers, runtimeProps.ADMIN_API_BACKEND_URL]);
+    }, [selectedRows, runtimeProps?.currentUser, runtimeProps.ADMIN_API_BACKEND_URL, fetchMyPapers]);
 
 
     const columns: GridColDef<PaperOwnerType>[] = [

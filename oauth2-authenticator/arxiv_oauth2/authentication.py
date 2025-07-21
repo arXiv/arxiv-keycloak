@@ -32,6 +32,7 @@ from .biz.cold_migration import cold_migrate
 # from .account import AccountRegistrationModel
 
 from .sessions import create_tapir_session
+from arxiv_bizlogic.audit_event import admin_audit, AdminAudit_BecomeUser
 
 @dataclasses.dataclass
 class CookieParams:
@@ -224,6 +225,13 @@ async def impersonate(request: Request,
     # legacy cookie
     if tapir_cookie and tapir_session:
         user_claims.set_tapir_session(tapir_cookie, tapir_session)
+
+    # Audit
+    admin_audit(AdminAudit_BecomeUser(new_session_id=tapir_session),
+                current_user.user_id,
+                user_id,
+                session_id=current_user.session_id,
+                remote_ip=client_ip)
 
     # Perform impersonation (returns a URL to redirect to)
     impersonation_response = kc_admin.connection.raw_post(f"admin/realms/{kc_admin.connection.user_realm_name}/users/{user_id}/impersonation", {})  # type: ignore

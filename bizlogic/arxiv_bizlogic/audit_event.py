@@ -8,13 +8,14 @@ import re
 from abc import abstractmethod
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Optional, Tuple, Dict
+from typing import Optional, Tuple, Dict, Callable
 
+from poetry.console.commands import self
 from sqlalchemy.orm import Session
 from arxiv.db.models import TapirAdminAudit
 from .user_status import UserVetoStatus, UserFlags
 from .validation.email_validation import is_valid_email
-
+from inspect import isfunction
 
 
 class AdminActionEnum(str, Enum):
@@ -356,16 +357,40 @@ class AdminAudit_SetFlag(AdminAuditEvent):
         ValueError: If the flag is not a valid UserFlags enum
     """
     _action = AdminActionEnum.FLIP_FLAG
+    _flag: UserFlags
+    _value_name: str
+    _value_type: type
 
     def __init__(self, *argc, **kwargs):
-        flag = kwargs.pop("flag")
-        if not isinstance(flag, UserFlags):
-            raise ValueError(f"flag '{flag!r}' is not a UserFlags'")
-        value = kwargs.pop("value")
-        data = f"{flag.value}={value}"
+        if not hasattr(self, "_value_type"):
+            raise NotImplementedError(f"AdminAudit_SetFlag is a base class and should not be instantiated directly")
+
+        if self._value_type is bool:
+            value = kwargs.pop(self._value_name)
+            if isinstance(value, str):
+                normalized = value.lower() in ("yes", "true", "1")
+            elif isinstance(value, int):
+                normalized = value != 0
+            elif isinstance(value, bool):
+                normalized = value
+            else:
+                raise ValueError(f"Invalid value type for flag {self._flag.value}: {type(value)}")
+            boolean_value = 1 if normalized else 0
+            data = f"{self._flag.value}={boolean_value}"
+        elif self._value_type is int:
+            data = f"{self._flag.value}={kwargs.pop(self._value_name)}"
+        elif self._value_type is str:
+            data = f"{self._flag.value}={kwargs.pop(self._value_name)}"
+        else:
+            raise NotImplementedError(f"Unsupported flag type: {self._value_type}")
         kwargs["data"] = data
+        if "flag" in kwargs:
+            _ = kwargs.pop("flag")
+        if "value" in kwargs:
+            _ = kwargs.pop("value")
         super().__init__(*argc, **kwargs)
         pass
+
 
     @classmethod
     def get_init_params(cls, audit_record: TapirAdminAudit) -> Tuple[list, dict]:
@@ -663,6 +688,68 @@ class AdminAudit_ChangeStatus(AdminAuditEvent):
         }
 
 
+class AdminAudit_SetGroupTest(AdminAudit_SetFlag):
+    _flag = UserFlags.ARXIV_FLAG_GROUP_TEST
+    _value_name = "group_test"
+    _value_type = bool
+
+class AdminAudit_SetProxy(AdminAudit_SetFlag):
+    _flag = UserFlags.ARXIV_FLAG_PROXY
+    _value_name = "proxy"
+    _value_type = bool
+
+class AdminAudit_SetSuspect(AdminAudit_SetFlag):
+    _flag = UserFlags.ARXIV_FLAG_SUSPECT
+    _value_name = "suspect"
+    _value_type = bool
+
+class AdminAudit_SetXml(AdminAudit_SetFlag):
+    _flag = UserFlags.ARXIV_FLAG_XML
+    _value_name = "xml"
+    _value_type = bool
+
+class AdminAudit_SetEndorsementValid(AdminAudit_SetFlag):
+    _flag = UserFlags.ARXIV_ENDORSEMENT_FLAG_VALID
+    _value_name = "endorsement_valid"
+    _value_type = bool
+
+class AdminAudit_SetPointValue(AdminAudit_SetFlag):
+    _flag = UserFlags.ARXIV_ENDORSEMENT_POINT_VALUE
+    _value_name = "point_value"
+    _value_type = int
+
+class AdminAudit_SetEndorsementRequestsValid(AdminAudit_SetFlag):
+    _flag = UserFlags.ARXIV_ENDORSEMENT_REQUEST_FLAG_VALID
+    _value_name = "endorsement_requests_valid"
+    _value_type = bool
+
+class AdminAudit_SetEmailBouncing(AdminAudit_SetFlag):
+    _flag = UserFlags.TAPIR_EMAIL_BOUNCING
+    _value_name = "email_bouncing"
+    _value_type = bool
+
+class AdminAudit_SetBanned(AdminAudit_SetFlag):
+    _flag = UserFlags.TAPIR_FLAG_BANNED
+    _value_name = "banned"
+    _value_type = bool
+
+class AdminAudit_SetEditSystem(AdminAudit_SetFlag):
+    _flag = UserFlags.TAPIR_FLAG_EDIT_SYSTEM
+    _value_name = "edit_system"
+    _value_type = bool
+
+class AdminAudit_SetEditUsers(AdminAudit_SetFlag):
+    _flag = UserFlags.TAPIR_FLAG_EDIT_USERS
+    _value_name = "edit_users"
+    _value_type = bool
+
+class AdminAudit_SetEmailVerified(AdminAudit_SetFlag):
+    _flag = UserFlags.TAPIR_FLAG_EMAIL_VERIFIED
+    _value_name = "verified"
+    _value_type = bool
+
+
+
 def admin_audit(session: Session,
                 event: AdminAuditEvent,
                 admin_user: str,
@@ -711,6 +798,39 @@ def admin_audit(session: Session,
     )
     session.add(entry)
 
+
+set_flag_event_classes: Dict[str, AdminAuditEvent] = {
+    cls._flag.value : cls for cls in [
+        AdminAudit_SetGroupTest,
+        AdminAudit_SetProxy,
+        AdminAudit_SetSuspect,
+        AdminAudit_SetXml,
+        AdminAudit_SetEndorsementValid,
+        AdminAudit_SetPointValue,
+        AdminAudit_SetEndorsementRequestsValid,
+        AdminAudit_SetEmailBouncing,
+        AdminAudit_SetBanned,
+        AdminAudit_SetEditSystem,
+        AdminAudit_SetEditUsers,
+        AdminAudit_SetEmailVerified,
+    ]
+}
+
+
+def admin_audit_flip_flag_instantiator(audit_record: TapirAdminAudit) -> AdminAuditEvent:
+    args, kwargs = AdminAudit_SetFlag.get_init_params(audit_record)
+    flag = kwargs["flag"]
+    value = kwargs["value"]
+    event_class = set_flag_event_classes.get(flag)
+    if not event_class:
+        raise ValueError(f"{audit_record.action}.{flag} is not a valid admin action of flip flag")
+    if not hasattr(event_class, "_value_name"):
+        raise NotImplementedError(f"AdminAudit_SetFlag is a base class and not intended to be instantiated directly")
+    value_name = event_class._value_name
+    kwargs.update({value_name: value})
+    return event_class(*args, **kwargs)
+
+
 event_classes: Dict[str, AdminAuditEvent] = {
     cls._action.value : cls for cls in [
         AdminAudit_AddPaperOwner,
@@ -723,7 +843,6 @@ event_classes: Dict[str, AdminAuditEvent] = {
         AdminAudit_BecomeUser,
         AdminAudit_ChangeEmail,
         AdminAudit_ChangePassword,
-        AdminAudit_SetFlag,
         AdminAudit_EndorsedBySuspect,
         AdminAudit_GotNegativeEndorsement,
         AdminAudit_MakeModerator,
@@ -732,9 +851,11 @@ event_classes: Dict[str, AdminAuditEvent] = {
         AdminAudit_UnuspendUser,
         AdminAudit_ChangeStatus,
         AdminAudit_AdminChangePaperPassword,
+        AdminAudit_SetEmailVerified,
     ]
+} | {
+    AdminActionEnum.FLIP_FLAG.value: admin_audit_flip_flag_instantiator
 }
-
 
 
 def create_admin_audit_event(audit_record: TapirAdminAudit) -> AdminAuditEvent:
@@ -757,6 +878,8 @@ def create_admin_audit_event(audit_record: TapirAdminAudit) -> AdminAuditEvent:
     if not event_class:
         raise ValueError(f"{audit_record.action} is not a valid admin action")
 
+    if isfunction(event_class):
+        return event_class(audit_record)
+
     args, kwargs = event_class.get_init_params(audit_record)
     return event_class(*args, **kwargs)
-

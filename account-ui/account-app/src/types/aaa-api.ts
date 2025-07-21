@@ -44,7 +44,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/impersonate/{user_id: str}": {
+    "/impersonate/{user_id}/": {
         parameters: {
             query?: never;
             header?: never;
@@ -53,8 +53,29 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Impersonate */
-        post: operations["impersonate_impersonate__user_id__str__post"];
+        /**
+         * Impersonate
+         * @description Handles user impersonation by administrators to access and act on behalf of another user.
+         *     This involves retrieving user information from the database and Keycloak,
+         *     generating appropriate claims, managing cookies, and performing necessary Keycloak
+         *     impersonation API calls.
+         *
+         *     :param request: The incoming HTTP request.
+         *     :type request: Request
+         *     :param user_id: The user ID of the target user to impersonate.
+         *     :type user_id: str
+         *     :param session: Database session dependency used for fetching user data.
+         *     :type session: sqlalchemy.orm.Session
+         *     :param client_ip: Client IP address retrieved from the request.
+         *     :type client_ip: str
+         *     :param current_user: Current authenticated user making the impersonation request. This
+         *         parameter can be None, indicating that the user is not authenticated.
+         *     :type current_user: Optional[ArxivUserClaims]
+         *     :return: A Response object which includes cookies for the impersonated session and redirects
+         *         to a target URL if impersonation was successful.
+         *     :rtype: Response
+         */
+        post: operations["impersonate_impersonate__user_id___post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -346,6 +367,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/account/email/history/{user_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Email History
+         * @description Get the past email history
+         */
+        get: operations["get_email_history_account_email_history__user_id___get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/account/password/": {
         parameters: {
             query?: never;
@@ -436,6 +477,26 @@ export interface paths {
          * @description Update AUTHOR_ID
          */
         put: operations["upsert_author_id_account_author_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/account/status/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update User Status
+         * @description Update User flags
+         */
+        put: operations["update_user_status_account_status__put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -623,12 +684,12 @@ export interface components {
             email_verified?: boolean | null;
             /** Scopes */
             scopes?: string[] | null;
-            /** Orcid */
-            orcid?: string | null;
-            /** Orcid Authenticated */
-            orcid_authenticated?: boolean | null;
             /** Author Id */
             author_id?: string | null;
+            /** Orcid Id */
+            orcid_id?: string | null;
+            /** Orcid Authenticated */
+            orcid_authenticated?: boolean | null;
         };
         /** AccountRegistrationError */
         AccountRegistrationError: {
@@ -682,6 +743,13 @@ export interface components {
              */
             keycloak_migration: boolean;
         };
+        /** AuthorIdUpdateModel */
+        AuthorIdUpdateModel: {
+            /** User Id */
+            user_id: string;
+            /** Author Id */
+            author_id?: string | null;
+        };
         /**
          * CAREER_STATUS
          * @enum {string}
@@ -704,6 +772,37 @@ export interface components {
             /** Subject Class */
             subject_class: string;
         };
+        /** EmailChangeEntry */
+        EmailChangeEntry: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Email */
+            email: string;
+            /**
+             * Start Date
+             * Format: date-time
+             */
+            start_date: string;
+            /** End Date */
+            end_date: string | null;
+            changed_by: components["schemas"]["EmailChangedBy"];
+            /** Admin Id */
+            admin_id?: number | null;
+            /**
+             * Issued When
+             * Format: date-time
+             */
+            issued_when: string;
+            /** Used */
+            used: boolean;
+        };
+        /**
+         * EmailChangedBy
+         * @enum {string}
+         */
+        EmailChangedBy: "USER" | "ADMIN";
         /** EmailModel */
         EmailModel: {
             /** User Id */
@@ -719,6 +818,10 @@ export interface components {
             email: string;
             /** New Email */
             new_email: string;
+            /** Email Verified */
+            email_verified?: boolean | null;
+            /** Comment */
+            comment?: string | null;
         };
         /** EmailVerifiedStatus */
         EmailVerifiedStatus: {
@@ -731,6 +834,17 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** OrcidUpdateModel */
+        OrcidUpdateModel: {
+            /** User Id */
+            user_id: string;
+            /** Orcid */
+            orcid?: string | null;
+            /** Orcid Auth */
+            orcid_auth?: string | null;
+            /** Authenticated */
+            authenticated: boolean;
         };
         /** PasswordResetRequest */
         PasswordResetRequest: {
@@ -775,6 +889,15 @@ export interface components {
             session: string;
             /** Refresh */
             refresh: string;
+        };
+        /** UserStatusModel */
+        UserStatusModel: {
+            /** User Id */
+            user_id: string;
+            /** Deleted */
+            deleted: boolean | null;
+            /** Banned */
+            banned: boolean | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -858,13 +981,13 @@ export interface operations {
             };
         };
     };
-    impersonate_impersonate__user_id__str__post: {
+    impersonate_impersonate__user_id___post: {
         parameters: {
-            query: {
+            query?: never;
+            header?: never;
+            path: {
                 user_id: string;
             };
-            header?: never;
-            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -1426,6 +1549,15 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
+            /** @description Too many email change request */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
             /** @description Error while updating Keycloak */
             503: {
                 headers: {
@@ -1433,6 +1565,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_email_history_account_email_history__user_id___get: {
+        parameters: {
+            query?: {
+                /** @description sort by */
+                _sort?: string | null;
+                /** @description sort order */
+                _order?: string | null;
+                _start?: number | null;
+                _end?: number | null;
+            };
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailChangeEntry"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1548,7 +1718,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EmailUpdateModel"];
+                "application/json": components["schemas"]["OrcidUpdateModel"];
             };
         };
         responses: {
@@ -1608,7 +1778,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EmailUpdateModel"];
+                "application/json": components["schemas"]["AuthorIdUpdateModel"];
             };
         };
         responses: {
@@ -1631,6 +1801,66 @@ export interface operations {
                 };
             };
             /** @description Forbidden - not allowed to change the AUTHOR_ID data */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Error while updating Keycloak */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_user_status_account_status__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserStatusModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Not logged in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Forbidden - not allowed to change the ORCID data */
             403: {
                 headers: {
                     [name: string]: unknown;

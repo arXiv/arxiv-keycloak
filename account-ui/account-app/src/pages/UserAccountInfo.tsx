@@ -217,10 +217,10 @@ const UserAccountInfo = () => {
     const endorsedCategories = endorsements ?
         <EndorsedCategories endorsements={endorsements} key={user?.id || "user"} runtimeProps={runtimeProps}/> : null;
 
-    const orcidId = runtimeProps.currentUser?.orcid;
+    const orcidId = runtimeProps.currentUser?.orcid_id;
     const orcidAuth = runtimeProps.currentUser?.orcid_authenticated;
 
-    const orcidText = runtimeProps.currentUser?.orcid ? null : (
+    const orcidText = runtimeProps.currentUser?.orcid_id ? null : (
         <Typography>
             {"You are encouraged to associate your "}
             <a href="https://info.arxiv.org/help/orcid">ORCID</a>
@@ -282,7 +282,7 @@ const UserAccountInfo = () => {
                         <Typography variant="body1"><b>{"URL: "}</b> <Link href={url} target="_blank">{user?.url}</Link></Typography>
                         <Typography variant="body1"><b>{"Country: "}</b><CountryName countryId={user?.country || ""} component="span" /></Typography>
                         <Typography variant="body1"><b>{"Career Status: "}</b>{user?.career_status}</Typography>
-                        <Typography variant="body1"><b>{"ORCID: "}</b>{user?.orcid}</Typography>
+                        <Typography variant="body1"><b>{"ORCID: "}</b>{user?.orcid_id}</Typography>
                         <Typography variant="body1"><b>{"arXiv author ID: "}</b>{user?.author_id}</Typography>
                     </Box>
                 </Box>
