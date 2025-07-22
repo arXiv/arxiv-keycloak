@@ -940,21 +940,16 @@ def admin_audit(session: Session,
         event: The AdminAuditEvent containing action details and data
         admin_user: ID of the administrator performing the action
         affected_user: ID of the user being affected by the action
-        session_id: Optional session ID associated with the admin action
+        session_id: Optional TAPIR session ID associated with the admin action
         remote_ip: Optional IP address of the administrator
         remote_hostname: Optional hostname of the administrator
         tracking_cookie: Optional tracking cookie for session correlation
         timestamp: Optional timestamp; if None, current UTC time is used
     """
-    # Prepare session_id for SQL
-    if not session_id:
-        _session_id = None
-    else:
-        _session_id = f"'{session_id}'"
 
     entry = TapirAdminAudit(
         log_date=timestamp,
-        session_id=_session_id,
+        session_id=session_id if session_id else None,
         ip_addr=remote_ip,
         remote_host=remote_hostname,
         admin_user=int(admin_user),
