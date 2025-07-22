@@ -5,20 +5,18 @@ Each admin event is represented vy a sub-class of AdminAuditEvent.
 """
 
 import re
-from abc import abstractmethod
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Optional, Tuple, Dict, Callable
+from typing import Optional, Tuple, Dict
 
-from poetry.console.commands import self
 from sqlalchemy.orm import Session
 from arxiv.db.models import TapirAdminAudit
+
 from .user_status import UserVetoStatus, UserFlags
-from .validation.email_validation import is_valid_email
 from inspect import isfunction
 
 
-class AdminActionEnum(str, Enum):
+class AdminAuditActionEnum(str, Enum):
     """Enumeration of admin actions that can be audited in the system.
     
     This enum defines all possible administrative actions that can be performed
@@ -131,7 +129,7 @@ class AdminAuditEvent:
         return self._data
 
     @property
-    def action(self) -> AdminActionEnum:
+    def action(self) -> AdminAuditActionEnum:
         return self.__class__._action
 
     @classmethod
@@ -160,6 +158,32 @@ class AdminAuditEvent:
             "tracking_cookie": audit_record.tracking_cookie,
             "timestamp": audit_record.log_date,
         }
+
+    def describe_user(self, _session: Session, id: str) -> str:
+        return r"{"+f"user[{id}]"+r"}"
+
+    def describe_affected_user(self, session: Session) -> str:
+        return self.describe_user(session, self.affected_user)
+
+    def describe_admin_user(self, session: Session) -> str:
+        return self.describe_user(session, self.admin_user)
+
+    def describe(self, session: Session) -> str:
+        return self.data
+
+
+def doc_href(doc_id, paper_id):
+    return f'<a href="/auth/admin/paper-detail.php?document_id={doc_id}">{paper_id}</a>'
+
+
+
+class AdminAudit_AddComment(AdminAuditEvent):
+    """Audit event for commenting on a user
+    """
+    _action = AdminAuditActionEnum.ADD_COMMENT
+
+    def describe(self, session: Session) -> str:
+        return f"{self.describe_admin_user(session)} commented on {self.describe_affected_user(session)}. {self.comment}"
 
 
 
@@ -209,39 +233,75 @@ class AdminAudit_PaperEvent(AdminAuditEvent):
 
 class AdminAudit_AddPaperOwner(AdminAudit_PaperEvent):
     """Audit event for adding a paper owner to a submission."""
-    _action = AdminActionEnum.ADD_PAPER_OWNER
+    _action = AdminAuditActionEnum.ADD_PAPER_OWNER
+
+
+    def describe(self, session: Session) -> str:
+        return f"{self.describe_admin_user(session)} made {self.describe_affected_user(session)} an owner of paper {doc_href(self.data, self.data)}"
 
 
 class AdminAudit_AddPaperOwner2(AdminAudit_PaperEvent):
     """Audit event for adding a secondary paper owner to a submission."""
-    _action = AdminActionEnum.ADD_PAPER_OWNER_2
+    _action = AdminAuditActionEnum.ADD_PAPER_OWNER_2
+
+    def describe(self, session: Session) -> str:    
+        return f"{self.describe_admin_user(session)} made {self.describe_affected_user(session)} an owner of paper {doc_href(self.data, self.data)} through the process-ownership screen"
 
 
 class AdminAudit_ChangePaperPassword(AdminAudit_PaperEvent):
     """Audit event for changing a paper's password."""
-    _action = AdminActionEnum.CHANGE_PAPER_PW
+    _action = AdminAuditActionEnum.CHANGE_PAPER_PW
+
+    def describe(self, session: Session) -> str:
+        return f"{self.describe_admin_user(session)} changed the paper password for {doc_href(self.data, self.data)} which was submitted by {self.describe_affected_user(session)}"
+
 
 class AdminAudit_AdminChangePaperPassword(AdminAudit_PaperEvent):
     """Audit event for changing a paper's password."""
-    _action =  AdminActionEnum.ARXIV_CHANGE_PAPER_PW
+    _action =  AdminAuditActionEnum.ARXIV_CHANGE_PAPER_PW
+
+    def describe(self, session: Session) -> str:
+        return f"{self.describe_admin_user(session)} changed the paper password for {doc_href(self.data, self.data)} which was submitted by {self.describe_affected_user(session)}"
+
 
 class AdminAudit_AdminMakeAuthor(AdminAudit_PaperEvent):
     """Audit event for making a user an author of a paper."""
-    _action = AdminActionEnum.ARXIV_MAKE_AUTHOR
+    _action = AdminAuditActionEnum.ARXIV_MAKE_AUTHOR
+
+    def describe(self, session: Session) -> str:
+        return f"{self.describe_admin_user(session)} made {self.describe_affected_user(session)} an author of {doc_href(self.data, self.data)}"        
+
 
 class AdminAudit_AdminMakeNonauthor(AdminAudit_PaperEvent):
     """Audit event for removing a user's authorship of a paper."""
-    _action = AdminActionEnum.ARXIV_MAKE_NONAUTHOR
+    _action = AdminAuditActionEnum.ARXIV_MAKE_NONAUTHOR
+    
+    def describe(self, session: Session) -> str:
+        return f"{self.describe_admin_user(session)} made {self.describe_affected_user(session)} a nonauthor of {doc_href(self.data, self.data)}"
 
 
 class AdminAudit_AdminRevokePaperOwner(AdminAudit_PaperEvent):
     """Audit event for revoking a user's paper ownership."""
-    _action = AdminActionEnum.ARXIV_REVOKE_PAPER_OWNER
+    _action = AdminAuditActionEnum.ARXIV_REVOKE_PAPER_OWNER
+
+    def describe(self, session: Session) -> str:
+        return f"{self.describe_admin_user(session)} revoked {self.describe_affected_user(session)} the ownership of {doc_href(self.data, self.data)}"
 
 
 class AdminAudit_AdminUnrevokePaperOwner(AdminAudit_PaperEvent):
     """Audit event for restoring a user's paper ownership."""
-    _action = AdminActionEnum.ARXIV_UNREVOKE_PAPER_OWNER
+    _action = AdminAuditActionEnum.ARXIV_UNREVOKE_PAPER_OWNER
+
+    def describe(self, session: Session) -> str:
+        return f"{self.describe_admin_user(session)} restored {self.describe_affected_user(session)} the ownership of {doc_href(self.data, self.data)}"
+
+class AdminAudit_AdminNotArxivRevokePaperOwner(AdminAudit_PaperEvent):
+    """Audit event for revoking a user's paper ownership."""
+    _action = AdminAuditActionEnum.REVOKE_PAPER_OWNER
+
+    def describe(self, session: Session) -> str:
+        return f"{self.describe_admin_user(session)} revoked {self.describe_affected_user(session)} the ownership of {doc_href(self.data, self.data)}"
+
 
 
 class AdminAudit_BecomeUser(AdminAuditEvent):
@@ -251,7 +311,7 @@ class AdminAudit_BecomeUser(AdminAuditEvent):
     functionality to impersonate another user for support purposes.
     The new session ID is stored as data.
     """
-    _action = AdminActionEnum.BECOME_USER
+    _action = AdminAuditActionEnum.BECOME_USER
 
     def __init__(self, *argc, **kwargs):
         data = str(kwargs.pop("new_session_id"))
@@ -287,6 +347,10 @@ class AdminAudit_BecomeUser(AdminAuditEvent):
             "timestamp": audit_record.log_date,
         }
 
+    def describe(self, session: Session) -> str:
+        return f"{self.describe_admin_user(session)} impersonated {self.describe_affected_user(session)}"
+
+
 class AdminAudit_ChangeEmail(AdminAuditEvent):
     """Audit event for changing a user's email address.
     
@@ -296,12 +360,10 @@ class AdminAudit_ChangeEmail(AdminAuditEvent):
     Raises:
         ValueError: If the provided email address is not valid
     """
-    _action = AdminActionEnum.CHANGE_EMAIL
+    _action = AdminAuditActionEnum.CHANGE_EMAIL
 
     def __init__(self, *argc, **kwargs):
         data = str(kwargs.pop("email"))
-        if not is_valid_email(data):
-            raise ValueError(f"email '{data}' is not a valid email")
         kwargs["data"] = data
         super().__init__(*argc, **kwargs)
         pass
@@ -333,6 +395,9 @@ class AdminAudit_ChangeEmail(AdminAuditEvent):
             "timestamp": audit_record.log_date,
         }
 
+    def describe(self, session: Session) -> str:
+        return f"{self.describe_admin_user(session)} changed email of {self.describe_affected_user(session)} to {self.data}"
+
 
 class AdminAudit_ChangePassword(AdminAuditEvent):
     """Audit event for changing a user's password.
@@ -340,23 +405,329 @@ class AdminAudit_ChangePassword(AdminAuditEvent):
     This event is logged when an administrator changes a user's password.
     No additional data or comment is stored for security reasons.
     """
-    _action = AdminActionEnum.CHANGE_PASSWORD
+    _action = AdminAuditActionEnum.CHANGE_PASSWORD
+
+    def describe(self, session: Session) -> str:
+        return f"{self.describe_admin_user(session)} changed password of {self.describe_affected_user(session)}"
+
+
+
+
+class AdminAudit_EndorseEvent(AdminAuditEvent):
+    """Base class for audit events related to user endorsements.
+    
+    This class handles audit events that involve endorsement actions,
+    storing the endorser ID, endorsee ID, and category as data.
+    
+    Args:
+        endorser: ID of the user providing the endorsement
+        endorsee: ID of the user receiving the endorsement
+        category: The subject category for the endorsement
+    """
+    def __init__(self, *argc, **kwargs):
+        endorser_id = kwargs.pop("endorser")
+        _ = int(endorser_id)
+        endorsee_id = kwargs.pop("endorsee")
+        _ = int(endorsee_id)
+        category = kwargs.pop("category")
+        data = f"{endorser_id} {category} {endorsee_id}"
+        kwargs["data"] = data
+        super().__init__(*argc, **kwargs)
+        pass
+
+    @classmethod
+    def get_init_params(cls, audit_record: TapirAdminAudit) -> Tuple[list, dict]:
+        """
+        Generate constructor parameters from an audit record.
+
+        This method can be overridden by subclasses to provide custom
+        parameter generation for their __init__ methods.
+
+        Args:
+            audit_record: The TapirAdminAudit database record
+
+        Returns:
+            A tuple of (args, kwargs) for the constructor
+        """
+        data = audit_record.data.split(" ")
+        if len(data) != 3:
+            raise ValueError(f"data '{audit_record.data}' is not valid")
+        endorser = data[0]
+        category = data[1]
+        endorsee = data[2]
+
+        if not re.match(r"^\d+$", endorser) or \
+                not re.match(r"^\d+$", endorsee) or \
+                not re.match(r"[\w\-]+\..*", category):
+            raise ValueError(f"data '{audit_record.data}' is not valid")
+
+        return [
+            audit_record.admin_user,
+            audit_record.affected_user,
+            audit_record.session_id,
+        ], {
+            "comment": audit_record.comment,
+            "endorser": endorser,
+            "endorsee": endorsee,
+            "category": category,
+            "remote_ip": audit_record.ip_addr,
+            "remote_hostname": audit_record.remote_host,
+            "tracking_cookie": audit_record.tracking_cookie,
+            "timestamp": audit_record.log_date,
+        }
+
+    def describe(self, session: Session) -> str:
+        data = self.data.split(" ")
+        if len(data) == 3:
+            endorser = data[0]
+            category = data[1]
+            endorsee = data[2]
+            return f"{self.describe_user(session, endorser)} ? {self.describe_user(session, endorsee)} for {category}"
+        return repr(data)
+
+
+class AdminAudit_EndorsedBySuspect(AdminAudit_EndorseEvent):
+    """Audit event for when a user is endorsed by a suspect user."""
+    _action = AdminAuditActionEnum.ENDORSED_BY_SUSPECT
+
+    def describe(self, session: Session) -> str:
+        data = self.data.split(" ")
+        if len(data) == 3:
+            endorser = data[0]
+            category = data[1]
+            endorsee = data[2]
+            return f"A suspect {self.describe_user(session, endorser)} endorsed {self.describe_user(session, endorsee)} for {category}"
+        return repr(data)
+
+
+class AdminAudit_GotNegativeEndorsement(AdminAudit_EndorseEvent):
+    """Audit event for when a user receives a negative endorsement."""
+    _action = AdminAuditActionEnum.GOT_NEGATIVE_ENDORSEMENT
+
+    def describe(self, session: Session) -> str:
+        data = self.data.split(" ")
+        if len(data) == 3:
+            endorser = data[0]
+            category = data[1]
+            endorsee = data[2]
+            return f"A suspect {self.describe_user(session, endorser)} rejected an endorsement request by {self.describe_user(session, endorsee)} for {category}"
+        return repr(data)
+
+
+class AdminAudit_MakeModerator(AdminAuditEvent):
+    """Audit event for making a user a moderator.
+    
+    This event is logged when an administrator grants moderator privileges
+    to a user for a specific category. The category is stored as data.
+    
+    Args:
+        category: The subject category for which the user is being made a moderator
+    """
+    _action = AdminAuditActionEnum.MAKE_MODERATOR
+
+    def __init__(self, *argc, **kwargs):
+        category = kwargs.pop("category")
+        data = f"{category}"
+        kwargs["data"] = data
+        super().__init__(*argc, **kwargs)
+        pass
+
+    @classmethod
+    def get_init_params(cls, audit_record: TapirAdminAudit) -> Tuple[list, dict]:
+        category = audit_record.data
+
+        return [
+            audit_record.admin_user,
+            audit_record.affected_user,
+            audit_record.session_id,
+        ], {
+            "comment": audit_record.comment,
+            "category": category,
+            "remote_ip": audit_record.ip_addr,
+            "remote_hostname": audit_record.remote_host,
+            "tracking_cookie": audit_record.tracking_cookie,
+            "timestamp": audit_record.log_date,
+        }
+
+    def describe(self, session: Session) -> str:
+        return f"{self.describe_admin_user(session)} made {self.describe_affected_user(session)} a moderator of {self.data}"
+
+
+class AdminAudit_UnmakeModerator(AdminAuditEvent):
+    """Audit event for removing a user's moderator privileges.
+    
+    This event is logged when an administrator revokes moderator privileges
+    from a user for a specific category. The category is stored as data.
+    
+    Args:
+        category: The subject category for which the user's moderator privileges are being revoked
+    """
+    _action = AdminAuditActionEnum.UNMAKE_MODERATOR
+
+    def __init__(self, *argc, **kwargs):
+        category = kwargs.pop("category")
+        data = f"{category}"
+        kwargs["data"] = data
+        super().__init__(*argc, **kwargs)
+        pass
+
+    @classmethod
+    def get_init_params(cls, audit_record: TapirAdminAudit) -> Tuple[list, dict]:
+        category = audit_record.data
+
+        return [
+            audit_record.admin_user,
+            audit_record.affected_user,
+            audit_record.session_id,
+        ], {
+            "comment": audit_record.comment,
+            "category": category,
+            "remote_ip": audit_record.ip_addr,
+            "remote_hostname": audit_record.remote_host,
+            "tracking_cookie": audit_record.tracking_cookie,
+            "timestamp": audit_record.log_date,
+        }
+
+    def describe(self, session: Session) -> str:
+        return f"{self.describe_admin_user(session)} removed {self.describe_affected_user(session)} from moderator of {self.data}"
+
+
+class AdminAudit_SuspendUser(AdminAuditEvent):
+    """Audit event for suspending a user.
+    
+    This event is logged when an administrator suspends a user account.
+    The banned flag is automatically set to 1 and a comment is required
+    to explain the reason for suspension.
+    """
+    _action = AdminAuditActionEnum.SUSPEND_USER
+
+    def __init__(self, *argc, **kwargs):
+        data = f'{UserFlags.TAPIR_FLAG_BANNED.value}=1'
+        kwargs["data"] = data
+        super().__init__(*argc, **kwargs)
+
+    @classmethod
+    def get_init_params(cls, audit_record: TapirAdminAudit) -> Tuple[list, dict]:
+        category = audit_record.data
+
+        return [
+            audit_record.admin_user,
+            audit_record.affected_user,
+            audit_record.session_id,
+        ], {
+            "comment": audit_record.comment,
+            "remote_ip": audit_record.ip_addr,
+            "remote_hostname": audit_record.remote_host,
+            "tracking_cookie": audit_record.tracking_cookie,
+            "timestamp": audit_record.log_date,
+        }
+
+    def describe(self, session: Session) -> str:
+        return f"{self.describe_admin_user(session)} suspended the account of {self.describe_affected_user(session)}"
+
+
+class AdminAudit_UnuspendUser(AdminAuditEvent):
+    """Audit event for unsuspending a user.
+    
+    This event is logged when an administrator removes a user's suspension.
+    The banned flag is automatically set to 0 and a comment is required
+    to explain the reason for unsuspension.
+    """
+    _action = AdminAuditActionEnum.UNSUSPEND_USER
+
+    def __init__(self, *argc, **kwargs):
+        data = f'{UserFlags.TAPIR_FLAG_BANNED.value}=0'
+        kwargs["data"] = data
+        super().__init__(*argc, **kwargs)
+
+    @classmethod
+    def get_init_params(cls, audit_record: TapirAdminAudit) -> Tuple[list, dict]:
+        category = audit_record.data
+
+        return [
+            audit_record.admin_user,
+            audit_record.affected_user,
+            audit_record.session_id,
+        ], {
+            "comment": audit_record.comment,
+            "remote_ip": audit_record.ip_addr,
+            "remote_hostname": audit_record.remote_host,
+            "tracking_cookie": audit_record.tracking_cookie,
+            "timestamp": audit_record.log_date,
+        }
+
+    def describe(self, session: Session) -> str:
+        return f"{self.describe_admin_user(session)} unsuspended the account of {self.describe_affected_user(session)}"
+
+
+class AdminAudit_ChangeStatus(AdminAuditEvent):
+    """Audit event for changing a user's status.
+    
+    This event is logged when an administrator changes a user's veto status.
+    The before and after status values are stored as data in the format
+    'before_status -> after_status'.
+    
+    Args:
+        status_before: The user's status before the change
+        status_after: The user's status after the change
+        
+    Raises:
+        ValueError: If either status is not a valid UserVetoStatus enum
+    """
+    _action = AdminAuditActionEnum.ARXIV_CHANGE_STATUS
+
+    def __init__(self, *argc, **kwargs):
+        status_before = kwargs.pop("status_before")
+        status_after = kwargs.pop("status_after")
+        if not isinstance(status_before, UserVetoStatus):
+            raise ValueError(f"status_before '{status_before!r}' is not a UserStatus'")
+        if not isinstance(status_after, UserVetoStatus):
+            raise ValueError(f"status_after '{status_after!r}' is not a UserStatus'")
+        data = f"{status_before.value} -> {status_after.value}"
+        kwargs["data"] = data
+        super().__init__(*argc, **kwargs)
+        pass
+
+    @classmethod
+    def get_init_params(cls, audit_record: TapirAdminAudit) -> Tuple[list, dict]:
+        # data = f"{status_before.value} -> {status_after.value}"
+        match = re.match(r"([\w\-]+) -> ([\w\-]+)", audit_record.data)
+
+        if not match:
+            raise ValueError(f"Invalid status change format: {audit_record.data}")
+
+        status_before = UserVetoStatus(match.group(1))
+        status_after = UserVetoStatus(match.group(2))
+
+        return [
+            audit_record.admin_user,
+            audit_record.affected_user,
+            audit_record.session_id,
+        ], {
+            "comment": audit_record.comment,
+            "remote_ip": audit_record.ip_addr,
+            "remote_hostname": audit_record.remote_host,
+            "tracking_cookie": audit_record.tracking_cookie,
+            "timestamp": audit_record.log_date,
+            "status_before": status_before,
+            "status_after": status_after,
+        }
 
 
 class AdminAudit_SetFlag(AdminAuditEvent):
     """Audit event for setting or unsetting a user flag.
-    
+
     This event is logged when an administrator modifies a user's flags
     (such as banned, approved, etc.). The flag name and value are stored as data.
-    
+
     Args:
         flag: The UserFlag being modified
         value: The new value for the flag
-        
+
     Raises:
         ValueError: If the flag is not a valid UserFlags enum
     """
-    _action = AdminActionEnum.FLIP_FLAG
+    _action = AdminAuditActionEnum.FLIP_FLAG
     _flag: UserFlags
     _value_name: str
     _value_type: type
@@ -426,266 +797,17 @@ class AdminAudit_SetFlag(AdminAuditEvent):
             "timestamp": audit_record.log_date,
         }
 
+    def describe(self, session: Session) -> str:
+        elements = self.data.split("=")
+        if len(elements) == 2:
+            value1 = elements[1]
+            if self._value_type is bool:
+                value = "true" if int(value1) else "false"
+            else:
+                value = self.data
 
-class AdminAudit_EndorseEvent(AdminAuditEvent):
-    """Base class for audit events related to user endorsements.
-    
-    This class handles audit events that involve endorsement actions,
-    storing the endorser ID, endorsee ID, and category as data.
-    
-    Args:
-        endorser: ID of the user providing the endorsement
-        endorsee: ID of the user receiving the endorsement
-        category: The subject category for the endorsement
-    """
-    def __init__(self, *argc, **kwargs):
-        endorser_id = kwargs.pop("endorser")
-        _ = int(endorser_id)
-        endorsee_id = kwargs.pop("endorsee")
-        _ = int(endorsee_id)
-        category = kwargs.pop("category")
-        data = f"{endorser_id} {category} {endorsee_id}"
-        kwargs["data"] = data
-        super().__init__(*argc, **kwargs)
-        pass
-
-    @classmethod
-    def get_init_params(cls, audit_record: TapirAdminAudit) -> Tuple[list, dict]:
-        """
-        Generate constructor parameters from an audit record.
-
-        This method can be overridden by subclasses to provide custom
-        parameter generation for their __init__ methods.
-
-        Args:
-            audit_record: The TapirAdminAudit database record
-
-        Returns:
-            A tuple of (args, kwargs) for the constructor
-        """
-        data = audit_record.data.split(" ")
-        if len(data) != 3:
-            raise ValueError(f"data '{audit_record.data}' is not valid")
-        endorser = data[0]
-        category = data[1]
-        endorsee = data[2]
-
-        if not re.match(r"^\d+$", endorser) or \
-                not re.match(r"^\d+$", endorsee) or \
-                not re.match(r"[\w\-]+\..*", category):
-            raise ValueError(f"data '{audit_record.data}' is not valid")
-
-        return [
-            audit_record.admin_user,
-            audit_record.affected_user,
-            audit_record.session_id,
-        ], {
-            "comment": audit_record.comment,
-            "endorser": endorser,
-            "endorsee": endorsee,
-            "category": category,
-            "remote_ip": audit_record.ip_addr,
-            "remote_hostname": audit_record.remote_host,
-            "tracking_cookie": audit_record.tracking_cookie,
-            "timestamp": audit_record.log_date,
-        }
-
-
-class AdminAudit_EndorsedBySuspect(AdminAudit_EndorseEvent):
-    """Audit event for when a user is endorsed by a suspect user."""
-    _action = AdminActionEnum.ENDORSED_BY_SUSPECT
-
-
-class AdminAudit_GotNegativeEndorsement(AdminAudit_EndorseEvent):
-    """Audit event for when a user receives a negative endorsement."""
-    _action = AdminActionEnum.GOT_NEGATIVE_ENDORSEMENT
-
-
-class AdminAudit_MakeModerator(AdminAuditEvent):
-    """Audit event for making a user a moderator.
-    
-    This event is logged when an administrator grants moderator privileges
-    to a user for a specific category. The category is stored as data.
-    
-    Args:
-        category: The subject category for which the user is being made a moderator
-    """
-    _action = AdminActionEnum.MAKE_MODERATOR
-
-    def __init__(self, *argc, **kwargs):
-        category = kwargs.pop("category")
-        data = f"{category}"
-        kwargs["data"] = data
-        super().__init__(*argc, **kwargs)
-        pass
-
-    @classmethod
-    def get_init_params(cls, audit_record: TapirAdminAudit) -> Tuple[list, dict]:
-        category = audit_record.data
-
-        return [
-            audit_record.admin_user,
-            audit_record.affected_user,
-            audit_record.session_id,
-        ], {
-            "comment": audit_record.comment,
-            "category": category,
-            "remote_ip": audit_record.ip_addr,
-            "remote_hostname": audit_record.remote_host,
-            "tracking_cookie": audit_record.tracking_cookie,
-            "timestamp": audit_record.log_date,
-        }
-
-
-class AdminAudit_UnmakeModerator(AdminAuditEvent):
-    """Audit event for removing a user's moderator privileges.
-    
-    This event is logged when an administrator revokes moderator privileges
-    from a user for a specific category. The category is stored as data.
-    
-    Args:
-        category: The subject category for which the user's moderator privileges are being revoked
-    """
-    _action = AdminActionEnum.UNMAKE_MODERATOR
-
-    def __init__(self, *argc, **kwargs):
-        category = kwargs.pop("category")
-        data = f"{category}"
-        kwargs["data"] = data
-        super().__init__(*argc, **kwargs)
-        pass
-
-    @classmethod
-    def get_init_params(cls, audit_record: TapirAdminAudit) -> Tuple[list, dict]:
-        category = audit_record.data
-
-        return [
-            audit_record.admin_user,
-            audit_record.affected_user,
-            audit_record.session_id,
-        ], {
-            "comment": audit_record.comment,
-            "category": category,
-            "remote_ip": audit_record.ip_addr,
-            "remote_hostname": audit_record.remote_host,
-            "tracking_cookie": audit_record.tracking_cookie,
-            "timestamp": audit_record.log_date,
-        }
-
-
-class AdminAudit_SuspendUser(AdminAuditEvent):
-    """Audit event for suspending a user.
-    
-    This event is logged when an administrator suspends a user account.
-    The banned flag is automatically set to 1 and a comment is required
-    to explain the reason for suspension.
-    """
-    _action = AdminActionEnum.SUSPEND_USER
-
-    def __init__(self, *argc, **kwargs):
-        data = f'{UserFlags.TAPIR_FLAG_BANNED.value}=1'
-        kwargs["data"] = data
-        super().__init__(*argc, **kwargs)
-
-    @classmethod
-    def get_init_params(cls, audit_record: TapirAdminAudit) -> Tuple[list, dict]:
-        category = audit_record.data
-
-        return [
-            audit_record.admin_user,
-            audit_record.affected_user,
-            audit_record.session_id,
-        ], {
-            "comment": audit_record.comment,
-            "remote_ip": audit_record.ip_addr,
-            "remote_hostname": audit_record.remote_host,
-            "tracking_cookie": audit_record.tracking_cookie,
-            "timestamp": audit_record.log_date,
-        }
-
-class AdminAudit_UnuspendUser(AdminAuditEvent):
-    """Audit event for unsuspending a user.
-    
-    This event is logged when an administrator removes a user's suspension.
-    The banned flag is automatically set to 0 and a comment is required
-    to explain the reason for unsuspension.
-    """
-    _action = AdminActionEnum.UNSUSPEND_USER
-
-    def __init__(self, *argc, **kwargs):
-        data = f'{UserFlags.TAPIR_FLAG_BANNED.value}=0'
-        kwargs["data"] = data
-        super().__init__(*argc, **kwargs)
-
-    @classmethod
-    def get_init_params(cls, audit_record: TapirAdminAudit) -> Tuple[list, dict]:
-        category = audit_record.data
-
-        return [
-            audit_record.admin_user,
-            audit_record.affected_user,
-            audit_record.session_id,
-        ], {
-            "comment": audit_record.comment,
-            "remote_ip": audit_record.ip_addr,
-            "remote_hostname": audit_record.remote_host,
-            "tracking_cookie": audit_record.tracking_cookie,
-            "timestamp": audit_record.log_date,
-        }
-
-
-class AdminAudit_ChangeStatus(AdminAuditEvent):
-    """Audit event for changing a user's status.
-    
-    This event is logged when an administrator changes a user's veto status.
-    The before and after status values are stored as data in the format
-    'before_status -> after_status'.
-    
-    Args:
-        status_before: The user's status before the change
-        status_after: The user's status after the change
-        
-    Raises:
-        ValueError: If either status is not a valid UserVetoStatus enum
-    """
-    _action = AdminActionEnum.ARXIV_CHANGE_STATUS
-
-    def __init__(self, *argc, **kwargs):
-        status_before = kwargs.pop("status_before")
-        status_after = kwargs.pop("status_after")
-        if not isinstance(status_before, UserVetoStatus):
-            raise ValueError(f"status_before '{status_before!r}' is not a UserStatus'")
-        if not isinstance(status_after, UserVetoStatus):
-            raise ValueError(f"status_after '{status_after!r}' is not a UserStatus'")
-        data = f"{status_before.value} -> {status_after.value}"
-        kwargs["data"] = data
-        super().__init__(*argc, **kwargs)
-        pass
-
-    @classmethod
-    def get_init_params(cls, audit_record: TapirAdminAudit) -> Tuple[list, dict]:
-        # data = f"{status_before.value} -> {status_after.value}"
-        match = re.match(r"([\w\-]+) -> ([\w\-]+)", audit_record.data)
-
-        if not match:
-            raise ValueError(f"Invalid status change format: {audit_record.data}")
-
-        status_before = UserVetoStatus(match.group(1))
-        status_after = UserVetoStatus(match.group(2))
-
-        return [
-            audit_record.admin_user,
-            audit_record.affected_user,
-            audit_record.session_id,
-        ], {
-            "comment": audit_record.comment,
-            "remote_ip": audit_record.ip_addr,
-            "remote_hostname": audit_record.remote_host,
-            "tracking_cookie": audit_record.tracking_cookie,
-            "timestamp": audit_record.log_date,
-            "status_before": status_before,
-            "status_after": status_after,
-        }
+            return f"{self.describe_admin_user(session)} set the {self._flag.value} of {self.describe_affected_user(session)} to {value}"
+        return self.data
 
 
 class AdminAudit_SetGroupTest(AdminAudit_SetFlag):
@@ -733,20 +855,66 @@ class AdminAudit_SetBanned(AdminAudit_SetFlag):
     _value_name = "banned"
     _value_type = bool
 
+    def describe(self, session: Session) -> str:
+        elements = self.data.split("=")
+        if len(elements) == 2:
+            value1 = elements[1]
+            if int(value1):
+                return f"{self.describe_admin_user(session)} banned {self.describe_affected_user(session)}"
+            else:
+                return f"{self.describe_admin_user(session)} unbanned {self.describe_affected_user(session)}"
+
+        return self.data
+
+
 class AdminAudit_SetEditSystem(AdminAudit_SetFlag):
     _flag = UserFlags.TAPIR_FLAG_EDIT_SYSTEM
     _value_name = "edit_system"
     _value_type = bool
+
+    def describe(self, session: Session) -> str:
+        elements = self.data.split("=")
+        if len(elements) == 2:
+            value1 = elements[1]
+            if int(value1):
+                return f"{self.describe_admin_user(session)} made {self.describe_affected_user(session)} a sysad"
+            else:
+                return f"{self.describe_admin_user(session)} cleared sysad of {self.describe_affected_user(session)}"
+
+        return self.data
+
 
 class AdminAudit_SetEditUsers(AdminAudit_SetFlag):
     _flag = UserFlags.TAPIR_FLAG_EDIT_USERS
     _value_name = "edit_users"
     _value_type = bool
 
+    def describe(self, session: Session) -> str:
+        elements = self.data.split("=")
+        if len(elements) == 2:
+            value1 = elements[1]
+            if int(value1):
+                return f"{self.describe_admin_user(session)} made {self.describe_affected_user(session)} an administrator"
+            else:
+                return f"{self.describe_admin_user(session)} cleared admin of {self.describe_affected_user(session)}"
+
+        return self.data
+
 class AdminAudit_SetEmailVerified(AdminAudit_SetFlag):
     _flag = UserFlags.TAPIR_FLAG_EMAIL_VERIFIED
     _value_name = "verified"
     _value_type = bool
+
+    def describe(self, session: Session) -> str:
+        elements = self.data.split("=")
+        if len(elements) == 2:
+            value1 = elements[1]
+            if int(value1):
+               return f"{self.describe_admin_user(session)} verified the email of {self.describe_affected_user(session)}"
+            else:
+                return f"{self.describe_admin_user(session)} unverified the email of {self.describe_affected_user(session)}"
+
+        return self.data
 
 
 
@@ -789,8 +957,8 @@ def admin_audit(session: Session,
         session_id=_session_id,
         ip_addr=remote_ip,
         remote_host=remote_hostname,
-        admin_user=admin_user,
-        affected_user=affected_user,
+        admin_user=int(admin_user),
+        affected_user=int(affected_user),
         tracking_cookie=tracking_cookie,
         action=event.action,
         data=event.data,
@@ -854,7 +1022,7 @@ event_classes: Dict[str, AdminAuditEvent] = {
         AdminAudit_SetEmailVerified,
     ]
 } | {
-    AdminActionEnum.FLIP_FLAG.value: admin_audit_flip_flag_instantiator
+    AdminAuditActionEnum.FLIP_FLAG.value: admin_audit_flip_flag_instantiator
 }
 
 
