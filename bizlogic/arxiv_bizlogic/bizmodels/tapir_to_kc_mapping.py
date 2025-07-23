@@ -1,14 +1,12 @@
 import logging
 import os
-from datetime import datetime, timezone
-
 from typing import Tuple, List, Dict
+
+from arxiv.auth.legacy.exceptions import PasswordAuthenticationFailed
+from arxiv.auth.legacy.passwords import check_password
+from arxiv.db.models import TapirUser, TapirUsersPassword, TapirNickname, Demographic, TapirPolicyClass
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
-
-from arxiv.db.models import TapirUser, TapirUsersPassword, TapirNickname, Demographic, TapirPolicyClass
-from arxiv.auth.legacy.passwords import check_password
-from arxiv.auth.legacy.exceptions import PasswordAuthenticationFailed
 
 from .user_model import UserModel
 
@@ -39,7 +37,7 @@ def authenticate_password(session: Session, user: TapirUser, password: str) -> b
 
     """
     logger.debug(f'Authenticate with password, user: {user.user_id}')
-    tapir_password: TapirUsersPassword = session.query(TapirUsersPassword) \
+    tapir_password: TapirUsersPassword | None = session.query(TapirUsersPassword) \
         .filter(TapirUsersPassword.user_id == user.user_id) \
         .one_or_none()
     if not tapir_password:
@@ -190,7 +188,7 @@ def user_model_to_auth_response(um: UserModel, tapir_user: TapirUser) -> AuthRes
 
     # seems to exist in DB
     if um.joined_date:
-        dt = datetime.fromtimestamp(um.joined_date, tz=timezone.utc)
+        dt = um.joined_date
         attributes["joined_date"] = [dt.isoformat() + "Z"]
 
     if um.joined_ip_num:
