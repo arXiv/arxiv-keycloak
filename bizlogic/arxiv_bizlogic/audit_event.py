@@ -7,14 +7,14 @@ Each admin event is represented vy a sub-class of AdminAuditEvent.
 import re
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Optional, Tuple, Dict
+from typing import Optional, Tuple, Dict, Type
 
 from sqlalchemy.orm import Session
 from arxiv.db.models import TapirAdminAudit
 
 from .user_status import UserVetoStatus, UserFlags
 from inspect import isfunction
-
+import time
 
 class AdminAuditActionEnum(str, Enum):
     """Enumeration of admin actions that can be audited in the system.
@@ -86,6 +86,8 @@ class AdminAuditEvent:
         tracking_cookie: Optional tracking cookie for the session
         _comment: Optional comment associated with the action
     """
+    _action = None
+    _value_name = None
     timestamp: int
     admin_user: str
     affected_user: str
@@ -117,8 +119,6 @@ class AdminAuditEvent:
         self.tracking_cookie = tracking_cookie
         self._comment = comment
         self._data = data
-        pass
-
 
     @property
     def comment(self) -> str:
@@ -918,15 +918,7 @@ class AdminAudit_SetEmailVerified(AdminAudit_SetFlag):
 
 
 
-def admin_audit(session: Session,
-                event: AdminAuditEvent,
-                admin_user: str,
-                affected_user: str,
-                session_id: str | None = None,
-                remote_ip: str | None = None,
-                remote_hostname: str | None = None,
-                tracking_cookie: str | None = None,
-                timestamp: int | None = None,):
+def admin_audit(session: Session, event: AdminAuditEvent) -> None:
     """
     Audit function for admin actions.
     
@@ -938,23 +930,24 @@ def admin_audit(session: Session,
     Args:
         session: SQLAlchemy database session for persisting the audit record
         event: The AdminAuditEvent containing action details and data
-        admin_user: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: Optional TAPIR session ID associated with the admin action
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for session correlation
-        timestamp: Optional timestamp; if None, current UTC time is used
+            admin_user: ID of the administrator performing the action
+            affected_user: ID of the user being affected by the action
+            session_id: Optional TAPIR session ID associated with the admin action
+            remote_ip: Optional IP address of the administrator
+            remote_hostname: Optional hostname of the administrator
+            tracking_cookie: Optional tracking cookie for session correlation
+            timestamp: Optional timestamp; if None, current UTC time is used
     """
 
+    timestamp = event.timestamp if event.timestamp else int(time.time())
     entry = TapirAdminAudit(
         log_date=timestamp,
-        session_id=session_id if session_id else None,
-        ip_addr=remote_ip,
-        remote_host=remote_hostname,
-        admin_user=int(admin_user),
-        affected_user=int(affected_user),
-        tracking_cookie=tracking_cookie,
+        session_id=event.session_id if event.session_id else None,
+        ip_addr=event.remote_ip,
+        remote_host=event.remote_hostname,
+        admin_user=int(event.admin_user),
+        affected_user=int(event.affected_user),
+        tracking_cookie=event.tracking_cookie,
         action=event.action,
         data=event.data,
         comment=event.comment,
@@ -962,7 +955,8 @@ def admin_audit(session: Session,
     session.add(entry)
 
 
-set_flag_event_classes: Dict[str, AdminAuditEvent] = {
+# noinspection PyTypeChecker
+set_flag_event_classes: Dict[str, Type[AdminAudit_SetFlag]] = {
     cls._flag.value : cls for cls in [
         AdminAudit_SetGroupTest,
         AdminAudit_SetProxy,
@@ -984,7 +978,7 @@ def admin_audit_flip_flag_instantiator(audit_record: TapirAdminAudit) -> AdminAu
     args, kwargs = AdminAudit_SetFlag.get_init_params(audit_record)
     flag = kwargs["flag"]
     value = kwargs["value"]
-    event_class = set_flag_event_classes.get(flag)
+    event_class: Optional[Type[AdminAuditEvent]] = set_flag_event_classes.get(flag)
     if not event_class:
         raise ValueError(f"{audit_record.action}.{flag} is not a valid admin action of flip flag")
     if not hasattr(event_class, "_value_name"):
@@ -1037,7 +1031,7 @@ def create_admin_audit_event(audit_record: TapirAdminAudit) -> AdminAuditEvent:
 
 
     # Find the appropriate event class or use this base class as fallback
-    event_class = event_classes.get(audit_record.action)
+    event_class: Optional[Type[AdminAuditEvent]] = event_classes.get(audit_record.action)
     if not event_class:
         raise ValueError(f"{audit_record.action} is not a valid admin action")
 
