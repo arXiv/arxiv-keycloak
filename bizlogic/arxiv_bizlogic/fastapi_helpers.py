@@ -1,27 +1,24 @@
 """Contains route information."""
+import asyncio
+import base64
+import datetime
+import hashlib
+import socket
+from dataclasses import dataclass
 from logging import getLogger
 from typing import Optional
-from dataclasses import dataclass
-import hashlib
-import base64
-import socket
-import asyncio
 
-from fastapi import Request, HTTPException, status, Depends
-from fastapi.responses import Response
-from starlette.types import ASGIApp, Receive, Scope, Send
-
-import jwt
 import jwcrypto
 import jwcrypto.jwt
-import datetime
-import time
-
+import jwt
 from arxiv.auth.user_claims import ArxivUserClaims
+from fastapi import Request, HTTPException, status, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from .database import Database
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
 
 class ApiToken(BaseModel):
     token: str
@@ -357,3 +354,8 @@ class TapirCookieToUserClaimsMiddleware:
         
         await self.app(scope, receive, send)
 
+
+def get_tapir_tracking_cookie(request: Request) -> str | None:
+    """Return the tapir tracking cookie value if it exists, otherwise None."""
+    tracking_cookie_key = request.app.extra.get('TRACKING_COOKIE_NAME', "tapir_tracking")
+    return request.cookies.get(tracking_cookie_key)
