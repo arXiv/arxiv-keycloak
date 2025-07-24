@@ -9,8 +9,9 @@ from typing import Optional, List
 
 from arxiv_bizlogic.bizmodels.user_model import UserModel
 from arxiv_bizlogic.validation.email_validation import is_valid_email
-from arxiv_bizlogic.fastapi_helpers import get_current_user_access_token, get_client_host_name
-from arxiv_bizlogic.audit_event import admin_audit, AdminAudit_ChangeEmail, AdminAudit_ChangePassword
+from arxiv_bizlogic.fastapi_helpers import get_current_user_access_token, get_client_host_name, get_authn_user, \
+    get_tapir_tracking_cookie
+from arxiv_bizlogic.audit_event import admin_audit, AdminAudit_ChangeEmail, AdminAudit_ChangePassword, AdminAudit_SetEmailVerified
 from fastapi import APIRouter, Depends, status, HTTPException, Request, Response, Query
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -157,7 +158,7 @@ async def register_account(
     if host is None:
         raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="The request requires a client host")
 
-    if not registration.email.strip():
+    if not registration.email:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="email is required")
     if not registration.username.strip():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="username is required")
@@ -282,17 +283,14 @@ def get_email_verified_status(
 @router.put("/email/verified/", description="Set the email verified status")
 def set_email_verified_status(
         body: EmailVerifiedStatus,
-        authn: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
-        remote_host: str = Depends(get_client_host),
+        authed_user: ArxivUserClaims = Depends(get_authn_user),
+        remote_ip: str = Depends(get_client_host),
         remote_hostname: str = Depends(get_client_host_name),
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ) -> EmailVerifiedStatus:
-    if authn is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     user_id = body.user_id
-    check_authnz(authn, None, user_id)
-
+    check_authnz(authed_user, None, user_id)
     user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -314,11 +312,20 @@ def set_email_verified_status(
 
     user.flag_email_verified = 1 if body.email_verified else 0
 
-    if not biz.email_verified(remote_ip=remote_host, remote_host=remote_hostname):
+    if not biz.email_verified(remote_ip=remote_ip, remote_host=remote_hostname):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is not verified.")
 
-    if isinstance(authn, ArxivUserClaims) and authn.user_id != user_id:
-        admin_audit(AdminAudit_EmailVerified)
+    admin_audit(
+        session,
+        AdminAudit_SetEmailVerified(
+            authed_user.user_id,
+            user_id,
+            authed_user.session_id,
+            verified = body.email_verified,
+            remote_ip=remote_ip,
+            remote_hostname=remote_hostname,
+        ),
+    )
 
     session.commit()
     return EmailVerifiedStatus(email_verified=bool(user.flag_email_verified), user_id = user_id)
@@ -393,13 +400,14 @@ def change_email(
         request: Request,
         body: EmailUpdateModel,
         session: Session = Depends(get_db),
-        client_host: str = Depends(get_client_host),
-        client_hostname: str = Depends(get_client_host_name),
-        authn: Optional[ArxivUserClaims|ApiToken] = Depends(get_authn_or_none),
+        remote_ip: str = Depends(get_client_host),
+        remote_hostname: str = Depends(get_client_host_name),
+        tracking_cookie: Optional[str] = Depends(get_tapir_tracking_cookie),
+        authn_user: ArxivUserClaims = Depends(get_authn_user),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ):
     user_id = body.user_id
-    check_authnz(authn, None, user_id)
+    check_authnz(authn_user, None, user_id)
 
     if not is_valid_email(body.new_email):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New email is invalid.")
@@ -424,7 +432,7 @@ def change_email(
         pass
 
     biz: EmailHistoryBiz = EmailHistoryBiz(session, user_id=user_id)
-    if is_super_user(authn):
+    if is_super_user(authn_user):
         # admin change email
         # We can short circuit the rate limit, etc.
         email_verified = True if body.email_verified is None else body.email_verified
@@ -443,17 +451,17 @@ def change_email(
             client_secret = request.app.extra['ARXIV_USER_SECRET']
             kc_user = cold_migrate(kc_admin, session, user_id, client_secret, email_verified=email_verified)
 
-        claims = get_arxiv_user_claims(authn)
+        claims = get_arxiv_user_claims(authn_user)
         tapir_session_id = None
         if claims:
             tapir_session_id = claims.session_id
 
         biz.set_user_email_by_admin(
             body.new_email,
-            admin_id=get_super_user_id(authn),
+            admin_id=get_super_user_id(authn_user),
             session_id=tapir_session_id,
-            remote_host=client_host,
-            remote_host_name=client_hostname,
+            remote_host=remote_ip,
+            remote_host_name=remote_hostname,
             comment=body.comment,
             email_verified=email_verified,
             )
@@ -491,11 +499,24 @@ def change_email(
             email=current_email,
             new_email=body.new_email,
             secret="",  # This is filled by add_email_history
-            remote_addr=client_host,
-            remote_host=client_hostname,
+            remote_addr=remote_ip,
+            remote_host=remote_hostname,
             used=False,
         )
     )
+
+    # add audit record
+    admin_audit(
+        session,
+        AdminAudit_ChangeEmail(
+            authn_user.user_id,
+            user_id,
+            authn_user.session_id,
+            email=body.new_email,
+            remote_ip=remote_ip,
+            remote_hostname=remote_hostname,
+            tracking_cookie=tracking_cookie,
+    ))
 
     session.commit()
     if kc_user:
@@ -541,10 +562,11 @@ class PasswordUpdateModel(BaseModel):
 async def change_user_password(
         request: Request,
         data: PasswordUpdateModel,
-        current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
+        authn_user: Optional[ArxivUserClaims] = Depends(get_authn_user),
         kc_access_token: Optional[str] = Depends( get_current_user_access_token),
-        token: ApiToken | ArxivUserClaims | None = Depends(verify_bearer_token),
         remote_ip: str = Depends(get_client_host),
+        remote_hostname: str = Depends(get_client_host_name),
+        tracking_cookie: Optional[str] = Depends(get_tapir_tracking_cookie),
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ):
@@ -552,11 +574,11 @@ async def change_user_password(
     Change user password
     """
     logger.debug("User password changed request. Current %s, data %s, Old password %s, new password %s",
-                 current_user.user_id if current_user else "No User", data.user_id,
+                 authn_user.user_id if authn_user else "No User", data.user_id,
                  sha256_base64_encode(data.old_password), sha256_base64_encode(data.new_password))
 
     user_id = data.user_id
-    check_authnz(token, current_user, user_id)
+    check_authnz(authn_user, None, user_id)
 
     if len(data.old_password) < 8:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Old password is invalid")
@@ -592,19 +614,17 @@ async def change_user_password(
     idp = request.app.extra["idp"]
 
     # if not kc_check_old_password(kc_admin, idp, nick.nickname, data.old_password, idp._ssl_cert_verify):
-    if isinstance(token, ArxivUserClaims):
-        if kc_access_token is None:
+    if kc_access_token is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Stale access. Please log out/login again.")
+
+    if not await kc_validate_access_token(kc_admin, idp, kc_access_token):
+        if authn_user.user_id == data.user_id:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                 detail="Stale access. Please log out/login again.")
-
-        current_user = token
-        if not await kc_validate_access_token(kc_admin, idp, kc_access_token):
-            if current_user.user_id == data.user_id:
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                    detail="Stale access. Please log out/login again.")
-            if not current_user.is_admin:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                    detail="Stale access. Please log out/login again.")
+        if not authn_user.is_admin:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="Stale access. Please log out/login again.")
 
     kc_user = None
     try:
@@ -623,12 +643,17 @@ async def change_user_password(
         # This should not happen. The tapir user exists and therefore, this must succeed.
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
 
-    if current_user.is_admin and current_user.user_id != data.user_id:
-        admin_audit(AdminAudit_ChangePassword(),
-                    user_id,
-                    current_user.user_id,
-                    session_id=current_user.session_id,
-                    remote_ip=remote_ip)
+    if authn_user.is_admin and authn_user.user_id != data.user_id:
+        admin_audit(
+            session,
+            AdminAudit_ChangePassword(
+                authn_user.user_id,
+                user_id,
+                authn_user.session_id,
+                remote_ip=remote_ip,
+                remote_hostname=remote_hostname,
+            ), # obv. no payload
+        )
 
     client_secret = request.app.extra['ARXIV_USER_SECRET']
 
@@ -671,6 +696,18 @@ async def change_user_password(
     logger.info("User password changed successfully. Old password %s, new password %s",
                 sha256_base64_encode(data.old_password), sha256_base64_encode(data.new_password))
 
+    # add audit record
+    admin_audit(
+        session,
+        AdminAudit_ChangePassword(
+            authn_user.user_id,
+            user_id,
+            authn_user.session_id,
+            remote_ip=remote_ip,
+            remote_hostname=remote_hostname,
+            tracking_cookie=tracking_cookie,
+    ))
+
 
 class PasswordResetRequest(BaseModel):
     username_or_email: str
@@ -682,12 +719,13 @@ async def reset_user_password(
         request: Request,
         body: PasswordResetRequest,
         current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
-        token: Optional[ApiToken] = Depends(verify_bearer_token),
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ):
     """
-    Reset user password
+    Make KC to send a password reset request.
+
+    NOTE: Nothing to remember but we may have to rate-limit.
     """
     logger.debug("User password reset request. Current %s",
                  current_user.user_id if current_user else "No User")

@@ -6,7 +6,8 @@ from dataclasses import asdict
 from typing import Optional, Literal, Any
 
 from arxiv_bizlogic.bizmodels.user_model import UserModel
-from arxiv_bizlogic.fastapi_helpers import get_client_host
+from arxiv_bizlogic.fastapi_helpers import get_client_host, get_authn_user, get_client_host_name, \
+    get_tapir_tracking_cookie
 # from arxiv_bizlogic.ng_auth import ng_cookie
 from arxiv_bizlogic.ng_auth.ng_cookie import create_ng_claims, ng_cookie_encode  # NGClaims, generate_nonce,
 from fastapi import APIRouter, Depends, status, Request, HTTPException, Response
@@ -144,8 +145,10 @@ async def oauth2_callback(request: Request,
 async def impersonate(request: Request,
                       user_id: str,
                       session = Depends(get_db),
-                      client_ip = Depends(get_client_host),
-                      current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
+                      remote_ip = Depends(get_client_host),
+                      remote_hostname = Depends(get_client_host_name),
+                      tracking_cookie: Optional[str] = Depends(get_tapir_tracking_cookie),
+                      current_user: ArxivUserClaims = Depends(get_authn_user),
                       ) -> Response:
     """
     Handles user impersonation by administrators to access and act on behalf of another user.
@@ -159,8 +162,12 @@ async def impersonate(request: Request,
     :type user_id: str
     :param session: Database session dependency used for fetching user data.
     :type session: sqlalchemy.orm.Session
-    :param client_ip: Client IP address retrieved from the request.
-    :type client_ip: str
+    :param remote_ip: Client IP address retrieved from the request.
+    :type remote_ip: str
+    :param remote_ip: Client Hostname retrieved from the request.
+    :type remote_hostname: str
+    :param tracking_cookie: Tapir tracking cookie, if any.
+    :type tracking_cookie: str
     :param current_user: Current authenticated user making the impersonation request. This
         parameter can be None, indicating that the user is not authenticated.
     :type current_user: Optional[ArxivUserClaims]
@@ -212,7 +219,7 @@ async def impersonate(request: Request,
         first_name=kc_user.get("firstName", ""),
         last_name=kc_user.get("lastName", ""),
         username=tapir_user.username,
-        client_ipv4=client_ip,
+        client_ipv4=remote_ip,
     )
 
     user_claims: ArxivUserClaims = ArxivUserClaims(claims)
@@ -220,23 +227,31 @@ async def impersonate(request: Request,
     logger.debug("User claims: user id=%s, email=%s", user_claims.user_id, user_claims.email)
 
     # legacy cookie and session
-    tapir_cookie, tapir_session = create_tapir_session(user_claims, client_ip)
+    tapir_cookie, tapir_session = create_tapir_session(user_claims, remote_ip)
 
     # legacy cookie
     if tapir_cookie and tapir_session:
         user_claims.set_tapir_session(tapir_cookie, tapir_session)
 
     # Audit
-    admin_audit(AdminAudit_BecomeUser(new_session_id=tapir_session),
-                current_user.user_id,
-                user_id,
-                session_id=current_user.session_id,
-                remote_ip=client_ip)
+    admin_audit(
+        session,
+        AdminAudit_BecomeUser(
+            current_user.user_id,
+            user_id,
+            current_user.session_id,
+            new_session_id=tapir_session.session_id,
+            remote_ip=remote_ip,
+            remote_hostname=remote_hostname,
+            tracking_cookie=tracking_cookie,
+        )
+    )
 
     # Perform impersonation (returns a URL to redirect to)
     impersonation_response = kc_admin.connection.raw_post(f"admin/realms/{kc_admin.connection.user_realm_name}/users/{user_id}/impersonation", {})  # type: ignore
     impersonation_url = impersonation_response.headers.get("redirect")
     response = make_cookie_response(request, user_claims, tapir_cookie, impersonation_url)
+
     return response
 
 

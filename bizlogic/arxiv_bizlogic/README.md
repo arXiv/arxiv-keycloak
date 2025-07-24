@@ -81,17 +81,27 @@ Logs paper ownership revocation (non-arXiv specific).
 **Constructor**: Same as `AdminAuditEvent`
 Logs when an admin adds a comment about a user.
 
+POST: admin-api/admin_logs/user_comment
+
 ### AdminAudit_BecomeUser
 **Constructor**: Inherits from `AdminAuditEvent` but expects `new_session_id` parameter instead of `data`
 Logs when an admin impersonates another user.
+
+    POST: aaa-api/authentication/impersonate/{user_id}/
+
 
 ### AdminAudit_ChangeEmail
 **Constructor**: Inherits from `AdminAuditEvent` but expects `email` parameter instead of `data`
 Logs when an admin changes a user's email address.
 
+    PUT: aaa-api/account/email
+
+
 ### AdminAudit_ChangePassword
 **Constructor**: Same as `AdminAuditEvent`
 Logs when an admin changes a user's password.
+
+    PUT: aaa-api/account/password
 
 ### AdminAudit_SuspendUser
 **Constructor**: Same as `AdminAuditEvent` (automatically sets banned flag data)
