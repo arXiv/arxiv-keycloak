@@ -178,7 +178,20 @@ def doc_href(doc_id, paper_id):
 
 
 class AdminAudit_AddComment(AdminAuditEvent):
-    """Audit event for commenting on a user
+    """Audit event for commenting on a user.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        data: Optional additional data
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
     """
     _action = AdminAuditActionEnum.ADD_COMMENT
 
@@ -245,7 +258,21 @@ class AdminAudit_PaperEvent(AdminAuditEvent):
 
 
 class AdminAudit_AddPaperOwner(AdminAudit_PaperEvent):
-    """Audit event for adding a paper owner to a submission."""
+    """Audit event for adding a paper owner to a submission.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        paper_id: The paper ID (arXiv ID) associated with this event
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _action = AdminAuditActionEnum.ADD_PAPER_OWNER
 
 
@@ -254,7 +281,21 @@ class AdminAudit_AddPaperOwner(AdminAudit_PaperEvent):
 
 
 class AdminAudit_AddPaperOwner2(AdminAudit_PaperEvent):
-    """Audit event for adding a secondary paper owner to a submission."""
+    """Audit event for adding a secondary paper owner to a submission.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        paper_id: The paper ID (arXiv ID) associated with this event
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _action = AdminAuditActionEnum.ADD_PAPER_OWNER_2
 
     def describe(self, session: Session) -> str:    
@@ -262,7 +303,21 @@ class AdminAudit_AddPaperOwner2(AdminAudit_PaperEvent):
 
 
 class AdminAudit_ChangePaperPassword(AdminAudit_PaperEvent):
-    """Audit event for changing a paper's password."""
+    """Audit event for changing a paper's password.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        paper_id: The paper ID (arXiv ID) associated with this event
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _action = AdminAuditActionEnum.CHANGE_PAPER_PW
 
     def describe(self, session: Session) -> str:
@@ -270,7 +325,21 @@ class AdminAudit_ChangePaperPassword(AdminAudit_PaperEvent):
 
 
 class AdminAudit_AdminChangePaperPassword(AdminAudit_PaperEvent):
-    """Audit event for changing a paper's password."""
+    """Audit event for admin-level changing of a paper's password.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        paper_id: The paper ID (arXiv ID) associated with this event
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _action =  AdminAuditActionEnum.ARXIV_CHANGE_PAPER_PW
 
     def describe(self, session: Session) -> str:
@@ -278,7 +347,21 @@ class AdminAudit_AdminChangePaperPassword(AdminAudit_PaperEvent):
 
 
 class AdminAudit_AdminMakeAuthor(AdminAudit_PaperEvent):
-    """Audit event for making a user an author of a paper."""
+    """Audit event for making a user an author of a paper.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        paper_id: The paper ID (arXiv ID) associated with this event
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _action = AdminAuditActionEnum.ARXIV_MAKE_AUTHOR
 
     def describe(self, session: Session) -> str:
@@ -286,7 +369,21 @@ class AdminAudit_AdminMakeAuthor(AdminAudit_PaperEvent):
 
 
 class AdminAudit_AdminMakeNonauthor(AdminAudit_PaperEvent):
-    """Audit event for removing a user's authorship of a paper."""
+    """Audit event for removing a user's authorship of a paper.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        paper_id: The paper ID (arXiv ID) associated with this event
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _action = AdminAuditActionEnum.ARXIV_MAKE_NONAUTHOR
     
     def describe(self, session: Session) -> str:
@@ -294,7 +391,21 @@ class AdminAudit_AdminMakeNonauthor(AdminAudit_PaperEvent):
 
 
 class AdminAudit_AdminRevokePaperOwner(AdminAudit_PaperEvent):
-    """Audit event for revoking a user's paper ownership."""
+    """Audit event for revoking a user's paper ownership.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        paper_id: The paper ID (arXiv ID) associated with this event
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _action = AdminAuditActionEnum.ARXIV_REVOKE_PAPER_OWNER
 
     def describe(self, session: Session) -> str:
@@ -302,14 +413,42 @@ class AdminAudit_AdminRevokePaperOwner(AdminAudit_PaperEvent):
 
 
 class AdminAudit_AdminUnrevokePaperOwner(AdminAudit_PaperEvent):
-    """Audit event for restoring a user's paper ownership."""
+    """Audit event for restoring a user's paper ownership.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        paper_id: The paper ID (arXiv ID) associated with this event
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _action = AdminAuditActionEnum.ARXIV_UNREVOKE_PAPER_OWNER
 
     def describe(self, session: Session) -> str:
         return f"{self.describe_admin_user(session)} restored {self.describe_affected_user(session)} the ownership of {doc_href(self.data, self.data)}"
 
 class AdminAudit_AdminNotArxivRevokePaperOwner(AdminAudit_PaperEvent):
-    """Audit event for revoking a user's paper ownership."""
+    """Audit event for revoking a user's paper ownership (non-arXiv specific).
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        paper_id: The paper ID (arXiv ID) associated with this event
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _action = AdminAuditActionEnum.REVOKE_PAPER_OWNER
 
     def describe(self, session: Session) -> str:
@@ -443,6 +582,19 @@ class AdminAudit_ChangePassword(AdminAuditEvent):
     
     This event is logged when an administrator changes a user's password.
     No additional data or comment is stored for security reasons.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        data: Optional additional data
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
     """
     _action = AdminAuditActionEnum.CHANGE_PASSWORD
 
@@ -536,7 +688,23 @@ class AdminAudit_EndorseEvent(AdminAuditEvent):
 
 
 class AdminAudit_EndorsedBySuspect(AdminAudit_EndorseEvent):
-    """Audit event for when a user is endorsed by a suspect user."""
+    """Audit event for when a user is endorsed by a suspect user.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        endorser: ID of the user providing the endorsement
+        endorsee: ID of the user receiving the endorsement
+        category: The subject category for the endorsement
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _action = AdminAuditActionEnum.ENDORSED_BY_SUSPECT
 
     def describe(self, session: Session) -> str:
@@ -550,7 +718,23 @@ class AdminAudit_EndorsedBySuspect(AdminAudit_EndorseEvent):
 
 
 class AdminAudit_GotNegativeEndorsement(AdminAudit_EndorseEvent):
-    """Audit event for when a user receives a negative endorsement."""
+    """Audit event for when a user receives a negative endorsement.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        endorser: ID of the user providing the endorsement
+        endorsee: ID of the user receiving the endorsement
+        category: The subject category for the endorsement
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _action = AdminAuditActionEnum.GOT_NEGATIVE_ENDORSEMENT
 
     def describe(self, session: Session) -> str:
