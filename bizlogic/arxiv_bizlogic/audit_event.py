@@ -193,6 +193,19 @@ class AdminAudit_PaperEvent(AdminAuditEvent):
     This class handles audit events that involve paper-related actions,
     storing the paper ID as the data field and validating it as an integer.
 
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        paper_id: The paper ID (arXiv ID) associated with this event
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+
     Attributes:
         _data: The paper ID associated with this event
     """
@@ -310,6 +323,19 @@ class AdminAudit_BecomeUser(AdminAuditEvent):
     This event is logged when an administrator uses the 'become user'
     functionality to impersonate another user for support purposes.
     The new session ID is stored as data.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        new_session_id: The new session ID created for impersonation
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
     """
     _action = AdminAuditActionEnum.BECOME_USER
 
@@ -356,6 +382,19 @@ class AdminAudit_ChangeEmail(AdminAuditEvent):
     
     This event is logged when an administrator changes a user's email address.
     The new email address is validated and stored as data.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        email: The new email address for the user
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
     
     Raises:
         ValueError: If the provided email address is not valid
@@ -420,9 +459,19 @@ class AdminAudit_EndorseEvent(AdminAuditEvent):
     storing the endorser ID, endorsee ID, and category as data.
     
     Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
         endorser: ID of the user providing the endorsement
         endorsee: ID of the user receiving the endorsement
         category: The subject category for the endorsement
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
     """
     def __init__(self, *argc, **kwargs):
         endorser_id = kwargs.pop("endorser")
@@ -521,7 +570,17 @@ class AdminAudit_MakeModerator(AdminAuditEvent):
     to a user for a specific category. The category is stored as data.
     
     Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
         category: The subject category for which the user is being made a moderator
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
     """
     _action = AdminAuditActionEnum.MAKE_MODERATOR
 
@@ -560,7 +619,17 @@ class AdminAudit_UnmakeModerator(AdminAuditEvent):
     from a user for a specific category. The category is stored as data.
     
     Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
         category: The subject category for which the user's moderator privileges are being revoked
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
     """
     _action = AdminAuditActionEnum.UNMAKE_MODERATOR
 
@@ -598,6 +667,18 @@ class AdminAudit_SuspendUser(AdminAuditEvent):
     This event is logged when an administrator suspends a user account.
     The banned flag is automatically set to 1 and a comment is required
     to explain the reason for suspension.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action (recommended for suspension reason)
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
     """
     _action = AdminAuditActionEnum.SUSPEND_USER
 
@@ -632,6 +713,18 @@ class AdminAudit_UnuspendUser(AdminAuditEvent):
     This event is logged when an administrator removes a user's suspension.
     The banned flag is automatically set to 0 and a comment is required
     to explain the reason for unsuspension.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action (recommended for unsuspension reason)
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
     """
     _action = AdminAuditActionEnum.UNSUSPEND_USER
 
@@ -668,8 +761,18 @@ class AdminAudit_ChangeStatus(AdminAuditEvent):
     'before_status -> after_status'.
     
     Args:
-        status_before: The user's status before the change
-        status_after: The user's status after the change
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        status_before: The user's status before the change (UserVetoStatus)
+        status_after: The user's status after the change (UserVetoStatus)
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
         
     Raises:
         ValueError: If either status is not a valid UserVetoStatus enum
@@ -721,11 +824,26 @@ class AdminAudit_SetFlag(AdminAuditEvent):
     (such as banned, approved, etc.). The flag name and value are stored as data.
 
     Args:
-        flag: The UserFlag being modified
-        value: The new value for the flag
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        {flag_param}: The new value for the flag (type varies by subclass)
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+
+    Note:
+        This is a base class. Use specific subclasses like AdminAudit_SetBanned,
+        AdminAudit_SetProxy, etc. The {flag_param} placeholder represents the
+        actual parameter name specific to each subclass.
 
     Raises:
         ValueError: If the flag is not a valid UserFlags enum
+        NotImplementedError: If instantiated directly (use subclasses)
     """
     _action = AdminAuditActionEnum.FLIP_FLAG
     _flag: UserFlags
@@ -811,46 +929,181 @@ class AdminAudit_SetFlag(AdminAuditEvent):
 
 
 class AdminAudit_SetGroupTest(AdminAudit_SetFlag):
+    """Audit event for setting/unsetting the group test flag.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        group_test: Boolean value for the group test flag
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _flag = UserFlags.ARXIV_FLAG_GROUP_TEST
     _value_name = "group_test"
     _value_type = bool
 
 class AdminAudit_SetProxy(AdminAudit_SetFlag):
+    """Audit event for setting/unsetting the proxy flag.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        proxy: Boolean value for the proxy flag
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _flag = UserFlags.ARXIV_FLAG_PROXY
     _value_name = "proxy"
     _value_type = bool
 
 class AdminAudit_SetSuspect(AdminAudit_SetFlag):
+    """Audit event for setting/unsetting the suspect flag.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        suspect: Boolean value for the suspect flag
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _flag = UserFlags.ARXIV_FLAG_SUSPECT
     _value_name = "suspect"
     _value_type = bool
 
 class AdminAudit_SetXml(AdminAudit_SetFlag):
+    """Audit event for setting/unsetting the XML flag.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        xml: Boolean value for the XML flag
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _flag = UserFlags.ARXIV_FLAG_XML
     _value_name = "xml"
     _value_type = bool
 
 class AdminAudit_SetEndorsementValid(AdminAudit_SetFlag):
+    """Audit event for setting/unsetting the endorsement valid flag.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        endorsement_valid: Boolean value for the endorsement valid flag
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _flag = UserFlags.ARXIV_ENDORSEMENT_FLAG_VALID
     _value_name = "endorsement_valid"
     _value_type = bool
 
 class AdminAudit_SetPointValue(AdminAudit_SetFlag):
+    """Audit event for setting the endorsement point value.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        point_value: Integer value for the endorsement point value
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _flag = UserFlags.ARXIV_ENDORSEMENT_POINT_VALUE
     _value_name = "point_value"
     _value_type = int
 
 class AdminAudit_SetEndorsementRequestsValid(AdminAudit_SetFlag):
+    """Audit event for setting/unsetting the endorsement requests valid flag.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        endorsement_requests_valid: Boolean value for the endorsement requests valid flag
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _flag = UserFlags.ARXIV_ENDORSEMENT_REQUEST_FLAG_VALID
     _value_name = "endorsement_requests_valid"
     _value_type = bool
 
 class AdminAudit_SetEmailBouncing(AdminAudit_SetFlag):
+    """Audit event for setting/unsetting the email bouncing flag.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        email_bouncing: Boolean value for the email bouncing flag
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _flag = UserFlags.TAPIR_EMAIL_BOUNCING
     _value_name = "email_bouncing"
     _value_type = bool
 
 class AdminAudit_SetBanned(AdminAudit_SetFlag):
+    """Audit event for setting/unsetting the banned flag.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        banned: Boolean value for the banned flag
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _flag = UserFlags.TAPIR_FLAG_BANNED
     _value_name = "banned"
     _value_type = bool
@@ -868,6 +1121,21 @@ class AdminAudit_SetBanned(AdminAudit_SetFlag):
 
 
 class AdminAudit_SetEditSystem(AdminAudit_SetFlag):
+    """Audit event for setting/unsetting the edit system flag (sysad privileges).
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        edit_system: Boolean value for the edit system flag
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _flag = UserFlags.TAPIR_FLAG_EDIT_SYSTEM
     _value_name = "edit_system"
     _value_type = bool
@@ -885,6 +1153,21 @@ class AdminAudit_SetEditSystem(AdminAudit_SetFlag):
 
 
 class AdminAudit_SetEditUsers(AdminAudit_SetFlag):
+    """Audit event for setting/unsetting the edit users flag (admin privileges).
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        edit_users: Boolean value for the edit users flag
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _flag = UserFlags.TAPIR_FLAG_EDIT_USERS
     _value_name = "edit_users"
     _value_type = bool
@@ -901,6 +1184,21 @@ class AdminAudit_SetEditUsers(AdminAudit_SetFlag):
         return self.data
 
 class AdminAudit_SetEmailVerified(AdminAudit_SetFlag):
+    """Audit event for setting/unsetting the email verified flag.
+    
+    Args:
+        admin_id: ID of the administrator performing the action
+        affected_user: ID of the user being affected by the action
+        session_id: TAPIR session ID associated with the action
+    
+    Kwargs:
+        verified: Boolean value for the email verified flag
+        remote_ip: Optional IP address of the administrator
+        remote_hostname: Optional hostname of the administrator
+        tracking_cookie: Optional tracking cookie for the session
+        comment: Optional comment about the action
+        timestamp: Optional Unix timestamp (auto-generated if not provided)
+    """
     _flag = UserFlags.TAPIR_FLAG_EMAIL_VERIFIED
     _value_name = "verified"
     _value_type = bool
