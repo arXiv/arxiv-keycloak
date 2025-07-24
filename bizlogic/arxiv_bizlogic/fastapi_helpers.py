@@ -90,6 +90,7 @@ def decode_user_claims(token: str, jwt_secret: str) -> ArxivUserClaims | None:
 
 
 def get_current_user_or_none(request: Request) -> ArxivUserClaims | None:
+    """gets the user claims from the cookie. This is a foundational function, and do not change the functionality."""
     logger = getLogger(__name__)
     session_cookie_key = request.app.extra[COOKIE_ENV_NAMES.auth_session_cookie_env]
     token = request.cookies.get(session_cookie_key)
@@ -104,6 +105,8 @@ def get_current_user_or_none(request: Request) -> ArxivUserClaims | None:
 
 
 async def get_current_user(request: Request) -> ArxivUserClaims | None:
+    """gets the user claims from the cookie, and raises 401 if no user claims.
+    """
     user = get_current_user_or_none(request)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
@@ -174,7 +177,7 @@ def sha256_base64_encode(input_string: str) -> str:
 def verify_bearer_token(request: Request,
                         credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer_security)) -> ArxivUserClaims | ApiToken | None:
     """
-    Verifies the provided bearer token.
+    Verifies the provided bearer token. This is a foundational function, and do not change the functionality.
 
     This function checks whether the provided bearer token is valid by
     comparing it against a predefined shared secret or by decoding it using
@@ -239,34 +242,50 @@ def get_authn_or_none(
 
 
 async def get_authn(
-    request: Request,
-    cookie_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
-    credentials: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token)) -> ArxivUserClaims | ApiToken:
+        request: Request,
+        cookie_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
+        credentials: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token)) -> ArxivUserClaims | ApiToken:
     cred = get_authn_or_none(request, cookie_user, credentials)
     if cred is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
     return cred
 
 
-async def is_admin_user(request: Request,
-                        user : ArxivUserClaims | ApiToken | None = Depends(get_authn_or_none)
-                        ) -> bool:
-    if user:
-        if not isinstance(user, ArxivUserClaims):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="API token is not accepted")
+async def get_authn_user(
+        request: Request,
+        cookie_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
+        credentials: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token)) -> ArxivUserClaims:
+    """
+    Gets a user claims object from a cookie or bearer token. ApiToken is not allowed.
+    Use this if you need to get user_id - IOW, when you mest leave an audit, use this.
 
+    :param request:
+    :param cookie_user:
+    :param credentials:
+    :return: ArxivUserClaims
+    """
+    cred = get_authn_or_none(request, cookie_user, credentials)
+    if cred is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
+    if not isinstance(cred, ArxivUserClaims):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
+    return cred
+
+
+async def is_admin_user(request: Request,
+                        user: ArxivUserClaims | ApiToken | None = Depends(get_authn_or_none)
+                        ) -> bool:
+    if user and isinstance(user, ArxivUserClaims):
         if user.is_admin:
             return True
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins are allowed")
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
 
 async def is_any_user(request: Request,
                       user: ArxivUserClaims | ApiToken | None = Depends(get_authn_or_none)
                       ) -> bool:
-    if user:
-        if not isinstance(user, ArxivUserClaims):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="API token is not accepted")
+    if user and isinstance(user, ArxivUserClaims):
         return True
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
