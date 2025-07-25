@@ -10,7 +10,7 @@ from typing import Optional, List
 from sqlalchemy import select, case, exists, cast, LargeBinary #, func
 from sqlalchemy.orm import Session
 from sqlalchemy.engine.row import Row
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, field_validator
 from datetime import datetime
 
 from arxiv.db.models import (TapirUser, TapirNickname, t_arXiv_moderators, Demographic, OrcidIds)
@@ -53,7 +53,7 @@ class UserModel(BaseModel):
         from_attributes = True
 
     id: Optional[int] = None
-    email: EmailStr
+    email: str
     first_name: str
     last_name: str
     suffix_name: Optional[str] = None
