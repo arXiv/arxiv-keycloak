@@ -49,7 +49,7 @@ import {paths as adminApi} from "../types/admin-api";
 // type DocumentsType = adminApi['/v1/documents/']['get']['responses']['200']['content']['application/json'];
 // type DemographicType = adminApi['/v1/demographics/{id}']['get']['responses']['200']['content']['application/json'];
 type PaperPasswordResponseType = adminApi['/v1/paper_pw/{id}']['get']['responses']['200']['content']['application/json'];
-type PaperAuthoredRequestType = adminApi['/v1/paper_owners/update-authorship']['put']['requestBody']['content']['application/json'];
+type PaperAuthoredRequestType = adminApi['/v1/paper_owners/authorship/{action}']['put']['requestBody']['content']['application/json'];
 // type PaperOwnerListRequestType = adminApi['/v1/paper_owners/']['get']['requestBody'];
 type PaperOwnerListResponseType = adminApi['/v1/paper_owners/']['get']['responses']['200']['content']['application/json'];
 type PaperOwnerType = adminApi['/v1/paper_owners/{id}']['get']['responses']['200']['content']['application/json'];
@@ -371,12 +371,11 @@ const YourDocuments: React.FC = () => {
         const docIds: string[] = selectedRows.map((row) => String(row));
         console.log("docIds", docIds);
         const body: PaperAuthoredRequestType = {
-            user_id: String(runtimeProps.currentUser.id),
             authored: authored ? docIds : [],
             not_authored: !authored ? docIds : [],
         }
 
-        const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + "/paper_owners/update-authorship",
+        const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + "/paper_owners/authorship/update",
             {
                 method: "PUT", headers: {"Content-Type": "application/json",}, body: JSON.stringify(body),
             });

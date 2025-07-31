@@ -5,6 +5,7 @@ class UserVetoStatus(str, Enum):
     OK = "ok"
     NO_UPLOAD = "no-upload"
     NO_REPLACE = "no-replace"
+    NO_ENDORSE = "no-endorse"
 
 
 class UserFlags(str, Enum):

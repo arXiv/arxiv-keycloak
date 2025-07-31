@@ -14,8 +14,7 @@ export interface paths {
         /** List Admin Logs */
         get: operations["list_admin_logs_v1_admin_logs__get"];
         put?: never;
-        /** Create Admin Log */
-        post: operations["create_admin_log_v1_admin_logs__post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -31,11 +30,26 @@ export interface paths {
         };
         /** Get Admin Log */
         get: operations["get_admin_log_v1_admin_logs__id__get"];
-        /** Update Admin Log */
-        put: operations["update_admin_log_v1_admin_logs__id__put"];
+        put?: never;
         post?: never;
-        /** Delete Admin Log */
-        delete: operations["delete_admin_log_v1_admin_logs__id__delete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin_logs/user_comment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Admin Log User Comment */
+        post: operations["create_admin_log_user_comment_v1_admin_logs_user_comment_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -560,24 +574,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/paper_owners/update-authorship": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Update Authorship */
-        put: operations["update_authorship_v1_paper_owners_update_authorship_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/paper_owners/update-paper-owners/{id}": {
+    "/v1/paper_owners/authorship/{action}": {
         parameters: {
             query?: never;
             header?: never;
@@ -586,16 +583,17 @@ export interface paths {
         };
         get?: never;
         /**
-         * Update Paper Owners
+         * Update Authorship
          * @description Handles the process of updating paper ownership by modifying existing ownership records or adding
          *     new ones based on the provided data, user authentication, and permissions. This endpoint is
          *     restricted to authenticated users, with additional constraints for non-admin users.
          *
          *     Parameters
          *     ----------
-         *     id : identifier
-         *         The identifier of the paper to be updated. "upsert" is a special ID for bulk upsert
-         *     body : PaperOwnersUpdateRequest
+         *     action : str
+         *         upsert: is for bulk upsert. "update" for update only - no insert
+         *         When upserting, you need to provide auto
+         *     body : PaperOwnershipUpdateRequest
          *         The request payload containing document ID, ownership details, and optional flags.
          *     session : Session, default: Depends(get_db)
          *         The database session for querying and committing changes.
@@ -617,11 +615,11 @@ export interface paths {
          *
          *     Returns
          *     -------
-         *     None
+         *     ReactAdminUpdateResult
          *         react-admin update result is returned but it is not very kosher. It may come back to
          *         bite me.
          */
-        put: operations["update_paper_owners_v1_paper_owners_update_paper_owners__id__put"];
+        put: operations["update_authorship_v1_paper_owners_authorship__action__put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -629,7 +627,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/paper_owners/pwc_link": {
+    "/v1/paper_owners/pwc_link/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -637,7 +635,7 @@ export interface paths {
             cookie?: never;
         };
         /** Pwc Link */
-        get: operations["pwc_link_v1_paper_owners_pwc_link_get"];
+        get: operations["pwc_link_v1_paper_owners_pwc_link__id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -714,7 +712,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/paper_pw/renew/{document_id}": {
+    "/v1/paper_pw/{document_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -726,7 +724,7 @@ export interface paths {
          * Renew Paper Password
          * @description Give the paper a new password
          */
-        put: operations["renew_paper_password_v1_paper_pw_renew__document_id__put"];
+        put: operations["renew_paper_password_v1_paper_pw__document_id__put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -894,26 +892,6 @@ export interface paths {
         get: operations["navigate_v1_ownership_requests_navigate_get"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/ownership_requests/{request_id}/documents/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Paper Ownership Decision
-         * @description Ownership creation
-         */
-        post: operations["create_paper_ownership_decision_v1_ownership_requests__request_id__documents__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1168,10 +1146,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Metadata
+         * Get Metadata By Paper Id
          * @description Get the metadata from paper id.
          */
-        get: operations["get_metadata_v1_metadata_paper_id__paper_id__get"];
+        get: operations["get_metadata_by_paper_id_v1_metadata_paper_id__paper_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1188,10 +1166,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Metadata
+         * Get Metadata Ancient
          * @description Get the metadata from paper id.
          */
-        get: operations["get_metadata_v1_metadata_paper_id__category___numeric_id__get"];
+        get: operations["get_metadata_ancient_v1_metadata_paper_id__category___numeric_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1228,11 +1206,15 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Metadata
+         * Get Metadata By Id
          * @description Display a paper.
          */
-        get: operations["get_metadata_v1_metadata__id__get"];
-        put?: never;
+        get: operations["get_metadata_by_id_v1_metadata__id__get"];
+        /**
+         * Update Metadata By Id
+         * @description Display a paper.
+         */
+        put: operations["update_metadata_by_id_v1_metadata__id__put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1820,6 +1802,16 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AdminAuditActionEnum
+         * @description Enumeration of admin actions that can be audited in the system.
+         *
+         *     This enum defines all possible administrative actions that can be performed
+         *     and logged in the audit trail. Each action corresponds to a specific
+         *     administrative operation that affects users, papers, or system state.
+         * @enum {string}
+         */
+        AdminAuditActionEnum: "add-comment" | "add-paper-owner" | "add-paper-owner-2" | "arXiv-change-paper-pw" | "arXiv-change-status" | "arXiv-make-author" | "arXiv-make-nonauthor" | "arXiv-revoke-paper-owner" | "arXiv-unrevoke-paper-owner" | "become-user" | "change-email" | "change-paper-pw" | "change-password" | "endorsed-by-suspect" | "flip-flag" | "got-negative-endorsement" | "make-moderator" | "revoke-paper-owner" | "suspend-user" | "unmake-moderator" | "unsuspend-user";
         /** AdminLogModel */
         AdminLogModel: {
             /** Id */
@@ -1849,6 +1841,13 @@ export interface components {
             submission_id?: number | null;
             /** Notify */
             notify?: number | null;
+        };
+        /** AdminUserComment */
+        AdminUserComment: {
+            /** User Id */
+            user_id: string;
+            /** Comment */
+            comment: string;
         };
         /**
          * Archive
@@ -2451,6 +2450,11 @@ export interface components {
         /**
          * OwnershipRequestSubmit
          * @example {
+         *       "authored_documents": [
+         *         2125897,
+         *         2123675,
+         *         2130529
+         *       ],
          *       "document_ids": [
          *         2123367,
          *         2123675,
@@ -2467,11 +2471,6 @@ export interface components {
          *         "2208.11535",
          *         "2209.00613"
          *       ],
-         *       "selected_documents": [
-         *         2125897,
-         *         2123675,
-         *         2130529
-         *       ],
          *       "user_id": 1129053,
          *       "workflow_status": "accepted"
          *     }
@@ -2486,14 +2485,14 @@ export interface components {
             workflow_status: components["schemas"]["WorkflowStatus"];
             /**
              * Document Ids
-             * @description List of IDs of the documents involved in the ownership request.
+             * @description List of IDs of the documents in the ownership request.
              */
             document_ids: number[];
             /**
-             * Selected Documents
-             * @description Optional list of document IDs that were selected for approval.
+             * Authored Documents
+             * @description List of document IDs that the requester is the author.
              */
-            selected_documents?: number[] | null;
+            authored_documents?: number[] | null;
             /**
              * Paper Ids
              * @description Optional list of paper IDs associated with the ownership request.
@@ -2531,39 +2530,8 @@ export interface components {
             /** Is Author */
             is_author: boolean;
         };
-        /** PaperOwnersUpdateRequest */
-        PaperOwnersUpdateRequest: {
-            /** Document Id */
-            document_id: string;
-            /**
-             * Owners
-             * @default []
-             */
-            owners: string[];
-            /**
-             * Nonowners
-             * @default []
-             */
-            nonowners: string[];
-            /** Timestamp */
-            timestamp?: string | null;
-            /** Valid */
-            valid?: boolean | null;
-            /** Auto */
-            auto?: boolean | null;
-        };
-        /** PaperOwnershipDecisionModel */
-        PaperOwnershipDecisionModel: {
-            workflow_status: components["schemas"]["WorkflowStatus"];
-            /** Rejected Document Ids */
-            rejected_document_ids: number[];
-            /** Accepted Document Ids */
-            accepted_document_ids: number[];
-        };
         /** PaperOwnershipUpdateRequest */
         PaperOwnershipUpdateRequest: {
-            /** User Id */
-            user_id: string;
             /**
              * Authored
              * @default []
@@ -2796,11 +2764,6 @@ export interface components {
             /** Group */
             group: string;
         };
-        /**
-         * TapirAdminActionEnum
-         * @enum {string}
-         */
-        TapirAdminActionEnum: "unknown" | "flip-flag" | "become-user" | "suspend-user" | "unsuspend-user" | "make-moderator" | "unmake-moderator" | "change-email" | "add-paper-owner" | "revoke-paper-owner" | "change-paper-pw" | "change-password" | "arXiv-change-status" | "arXiv-make-nonauthor" | "arXiv-make-author" | "add-paper-owner-2" | "arXiv-revoke-paper-owner" | "arXiv-unrevoke-paper-owner" | "arXiv-change-paper-pw" | "endorsed-by-suspect" | "got-negative-endorsement" | "add-comment";
         /** TapirAdminAuditModel */
         TapirAdminAuditModel: {
             /** Id */
@@ -2822,7 +2785,7 @@ export interface components {
             affected_user: number;
             /** Tracking Cookie */
             tracking_cookie: string;
-            action: components["schemas"]["TapirAdminActionEnum"];
+            action: components["schemas"]["AdminAuditActionEnum"];
             /** Data */
             data: string;
             /** Comment */
@@ -2856,10 +2819,7 @@ export interface components {
         UserModel: {
             /** Id */
             id?: number | null;
-            /**
-             * Email
-             * Format: email
-             */
+            /** Email */
             email: string;
             /** First Name */
             first_name: string;
@@ -3005,10 +2965,7 @@ export interface components {
         UserUpdateModel: {
             /** Id */
             id?: number | null;
-            /**
-             * Email
-             * Format: email
-             */
+            /** Email */
             email: string;
             /** First Name */
             first_name: string;
@@ -3226,26 +3183,6 @@ export interface operations {
             };
         };
     };
-    create_admin_log_v1_admin_logs__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminLogModel"];
-                };
-            };
-        };
-    };
     get_admin_log_v1_admin_logs__id__get: {
         parameters: {
             query?: never;
@@ -3277,16 +3214,18 @@ export interface operations {
             };
         };
     };
-    update_admin_log_v1_admin_logs__id__put: {
+    create_admin_log_user_comment_v1_admin_logs_user_comment_post: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                id: number;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminUserComment"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -3296,35 +3235,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AdminLogModel"];
                 };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_admin_log_v1_admin_logs__id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -3806,6 +3716,7 @@ export interface operations {
                 is_non_academic?: boolean | null;
                 username?: string | null;
                 email?: string | null;
+                name?: string | null;
                 last_name?: string | null;
                 first_name?: string | null;
                 flag_edit_users?: boolean | null;
@@ -4662,6 +4573,8 @@ export interface operations {
                 /** @description End date for filtering */
                 end_date?: string | null;
                 flag_valid?: boolean | null;
+                flag_author?: boolean | null;
+                flag_auto?: boolean | null;
                 user_id?: string | null;
                 document_id?: number | null;
                 /** @description MUI datagrid filter */
@@ -4857,51 +4770,18 @@ export interface operations {
             };
         };
     };
-    update_authorship_v1_paper_owners_update_authorship_put: {
+    update_authorship_v1_paper_owners_authorship__action__put: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                action: string;
+            };
             cookie?: never;
         };
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PaperOwnershipUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_paper_owners_v1_paper_owners_update_paper_owners__id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PaperOwnersUpdateRequest"];
             };
         };
         responses: {
@@ -4925,7 +4805,7 @@ export interface operations {
             };
         };
     };
-    pwc_link_v1_paper_owners_pwc_link_get: {
+    pwc_link_v1_paper_owners_pwc_link__id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -5075,7 +4955,7 @@ export interface operations {
             };
         };
     };
-    renew_paper_password_v1_paper_pw_renew__document_id__put: {
+    renew_paper_password_v1_paper_pw__document_id__put: {
         parameters: {
             query?: never;
             header?: never;
@@ -5275,41 +5155,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OwnershipRequestNavi"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_paper_ownership_decision_v1_ownership_requests__request_id__documents__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                request_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PaperOwnershipDecisionModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OwnershipRequestModel"];
                 };
             };
             /** @description Validation Error */
@@ -5678,6 +5523,8 @@ export interface operations {
                 id?: number[] | null;
                 /** @description Submitter ID */
                 submitter_id?: string | null;
+                /** @description Submitter Name */
+                submitter_name?: string | null;
                 /** @description MUI datagrid filter */
                 filter?: string | null;
                 preset?: string | null;
@@ -5887,7 +5734,7 @@ export interface operations {
             };
         };
     };
-    get_metadata_v1_metadata_paper_id__paper_id__get: {
+    get_metadata_by_paper_id_v1_metadata_paper_id__paper_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -5918,7 +5765,7 @@ export interface operations {
             };
         };
     };
-    get_metadata_v1_metadata_paper_id__category___numeric_id__get: {
+    get_metadata_ancient_v1_metadata_paper_id__category___numeric_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -5981,7 +5828,7 @@ export interface operations {
             };
         };
     };
-    get_metadata_v1_metadata__id__get: {
+    get_metadata_by_id_v1_metadata__id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -5991,6 +5838,41 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetadataModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_metadata_by_id_v1_metadata__id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MetadataModel"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -6603,7 +6485,7 @@ export interface operations {
                 _order?: string | null;
                 _start?: number | null;
                 _end?: number | null;
-                /** @description List of user IDs to filter by */
+                /** @description List of IDs to filter by */
                 id?: number[] | null;
                 /** @description Admin User id */
                 admin_user?: number | null;

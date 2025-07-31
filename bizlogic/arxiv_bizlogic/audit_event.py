@@ -281,7 +281,7 @@ class AdminAudit_AddPaperOwner(AdminAudit_PaperEvent):
 
 
 class AdminAudit_AddPaperOwner2(AdminAudit_PaperEvent):
-    """Audit event for adding a secondary paper owner to a submission.
+    """Audit event for adding a paper owner.
     
     Args:
         admin_id: ID of the administrator performing the action
@@ -1392,7 +1392,7 @@ class AdminAudit_SetEmailVerified(AdminAudit_SetFlag):
         if len(elements) == 2:
             value1 = elements[1]
             if int(value1):
-               return f"{self.describe_admin_user(session)} verified the email of {self.describe_affected_user(session)}"
+                return f"{self.describe_admin_user(session)} verified the email of {self.describe_affected_user(session)}"
             else:
                 return f"{self.describe_admin_user(session)} unverified the email of {self.describe_affected_user(session)}"
 
@@ -1438,7 +1438,7 @@ def admin_audit(session: Session, event: AdminAuditEvent) -> None:
 
 
 # noinspection PyTypeChecker
-set_flag_event_classes: Dict[str, Type[AdminAudit_SetFlag]] = {
+flag_setter_classes: Dict[str, Type[AdminAudit_SetFlag]] = {
     cls._flag.value : cls for cls in [
         AdminAudit_SetGroupTest,
         AdminAudit_SetProxy,
@@ -1460,7 +1460,7 @@ def admin_audit_flip_flag_instantiator(audit_record: TapirAdminAudit) -> AdminAu
     args, kwargs = AdminAudit_SetFlag.get_init_params(audit_record)
     flag = kwargs["flag"]
     value = kwargs["value"]
-    event_class: Optional[Type[AdminAuditEvent]] = set_flag_event_classes.get(flag)
+    event_class: Optional[Type[AdminAuditEvent]] = flag_setter_classes.get(flag)
     if not event_class:
         raise ValueError(f"{audit_record.action}.{flag} is not a valid admin action of flip flag")
     if not hasattr(event_class, "_value_name"):
