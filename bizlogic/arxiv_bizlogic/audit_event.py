@@ -76,15 +76,14 @@ class AdminAuditEvent:
     about an administrative action including who performed it, who was affected,
     when it occurred, and relevant session/network information.
     
-    Attributes:
-        timestamp: Unix timestamp when the event occurred
-        admin_user: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: Optional session ID associated with the action
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        _comment: Optional comment associated with the action
+    :ivar timestamp: Unix timestamp when the event occurred
+    :ivar admin_user: ID of the administrator performing the action
+    :ivar affected_user: ID of the user being affected by the action
+    :ivar session_id: Optional session ID associated with the action
+    :ivar remote_ip: Optional IP address of the administrator
+    :ivar remote_hostname: Optional hostname of the administrator
+    :ivar tracking_cookie: Optional tracking cookie for the session
+    :ivar _comment: Optional comment associated with the action
     """
     _action = None
     _value_name = None
@@ -108,6 +107,18 @@ class AdminAuditEvent:
                  comment: str | None = None,
                  data: str | None = None,
                  timestamp: int | None = None):
+        """Initialize an AdminAuditEvent.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param data: Optional additional data
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
         self.admin_user = admin_id
         self.affected_user = affected_user
         self.session_id = session_id
@@ -134,17 +145,14 @@ class AdminAuditEvent:
 
     @classmethod
     def get_init_params(cls, audit_record: TapirAdminAudit) -> Tuple[list, dict]:
-        """
-        Generate constructor parameters from an audit record.
+        """Generate constructor parameters from an audit record.
 
         This method can be overridden by subclasses to provide custom
         parameter generation for their __init__ methods.
 
-        Args:
-            audit_record: The TapirAdminAudit database record
-
-        Returns:
-            A tuple of (args, kwargs) for the constructor
+        :param audit_record: The TapirAdminAudit database record
+        :return: A tuple of (args, kwargs) for the constructor
+        :rtype: Tuple[list, dict]
         """
         return [
             audit_record.admin_user,
@@ -178,22 +186,33 @@ def doc_href(doc_id, paper_id):
 
 
 class AdminAudit_AddComment(AdminAuditEvent):
-    """Audit event for commenting on a user.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        data: Optional additional data
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for commenting on a user."""
     _action = AdminAuditActionEnum.ADD_COMMENT
+    
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 data: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_AddComment.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param data: Optional additional data
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, remote_ip, 
+                        remote_hostname, tracking_cookie, comment, data, timestamp)
 
     def describe(self, session: Session) -> str:
         return f"{self.describe_admin_user(session)} commented on {self.describe_affected_user(session)}. {self.comment}"
@@ -206,24 +225,22 @@ class AdminAudit_PaperEvent(AdminAuditEvent):
     This class handles audit events that involve paper-related actions,
     storing the paper ID as the data field and validating it as an integer.
 
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        paper_id: The paper ID (arXiv ID) associated with this event
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-
-    Attributes:
-        _data: The paper ID associated with this event
+    :ivar _data: The paper ID associated with this event
     """
 
     def __init__(self, *args, **kwargs):
+        """Initialize an AdminAudit_PaperEvent.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param paper_id: The paper ID (arXiv ID) associated with this event
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
         data = kwargs.pop("paper_id")
         kwargs['data'] = data
         super().__init__(*args, **kwargs)
@@ -231,17 +248,14 @@ class AdminAudit_PaperEvent(AdminAuditEvent):
 
     @classmethod
     def get_init_params(cls, audit_record: TapirAdminAudit) -> Tuple[list, dict]:
-        """
-        Generate constructor parameters from an audit record.
+        """Generate constructor parameters from an audit record.
 
         This method can be overridden by subclasses to provide custom
         parameter generation for their __init__ methods.
 
-        Args:
-            audit_record: The TapirAdminAudit database record
-
-        Returns:
-            A tuple of (args, kwargs) for the constructor
+        :param audit_record: The TapirAdminAudit database record
+        :return: A tuple of (args, kwargs) for the constructor
+        :rtype: Tuple[list, dict]
         """
         return [
             audit_record.admin_user,
@@ -258,22 +272,34 @@ class AdminAudit_PaperEvent(AdminAuditEvent):
 
 
 class AdminAudit_AddPaperOwner(AdminAudit_PaperEvent):
-    """Audit event for adding a paper owner to a submission.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        paper_id: The paper ID (arXiv ID) associated with this event
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for adding a paper owner to a submission."""
     _action = AdminAuditActionEnum.ADD_PAPER_OWNER
+
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 paper_id: str,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_AddPaperOwner.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param paper_id: The paper ID (arXiv ID) associated with this event
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, paper_id=paper_id,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
 
 
     def describe(self, session: Session) -> str:
@@ -281,175 +307,271 @@ class AdminAudit_AddPaperOwner(AdminAudit_PaperEvent):
 
 
 class AdminAudit_AddPaperOwner2(AdminAudit_PaperEvent):
-    """Audit event for adding a paper owner.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        paper_id: The paper ID (arXiv ID) associated with this event
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for adding a paper owner."""
     _action = AdminAuditActionEnum.ADD_PAPER_OWNER_2
+
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 paper_id: str,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_AddPaperOwner2.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param paper_id: The paper ID (arXiv ID) associated with this event
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, paper_id=paper_id,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
 
     def describe(self, session: Session) -> str:    
         return f"{self.describe_admin_user(session)} made {self.describe_affected_user(session)} an owner of paper {doc_href(self.data, self.data)} through the process-ownership screen"
 
 
 class AdminAudit_ChangePaperPassword(AdminAudit_PaperEvent):
-    """Audit event for changing a paper's password.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        paper_id: The paper ID (arXiv ID) associated with this event
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for changing a paper's password."""
     _action = AdminAuditActionEnum.CHANGE_PAPER_PW
+
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 paper_id: str,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_ChangePaperPassword.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param paper_id: The paper ID (arXiv ID) associated with this event
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, paper_id=paper_id,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
 
     def describe(self, session: Session) -> str:
         return f"{self.describe_admin_user(session)} changed the paper password for {doc_href(self.data, self.data)} which was submitted by {self.describe_affected_user(session)}"
 
 
 class AdminAudit_AdminChangePaperPassword(AdminAudit_PaperEvent):
-    """Audit event for admin-level changing of a paper's password.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        paper_id: The paper ID (arXiv ID) associated with this event
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for admin-level changing of a paper's password."""
     _action =  AdminAuditActionEnum.ARXIV_CHANGE_PAPER_PW
+
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 paper_id: str,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_AdminChangePaperPassword.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param paper_id: The paper ID (arXiv ID) associated with this event
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, paper_id=paper_id,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
 
     def describe(self, session: Session) -> str:
         return f"{self.describe_admin_user(session)} changed the paper password for {doc_href(self.data, self.data)} which was submitted by {self.describe_affected_user(session)}"
 
 
 class AdminAudit_AdminMakeAuthor(AdminAudit_PaperEvent):
-    """Audit event for making a user an author of a paper.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        paper_id: The paper ID (arXiv ID) associated with this event
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for making a user an author of a paper."""
     _action = AdminAuditActionEnum.ARXIV_MAKE_AUTHOR
+
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 paper_id: str,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_AdminMakeAuthor.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param paper_id: The paper ID (arXiv ID) associated with this event
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, paper_id=paper_id,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
 
     def describe(self, session: Session) -> str:
         return f"{self.describe_admin_user(session)} made {self.describe_affected_user(session)} an author of {doc_href(self.data, self.data)}"        
 
 
 class AdminAudit_AdminMakeNonauthor(AdminAudit_PaperEvent):
-    """Audit event for removing a user's authorship of a paper.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        paper_id: The paper ID (arXiv ID) associated with this event
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for removing a user's authorship of a paper."""
     _action = AdminAuditActionEnum.ARXIV_MAKE_NONAUTHOR
+
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 paper_id: str,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_AdminMakeNonauthor.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param paper_id: The paper ID (arXiv ID) associated with this event
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, paper_id=paper_id,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
     
     def describe(self, session: Session) -> str:
         return f"{self.describe_admin_user(session)} made {self.describe_affected_user(session)} a nonauthor of {doc_href(self.data, self.data)}"
 
 
 class AdminAudit_AdminRevokePaperOwner(AdminAudit_PaperEvent):
-    """Audit event for revoking a user's paper ownership.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        paper_id: The paper ID (arXiv ID) associated with this event
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for revoking a user's paper ownership."""
     _action = AdminAuditActionEnum.ARXIV_REVOKE_PAPER_OWNER
+
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 paper_id: str,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_AdminRevokePaperOwner.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param paper_id: The paper ID (arXiv ID) associated with this event
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, paper_id=paper_id,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
 
     def describe(self, session: Session) -> str:
         return f"{self.describe_admin_user(session)} revoked {self.describe_affected_user(session)} the ownership of {doc_href(self.data, self.data)}"
 
 
 class AdminAudit_AdminUnrevokePaperOwner(AdminAudit_PaperEvent):
-    """Audit event for restoring a user's paper ownership.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        paper_id: The paper ID (arXiv ID) associated with this event
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for restoring a user's paper ownership."""
     _action = AdminAuditActionEnum.ARXIV_UNREVOKE_PAPER_OWNER
+
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 paper_id: str,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_AdminUnrevokePaperOwner.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param paper_id: The paper ID (arXiv ID) associated with this event
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, paper_id=paper_id,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
 
     def describe(self, session: Session) -> str:
         return f"{self.describe_admin_user(session)} restored {self.describe_affected_user(session)} the ownership of {doc_href(self.data, self.data)}"
 
 class AdminAudit_AdminNotArxivRevokePaperOwner(AdminAudit_PaperEvent):
-    """Audit event for revoking a user's paper ownership (non-arXiv specific).
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        paper_id: The paper ID (arXiv ID) associated with this event
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for revoking a user's paper ownership (non-arXiv specific)."""
     _action = AdminAuditActionEnum.REVOKE_PAPER_OWNER
+
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 paper_id: str,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_AdminNotArxivRevokePaperOwner.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param paper_id: The paper ID (arXiv ID) associated with this event
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, paper_id=paper_id,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
 
     def describe(self, session: Session) -> str:
         return f"{self.describe_admin_user(session)} revoked {self.describe_affected_user(session)} the ownership of {doc_href(self.data, self.data)}"
@@ -462,23 +584,22 @@ class AdminAudit_BecomeUser(AdminAuditEvent):
     This event is logged when an administrator uses the 'become user'
     functionality to impersonate another user for support purposes.
     The new session ID is stored as data.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        new_session_id: The new session ID created for impersonation
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
     """
     _action = AdminAuditActionEnum.BECOME_USER
 
     def __init__(self, *argc, **kwargs):
+        """Initialize an AdminAudit_BecomeUser.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param new_session_id: The new session ID created for impersonation
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
         data = str(kwargs.pop("new_session_id"))
         _ = int(data)
         kwargs["data"] = data
@@ -487,17 +608,14 @@ class AdminAudit_BecomeUser(AdminAuditEvent):
 
     @classmethod
     def get_init_params(cls, audit_record: TapirAdminAudit) -> Tuple[list, dict]:
-        """
-        Generate constructor parameters from an audit record.
+        """Generate constructor parameters from an audit record.
 
         This method can be overridden by subclasses to provide custom
         parameter generation for their __init__ methods.
 
-        Args:
-            audit_record: The TapirAdminAudit database record
-
-        Returns:
-            A tuple of (args, kwargs) for the constructor
+        :param audit_record: The TapirAdminAudit database record
+        :return: A tuple of (args, kwargs) for the constructor
+        :rtype: Tuple[list, dict]
         """
         return [
             audit_record.admin_user,
@@ -521,26 +639,23 @@ class AdminAudit_ChangeEmail(AdminAuditEvent):
     
     This event is logged when an administrator changes a user's email address.
     The new email address is validated and stored as data.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        email: The new email address for the user
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    
-    Raises:
-        ValueError: If the provided email address is not valid
     """
     _action = AdminAuditActionEnum.CHANGE_EMAIL
 
     def __init__(self, *argc, **kwargs):
+        """Initialize an AdminAudit_ChangeEmail.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param email: The new email address for the user
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        :raises ValueError: If the provided email address is not valid
+        """
         data = str(kwargs.pop("email"))
         kwargs["data"] = data
         super().__init__(*argc, **kwargs)
@@ -548,17 +663,14 @@ class AdminAudit_ChangeEmail(AdminAuditEvent):
 
     @classmethod
     def get_init_params(cls, audit_record: TapirAdminAudit) -> Tuple[list, dict]:
-        """
-        Generate constructor parameters from an audit record.
+        """Generate constructor parameters from an audit record.
 
         This method can be overridden by subclasses to provide custom
         parameter generation for their __init__ methods.
 
-        Args:
-            audit_record: The TapirAdminAudit database record
-
-        Returns:
-            A tuple of (args, kwargs) for the constructor
+        :param audit_record: The TapirAdminAudit database record
+        :return: A tuple of (args, kwargs) for the constructor
+        :rtype: Tuple[list, dict]
         """
         return [
             audit_record.admin_user,
@@ -582,21 +694,33 @@ class AdminAudit_ChangePassword(AdminAuditEvent):
     
     This event is logged when an administrator changes a user's password.
     No additional data or comment is stored for security reasons.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        data: Optional additional data
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
     """
     _action = AdminAuditActionEnum.CHANGE_PASSWORD
+
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 data: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_ChangePassword.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param data: Optional additional data
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, remote_ip, 
+                        remote_hostname, tracking_cookie, comment, data, timestamp)
 
     def describe(self, session: Session) -> str:
         return f"{self.describe_admin_user(session)} changed password of {self.describe_affected_user(session)}"
@@ -609,23 +733,22 @@ class AdminAudit_EndorseEvent(AdminAuditEvent):
     
     This class handles audit events that involve endorsement actions,
     storing the endorser ID, endorsee ID, and category as data.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        endorser: ID of the user providing the endorsement
-        endorsee: ID of the user receiving the endorsement
-        category: The subject category for the endorsement
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
     """
     def __init__(self, *argc, **kwargs):
+        """Initialize an AdminAudit_EndorseEvent.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param endorser: ID of the user providing the endorsement
+        :param endorsee: ID of the user receiving the endorsement
+        :param category: The subject category for the endorsement
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
         endorser_id = kwargs.pop("endorser")
         _ = int(endorser_id)
         endorsee_id = kwargs.pop("endorsee")
@@ -638,17 +761,14 @@ class AdminAudit_EndorseEvent(AdminAuditEvent):
 
     @classmethod
     def get_init_params(cls, audit_record: TapirAdminAudit) -> Tuple[list, dict]:
-        """
-        Generate constructor parameters from an audit record.
+        """Generate constructor parameters from an audit record.
 
         This method can be overridden by subclasses to provide custom
         parameter generation for their __init__ methods.
 
-        Args:
-            audit_record: The TapirAdminAudit database record
-
-        Returns:
-            A tuple of (args, kwargs) for the constructor
+        :param audit_record: The TapirAdminAudit database record
+        :return: A tuple of (args, kwargs) for the constructor
+        :rtype: Tuple[list, dict]
         """
         data = audit_record.data.split(" ")
         if len(data) != 3:
@@ -688,24 +808,39 @@ class AdminAudit_EndorseEvent(AdminAuditEvent):
 
 
 class AdminAudit_EndorsedBySuspect(AdminAudit_EndorseEvent):
-    """Audit event for when a user is endorsed by a suspect user.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        endorser: ID of the user providing the endorsement
-        endorsee: ID of the user receiving the endorsement
-        category: The subject category for the endorsement
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for when a user is endorsed by a suspect user."""
     _action = AdminAuditActionEnum.ENDORSED_BY_SUSPECT
+
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 endorser: str,
+                 endorsee: str,
+                 category: str,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_EndorsedBySuspect.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param endorser: ID of the user providing the endorsement
+        :param endorsee: ID of the user receiving the endorsement
+        :param category: The subject category for the endorsement
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, endorser=endorser,
+                        endorsee=endorsee, category=category, remote_ip=remote_ip,
+                        remote_hostname=remote_hostname, tracking_cookie=tracking_cookie,
+                        comment=comment, timestamp=timestamp)
 
     def describe(self, session: Session) -> str:
         data = self.data.split(" ")
@@ -718,24 +853,39 @@ class AdminAudit_EndorsedBySuspect(AdminAudit_EndorseEvent):
 
 
 class AdminAudit_GotNegativeEndorsement(AdminAudit_EndorseEvent):
-    """Audit event for when a user receives a negative endorsement.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        endorser: ID of the user providing the endorsement
-        endorsee: ID of the user receiving the endorsement
-        category: The subject category for the endorsement
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for when a user receives a negative endorsement."""
     _action = AdminAuditActionEnum.GOT_NEGATIVE_ENDORSEMENT
+
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 endorser: str,
+                 endorsee: str,
+                 category: str,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_GotNegativeEndorsement.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param endorser: ID of the user providing the endorsement
+        :param endorsee: ID of the user receiving the endorsement
+        :param category: The subject category for the endorsement
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, endorser=endorser,
+                        endorsee=endorsee, category=category, remote_ip=remote_ip,
+                        remote_hostname=remote_hostname, tracking_cookie=tracking_cookie,
+                        comment=comment, timestamp=timestamp)
 
     def describe(self, session: Session) -> str:
         data = self.data.split(" ")
@@ -752,23 +902,22 @@ class AdminAudit_MakeModerator(AdminAuditEvent):
     
     This event is logged when an administrator grants moderator privileges
     to a user for a specific category. The category is stored as data.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        category: The subject category for which the user is being made a moderator
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
     """
     _action = AdminAuditActionEnum.MAKE_MODERATOR
 
     def __init__(self, *argc, **kwargs):
+        """Initialize an AdminAudit_MakeModerator.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param category: The subject category for which the user is being made a moderator
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
         category = kwargs.pop("category")
         data = f"{category}"
         kwargs["data"] = data
@@ -801,23 +950,22 @@ class AdminAudit_UnmakeModerator(AdminAuditEvent):
     
     This event is logged when an administrator revokes moderator privileges
     from a user for a specific category. The category is stored as data.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        category: The subject category for which the user's moderator privileges are being revoked
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
     """
     _action = AdminAuditActionEnum.UNMAKE_MODERATOR
 
     def __init__(self, *argc, **kwargs):
+        """Initialize an AdminAudit_UnmakeModerator.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param category: The subject category for which the user's moderator privileges are being revoked
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
         category = kwargs.pop("category")
         data = f"{category}"
         kwargs["data"] = data
@@ -851,22 +999,21 @@ class AdminAudit_SuspendUser(AdminAuditEvent):
     This event is logged when an administrator suspends a user account.
     The banned flag is automatically set to 1 and a comment is required
     to explain the reason for suspension.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action (recommended for suspension reason)
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
     """
     _action = AdminAuditActionEnum.SUSPEND_USER
 
     def __init__(self, *argc, **kwargs):
+        """Initialize an AdminAudit_SuspendUser.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action (recommended for suspension reason)
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
         data = f'{UserFlags.TAPIR_FLAG_BANNED.value}=1'
         kwargs["data"] = data
         super().__init__(*argc, **kwargs)
@@ -897,22 +1044,21 @@ class AdminAudit_UnuspendUser(AdminAuditEvent):
     This event is logged when an administrator removes a user's suspension.
     The banned flag is automatically set to 0 and a comment is required
     to explain the reason for unsuspension.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action (recommended for unsuspension reason)
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
     """
     _action = AdminAuditActionEnum.UNSUSPEND_USER
 
     def __init__(self, *argc, **kwargs):
+        """Initialize an AdminAudit_UnuspendUser.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action (recommended for unsuspension reason)
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
         data = f'{UserFlags.TAPIR_FLAG_BANNED.value}=0'
         kwargs["data"] = data
         super().__init__(*argc, **kwargs)
@@ -943,27 +1089,24 @@ class AdminAudit_ChangeStatus(AdminAuditEvent):
     This event is logged when an administrator changes a user's veto status.
     The before and after status values are stored as data in the format
     'before_status -> after_status'.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        status_before: The user's status before the change (UserVetoStatus)
-        status_after: The user's status after the change (UserVetoStatus)
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-        
-    Raises:
-        ValueError: If either status is not a valid UserVetoStatus enum
     """
     _action = AdminAuditActionEnum.ARXIV_CHANGE_STATUS
 
     def __init__(self, *argc, **kwargs):
+        """Initialize an AdminAudit_ChangeStatus.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param status_before: The user's status before the change (UserVetoStatus)
+        :param status_after: The user's status after the change (UserVetoStatus)
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        :raises ValueError: If either status is not a valid UserVetoStatus enum
+        """
         status_before = kwargs.pop("status_before")
         status_after = kwargs.pop("status_after")
         if not isinstance(status_before, UserVetoStatus):
@@ -1007,27 +1150,9 @@ class AdminAudit_SetFlag(AdminAuditEvent):
     This event is logged when an administrator modifies a user's flags
     (such as banned, approved, etc.). The flag name and value are stored as data.
 
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        {flag_param}: The new value for the flag (type varies by subclass)
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-
-    Note:
-        This is a base class. Use specific subclasses like AdminAudit_SetBanned,
-        AdminAudit_SetProxy, etc. The {flag_param} placeholder represents the
-        actual parameter name specific to each subclass.
-
-    Raises:
-        ValueError: If the flag is not a valid UserFlags enum
-        NotImplementedError: If instantiated directly (use subclasses)
+    .. note:: This is a base class. Use specific subclasses like AdminAudit_SetBanned,
+              AdminAudit_SetProxy, etc. The flag_param placeholder represents the
+              actual parameter name specific to each subclass.
     """
     _action = AdminAuditActionEnum.FLIP_FLAG
     _flag: UserFlags
@@ -1035,6 +1160,20 @@ class AdminAudit_SetFlag(AdminAuditEvent):
     _value_type: type
 
     def __init__(self, *argc, **kwargs):
+        """Initialize an AdminAudit_SetFlag.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param flag_param: The new value for the flag (type varies by subclass)
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        :raises ValueError: If the flag is not a valid UserFlags enum
+        :raises NotImplementedError: If instantiated directly (use subclasses)
+        """
         if not hasattr(self, "_value_type"):
             raise NotImplementedError(f"AdminAudit_SetFlag is a base class and should not be instantiated directly")
 
@@ -1067,17 +1206,14 @@ class AdminAudit_SetFlag(AdminAuditEvent):
 
     @classmethod
     def get_init_params(cls, audit_record: TapirAdminAudit) -> Tuple[list, dict]:
-        """
-        Generate constructor parameters from an audit record.
+        """Generate constructor parameters from an audit record.
 
         This method can be overridden by subclasses to provide custom
         parameter generation for their __init__ methods.
 
-        Args:
-            audit_record: The TapirAdminAudit database record
-
-        Returns:
-            A tuple of (args, kwargs) for the constructor
+        :param audit_record: The TapirAdminAudit database record
+        :return: A tuple of (args, kwargs) for the constructor
+        :rtype: Tuple[list, dict]
         """
         data = audit_record.data.split("=")
         if len(data) != 2:
@@ -1113,184 +1249,292 @@ class AdminAudit_SetFlag(AdminAuditEvent):
 
 
 class AdminAudit_SetGroupTest(AdminAudit_SetFlag):
-    """Audit event for setting/unsetting the group test flag.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        group_test: Boolean value for the group test flag
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for setting/unsetting the group test flag."""
     _flag = UserFlags.ARXIV_FLAG_GROUP_TEST
     _value_name = "group_test"
     _value_type = bool
 
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 group_test: bool,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_SetGroupTest.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param group_test: Boolean value for the group test flag
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, group_test=group_test,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
+
 class AdminAudit_SetProxy(AdminAudit_SetFlag):
-    """Audit event for setting/unsetting the proxy flag.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        proxy: Boolean value for the proxy flag
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for setting/unsetting the proxy flag."""
     _flag = UserFlags.ARXIV_FLAG_PROXY
     _value_name = "proxy"
     _value_type = bool
 
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 proxy: bool,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_SetProxy.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param proxy: Boolean value for the proxy flag
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, proxy=proxy,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
+
 class AdminAudit_SetSuspect(AdminAudit_SetFlag):
-    """Audit event for setting/unsetting the suspect flag.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        suspect: Boolean value for the suspect flag
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for setting/unsetting the suspect flag."""
     _flag = UserFlags.ARXIV_FLAG_SUSPECT
     _value_name = "suspect"
     _value_type = bool
 
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 suspect: bool,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_SetSuspect.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param suspect: Boolean value for the suspect flag
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, suspect=suspect,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
+
 class AdminAudit_SetXml(AdminAudit_SetFlag):
-    """Audit event for setting/unsetting the XML flag.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        xml: Boolean value for the XML flag
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for setting/unsetting the XML flag."""
     _flag = UserFlags.ARXIV_FLAG_XML
     _value_name = "xml"
     _value_type = bool
 
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 xml: bool,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_SetXml.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param xml: Boolean value for the XML flag
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, xml=xml,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
+
 class AdminAudit_SetEndorsementValid(AdminAudit_SetFlag):
-    """Audit event for setting/unsetting the endorsement valid flag.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        endorsement_valid: Boolean value for the endorsement valid flag
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for setting/unsetting the endorsement valid flag."""
     _flag = UserFlags.ARXIV_ENDORSEMENT_FLAG_VALID
     _value_name = "endorsement_valid"
     _value_type = bool
 
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 endorsement_valid: bool,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_SetEndorsementValid.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param endorsement_valid: Boolean value for the endorsement valid flag
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, endorsement_valid=endorsement_valid,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
+
 class AdminAudit_SetPointValue(AdminAudit_SetFlag):
-    """Audit event for setting the endorsement point value.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        point_value: Integer value for the endorsement point value
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for setting the endorsement point value."""
     _flag = UserFlags.ARXIV_ENDORSEMENT_POINT_VALUE
     _value_name = "point_value"
     _value_type = int
 
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 point_value: int,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_SetPointValue.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param point_value: Integer value for the endorsement point value
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, point_value=point_value,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
+
 class AdminAudit_SetEndorsementRequestsValid(AdminAudit_SetFlag):
-    """Audit event for setting/unsetting the endorsement requests valid flag.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        endorsement_requests_valid: Boolean value for the endorsement requests valid flag
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for setting/unsetting the endorsement requests valid flag."""
     _flag = UserFlags.ARXIV_ENDORSEMENT_REQUEST_FLAG_VALID
     _value_name = "endorsement_requests_valid"
     _value_type = bool
 
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 endorsement_requests_valid: bool,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_SetEndorsementRequestsValid.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param endorsement_requests_valid: Boolean value for the endorsement requests valid flag
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, endorsement_requests_valid=endorsement_requests_valid,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
+
 class AdminAudit_SetEmailBouncing(AdminAudit_SetFlag):
-    """Audit event for setting/unsetting the email bouncing flag.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        email_bouncing: Boolean value for the email bouncing flag
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for setting/unsetting the email bouncing flag."""
     _flag = UserFlags.TAPIR_EMAIL_BOUNCING
     _value_name = "email_bouncing"
     _value_type = bool
 
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 email_bouncing: bool,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_SetEmailBouncing.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param email_bouncing: Boolean value for the email bouncing flag
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, email_bouncing=email_bouncing,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
+
 class AdminAudit_SetBanned(AdminAudit_SetFlag):
-    """Audit event for setting/unsetting the banned flag.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        banned: Boolean value for the banned flag
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for setting/unsetting the banned flag."""
     _flag = UserFlags.TAPIR_FLAG_BANNED
     _value_name = "banned"
     _value_type = bool
+
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 banned: bool,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_SetBanned.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param banned: Boolean value for the banned flag
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, banned=banned,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
 
     def describe(self, session: Session) -> str:
         elements = self.data.split("=")
@@ -1305,24 +1549,36 @@ class AdminAudit_SetBanned(AdminAudit_SetFlag):
 
 
 class AdminAudit_SetEditSystem(AdminAudit_SetFlag):
-    """Audit event for setting/unsetting the edit system flag (sysad privileges).
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        edit_system: Boolean value for the edit system flag
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for setting/unsetting the edit system flag (sysad privileges)."""
     _flag = UserFlags.TAPIR_FLAG_EDIT_SYSTEM
     _value_name = "edit_system"
     _value_type = bool
+
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 edit_system: bool,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_SetEditSystem.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param edit_system: Boolean value for the edit system flag
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, edit_system=edit_system,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
 
     def describe(self, session: Session) -> str:
         elements = self.data.split("=")
@@ -1337,24 +1593,36 @@ class AdminAudit_SetEditSystem(AdminAudit_SetFlag):
 
 
 class AdminAudit_SetEditUsers(AdminAudit_SetFlag):
-    """Audit event for setting/unsetting the edit users flag (admin privileges).
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        edit_users: Boolean value for the edit users flag
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for setting/unsetting the edit users flag (admin privileges)."""
     _flag = UserFlags.TAPIR_FLAG_EDIT_USERS
     _value_name = "edit_users"
     _value_type = bool
+
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 edit_users: bool,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_SetEditUsers.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param edit_users: Boolean value for the edit users flag
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, edit_users=edit_users,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
 
     def describe(self, session: Session) -> str:
         elements = self.data.split("=")
@@ -1368,24 +1636,36 @@ class AdminAudit_SetEditUsers(AdminAudit_SetFlag):
         return self.data
 
 class AdminAudit_SetEmailVerified(AdminAudit_SetFlag):
-    """Audit event for setting/unsetting the email verified flag.
-    
-    Args:
-        admin_id: ID of the administrator performing the action
-        affected_user: ID of the user being affected by the action
-        session_id: TAPIR session ID associated with the action
-    
-    Kwargs:
-        verified: Boolean value for the email verified flag
-        remote_ip: Optional IP address of the administrator
-        remote_hostname: Optional hostname of the administrator
-        tracking_cookie: Optional tracking cookie for the session
-        comment: Optional comment about the action
-        timestamp: Optional Unix timestamp (auto-generated if not provided)
-    """
+    """Audit event for setting/unsetting the email verified flag."""
     _flag = UserFlags.TAPIR_FLAG_EMAIL_VERIFIED
     _value_name = "verified"
     _value_type = bool
+
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str,
+                 verified: bool,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_SetEmailVerified.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param verified: Boolean value for the email verified flag
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, verified=verified,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
 
     def describe(self, session: Session) -> str:
         elements = self.data.split("=")
@@ -1401,24 +1681,23 @@ class AdminAudit_SetEmailVerified(AdminAudit_SetFlag):
 
 
 def admin_audit(session: Session, event: AdminAuditEvent) -> None:
-    """
-    Audit function for admin actions.
+    """Audit function for admin actions.
     
     This function logs an administrative action to the audit trail by creating
     a new entry in the TapirAdminAudit table. It captures all relevant information
     about the action including who performed it, who was affected, when it occurred,
     and any additional context.
 
-    Args:
-        session: SQLAlchemy database session for persisting the audit record
-        event: The AdminAuditEvent containing action details and data
-            admin_user: ID of the administrator performing the action
-            affected_user: ID of the user being affected by the action
-            session_id: Optional TAPIR session ID associated with the admin action
-            remote_ip: Optional IP address of the administrator
-            remote_hostname: Optional hostname of the administrator
-            tracking_cookie: Optional tracking cookie for session correlation
-            timestamp: Optional timestamp; if None, current UTC time is used
+    :param session: SQLAlchemy database session for persisting the audit record
+    :param event: The AdminAuditEvent containing action details and data
+    :type event: AdminAuditEvent with the following attributes:
+        - admin_user: ID of the administrator performing the action
+        - affected_user: ID of the user being affected by the action
+        - session_id: Optional TAPIR session ID associated with the admin action
+        - remote_ip: Optional IP address of the administrator
+        - remote_hostname: Optional hostname of the administrator
+        - tracking_cookie: Optional tracking cookie for session correlation
+        - timestamp: Optional timestamp; if None, current UTC time is used
     """
 
     timestamp = event.timestamp if event.timestamp else int(time.time())
@@ -1498,17 +1777,14 @@ event_classes: Dict[str, AdminAuditEvent] = {
 
 
 def create_admin_audit_event(audit_record: TapirAdminAudit) -> AdminAuditEvent:
-    """
-    Create an AdminAuditEvent instance from a TapirAdminAudit database record.
+    """Create an AdminAuditEvent instance from a TapirAdminAudit database record.
 
     This function is the reverse of admin_audit(). It examines the action type
     in the audit record and instantiates the appropriate AdminAuditEvent subclass.
 
-    Args:
-        audit_record: The TapirAdminAudit database record
-
-    Returns:
-        An instance of the appropriate AdminAuditEvent subclass
+    :param audit_record: The TapirAdminAudit database record
+    :return: An instance of the appropriate AdminAuditEvent subclass
+    :rtype: AdminAuditEvent
     """
 
 
