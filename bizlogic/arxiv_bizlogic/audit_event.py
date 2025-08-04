@@ -744,7 +744,7 @@ class AdminAudit_EndorseEvent(AdminAuditEvent):
         :param affected_user: ID of the user being affected by the action
         :param session_id: TAPIR session ID associated with the action
         :param endorser: ID of the user providing the endorsement
-        :param endorsee: ID of the user receiving the endorsement
+        :param endorsement_request: ID of the endorsement request
         :param category: The subject category for the endorsement
         :param remote_ip: Optional IP address of the administrator
         :param remote_hostname: Optional hostname of the administrator
@@ -754,10 +754,10 @@ class AdminAudit_EndorseEvent(AdminAuditEvent):
         """
         endorser_id = kwargs.pop("endorser")
         _ = int(endorser_id)
-        endorsee_id = kwargs.pop("endorsee")
-        _ = int(endorsee_id)
+        er_id = kwargs.pop("endorsement_request")
+        _ = int(er_id)
         category = kwargs.pop("category")
-        data = f"{endorser_id} {category} {endorsee_id}"
+        data = f"{endorser_id} {category} {er_id}"
         kwargs["data"] = data
         super().__init__(*argc, **kwargs)
         pass
@@ -778,10 +778,10 @@ class AdminAudit_EndorseEvent(AdminAuditEvent):
             raise ValueError(f"data '{audit_record.data}' is not valid")
         endorser = data[0]
         category = data[1]
-        endorsee = data[2]
+        endorsement_request_id = data[2]
 
         if not re.match(r"^\d+$", endorser) or \
-                not re.match(r"^\d+$", endorsee) or \
+                not re.match(r"^\d+$", endorsement_request_id) or \
                 not re.match(r"[\w\-]+\..*", category):
             raise ValueError(f"data '{audit_record.data}' is not valid")
 
@@ -792,7 +792,7 @@ class AdminAudit_EndorseEvent(AdminAuditEvent):
         ], {
             "comment": audit_record.comment,
             "endorser": endorser,
-            "endorsee": endorsee,
+            "endorsement_request": endorsement_request_id,
             "category": category,
             "remote_ip": audit_record.ip_addr,
             "remote_hostname": audit_record.remote_host,
@@ -805,7 +805,7 @@ class AdminAudit_EndorseEvent(AdminAuditEvent):
         if len(data) == 3:
             endorser = data[0]
             category = data[1]
-            endorsee = data[2]
+            endorsee = self.affected_user
             return f"{self.describe_user(session, endorser)} ? {self.describe_user(session, endorsee)} for {category}"
         return repr(data)
 
@@ -816,10 +816,10 @@ class AdminAudit_EndorsedBySuspect(AdminAudit_EndorseEvent):
 
     def __init__(self, 
                  admin_id: str | None,
-                 affected_user: str,
+                 affected_user: str, # Endorsee
                  session_id: str,
                  endorser: str,
-                 endorsee: str,
+                 endorsement_request: str,
                  category: str,
                  remote_ip: str | None = None,
                  remote_hostname: str | None = None,
@@ -832,7 +832,7 @@ class AdminAudit_EndorsedBySuspect(AdminAudit_EndorseEvent):
         :param affected_user: ID of the user being affected by the action
         :param session_id: TAPIR session ID associated with the action
         :param endorser: ID of the user providing the endorsement
-        :param endorsee: ID of the user receiving the endorsement
+        :param endorsement_request: ID of endorsement request
         :param category: The subject category for the endorsement
         :param remote_ip: Optional IP address of the administrator
         :param remote_hostname: Optional hostname of the administrator
@@ -841,7 +841,7 @@ class AdminAudit_EndorsedBySuspect(AdminAudit_EndorseEvent):
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         """
         super().__init__(admin_id, affected_user, session_id, endorser=endorser,
-                        endorsee=endorsee, category=category, remote_ip=remote_ip,
+                        endorsement_request=endorsement_request, category=category, remote_ip=remote_ip,
                         remote_hostname=remote_hostname, tracking_cookie=tracking_cookie,
                         comment=comment, timestamp=timestamp)
 
@@ -850,7 +850,7 @@ class AdminAudit_EndorsedBySuspect(AdminAudit_EndorseEvent):
         if len(data) == 3:
             endorser = data[0]
             category = data[1]
-            endorsee = data[2]
+            endorsee = self.affected_user
             return f"A suspect {self.describe_user(session, endorser)} endorsed {self.describe_user(session, endorsee)} for {category}"
         return repr(data)
 
@@ -861,10 +861,10 @@ class AdminAudit_GotNegativeEndorsement(AdminAudit_EndorseEvent):
 
     def __init__(self, 
                  admin_id: str | None,
-                 affected_user: str,
+                 affected_user: str, # endorsee
                  session_id: str,
                  endorser: str,
-                 endorsee: str,
+                 endorsement_request: str,
                  category: str,
                  remote_ip: str | None = None,
                  remote_hostname: str | None = None,
@@ -877,7 +877,7 @@ class AdminAudit_GotNegativeEndorsement(AdminAudit_EndorseEvent):
         :param affected_user: ID of the user being affected by the action
         :param session_id: TAPIR session ID associated with the action
         :param endorser: ID of the user providing the endorsement
-        :param endorsee: ID of the user receiving the endorsement
+        :param endorsement_request: ID of endorsement request
         :param category: The subject category for the endorsement
         :param remote_ip: Optional IP address of the administrator
         :param remote_hostname: Optional hostname of the administrator
@@ -886,7 +886,7 @@ class AdminAudit_GotNegativeEndorsement(AdminAudit_EndorseEvent):
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         """
         super().__init__(admin_id, affected_user, session_id, endorser=endorser,
-                        endorsee=endorsee, category=category, remote_ip=remote_ip,
+                        endorsement_request=endorsement_request, category=category, remote_ip=remote_ip,
                         remote_hostname=remote_hostname, tracking_cookie=tracking_cookie,
                         comment=comment, timestamp=timestamp)
 
@@ -895,7 +895,7 @@ class AdminAudit_GotNegativeEndorsement(AdminAudit_EndorseEvent):
         if len(data) == 3:
             endorser = data[0]
             category = data[1]
-            endorsee = data[2]
+            endorsee = self.affected_user
             return f"A suspect {self.describe_user(session, endorser)} rejected an endorsement request by {self.describe_user(session, endorsee)} for {category}"
         return repr(data)
 
