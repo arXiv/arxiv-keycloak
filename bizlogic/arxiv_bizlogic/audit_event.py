@@ -1750,8 +1750,8 @@ flag_setter_classes: Dict[str, Type[AdminAudit_SetFlag]] = {
 
 def admin_audit_flip_flag_instantiator(audit_record: TapirAdminAudit) -> AdminAuditEvent:
     args, kwargs = AdminAudit_SetFlag.get_init_params(audit_record)
-    flag = kwargs["flag"]
-    value = kwargs["value"]
+    flag = kwargs.pop("flag")
+    value = kwargs.pop("value")
     event_class: Optional[Type[AdminAuditEvent]] = flag_setter_classes.get(flag)
     if not event_class:
         raise ValueError(f"{audit_record.action}.{flag} is not a valid admin action of flip flag")
