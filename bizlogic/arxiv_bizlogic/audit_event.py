@@ -88,7 +88,7 @@ class AdminAuditEvent:
     _action = None
     _value_name = None
     timestamp: int
-    admin_user: str
+    admin_user: str | None
     affected_user: str
     session_id: Optional[str]
     remote_ip: Optional[str]
@@ -98,7 +98,7 @@ class AdminAuditEvent:
     _data: Optional[str]
 
     def __init__(self,
-                 admin_id: str,
+                 admin_id: str | None,
                  affected_user: str,
                  session_id: str,
                  remote_ip: str | None = None,
@@ -642,6 +642,11 @@ class AdminAudit_ChangeEmail(AdminAuditEvent):
     """
     _action = AdminAuditActionEnum.CHANGE_EMAIL
 
+    @classmethod
+    @property
+    def data_keyword(cls) -> str:
+        return "email"
+
     def __init__(self, *argc, **kwargs):
         """Initialize an AdminAudit_ChangeEmail.
 
@@ -656,7 +661,7 @@ class AdminAudit_ChangeEmail(AdminAuditEvent):
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         :raises ValueError: If the provided email address is not valid
         """
-        data = str(kwargs.pop("email"))
+        data = str(kwargs.pop(self.data_keyword))
         kwargs["data"] = data
         super().__init__(*argc, **kwargs)
         pass
@@ -677,8 +682,8 @@ class AdminAudit_ChangeEmail(AdminAuditEvent):
             audit_record.affected_user,
             audit_record.session_id,
         ], {
+            cls.data_keyword: audit_record.data,
             "comment": audit_record.comment,
-            "email": audit_record.data,
             "remote_ip": audit_record.ip_addr,
             "remote_hostname": audit_record.remote_host,
             "tracking_cookie": audit_record.tracking_cookie,
@@ -726,8 +731,6 @@ class AdminAudit_ChangePassword(AdminAuditEvent):
         return f"{self.describe_admin_user(session)} changed password of {self.describe_affected_user(session)}"
 
 
-
-
 class AdminAudit_EndorseEvent(AdminAuditEvent):
     """Base class for audit events related to user endorsements.
     
@@ -737,7 +740,7 @@ class AdminAudit_EndorseEvent(AdminAuditEvent):
     def __init__(self, *argc, **kwargs):
         """Initialize an AdminAudit_EndorseEvent.
 
-        :param admin_id: ID of the administrator performing the action
+        :param admin_id: ID of the administrator performing the action - nullable for non-endorsement actions
         :param affected_user: ID of the user being affected by the action
         :param session_id: TAPIR session ID associated with the action
         :param endorser: ID of the user providing the endorsement
@@ -783,7 +786,7 @@ class AdminAudit_EndorseEvent(AdminAuditEvent):
             raise ValueError(f"data '{audit_record.data}' is not valid")
 
         return [
-            audit_record.admin_user,
+            audit_record.admin_user, # This is null for most cases
             audit_record.affected_user,
             audit_record.session_id,
         ], {
@@ -812,7 +815,7 @@ class AdminAudit_EndorsedBySuspect(AdminAudit_EndorseEvent):
     _action = AdminAuditActionEnum.ENDORSED_BY_SUSPECT
 
     def __init__(self, 
-                 admin_id: str,
+                 admin_id: str | None,
                  affected_user: str,
                  session_id: str,
                  endorser: str,
@@ -825,7 +828,7 @@ class AdminAudit_EndorsedBySuspect(AdminAudit_EndorseEvent):
                  timestamp: int | None = None):
         """Initialize an AdminAudit_EndorsedBySuspect.
 
-        :param admin_id: ID of the administrator performing the action
+        :param admin_id: ID of the administrator performing the action - null for negative endorsement by non-admin
         :param affected_user: ID of the user being affected by the action
         :param session_id: TAPIR session ID associated with the action
         :param endorser: ID of the user providing the endorsement
@@ -857,7 +860,7 @@ class AdminAudit_GotNegativeEndorsement(AdminAudit_EndorseEvent):
     _action = AdminAuditActionEnum.GOT_NEGATIVE_ENDORSEMENT
 
     def __init__(self, 
-                 admin_id: str,
+                 admin_id: str | None,
                  affected_user: str,
                  session_id: str,
                  endorser: str,
@@ -870,7 +873,7 @@ class AdminAudit_GotNegativeEndorsement(AdminAudit_EndorseEvent):
                  timestamp: int | None = None):
         """Initialize an AdminAudit_GotNegativeEndorsement.
 
-        :param admin_id: ID of the administrator performing the action
+        :param admin_id: ID of the administrator performing the action - null for negative endorsement by non-admin
         :param affected_user: ID of the user being affected by the action
         :param session_id: TAPIR session ID associated with the action
         :param endorser: ID of the user providing the endorsement
@@ -905,6 +908,11 @@ class AdminAudit_MakeModerator(AdminAuditEvent):
     """
     _action = AdminAuditActionEnum.MAKE_MODERATOR
 
+    @classmethod
+    @property
+    def data_keyword(cls) -> str:
+        return "category"
+
     def __init__(self, *argc, **kwargs):
         """Initialize an AdminAudit_MakeModerator.
 
@@ -918,7 +926,7 @@ class AdminAudit_MakeModerator(AdminAuditEvent):
         :param comment: Optional comment about the action
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         """
-        category = kwargs.pop("category")
+        category = kwargs.pop(self.data_keyword)
         data = f"{category}"
         kwargs["data"] = data
         super().__init__(*argc, **kwargs)
@@ -933,8 +941,8 @@ class AdminAudit_MakeModerator(AdminAuditEvent):
             audit_record.affected_user,
             audit_record.session_id,
         ], {
+            cls.data_keyword: category,
             "comment": audit_record.comment,
-            "category": category,
             "remote_ip": audit_record.ip_addr,
             "remote_hostname": audit_record.remote_host,
             "tracking_cookie": audit_record.tracking_cookie,
@@ -953,6 +961,11 @@ class AdminAudit_UnmakeModerator(AdminAuditEvent):
     """
     _action = AdminAuditActionEnum.UNMAKE_MODERATOR
 
+    @classmethod
+    @property
+    def data_keyword(cls) -> str:
+        return "category"
+
     def __init__(self, *argc, **kwargs):
         """Initialize an AdminAudit_UnmakeModerator.
 
@@ -966,7 +979,7 @@ class AdminAudit_UnmakeModerator(AdminAuditEvent):
         :param comment: Optional comment about the action
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         """
-        category = kwargs.pop("category")
+        category = kwargs.pop(self.data_keyword)
         data = f"{category}"
         kwargs["data"] = data
         super().__init__(*argc, **kwargs)
@@ -981,8 +994,8 @@ class AdminAudit_UnmakeModerator(AdminAuditEvent):
             audit_record.affected_user,
             audit_record.session_id,
         ], {
+            cls.data_keyword: category,
             "comment": audit_record.comment,
-            "category": category,
             "remote_ip": audit_record.ip_addr,
             "remote_hostname": audit_record.remote_host,
             "tracking_cookie": audit_record.tracking_cookie,
