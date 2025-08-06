@@ -19,7 +19,7 @@ from arxiv.auth.legacy import passwords
 from arxiv_bizlogic.bizmodels.tapir_to_kc_mapping import AuthResponse
 from fastapi import HTTPException, status
 from keycloak import KeycloakAdmin, KeycloakError, KeycloakAuthenticationError, KeycloakOpenID, KeycloakPostError
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, field_validator
 from sqlalchemy import and_
 from sqlalchemy.exc import IntegrityError
 
@@ -31,7 +31,6 @@ from .. import datetime_to_epoch
 from arxiv_bizlogic.bizmodels.user_model import UserModel, USER_MODEL_DEFAULTS, VetoStatusEnum
 
 logger = logging.getLogger(__name__)
-
 
 
 # CAREER_STATUS = ["Unknown", "Staff", "Professor", "Post Doc", "Grad Student", "Other"]
@@ -127,7 +126,7 @@ class AccountIdentifierModel(BaseModel):
 
 class AccountInfoBaseModel(BaseModel):
     username: str  # aka nickname in Tapir
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     first_name: str
     last_name: str
     suffix_name: Optional[str] = None
@@ -165,6 +164,7 @@ class AccountInfoBaseModel(BaseModel):
                         groups = {group: True for group in value}
                         del result[key]
                         # groups = [CategoryGroup(elem) for elem in value]
+                        group: CategoryGroup
                         for group in list(CategoryGroup):
                             result[CategoryGroupToCategoryFlags[group.value]] = group.value in groups
                     else:

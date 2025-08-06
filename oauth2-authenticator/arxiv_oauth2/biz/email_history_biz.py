@@ -592,8 +592,8 @@ class EmailHistoryBiz:
         self.session.add(user)
         add_admin_email_change_log(
             self.session,
-            admin_id,
-            self.user_id,
+            int(admin_id),
+            int(self.user_id),
             old_email,
             new_email,
             session_id=session_id,

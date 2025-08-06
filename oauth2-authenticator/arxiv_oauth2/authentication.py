@@ -239,7 +239,7 @@ async def impersonate(request: Request,
         AdminAudit_BecomeUser(
             current_user.user_id,
             user_id,
-            current_user.session_id,
+            current_user.tapir_session_id,
             new_session_id=tapir_session.session_id,
             remote_ip=remote_ip,
             remote_hostname=remote_hostname,

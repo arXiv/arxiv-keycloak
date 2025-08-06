@@ -34,7 +34,7 @@ from .biz.account_biz import (AccountInfoModel, get_account_info,
                               kc_validate_access_token, kc_send_verify_email, register_arxiv_account,
                               update_tapir_account, AccountIdentifierModel, kc_login_with_client_credential)
 from .biz.cold_migration import cold_migrate
-from .biz.email_history_biz import TapirEmailChangeTokenModel, EmailHistoryBiz, UserEmailHistory, add_admin_email_change_log, \
+from .biz.email_history_biz import TapirEmailChangeTokenModel, EmailHistoryBiz, \
     EmailChangeEntry
 # from . import stateless_captcha
 from .captcha import CaptchaTokenReplyModel, get_captcha_token
@@ -320,7 +320,7 @@ def set_email_verified_status(
         AdminAudit_SetEmailVerified(
             authed_user.user_id,
             user_id,
-            authed_user.session_id,
+            authed_user.tapir_session_id,
             verified = body.email_verified,
             remote_ip=remote_ip,
             remote_hostname=remote_hostname,
@@ -454,18 +454,17 @@ def change_email(
         claims = get_arxiv_user_claims(authn_user)
         tapir_session_id = None
         if claims:
-            tapir_session_id = claims.session_id
+            tapir_session_id = claims.tapir_session_id
 
         biz.set_user_email_by_admin(
             body.new_email,
             admin_id=get_super_user_id(authn_user),
             session_id=tapir_session_id,
-            remote_host=remote_ip,
-            remote_host_name=remote_hostname,
+            remote_addr=remote_ip,
+            remote_host=remote_hostname,
             comment=body.comment,
             email_verified=email_verified,
             )
-
 
         session.commit()
 
@@ -502,6 +501,7 @@ def change_email(
             remote_addr=remote_ip,
             remote_host=remote_hostname,
             used=False,
+            issued_when=datetime.now(),
         )
     )
 
@@ -511,7 +511,7 @@ def change_email(
         AdminAudit_ChangeEmail(
             authn_user.user_id,
             user_id,
-            authn_user.session_id,
+            authn_user.tapir_session_id,
             email=body.new_email,
             remote_ip=remote_ip,
             remote_hostname=remote_hostname,
@@ -546,7 +546,7 @@ def get_email_history(
     if _start is None:
         _start = 0
     if _end is None:
-        _end = len(history)
+        _end = len(history.change_history)
 
     response.headers['X-Total-Count'] = str(len(history.change_history))
     return history.change_history[_start:_end]
@@ -644,12 +644,13 @@ async def change_user_password(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
 
     if authn_user.is_admin and authn_user.user_id != data.user_id:
+        tsid = str(authn_user.tapir_session_id) if authn_user.tapir_session_id else ""
         admin_audit(
             session,
             AdminAudit_ChangePassword(
                 authn_user.user_id,
                 user_id,
-                authn_user.session_id,
+                tsid,
                 remote_ip=remote_ip,
                 remote_hostname=remote_hostname,
             ), # obv. no payload
@@ -697,12 +698,13 @@ async def change_user_password(
                 sha256_base64_encode(data.old_password), sha256_base64_encode(data.new_password))
 
     # add audit record
+    tsid = str(authn_user.tapir_session_id) if authn_user.tapir_session_id else ""
     admin_audit(
         session,
         AdminAudit_ChangePassword(
             authn_user.user_id,
             user_id,
-            authn_user.session_id,
+            tsid,
             remote_ip=remote_ip,
             remote_hostname=remote_hostname,
             tracking_cookie=tracking_cookie,
@@ -1047,7 +1049,7 @@ def upsert_author_id(
 
             if author_id:
                 # Update existing record
-                author_id.author_id = body.author_id
+                author_id.author_id = body.author_id if body.author_id else ""
                 author_id.updated = current_time
             else:
                 # Create new record

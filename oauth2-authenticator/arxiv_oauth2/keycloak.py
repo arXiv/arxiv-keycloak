@@ -4,7 +4,7 @@ Keycloak audit event processing
 import json
 from typing import Optional, Any
 
-from arxiv_bizlogic.fastapi_helpers import get_current_user, get_current_user_or_none
+from arxiv_bizlogic.fastapi_helpers import get_current_user_or_none
 from fastapi import APIRouter, Depends, status, HTTPException, Request, Response
 from keycloak import KeycloakAdmin, KeycloakError, KeycloakGetError
 from sqlalchemy.orm import Session
