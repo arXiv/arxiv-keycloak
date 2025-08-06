@@ -1693,7 +1693,7 @@ class AdminAudit_SetEmailVerified(AdminAudit_SetFlag):
 
 
 
-def admin_audit(session: Session, event: AdminAuditEvent) -> None:
+def admin_audit(session: Session, event: AdminAuditEvent) -> TapirAdminAudit:
     """Audit function for admin actions.
     
     This function logs an administrative action to the audit trail by creating
@@ -1727,7 +1727,7 @@ def admin_audit(session: Session, event: AdminAuditEvent) -> None:
         comment=event.comment if event.comment else '',
     )
     session.add(entry)
-    pass
+    return entry
 
 
 # noinspection PyTypeChecker
