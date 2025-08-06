@@ -129,7 +129,7 @@ class AdminAuditEvent:
         self.remote_hostname = remote_hostname if remote_hostname else ''
         self.tracking_cookie = tracking_cookie if tracking_cookie else ''
         self._comment = comment if comment else ''
-        self._data = data if data is not None else ""
+        self._data = data if data  else ""
 
     @property
     def comment(self) -> str:
@@ -1716,17 +1716,18 @@ def admin_audit(session: Session, event: AdminAuditEvent) -> None:
     timestamp = event.timestamp if event.timestamp else int(time.time())
     entry = TapirAdminAudit(
         log_date=timestamp,
-        session_id=event.session_id if event.session_id else None,
-        ip_addr=event.remote_ip,
-        remote_host=event.remote_hostname,
-        admin_user=int(event.admin_user),
-        affected_user=int(event.affected_user),
-        tracking_cookie=event.tracking_cookie,
+        session_id=event.session_id,
+        ip_addr=event.remote_ip if event.remote_ip else '',
+        remote_host=event.remote_hostname if event.remote_hostname else '',
+        admin_user=int(event.admin_user) if event.admin_user else None,
+        affected_user=int(event.affected_user) if event.affected_user else 0,
+        tracking_cookie=event.tracking_cookie if event.tracking_cookie else '',
         action=event.action,
-        data=event.data,
-        comment=event.comment,
+        data=event.data if event.data else '',
+        comment=event.comment if event.comment else '',
     )
     session.add(entry)
+    pass
 
 
 # noinspection PyTypeChecker
