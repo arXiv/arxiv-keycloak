@@ -125,11 +125,11 @@ class AdminAuditEvent:
         if timestamp is None:
             timestamp = int(datetime.now(tz=timezone.utc).timestamp())
         self.timestamp = timestamp
-        self.remote_ip = remote_ip
-        self.remote_hostname = remote_hostname
-        self.tracking_cookie = tracking_cookie
-        self._comment = comment
-        self._data = data
+        self.remote_ip = remote_ip if remote_ip else ''
+        self.remote_hostname = remote_hostname if remote_hostname else ''
+        self.tracking_cookie = tracking_cookie if tracking_cookie else ''
+        self._comment = comment if comment else ''
+        self._data = data if data is not None else ""
 
     @property
     def comment(self) -> str:
