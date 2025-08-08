@@ -128,11 +128,16 @@ async def oauth2_callback(request: Request,
     logger.debug("User claims: user id=%s, email=%s", user_claims.user_id, user_claims.email)
 
     # legacy cookie and session
-    tapir_cookie, tapir_session = create_tapir_session(user_claims, client_ip)
+    # Hack - perhaps port the legacy auth. For now, this works.
+    from arxiv.db import Session
+    Session = session
+    tapir_cookie, tapir_session = create_tapir_session(session, user_claims, client_ip)
 
     # Legacy cookie
     if tapir_cookie and tapir_session:
         user_claims.set_tapir_session(tapir_cookie, tapir_session)
+    else:
+        logger.warning("Tapir session wasn't created. This may cause a problem where the business logic wants a tapir session.")
 
     # Set up cookies
     next_page = urllib.parse.unquote(request.query_params.get("state", "/"))  # Default to root if not provided
@@ -227,7 +232,16 @@ async def impersonate(request: Request,
     logger.debug("User claims: user id=%s, email=%s", user_claims.user_id, user_claims.email)
 
     # legacy cookie and session
-    tapir_cookie, tapir_session = create_tapir_session(user_claims, remote_ip)
+    # Hack - perhaps port the legacy auth. For now, this works.
+    from arxiv.db import Session
+    Session = session
+    tapir_cookie, tapir_session = create_tapir_session(session, user_claims, remote_ip)
+
+    # Legacy cookie
+    if tapir_cookie and tapir_session:
+        user_claims.set_tapir_session(tapir_cookie, tapir_session)
+    else:
+        logger.warning("Tapir session wasn't created. This may cause a problem where the business logic wants a tapir session.")
 
     # legacy cookie
     if tapir_cookie and tapir_session:
