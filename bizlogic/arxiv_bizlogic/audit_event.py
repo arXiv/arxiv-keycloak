@@ -851,7 +851,7 @@ class AdminAudit_EndorsedBySuspect(AdminAudit_EndorseEvent):
             endorser = data[0]
             category = data[1]
             endorsee = self.affected_user
-            return f"A suspect {self.describe_user(session, endorser)} endorsed {self.describe_user(session, endorsee)} for {category}"
+            return f"A flagged user {self.describe_user(session, endorser)} endorsed {self.describe_user(session, endorsee)} for {category}"
         return repr(data)
 
 
@@ -896,7 +896,7 @@ class AdminAudit_GotNegativeEndorsement(AdminAudit_EndorseEvent):
             endorser = data[0]
             category = data[1]
             endorsee = self.affected_user
-            return f"A suspect {self.describe_user(session, endorser)} rejected an endorsement request by {self.describe_user(session, endorsee)} for {category}"
+            return f"A flagged user {self.describe_user(session, endorser)} rejected an endorsement request by {self.describe_user(session, endorsee)} for {category}"
         return repr(data)
 
 

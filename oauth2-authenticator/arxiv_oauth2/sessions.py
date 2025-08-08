@@ -6,10 +6,12 @@ from arxiv.auth.user_claims import ArxivUserClaims
 from arxiv.auth.user_claims_to_legacy import create_tapir_session_from_user_claims
 from arxiv.auth.domain import Session as ArxivSession
 from arxiv.auth.legacy.exceptions import NoSuchUser, SessionCreationFailed
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
 def create_tapir_session(
+        session: Session,
         user_claims: ArxivUserClaims, client_ip: str
 ) -> Tuple[Optional[str], Optional[ArxivSession]]:
     # legacy cookie

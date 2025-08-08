@@ -43,7 +43,7 @@ def create_ng_claims(claims: ArxivUserClaims) -> NGClaims:
 
     return NGClaims(
         user_id=int(claims.user_id if claims.user_id else 0),
-        session_id=claims.tapir_session_id,
+        session_id=str(claims.tapir_session_id) if claims.tapir_session_id is not None else "",
         nonce=generate_nonce(),
         expires=claims.expires_at.isoformat())
 

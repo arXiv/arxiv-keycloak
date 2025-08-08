@@ -95,8 +95,8 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps, vetoed: boolean }>
         const query = new URLSearchParams();
 
         query.append("submitter_id", runtimeProps.currentUser.id);
-        query.append("status", "current");
-        query.append("status", "processing");
+        query.append("submission_status_group", "current");
+        // query.append("submission_status_group", "processing");
         query.append("_start", start.toString());
         query.append("_end", end.toString());
 
