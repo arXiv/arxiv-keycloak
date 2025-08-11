@@ -1,4 +1,4 @@
-import React, {useContext, useState} from "react";
+import React, {useContext, useState, useEffect} from "react";
 import Typography from "@mui/material/Typography";
 import Button  from "@mui/material/Button";
 import Box from "@mui/material/Box";
@@ -14,7 +14,6 @@ import IconButton from "@mui/material/IconButton";
 import TextField from "@mui/material/TextField";
 
 import { Add, Delete } from "@mui/icons-material";
-import { useQuery } from "@tanstack/react-query";
 
 import {RuntimeContext, RuntimeProps} from "../RuntimeContext.tsx";
 // import YesNoDialog from "../bits/YesNoDialog.tsx";
@@ -28,6 +27,8 @@ import {ADMIN_DOCUMENT_PAPER_ID_UPL, ADMIN_OWNERSHIP_REQUESTS_URL} from "../type
 type ArxivDocument = adminApi[typeof  ADMIN_DOCUMENT_PAPER_ID_UPL]['get']['responses']['200']['content']['application/json'];
 
 type OwnershipRequestsRequest = adminApi[typeof ADMIN_OWNERSHIP_REQUESTS_URL]['post']['requestBody']['content']['application/json'];
+
+
 
 /*
 const SubmitRequest: React.FC<{ runtimeProps: RuntimeProps }> = ({ runtimeProps }) => {
@@ -81,73 +82,70 @@ const SubmitRequest: React.FC<{ runtimeProps: RuntimeProps }> = ({ runtimeProps 
 */
 
 
-// Define the shape of a row
-interface TableRowData {
-    id: string;
-    dated: string;
-    title: string;
-    authors: string;
-}
 
-const null_row = { id: "", dated: "", title: "", authors: "" };
-
-
-// Function to fetch data based on ID
-async function fetchData(id: string, runtimeProps: RuntimeProps) : Promise<TableRowData> {
-    console.log("1 fetch data " + id);
-    if (id.length === 0) return Object.assign({}, null_row);
-    console.log("2 fetch data " + id);
-    try {
-        const getDocument = runtimeProps.adminFetcher.path(ADMIN_DOCUMENT_PAPER_ID_UPL).method('get').create();
-        const response = await getDocument({paper_id: id});
-        
-        if (response.ok) {
-            const doc: ArxivDocument = response.data;
-            return {id: doc.paper_id, dated: doc.dated, title: doc.title, authors: doc.authors || ""};
-        }
-        else if (response.status === 404) {
-            return {id: id, dated: "", title: `${id} : Invalid paper ID`, authors: ""};
-        }
-        else {
-            const errorMessage = (response.data as any)?.detail || response.statusText || "Error fetching document";
-            return {id: id, dated: "", title: errorMessage, authors: ""};
-        }
-    }
-    catch (error: any) {
-        console.log("fetch data error " + error);
-        return Object.assign({}, null_row);
-    }
-}
-
-const TableRowComponent: React.FC<{
+const OwnershipRequestTableRowComponent: React.FC<{
     runtimeProps: RuntimeProps;
-    row: TableRowData;
+    paperId: string;
     index: number;
     onIdChange: (index: number, newId: string) => void;
     onRemove: () => void;
-}> = ({ runtimeProps, row, index, onIdChange, onRemove }) => {
+}> = ({ runtimeProps, paperId, index, onIdChange, onRemove }) => {
 
-    console.log("TableRowComponent " + JSON.stringify(row));
+    const [document, setDocument] = useState<ArxivDocument | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
 
-    const { data } = useQuery({
-        queryKey: ["/documents/paper_id/", row.id],
-        queryFn: () => fetchData(row.id, runtimeProps),
-        enabled: !!row.id, // Fetch only when ID is entered
-    });
+    useEffect(() => {
+        const fetchPaperData = async () => {
+            if (!paperId) {
+                setDocument(null);
+                setError(null);
+                return;
+            }
+
+            setLoading(true);
+            setError(null);
+
+            try {
+                const getDocument = runtimeProps.adminFetcher.path(ADMIN_DOCUMENT_PAPER_ID_UPL).method('get').create();
+                const response = await getDocument({paper_id: paperId});
+                
+                if (response.ok) {
+                    const doc: ArxivDocument = response.data;
+                    setDocument(doc);
+                } else if (response.status === 404) {
+                    setDocument(null);
+                    setError(`${paperId}: Invalid paper ID`);
+                } else {
+                    const errorMessage = (response.data as any)?.detail || response.statusText || "Error fetching document";
+                    setDocument(null);
+                    setError(errorMessage);
+                }
+            } catch (error: any) {
+                console.error("Error fetching paper data:", error);
+                setDocument(null);
+                setError("Error fetching document");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPaperData();
+    }, [paperId, runtimeProps]);
 
     return (
         <TableRow>
             <TableCell>
                 <TextField
-                    value={row.id}
+                    value={paperId}
                     onChange={(e) => onIdChange(index, e.target.value)}
                     size="small"
                     sx={{width: "12em"}}
                 />
             </TableCell>
-            <TableCell>{data ? utcToNnewYorkDatePrinter(data.dated) : ""}</TableCell>
-            <TableCell>{data?.title || ""}</TableCell>
-            <TableCell>{data?.authors || ""}</TableCell>
+            <TableCell>{document ? utcToNnewYorkDatePrinter(document.dated) : ""}</TableCell>
+            <TableCell>{loading ? "Loading..." : (error || document?.title || "")}</TableCell>
+            <TableCell>{document?.authors || ""}</TableCell>
             <TableCell>
                 <IconButton onClick={onRemove} color="error">
                     <Delete />
@@ -157,33 +155,33 @@ const TableRowComponent: React.FC<{
     );
 };
 
-function OwnershipRequstTable({runtimeProps} : {runtimeProps: RuntimeProps}) : React.ReactNode {
+function OwnershipRequestTable({runtimeProps} : {runtimeProps: RuntimeProps}) : React.ReactNode {
     const {showNotification, showMessageDialog} = useNotification();
-    const [rows, setRows] = useState<TableRowData[]>([Object.assign({}, null_row)]);
+    const [paperIds, setPaperIds] = useState<string[]>([""]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const handleIdChange = (index: number, newId: string) => {
-        const updatedRows = [...rows];
-        updatedRows[index].id = newId;
-        setRows(updatedRows);
-        console.log(JSON.stringify(updatedRows));
+        const updatedIds = [...paperIds];
+        updatedIds[index] = newId;
+        setPaperIds(updatedIds);
+        console.log(JSON.stringify(updatedIds));
         setError(null);
     };
 
     const addRow = () => {
-        setRows([...rows, Object.assign({}, null_row)]);
+        setPaperIds([...paperIds, ""]);
     };
 
     const removeRow = (index: number) => {
-        setRows(rows.filter((_, i) => i !== index));
+        setPaperIds(paperIds.filter((_, i) => i !== index));
     };
 
     const handleSubmit = async () => {
         setLoading(true);
         setError(null);
 
-        const ids = rows.map((row) => row.id.trim()).filter((id) => id !== ""); // Remove empty IDs
+        const ids = paperIds.map((id) => id.trim()).filter((id) => id !== ""); // Remove empty IDs
         const body: OwnershipRequestsRequest = {
             user_id: runtimeProps.currentUser?.id ? String(runtimeProps.currentUser.id) : undefined,
             arxiv_ids: ids,
@@ -216,7 +214,7 @@ function OwnershipRequstTable({runtimeProps} : {runtimeProps: RuntimeProps}) : R
         }
     };
 
-    const inputs = rows.map((row) => row.id.trim()).filter((value) => value !== "");
+    const inputs = paperIds.map((id) => id.trim()).filter((value) => value !== "");
 
     return (
         <>
@@ -232,11 +230,11 @@ function OwnershipRequstTable({runtimeProps} : {runtimeProps: RuntimeProps}) : R
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {rows.map((row, index) => (
-                        <TableRowComponent
+                    {paperIds.map((paperId, index) => (
+                        <OwnershipRequestTableRowComponent
                             runtimeProps={runtimeProps}
                             key={index}
-                            row={row}
+                            paperId={paperId}
                             index={index}
                             onIdChange={handleIdChange}
                             onRemove={() => removeRow(index)}
@@ -276,7 +274,7 @@ const OwnershipRequest = () => {
                     <Typography variant={"body1"}>
                         To process an ownership request, enter either the numeric request id.
                     </Typography>
-                    <OwnershipRequstTable runtimeProps={runtimeProps} />
+                    <OwnershipRequestTable runtimeProps={runtimeProps} />
                     <Typography variant={"body2"} sx={{fontWeight: "bold", mt: 2}}>
                         {"If you have a large number of paper IDs to request, please contact "}
                         {runtimeProps.URLS.arxivAdminContactEmail}

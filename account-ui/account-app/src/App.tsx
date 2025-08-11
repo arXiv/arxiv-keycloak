@@ -1,5 +1,4 @@
 import React, {useEffect} from "react";
-import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import {RuntimeContextProvider} from "./RuntimeContext";
 import {BrowserRouter as Router, Routes, Route} from "react-router-dom";
 
@@ -32,8 +31,6 @@ import {ThemeProvider, CssBaseline} from '@mui/material';
 import arxivTheme from "./arxivTheme.ts";
 
 
-const queryClient = new QueryClient();
-
 const App: React.FC = () => {
 
     const ExternalRedirect: React.FC<{ to: string }> = ({to}) => {
@@ -49,46 +46,44 @@ const App: React.FC = () => {
         <ThemeProvider theme={arxivTheme}>
             <CssBaseline/>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <QueryClientProvider client={queryClient}>
-                    <NotificationProvider>
-                        <RuntimeContextProvider>
-                            <Box sx={{
-                                minHeight: '100vh',
-                                backgroundColor: 'white',
-                                display: 'flex',
-                                flexDirection: 'column'
-                            }}>
-                                <Router>
-                                    <ArxivHeader/>
-                                    <Container component="main">
-                                        <Routes>
-                                            <Route path="/user-account" element={<UserAccountInfo/>}/>
-                                            <Route path="/user-account/login"
-                                                   element={<ExternalRedirect to={"/login"}/>}/>
-                                            <Route path="/user-account/logout" element={<Logout/>}/>
-                                            <Route path="/user-account/register" element={<AccountRegistration/>}/>
-                                            <Route path="/user-account/request-document-ownership"
-                                                   element={<OwnershipRequest/>}/>
-                                            <Route path="/user-account/change-author-status"
-                                                   element={<AuthorshipStatus/>}/>
-                                            <Route path="/user-account/update-profile" element={<UpdateProfile/>}/>
-                                            <Route path="/user-account/change-password" element={<ChangePassword/>}/>
-                                            <Route path="/user-account/change-email" element={<ChangeEmail/>}/>
-                                            <Route path="/user-account/endorse" element={<EnterEndorsementCode/>}/>
-                                            <Route path="/user-account/article-information" element={<YourDocuments/>}/>
-                                            <Route path="/user-account/owned-documents" element={<ArticlesYouOwn/>}/>
-                                            <Route path="/user-account/claim-document-ownership"
-                                                   element={<ClaimPaperOwnership/>}/>
-                                            <Route path="/user-account/reset-password" element={<ResetPassword/>}/>
-                                            <Route path="*" element={<NotFound404/>}/>
-                                        </Routes>
-                                    </Container>
-                                    <ArxivFooter/>
-                                </Router>
-                            </Box>
-                        </RuntimeContextProvider>
-                    </NotificationProvider>
-                </QueryClientProvider>
+                <NotificationProvider>
+                    <RuntimeContextProvider>
+                        <Box sx={{
+                            minHeight: '100vh',
+                            backgroundColor: 'white',
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }}>
+                            <Router>
+                                <ArxivHeader/>
+                                <Container component="main">
+                                    <Routes>
+                                        <Route path="/user-account" element={<UserAccountInfo/>}/>
+                                        <Route path="/user-account/login"
+                                               element={<ExternalRedirect to={"/login"}/>}/>
+                                        <Route path="/user-account/logout" element={<Logout/>}/>
+                                        <Route path="/user-account/register" element={<AccountRegistration/>}/>
+                                        <Route path="/user-account/request-document-ownership"
+                                               element={<OwnershipRequest/>}/>
+                                        <Route path="/user-account/change-author-status"
+                                               element={<AuthorshipStatus/>}/>
+                                        <Route path="/user-account/update-profile" element={<UpdateProfile/>}/>
+                                        <Route path="/user-account/change-password" element={<ChangePassword/>}/>
+                                        <Route path="/user-account/change-email" element={<ChangeEmail/>}/>
+                                        <Route path="/user-account/endorse" element={<EnterEndorsementCode/>}/>
+                                        <Route path="/user-account/article-information" element={<YourDocuments/>}/>
+                                        <Route path="/user-account/owned-documents" element={<ArticlesYouOwn/>}/>
+                                        <Route path="/user-account/claim-document-ownership"
+                                               element={<ClaimPaperOwnership/>}/>
+                                        <Route path="/user-account/reset-password" element={<ResetPassword/>}/>
+                                        <Route path="*" element={<NotFound404/>}/>
+                                    </Routes>
+                                </Container>
+                                <ArxivFooter/>
+                            </Router>
+                        </Box>
+                    </RuntimeContextProvider>
+                </NotificationProvider>
             </LocalizationProvider>
         </ThemeProvider>
     );
