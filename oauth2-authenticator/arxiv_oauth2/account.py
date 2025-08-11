@@ -65,7 +65,7 @@ async def get_current_user_info(
     return reply_account_info(session, str(current_user.user_id))
 
 
-@router.get('/profile/{user_id:str}')
+@router.get('/{user_id:str}/profile')
 async def get_user_profile(user_id: str,
                            current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
                            token: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
@@ -78,8 +78,9 @@ async def get_user_profile(user_id: str,
 #
 # Profile update and registering user is VERY similar. It is essentially upsert. At some point, I should think
 # about refactor these two.
-@router.put('/profile/', description="Update the user account profile for both Keycloak and user in db")
+@router.put('/{user_id:str}/profile', description="Update the user account profile for both Keycloak and user in db")
 async def update_account_profile(
+        user_id: str,
         data: AccountInfoModel,
         authn: Optional[ArxivUserClaims | ApiToken] = Depends(get_authn_or_none),
         session: Session = Depends(get_db),
@@ -88,7 +89,7 @@ async def update_account_profile(
     """
     Update the profile name of a user.
     """
-    user_id = data.id
+    assert user_id == data.id
     check_authnz(authn, None, user_id)
 
     # class AccountInfoModel:
@@ -133,7 +134,7 @@ async def update_account_profile(
 
 
 # See profile update comment.
-@router.post('/register/',
+@router.post('/register',
              status_code=status.HTTP_201_CREATED,
              responses={
                  status.HTTP_201_CREATED: {"model": AccountInfoModel, "description": "Successfully created account"},
@@ -224,19 +225,19 @@ async def register_account(
     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="register_arxiv_account returned an unexpected result")
 
 
-@router.get("/register/")
+@router.get("/register")
 def get_register(request: Request) -> CaptchaTokenReplyModel:
     return get_captcha_token(request)
 
 
 class EmailModel(BaseModel):
-    user_id: str
     email: str
 
 
-@router.post("/email/verify/", description="Request to send verify email")
+@router.post("/{user_id:str}/email/verify", description="Request to send verify email")
 def email_verify_requset(
         request: Request,
+        user_id: str,
         body: EmailModel,
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
@@ -244,7 +245,7 @@ def email_verify_requset(
     user: TapirUser | None = session.query(TapirUser).filter(TapirUser.email == body.email).one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    kc_send_verify_email(kc_admin, str(user.user_id), force_verify=True)
+    kc_send_verify_email(kc_admin, str(user_id), force_verify=True)
     return
 
 
@@ -252,7 +253,7 @@ class EmailVerifiedStatus(BaseModel):
     user_id: str
     email_verified: bool
 
-@router.get("/email/verified/", description="Is the email verified for this usea?")
+@router.get("/email/verified", description="Is the email verified for this usea?")
 def get_email_verified_status_current_user(
         current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
         session: Session = Depends(get_db),
@@ -266,7 +267,7 @@ def get_email_verified_status_current_user(
     return EmailVerifiedStatus(email_verified=bool(user.flag_email_verified), user_id =str(user.user_id))
 
 
-@router.get("/email/verified/{user_id:str}/", description="Is the email verified for this usea?")
+@router.get("/{user_id:str}/email/verified", description="Is the email verified for this usea?")
 def get_email_verified_status(
         user_id: str,
         authn: Optional[ArxivUserClaims] = Depends(get_authn_or_none),
@@ -280,8 +281,9 @@ def get_email_verified_status(
     return EmailVerifiedStatus(email_verified=bool(user.flag_email_verified), user_id = user_id)
 
 
-@router.put("/email/verified/", description="Set the email verified status")
+@router.put("/{user_id:str}/email/verified", description="Set the email verified status")
 def set_email_verified_status(
+        user_id: str,
         body: EmailVerifiedStatus,
         authed_user: ArxivUserClaims = Depends(get_authn_user),
         remote_ip: str = Depends(get_client_host),
@@ -289,7 +291,7 @@ def set_email_verified_status(
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ) -> EmailVerifiedStatus:
-    user_id = body.user_id
+    assert user_id == body.user_id
     check_authnz(authed_user, None, user_id)
     user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
     if not user:
@@ -332,13 +334,12 @@ def set_email_verified_status(
 
 
 class EmailUpdateModel(EmailModel):
-    user_id: str
     new_email: str
     email_verified: Optional[bool] = None  # This is only useful when the admin wants to set the verify status
     comment: Optional[str] = None
 
 
-@router.put("/email/", description="Request to change email", responses={
+@router.put("/{user_id:str}/email", description="Request to change email", responses={
     400: {
         "description": "Old and new email are the same. Or bad new email address",
         "content": {
@@ -398,6 +399,7 @@ class EmailUpdateModel(EmailModel):
 })
 def change_email(
         request: Request,
+        user_id: str,
         body: EmailUpdateModel,
         session: Session = Depends(get_db),
         remote_ip: str = Depends(get_client_host),
@@ -406,7 +408,6 @@ def change_email(
         authn_user: ArxivUserClaims = Depends(get_authn_user),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ):
-    user_id = body.user_id
     check_authnz(authn_user, None, user_id)
 
     if not is_valid_email(body.new_email):
@@ -462,7 +463,7 @@ def change_email(
             session_id=tapir_session_id,
             remote_addr=remote_ip,
             remote_host=remote_hostname,
-            comment=body.comment,
+            comment=body.comment if body.comment else "Not given",
             email_verified=email_verified,
             )
 
@@ -525,7 +526,7 @@ def change_email(
 
 
 
-@router.get("/email/history/{user_id:str}/", description="Get the past email history")
+@router.get("/{user_id:str}/email/history", description="Get the past email history")
 def get_email_history(
         request: Request,
         response: Response,
@@ -553,14 +554,14 @@ def get_email_history(
 
 
 class PasswordUpdateModel(BaseModel):
-    user_id: str
     old_password: str
     new_password: str
 
 
-@router.put('/password/', description="Update user password")
+@router.put('/{user_id:str}/password', description="Update user password")
 async def change_user_password(
         request: Request,
+        user_id: str,
         data: PasswordUpdateModel,
         authn_user: Optional[ArxivUserClaims] = Depends(get_authn_user),
         kc_access_token: Optional[str] = Depends( get_current_user_access_token),
@@ -574,10 +575,9 @@ async def change_user_password(
     Change user password
     """
     logger.debug("User password changed request. Current %s, data %s, Old password %s, new password %s",
-                 authn_user.user_id if authn_user else "No User", data.user_id,
+                 authn_user.user_id if authn_user else "No User", user_id,
                  sha256_base64_encode(data.old_password), sha256_base64_encode(data.new_password))
 
-    user_id = data.user_id
     check_authnz(authn_user, None, user_id)
 
     if len(data.old_password) < 8:
@@ -586,20 +586,20 @@ async def change_user_password(
     if not validate_password(data.new_password):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New password is invalid")
 
-    user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == data.user_id).one_or_none()
+    user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user id")
 
     nick: TapirNickname | None = session.query(TapirNickname).filter(
-        TapirNickname.user_id == data.user_id).one_or_none()
+        TapirNickname.user_id == user_id).one_or_none()
     if nick is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user id")
 
     pwd: TapirUsersPassword | None = session.query(TapirUsersPassword).filter(
-        TapirUsersPassword.user_id == data.user_id).one_or_none()
+        TapirUsersPassword.user_id == user_id).one_or_none()
     if pwd is None:
         pwd = TapirUsersPassword(
-            user_id=data.user_id,
+            user_id=user_id,
             password_storage=2,
             password_enc=passwords.hash_password(data.old_password),
         )
@@ -619,7 +619,7 @@ async def change_user_password(
                             detail="Stale access. Please log out/login again.")
 
     if not await kc_validate_access_token(kc_admin, idp, kc_access_token):
-        if authn_user.user_id == data.user_id:
+        if authn_user.user_id == user_id:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                 detail="Stale access. Please log out/login again.")
         if not authn_user.is_admin:
@@ -628,7 +628,7 @@ async def change_user_password(
 
     kc_user = None
     try:
-        kc_user = kc_admin.get_user(data.user_id)
+        kc_user = kc_admin.get_user(user_id)
     except KeycloakGetError:
         pass
 
@@ -643,7 +643,7 @@ async def change_user_password(
         # This should not happen. The tapir user exists and therefore, this must succeed.
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
 
-    if authn_user.is_admin and authn_user.user_id != data.user_id:
+    if authn_user.is_admin and authn_user.user_id != user_id:
         tsid = str(authn_user.tapir_session_id) if authn_user.tapir_session_id else ""
         admin_audit(
             session,
@@ -715,7 +715,7 @@ class PasswordResetRequest(BaseModel):
     username_or_email: str
 
 
-@router.post('/password/reset/', description="Reset user password",
+@router.post('/password/reset', description="Reset user password",
              status_code=status.HTTP_201_CREATED)
 async def reset_user_password(
         request: Request,
@@ -794,7 +794,7 @@ async def reset_user_password(
     return
 
 
-@router.get('/identifier/')
+@router.get('/identifier')
 async def get_user_profile_with_query(
         user_id: Optional[str] = Query(None, description="User ID"),
         email: Optional[str] = Query(None, description="Email"),
@@ -850,7 +850,7 @@ class OrcidUpdateModel(BaseModel):
     orcid_auth: Optional[str] = None
     authenticated: bool
 
-@router.put("/orcid/", description="Update ORCID", responses={
+@router.put("/orcid", description="Update ORCID", responses={
     401: {
         "description": "Not logged in",
         "content": {
@@ -1001,7 +1001,7 @@ class AuthorIdUpdateModel(BaseModel):
     author_id: Optional[str] = None
 
 
-@router.put("/author_id/", description="Update AUTHOR_ID", responses={
+@router.put("/author_id", description="Update AUTHOR_ID", responses={
     401: {
         "description": "Not logged in",
         "content": {
@@ -1147,7 +1147,7 @@ class UserStatusModel(BaseModel):
     # maybe add more
 
 
-@router.put("/status/", description="Update User flags", responses={
+@router.put("/{user_id:str}/status", description="Update User flags", responses={
     401: {
         "description": "Not logged in",
         "content": {
@@ -1174,12 +1174,13 @@ class UserStatusModel(BaseModel):
     },
 })
 def update_user_status(
+        user_id: str,
         body: UserStatusModel,
         session: Session = Depends(get_db),
         authn: Optional[ArxivUserClaims|ApiToken] = Depends(get_authn_or_none),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ):
-    user_id = body.user_id
+    assert user_id == body.user_id
     check_authnz(authn, None, user_id)
 
     user: UserModel | None = UserModel.one_user(session, user_id)

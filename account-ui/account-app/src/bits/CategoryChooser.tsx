@@ -6,10 +6,13 @@ import { paths as adminApi } from "../types/admin-api";
 import {RuntimeContext} from "../RuntimeContext";
 import arxivCategories from "./arxivCategories"
 import {paths} from "../types/aaa-api.ts";
-import {fetchPlus} from "../fetchPlus.ts";
+import {ACCOUNT_REGISTER_URL} from "../types/aaa-url.ts";
+import {ADMIN_CATEGORIES_URL, ADMIN_CATEGORY_URL} from "../types/admin-url.ts";
+// import {fetchPlus} from "../fetchPlus.ts";
 
-export type CategoryType = adminApi["/v1/categories/{id}"]["get"]["responses"]["200"]["content"]["application/json"];
-export type SubmitRequestType = paths["/account/register/"]['post']['requestBody']['content']['application/json'];
+export type CategoryType = adminApi[typeof ADMIN_CATEGORY_URL]["get"]["responses"]["200"]["content"]["application/json"];
+
+export type SubmitRequestType = paths[typeof ACCOUNT_REGISTER_URL]['post']['requestBody']['content']['application/json'];
 export type SelectedCategoryType = SubmitRequestType["default_category"] | null;
 
 
@@ -29,12 +32,20 @@ const CategoryChooser: React.FC<CategoryChooserProps> = ({onSelect, selectedCate
     const [categoryList, setCategoryList] = useState<CategoryType[]>(arxivCategories);
     const [categories, setCategories] = useState<CategoryGroupType[]>([]);
 
+
     useEffect(() => {
-        fetchPlus(runtimeContext.ADMIN_API_BACKEND_URL +  "/categories/")
-            .then(response => response.json())
-            .then(data => setCategoryList(data))
-            .catch(error => console.log(error));
-    }, []);
+        async function fetchCategories() {
+            const getCategories = runtimeContext.adminFetcher. path(ADMIN_CATEGORIES_URL).method('get').create();
+            try {
+                const resonse = await getCategories({});
+                setCategoryList(resonse.data);
+            }
+            catch (error) {
+                console.log(error);
+            }
+        }
+        fetchCategories();
+    }, [runtimeContext.adminFetcher]);
 
     useEffect(() => {
         const categoryGroups: CategoryGroupType[] = Object.values(

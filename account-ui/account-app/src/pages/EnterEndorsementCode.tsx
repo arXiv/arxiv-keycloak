@@ -19,17 +19,21 @@ import Radio from "@mui/material/Radio";
 import CardHeader from "@mui/material/CardHeader";
 import Link from "@mui/material/Link";
 import {printUserName} from "../bits/printer.ts";
-import {fetchPlus} from "../fetchPlus.ts";
 import {useLocation} from "react-router-dom";
 import CardWithTitle from "../bits/CardWithTitle.tsx";
+import {
+    ADMIN_CATEGORY_ARCHIVE_SUBJECT_CLASS_URL,
+    ADMIN_ENDORSEMENT_ENDORSE_URL,
+    ADMIN_ENDORSEMENT_REQUESTS_CODE
+} from "../types/admin-url.ts";
 
-type EndorsementCodeRequest = adminApi["/v1/endorsements/endorse"]['post']['requestBody']['content']['application/json'];
+type EndorsementCodeRequest = adminApi[typeof ADMIN_ENDORSEMENT_ENDORSE_URL]['post']['requestBody']['content']['application/json'];
 
-type EndorsementOutcomeModel = adminApi["/v1/endorsements/endorse"]['post']['responses']['200']['content']['application/json'];
-type Endorsement405Response = adminApi["/v1/endorsements/endorse"]['post']['responses']['405']['content']['application/json'];
-type EndorsementRequestType = adminApi["/v1/endorsement_requests/code"]['get']['responses']['200']['content']['application/json'];
+type EndorsementOutcomeModel = adminApi[typeof ADMIN_ENDORSEMENT_ENDORSE_URL]['post']['responses']['200']['content']['application/json'];
+type Endorsement405Response = adminApi[typeof ADMIN_ENDORSEMENT_ENDORSE_URL]['post']['responses']['405']['content']['application/json'];
+type EndorsementRequestType = adminApi[typeof ADMIN_ENDORSEMENT_REQUESTS_CODE]['get']['responses']['200']['content']['application/json'];
 type PublicUserType = EndorsementOutcomeModel["endorsee"];
-type CategoryResponse = adminApi["/v1/categories/{archive}/subject-class/{subject_class}"]['get']['responses']['200']['content']['application/json'];
+type CategoryResponse = adminApi[typeof ADMIN_CATEGORY_ARCHIVE_SUBJECT_CLASS_URL]['get']['responses']['200']['content']['application/json'];
 
 
 const EnterEndorsementCode = () => {
@@ -89,17 +93,12 @@ const EnterEndorsementCode = () => {
                 const query = new URLSearchParams();
                 query.set("secret", formData.endorsement_code);
                 try {
-                    const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + '/endorsements/endorse',
-                        {
-                            method: "POST",
-                            body: JSON.stringify(formData),
-                            headers: new Headers({
-                                "Content-Type": "application/json",
-                            })
-                        },);
+                    const postEndorsement = runtimeProps.adminFetcher.path(ADMIN_ENDORSEMENT_ENDORSE_URL).method('post').create();
+                    const response = await postEndorsement(formData);
+                    
                     if (response.ok) {
                         setErrors({...errors, endorsement_code: ""});
-                        const body: EndorsementOutcomeModel = await response.json();
+                        const body: EndorsementOutcomeModel = response.data;
                         setEndorsementOutcome(body);
                     } else {
                         setEndorsementOutcome(null);
@@ -115,9 +114,9 @@ const EnterEndorsementCode = () => {
                                 }, "Login"
                             );
                         } else {
-                            const body = await response.json();
-                            console.log(JSON.stringify(body));
-                            showNotification(body.detail, "error");
+                            const errorMessage = (response.data as any)?.detail || "Unknown error";
+                            console.log(JSON.stringify(response.data));
+                            showNotification(errorMessage, "error");
                         }
                     }
                 } catch (error) {
@@ -140,9 +139,10 @@ const EnterEndorsementCode = () => {
             const er = endorsementOutcome?.endorsement_request;
             if (er) {
                 try {
-                    const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/categories/${er.archive}/subject-class/${er.subject_class}`);
+                    const getCategoryInfo = runtimeProps.adminFetcher.path(ADMIN_CATEGORY_ARCHIVE_SUBJECT_CLASS_URL).method('get').create();
+                    const response = await getCategoryInfo({archive: er.archive || '', subject_class: er.subject_class || ''});
                     if (response.ok) {
-                        const body: CategoryResponse = await response.json();
+                        const body: CategoryResponse = response.data;
                         setEndorsementCategoryName(body.category_name);
                     } else {
                         setEndorsementCategoryName(null);
@@ -239,29 +239,25 @@ const EnterEndorsementCode = () => {
         event.preventDefault();
 
         try {
-            const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + "/endorsements/endorse", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({...formData, preflight: false}),
-            });
+            const postEndorsement = runtimeProps.adminFetcher.path(ADMIN_ENDORSEMENT_ENDORSE_URL).method('post').create();
+            const response = await postEndorsement({...formData, preflight: false});
 
             if (!response.ok) {
-                const errorReply = await response.json();
+                const errorReply = response.data;
                 console.error(response.statusText);
                 console.log(JSON.stringify(errorReply));
                 if (response.status === 405) {
                     const outcome = errorReply as unknown as Endorsement405Response;
                     showMessageDialog((<span>{outcome?.reason || "Reason not given"}</span>), "Endorsement failed");
                 } else {
-                    showNotification(errorReply.detail, "warning");
+                    const errorMessage = (errorReply as any)?.detail || "Unknown error";
+                    showNotification(errorMessage, "warning");
                 }
                 return;
             }
 
             if (response.status === 200) {
-                const body: EndorsementOutcomeModel = await response.json();
+                const body: EndorsementOutcomeModel = response.data;
                 if (body.endorsement?.point_value) {
                     showMessageDialog(
                         (<>
@@ -293,8 +289,8 @@ const EnterEndorsementCode = () => {
                 }
                 return;
             } else {
-                const body = await response.json();
-                showNotification(`Unexpected respones ${response.statusText} -  ${body.detail}`, "warning");
+                const errorMessage = (response.data as any)?.detail || "Unknown error";
+                showNotification(`Unexpected response ${response.statusText} - ${errorMessage}`, "warning");
             }
         } catch (error) {
             console.error("Error:", error);
@@ -394,7 +390,7 @@ const EnterEndorsementCode = () => {
                 arXiv will only inform {endorseeName} if you choose to endorse.
             </Typography>
             <FormControl component="fieldset"
-                         disabled={errors?.endorsement_code?.length ? true : false}>
+                         disabled={!!errors?.endorsement_code?.length}>
                 <RadioGroup
                     tabIndex={2}
                     name="positive"

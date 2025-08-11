@@ -234,14 +234,14 @@ class AdminAudit_PaperEvent(AdminAuditEvent):
         :param admin_id: ID of the administrator performing the action
         :param affected_user: ID of the user being affected by the action
         :param session_id: TAPIR session ID associated with the action
-        :param paper_id: The paper ID (arXiv ID) associated with this event
+        :param document_id: The Document ID (primary key of arXid_documents) associated with this event
         :param remote_ip: Optional IP address of the administrator
         :param remote_hostname: Optional hostname of the administrator
         :param tracking_cookie: Optional tracking cookie for the session
         :param comment: Optional comment about the action
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         """
-        data = kwargs.pop("paper_id")
+        data = kwargs.pop("document_id")
         kwargs['data'] = data
         super().__init__(*args, **kwargs)
         pass
@@ -263,7 +263,7 @@ class AdminAudit_PaperEvent(AdminAuditEvent):
             audit_record.session_id,
         ], {
             "comment": audit_record.comment,
-            "paper_id": audit_record.data,
+            "document_id": audit_record.data,
             "remote_ip": audit_record.ip_addr,
             "remote_hostname": audit_record.remote_host,
             "tracking_cookie": audit_record.tracking_cookie,
@@ -279,7 +279,7 @@ class AdminAudit_AddPaperOwner(AdminAudit_PaperEvent):
                  admin_id: str,
                  affected_user: str,
                  session_id: str | None,
-                 paper_id: str,
+                 document_id: str,
                  remote_ip: str | None = None,
                  remote_hostname: str | None = None,
                  tracking_cookie: str | None = None,
@@ -290,14 +290,14 @@ class AdminAudit_AddPaperOwner(AdminAudit_PaperEvent):
         :param admin_id: ID of the administrator performing the action
         :param affected_user: ID of the user being affected by the action
         :param session_id: TAPIR session ID associated with the action
-        :param paper_id: The paper ID (arXiv ID) associated with this event
+        :param document_id: The document ID associated with this event
         :param remote_ip: Optional IP address of the administrator
         :param remote_hostname: Optional hostname of the administrator
         :param tracking_cookie: Optional tracking cookie for the session
         :param comment: Optional comment about the action
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         """
-        super().__init__(admin_id, affected_user, session_id, paper_id=paper_id,
+        super().__init__(admin_id, affected_user, session_id, document_id=document_id,
                         remote_ip=remote_ip, remote_hostname=remote_hostname,
                         tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
 
@@ -314,7 +314,7 @@ class AdminAudit_AddPaperOwner2(AdminAudit_PaperEvent):
                  admin_id: str,
                  affected_user: str,
                  session_id: str | None,
-                 paper_id: str,
+                 document_id: str,
                  remote_ip: str | None = None,
                  remote_hostname: str | None = None,
                  tracking_cookie: str | None = None,
@@ -325,14 +325,14 @@ class AdminAudit_AddPaperOwner2(AdminAudit_PaperEvent):
         :param admin_id: ID of the administrator performing the action
         :param affected_user: ID of the user being affected by the action
         :param session_id: TAPIR session ID associated with the action
-        :param paper_id: The paper ID (arXiv ID) associated with this event
+        :param document_id: The document_id associated with this event
         :param remote_ip: Optional IP address of the administrator
         :param remote_hostname: Optional hostname of the administrator
         :param tracking_cookie: Optional tracking cookie for the session
         :param comment: Optional comment about the action
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         """
-        super().__init__(admin_id, affected_user, session_id, paper_id=paper_id,
+        super().__init__(admin_id, affected_user, session_id, document_id=document_id,
                         remote_ip=remote_ip, remote_hostname=remote_hostname,
                         tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
 
@@ -348,7 +348,7 @@ class AdminAudit_ChangePaperPassword(AdminAudit_PaperEvent):
                  admin_id: str,
                  affected_user: str,
                  session_id: str | None,
-                 paper_id: str,
+                 document_id: str,
                  remote_ip: str | None = None,
                  remote_hostname: str | None = None,
                  tracking_cookie: str | None = None,
@@ -359,14 +359,14 @@ class AdminAudit_ChangePaperPassword(AdminAudit_PaperEvent):
         :param admin_id: ID of the administrator performing the action
         :param affected_user: ID of the user being affected by the action
         :param session_id: TAPIR session ID associated with the action
-        :param paper_id: The paper ID (arXiv ID) associated with this event
+        :param document_id: The document_id associated with this event
         :param remote_ip: Optional IP address of the administrator
         :param remote_hostname: Optional hostname of the administrator
         :param tracking_cookie: Optional tracking cookie for the session
         :param comment: Optional comment about the action
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         """
-        super().__init__(admin_id, affected_user, session_id, paper_id=paper_id,
+        super().__init__(admin_id, affected_user, session_id, document_id=document_id,
                         remote_ip=remote_ip, remote_hostname=remote_hostname,
                         tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
 
@@ -382,7 +382,7 @@ class AdminAudit_AdminChangePaperPassword(AdminAudit_PaperEvent):
                  admin_id: str,
                  affected_user: str,
                  session_id: str | None,
-                 paper_id: str,
+                 document_id: str,
                  remote_ip: str | None = None,
                  remote_hostname: str | None = None,
                  tracking_cookie: str | None = None,
@@ -393,14 +393,14 @@ class AdminAudit_AdminChangePaperPassword(AdminAudit_PaperEvent):
         :param admin_id: ID of the administrator performing the action
         :param affected_user: ID of the user being affected by the action
         :param session_id: TAPIR session ID associated with the action
-        :param paper_id: The paper ID (arXiv ID) associated with this event
+        :param document_id: The document_id associated with this event
         :param remote_ip: Optional IP address of the administrator
         :param remote_hostname: Optional hostname of the administrator
         :param tracking_cookie: Optional tracking cookie for the session
         :param comment: Optional comment about the action
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         """
-        super().__init__(admin_id, affected_user, session_id, paper_id=paper_id,
+        super().__init__(admin_id, affected_user, session_id, document_id=document_id,
                         remote_ip=remote_ip, remote_hostname=remote_hostname,
                         tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
 
@@ -416,7 +416,7 @@ class AdminAudit_AdminMakeAuthor(AdminAudit_PaperEvent):
                  admin_id: str,
                  affected_user: str,
                  session_id: str | None,
-                 paper_id: str,
+                 document_id: str,
                  remote_ip: str | None = None,
                  remote_hostname: str | None = None,
                  tracking_cookie: str | None = None,
@@ -427,14 +427,14 @@ class AdminAudit_AdminMakeAuthor(AdminAudit_PaperEvent):
         :param admin_id: ID of the administrator performing the action
         :param affected_user: ID of the user being affected by the action
         :param session_id: TAPIR session ID associated with the action
-        :param paper_id: The paper ID (arXiv ID) associated with this event
+        :param document_id: document_id associated with this event
         :param remote_ip: Optional IP address of the administrator
         :param remote_hostname: Optional hostname of the administrator
         :param tracking_cookie: Optional tracking cookie for the session
         :param comment: Optional comment about the action
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         """
-        super().__init__(admin_id, affected_user, session_id, paper_id=paper_id,
+        super().__init__(admin_id, affected_user, session_id, document_id=document_id,
                         remote_ip=remote_ip, remote_hostname=remote_hostname,
                         tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
 
@@ -450,7 +450,7 @@ class AdminAudit_AdminMakeNonauthor(AdminAudit_PaperEvent):
                  admin_id: str,
                  affected_user: str,
                  session_id: str | None,
-                 paper_id: str,
+                 document_id: str,
                  remote_ip: str | None = None,
                  remote_hostname: str | None = None,
                  tracking_cookie: str | None = None,
@@ -461,14 +461,14 @@ class AdminAudit_AdminMakeNonauthor(AdminAudit_PaperEvent):
         :param admin_id: ID of the administrator performing the action
         :param affected_user: ID of the user being affected by the action
         :param session_id: TAPIR session ID associated with the action
-        :param paper_id: The paper ID (arXiv ID) associated with this event
+        :param document_id: The document ID (primary key) associated with this event
         :param remote_ip: Optional IP address of the administrator
         :param remote_hostname: Optional hostname of the administrator
         :param tracking_cookie: Optional tracking cookie for the session
         :param comment: Optional comment about the action
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         """
-        super().__init__(admin_id, affected_user, session_id, paper_id=paper_id,
+        super().__init__(admin_id, affected_user, session_id, document_id=document_id,
                         remote_ip=remote_ip, remote_hostname=remote_hostname,
                         tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
     
@@ -484,7 +484,7 @@ class AdminAudit_AdminRevokePaperOwner(AdminAudit_PaperEvent):
                  admin_id: str,
                  affected_user: str,
                  session_id: str | None,
-                 paper_id: str,
+                 document_id: str,
                  remote_ip: str | None = None,
                  remote_hostname: str | None = None,
                  tracking_cookie: str | None = None,
@@ -495,14 +495,14 @@ class AdminAudit_AdminRevokePaperOwner(AdminAudit_PaperEvent):
         :param admin_id: ID of the administrator performing the action
         :param affected_user: ID of the user being affected by the action
         :param session_id: TAPIR session ID associated with the action
-        :param paper_id: The paper ID (arXiv ID) associated with this event
+        :param document_id: The document ID (primary key) associated with this event
         :param remote_ip: Optional IP address of the administrator
         :param remote_hostname: Optional hostname of the administrator
         :param tracking_cookie: Optional tracking cookie for the session
         :param comment: Optional comment about the action
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         """
-        super().__init__(admin_id, affected_user, session_id, paper_id=paper_id,
+        super().__init__(admin_id, affected_user, session_id, document_id=document_id,
                         remote_ip=remote_ip, remote_hostname=remote_hostname,
                         tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
 
@@ -518,7 +518,7 @@ class AdminAudit_AdminUnrevokePaperOwner(AdminAudit_PaperEvent):
                  admin_id: str,
                  affected_user: str,
                  session_id: str | None,
-                 paper_id: str,
+                 document_id: str,
                  remote_ip: str | None = None,
                  remote_hostname: str | None = None,
                  tracking_cookie: str | None = None,
@@ -529,14 +529,14 @@ class AdminAudit_AdminUnrevokePaperOwner(AdminAudit_PaperEvent):
         :param admin_id: ID of the administrator performing the action
         :param affected_user: ID of the user being affected by the action
         :param session_id: TAPIR session ID associated with the action
-        :param paper_id: The paper ID (arXiv ID) associated with this event
+        :param document_id: The document ID (primary key) associated with this event
         :param remote_ip: Optional IP address of the administrator
         :param remote_hostname: Optional hostname of the administrator
         :param tracking_cookie: Optional tracking cookie for the session
         :param comment: Optional comment about the action
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         """
-        super().__init__(admin_id, affected_user, session_id, paper_id=paper_id,
+        super().__init__(admin_id, affected_user, session_id, document_id=document_id,
                         remote_ip=remote_ip, remote_hostname=remote_hostname,
                         tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
 
@@ -551,7 +551,7 @@ class AdminAudit_AdminNotArxivRevokePaperOwner(AdminAudit_PaperEvent):
                  admin_id: str,
                  affected_user: str,
                  session_id: str | None,
-                 paper_id: str,
+                 document_id: str,
                  remote_ip: str | None = None,
                  remote_hostname: str | None = None,
                  tracking_cookie: str | None = None,
@@ -562,14 +562,14 @@ class AdminAudit_AdminNotArxivRevokePaperOwner(AdminAudit_PaperEvent):
         :param admin_id: ID of the administrator performing the action
         :param affected_user: ID of the user being affected by the action
         :param session_id: TAPIR session ID associated with the action
-        :param paper_id: The paper ID (arXiv ID) associated with this event
+        :param document_id: The document ID (primary key) associated with this event
         :param remote_ip: Optional IP address of the administrator
         :param remote_hostname: Optional hostname of the administrator
         :param tracking_cookie: Optional tracking cookie for the session
         :param comment: Optional comment about the action
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         """
-        super().__init__(admin_id, affected_user, session_id, paper_id=paper_id,
+        super().__init__(admin_id, affected_user, session_id, document_id=document_id,
                         remote_ip=remote_ip, remote_hostname=remote_hostname,
                         tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
 

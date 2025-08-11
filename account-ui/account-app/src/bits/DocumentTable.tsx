@@ -23,12 +23,12 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import {RuntimeProps} from "../RuntimeContext.tsx";
 import { paths as adminApi } from "../types/admin-api";
-import {fetchPlus} from "../fetchPlus.ts";
+import {ADMIN_DOCUMENTS_ID_URL, ADMIN_DOCUMENTS_URL} from "../types/admin-url.ts";
 // import DocumentStatusName from "./DocumentStatusName.tsx";
 // import categoryChooser from "./CategoryChooser.tsx";
 
-type DocumentType = adminApi['/v1/documents/{id}']['get']['responses']['200']['content']['application/json'];
-type DocumentsType = adminApi['/v1/documents/']['get']['responses']['200']['content']['application/json'];
+type DocumentType = adminApi[typeof ADMIN_DOCUMENTS_ID_URL]['get']['responses']['200']['content']['application/json'];
+type DocumentsType = adminApi[typeof ADMIN_DOCUMENTS_URL]['get']['responses']['200']['content']['application/json'];
 
 const PAGE_SIZES = [10, 25, 50];
 
@@ -59,26 +59,31 @@ const DocumentTable: React.FC<{runtimeProps: RuntimeProps}> = ({runtimeProps}) =
         try {
             const start = page * pageSize;
             const end = start + pageSize;
-            const query = new URLSearchParams();
 
-            query.append("submitter_id", runtimeProps.currentUser.id);
-            query.append("_start", start.toString());
-            query.append("_end", end.toString());
-            if (statusFilter) query.append("status", statusFilter);
-            if (titleFilter) query.append("title_like", titleFilter);
+            const getDocuments = runtimeProps.adminFetcher.path(ADMIN_DOCUMENTS_URL).method('get').create();
+            const response = await getDocuments({
+                submitter_id: runtimeProps.currentUser.id,
+                _start: start,
+                _end: end,
+                ...(statusFilter !== "all" && { status: statusFilter }),
+                ...(titleFilter && { title_like: titleFilter })
+            });
+            
+            if (response.ok) {
+                const data: DocumentType[] = response.data;
+                const total = parseInt(response.headers?.get?.("X-Total-Count") || "0", 10);
 
-            const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL  + `/documents/?${query.toString()}`);
-            const data: DocumentType[] = await response.json();
-            const total = parseInt(response.headers.get("X-Total-Count") || "0", 10);
-
-            setDocuments(
-                data.map((document) => ({
-                    ...document,
-                    identifier: Number(document.id),
-                    expires: Number(document.created),
-                }))
-            );
-            setTotalCount(total);
+                setDocuments(
+                    data.map((document) => ({
+                        ...document,
+                        identifier: Number(document.id),
+                        expires: Number(document.created),
+                    }))
+                );
+                setTotalCount(total);
+            } else {
+                console.error("Error fetching documents:", response.statusText);
+            }
         } catch (err) {
             console.error("Error fetching documents:", err);
         }

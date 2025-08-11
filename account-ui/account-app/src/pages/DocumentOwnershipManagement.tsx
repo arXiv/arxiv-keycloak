@@ -40,19 +40,24 @@ import JournalReferenceIcon from "../assets/images/journalref.png";
 import LinkCodeDataIcon from "../assets/images/pwc_logo.png";
 import DatagridPaginationMaker from "../bits/DataGridPagination.tsx";
 import Button from "@mui/material/Button";
-import {fetchPlus} from "../fetchPlus.ts";
 import CardWithTitle from "../bits/CardWithTitle.tsx";
 import {paths as adminApi} from "../types/admin-api";
+import {
+    ADMIN_DOCUMENTS_USER_ACTION_URL,
+    ADMIN_PAPER_OWNERS_AUTHORSHIP_ACTION_URL, ADMIN_PAPER_OWNERS_ID_URL,
+    ADMIN_PAPER_OWNERS_URL,
+    ADMIN_PAPER_PW_ID_URL
+} from "../types/admin-url.ts";
 
 
 // type DocumentType = adminApi['/v1/documents/{id}']['get']['responses']['200']['content']['application/json'];
 // type DocumentsType = adminApi['/v1/documents/']['get']['responses']['200']['content']['application/json'];
 // type DemographicType = adminApi['/v1/demographics/{id}']['get']['responses']['200']['content']['application/json'];
-type PaperPasswordResponseType = adminApi['/v1/paper_pw/{id}']['get']['responses']['200']['content']['application/json'];
-type PaperAuthoredRequestType = adminApi['/v1/paper_owners/authorship/{action}']['put']['requestBody']['content']['application/json'];
+type PaperPasswordResponseType = adminApi[typeof ADMIN_PAPER_PW_ID_URL]['get']['responses']['200']['content']['application/json'];
+type PaperAuthoredRequestType = adminApi[typeof ADMIN_PAPER_OWNERS_AUTHORSHIP_ACTION_URL]['put']['requestBody']['content']['application/json'];
 // type PaperOwnerListRequestType = adminApi['/v1/paper_owners/']['get']['requestBody'];
-type PaperOwnerListResponseType = adminApi['/v1/paper_owners/']['get']['responses']['200']['content']['application/json'];
-type PaperOwnerType = adminApi['/v1/paper_owners/{id}']['get']['responses']['200']['content']['application/json'];
+type PaperOwnerListResponseType = adminApi[typeof ADMIN_PAPER_OWNERS_URL]['get']['responses']['200']['content']['application/json'];
+type PaperOwnerType = adminApi[typeof ADMIN_PAPER_OWNERS_ID_URL]['get']['responses']['200']['content']['application/json'];
 
 
 const PAGE_SIZES = [5, 20, 100];
@@ -180,7 +185,7 @@ const YourDocuments: React.FC = () => {
 
             try {
                 setIsSubmissionLoading(true);
-                const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/submissions/?${query.toString()}`);
+                const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/v1//submissions/?${query.toString()}`);
                 const total = parseInt(response.headers.get("X-Total-Count") || "0", 10);
                 setTotalSubmissions(total);
             } catch (err) {
@@ -200,7 +205,7 @@ const YourDocuments: React.FC = () => {
 
             try {
                 setIsDemographicLoading(true);
-                const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/demographics/${runtimeProps.currentUser.id}`);
+                const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/v1/demographics/${runtimeProps.currentUser.id}`);
                 const demographic: DemographicType = await response.json();
                 setDemographic(demographic);
             } catch (err) {
@@ -261,40 +266,30 @@ const YourDocuments: React.FC = () => {
             // const interestedIds = Object.values(submissinStatusList).filter(status => status.group === "current" || status.group === "processing");
             const start = paginationModel.page * paginationModel.pageSize;
             const end = start + paginationModel.pageSize;
-            const query = new URLSearchParams();
-
-            query.append("user_id", runtimeProps.currentUser.id);
-            query.append("with_document", String(true));
-            query.append("_start", start.toString());
-            query.append("_end", end.toString());
-            if (sortModel) {
-                for (const criteria of sortModel) {
-                    query.append("_sort", criteria.field);
-                    if (criteria.sort)
-                        query.append("_order", criteria.sort.toUpperCase());
-                }
-            }
-
-            filterModel.items.forEach((filter) => {
-                console.log("filter " + JSON.stringify(filter));
-                if (filter.value) {
-                    query.append("filter", JSON.stringify(filter));
-                }
-            });
 
             setIsLoading(true);
-            const response1 = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/paper_owners/?${query.toString()}`);
+            const getPaperOwners = runtimeProps.adminFetcher.path(ADMIN_PAPER_OWNERS_URL).method('get').create();
+            const response1 = await getPaperOwners({
+                user_id: runtimeProps.currentUser.id,
+                with_document: true,
+                _start: start,
+                _end: end,
+                ...(sortModel.length > 0 && { _sort: sortModel[0].field }),
+                ...(sortModel.length > 0 && sortModel[0].sort && { _order: sortModel[0].sort.toUpperCase() }),
+                ...(filterModel.items.length > 0 && { filter: JSON.stringify(filterModel.items[0]) })
+            });
+            
             if (!response1.ok) {
                 if (response1.status >= 500) {
                     showNotification("Data service is not responding", "warning");
                     return;
                 }
-                const message = await response1.text();
-                showNotification(message, "warning");
+                const errorMessage = (response1.data as any)?.detail || response1.statusText || "Error fetching papers";
+                showNotification(errorMessage, "warning");
                 return;
             }
-            const myPapers: PaperOwnerListResponseType = await response1.json();
-            const total = parseInt(response1.headers.get("X-Total-Count") || "0", 10);
+            const myPapers: PaperOwnerListResponseType = response1.data;
+            const total = parseInt(response1.headers?.get?.("X-Total-Count") || "0", 10);
             setPaperCount(total);
             setPapers(myPapers);
         } catch (err) {
@@ -302,7 +297,7 @@ const YourDocuments: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [paginationModel, filterModel, sortModel, runtimeProps.currentUser, runtimeProps.ADMIN_API_BACKEND_URL, showNotification]);
+    }, [paginationModel, filterModel, sortModel, runtimeProps.currentUser, runtimeProps.adminFetcher, showNotification]);
 
     useEffect(() => {
         fetchMyPapers();
@@ -336,16 +331,17 @@ const YourDocuments: React.FC = () => {
             async function showPaperPassword() {
                 try {
                     setIsLoading(true);
-                    const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + "/paper-pw/" + rowId);
+                    const getPaperPassword = runtimeProps.adminFetcher.path(ADMIN_PAPER_PW_ID_URL).method('get').create();
+                    const response = await getPaperPassword({id: rowId});
                     if (response.ok) {
-                        const body: PaperPasswordResponseType = await response.json();
+                        const body: PaperPasswordResponseType = response.data;
                         showMessageDialog(body.password_enc, "Paper Password");
                     } else {
-                        const body = await response.json();
-                        showMessageDialog(body.detail, "Paper Password Not Found");
+                        const errorMessage = (response.data as any)?.detail || "Paper Password Not Found";
+                        showMessageDialog(errorMessage, "Paper Password Not Found");
                     }
                 } catch (error) {
-                    console.error("Error fetching user:", error);
+                    console.error("Error fetching paper password:", error);
                 } finally {
                     setIsLoading(false);
                 }
@@ -356,7 +352,7 @@ const YourDocuments: React.FC = () => {
             const match = rowId.match(/^user_(\d+)-doc_(\d+)$/);
             if (match) {
                 const [, /*_user_id*/, doc_id] = match;
-                const url = runtimeProps.ADMIN_API_BACKEND_URL + `/documents/user-action/${doc_id}/${action.toLowerCase()}`;
+                const url = runtimeProps.ADMIN_API_BACKEND_URL + ADMIN_DOCUMENTS_USER_ACTION_URL.replace('{id}', doc_id).replace('{action}', action.toLowerCase());
                 window.open(url, '_blank');
             }
             else {
@@ -375,16 +371,15 @@ const YourDocuments: React.FC = () => {
             not_authored: !authored ? docIds : [],
         }
 
-        const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + "/paper_owners/authorship/update",
-            {
-                method: "PUT", headers: {"Content-Type": "application/json",}, body: JSON.stringify(body),
-            });
+        const updateAuthorship = runtimeProps.adminFetcher.path(ADMIN_PAPER_OWNERS_AUTHORSHIP_ACTION_URL).method('put').create();
+        const response = await updateAuthorship({action: "update", ...body});
         if (response.ok) {
             await fetchMyPapers();
         } else {
-            console.log(await response.text());
+            const errorMessage = (response.data as any)?.detail || response.statusText || "Error updating authorship";
+            console.log(errorMessage);
         }
-    }, [selectedRows, runtimeProps?.currentUser, runtimeProps.ADMIN_API_BACKEND_URL, fetchMyPapers]);
+    }, [selectedRows, runtimeProps?.currentUser, runtimeProps.adminFetcher, fetchMyPapers]);
 
 
     const columns: GridColDef<PaperOwnerType>[] = [

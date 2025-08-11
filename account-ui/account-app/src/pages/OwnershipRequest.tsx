@@ -21,12 +21,13 @@ import {RuntimeContext, RuntimeProps} from "../RuntimeContext.tsx";
 import { paths as adminApi } from "../types/admin-api";
 import {useNotification} from "../NotificationContext.tsx";
 import {utcToNnewYorkDatePrinter} from "../bits/printer.ts";
-import {fetchPlus} from "../fetchPlus.ts";
 import YourOwnershipRequests from "../components/YourOwnershipRequests.tsx";
 import CardWithTitle from "../bits/CardWithTitle.tsx";
+import {ADMIN_DOCUMENT_PAPER_ID_UPL, ADMIN_OWNERSHIP_REQUESTS_URL} from "../types/admin-url.ts";
 
-type ArxivDocument = adminApi['/v1/documents/paper_id/{paper_id}']['get']['responses']['200']['content']['application/json'];
-type OwnershipRequestsRequest = adminApi['/v1/ownership_requests/']['post']['requestBody']['content']['application/json'];
+type ArxivDocument = adminApi[typeof  ADMIN_DOCUMENT_PAPER_ID_UPL]['get']['responses']['200']['content']['application/json'];
+
+type OwnershipRequestsRequest = adminApi[typeof ADMIN_OWNERSHIP_REQUESTS_URL]['post']['requestBody']['content']['application/json'];
 
 /*
 const SubmitRequest: React.FC<{ runtimeProps: RuntimeProps }> = ({ runtimeProps }) => {
@@ -92,25 +93,27 @@ const null_row = { id: "", dated: "", title: "", authors: "" };
 
 
 // Function to fetch data based on ID
-async function fetchData(fetchFunc: typeof fetch, id: string, runtimeProps: RuntimeProps) : Promise<TableRowData> {
+async function fetchData(id: string, runtimeProps: RuntimeProps) : Promise<TableRowData> {
     console.log("1 fetch data " + id);
     if (id.length === 0) return Object.assign({}, null_row);
     console.log("2 fetch data " + id);
     try {
-        const response = await fetchFunc(runtimeProps.ADMIN_API_BACKEND_URL + "/documents/paper_id/" + id);
-        if (response.status === 200) {
-            const doc: ArxivDocument = await response.json();
+        const getDocument = runtimeProps.adminFetcher.path(ADMIN_DOCUMENT_PAPER_ID_UPL).method('get').create();
+        const response = await getDocument({paper_id: id});
+        
+        if (response.ok) {
+            const doc: ArxivDocument = response.data;
             return {id: doc.paper_id, dated: doc.dated, title: doc.title, authors: doc.authors || ""};
         }
         else if (response.status === 404) {
             return {id: id, dated: "", title: `${id} : Invalid paper ID`, authors: ""};
         }
         else {
-            const msg = await response.text();
-            return {id: id, dated: "", title: msg, authors: ""};
+            const errorMessage = (response.data as any)?.detail || response.statusText || "Error fetching document";
+            return {id: id, dated: "", title: errorMessage, authors: ""};
         }
     }
-    catch (error) {
+    catch (error: any) {
         console.log("fetch data error " + error);
         return Object.assign({}, null_row);
     }
@@ -128,7 +131,7 @@ const TableRowComponent: React.FC<{
 
     const { data } = useQuery({
         queryKey: ["/documents/paper_id/", row.id],
-        queryFn: () => fetchData(fetchPlus, row.id, runtimeProps),
+        queryFn: () => fetchData(row.id, runtimeProps),
         enabled: !!row.id, // Fetch only when ID is entered
     });
 
@@ -193,20 +196,16 @@ function OwnershipRequstTable({runtimeProps} : {runtimeProps: RuntimeProps}) : R
         }
 
         try {
-            const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + "/ownership_requests/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(body), // Sending only IDs in the request
-            });
+            const postOwnershipRequest = runtimeProps.adminFetcher.path(ADMIN_OWNERSHIP_REQUESTS_URL).method('post').create();
+            const response = await postOwnershipRequest(body);
 
             if (!response.ok) {
-                showNotification(`Error: ${response.statusText}`, "error");
+                const errorMessage = (response.data as any)?.detail || response.statusText || "Error submitting request";
+                showNotification(`Error: ${errorMessage}`, "error");
                 return;
             }
 
-            // const result = await response.json();
+            // const result = response.data;
             showMessageDialog("", "Request submitted successfully!")
         } catch (error) {
             showNotification("Failed to submit data. Please try again.", "error");

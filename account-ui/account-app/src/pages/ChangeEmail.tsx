@@ -11,12 +11,15 @@ import {useNotification} from "../NotificationContext";
 import {paths} from "../types/aaa-api.ts";
 import {emailValidator} from "../bits/validators.ts";
 import {printUserName} from "../bits/printer.ts";
-import {fetchPlus} from "../fetchPlus.ts";
 import {useNavigate} from "react-router-dom";
 import CardWithTitle from "../bits/CardWithTitle.tsx";
 
-type AccountProfileRequest = paths["/account/profile/{user_id}"]['get']['responses']['200']['content']['application/json'];
-type ChangeEmailRequest = paths["/account/email/"]['put']['requestBody']['content']['application/json'];
+const ACCOUNT_PROFILE_URL = "/account/{user_id}/profile";
+type AccountProfileRequest = paths[typeof ACCOUNT_PROFILE_URL]['get']['responses']['200']['content']['application/json'];
+
+const ACCOUNT_EMAIL_URL = "/account/{user_id}/email";
+type ChangeEmailRequest = paths[typeof ACCOUNT_EMAIL_URL]['put']['requestBody']['content']['application/json'];
+
 
 const ChangeEmail = () => {
     const runtimeProps = useContext(RuntimeContext);
@@ -27,8 +30,8 @@ const ChangeEmail = () => {
     const fullName = printUserName(user);
     const navigate = useNavigate();
 
+
     const [formData, setFormData] = useState<ChangeEmailRequest>({
-        user_id: "",
         email: "",
         new_email: ""
     });
@@ -39,64 +42,46 @@ const ChangeEmail = () => {
     }>({});
 
     useEffect(() => {
+        const getProfile = runtimeProps.aaaFetcher.path(ACCOUNT_PROFILE_URL).method('get').create();
+
         async function doFetchCurrentUser() {
             if (!user)
                 return;
-            setFormData({...formData, user_id: user.id});
+            setFormData({...formData});
             try {
-                const response = await fetchPlus(runtimeProps.AAA_URL + `/account/profile/${user.id}`);
-                if (!response.ok) {
-                    const data = await response.json();
-                    showNotification("Connection to arXiv failed. " + data.detail, "error")
-                    return;
-                }
-                const profile: AccountProfileRequest = await response.json();
+                const response = await getProfile({user_id: user.id});
+                const profile: AccountProfileRequest = response.data;
                 setFormData(Object.assign({}, formData,
                     {
                         user_id: profile.id,
                         email: profile.email,
                     }
                 ));
-            } catch (err) {
-                showNotification(`Connection to arXiv failed - ${err}.`, "error")
+            } catch (error: any) {
+                console.error("Error:", error);
+                showNotification(`Connection to arXiv failed - ${error.messabe}.`, "error")
             }
         }
 
         doFetchCurrentUser();
-    }, [user])
+    }, [user, runtimeProps.aaaFetcher])
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        const putEmail = runtimeProps.aaaFetcher.path(ACCOUNT_EMAIL_URL).method('put').create();
+        if (!user?.id)
+            return;
         console.log("change email");
         event.preventDefault();
         setInProgress(true);
 
         try {
-            const response = await fetchPlus(runtimeProps.AAA_URL + "/account/email/", {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(formData),
-            });
-            if (!response.ok) {
-                console.error(response.statusText);
-                const errorResponse = await response.json();
-                showNotification(errorResponse.detail, "warning");
-                if (response.status >= 500) {
-                    const message = errorResponse.detail;
-                    showMessageDialog(message, "Please try again later!");
-                } else {
-                    showMessageDialog(errorResponse.detail, "Request failed");
-                }
-                return;
-            }
-
+            await putEmail({user_id: user.id,  ...formData});
             showMessageDialog("Please follow the link in the email and verify your new email address.", "Check Your Email",
                 () => navigate(runtimeProps.URLS.userAccountInfo), "OK");
             showNotification("Email change successfully", "success");
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error:", error);
-            showNotification(JSON.stringify(error), "warning");
+            showNotification(JSON.stringify(error), "error");
         } finally {
             setInProgress(false);
         }
@@ -122,18 +107,17 @@ const ChangeEmail = () => {
         Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && value !== ''
     );
 
+    const title = `Change Email for ${fullName}`
     return (
         <Container maxWidth="sm" sx={{my: "4em"}}>
             <Box display={"flex"} flexDirection={"column"} sx={{gap: "2em"}}>
                 <Typography variant={"h1"}>
                     Change Email
                 </Typography>
-
-                <CardWithTitle title={`Change Email for ${fullName}`}>
+                
+                <CardWithTitle title={title}>
                     <Box component="form" sx={{display: "flex", flexDirection: "column", gap: 2}}
                          onSubmit={handleSubmit}>
-                        <input name="user_id" id="user_id" type="text" disabled={true} value={formData.user_id}
-                               hidden={true}/>
                         <Typography>
                             Your current e-mail address is {emailAddress}. Enter your new e-mail address into the
                             following form; we'll send a verification code to your new e-mail address which you can use

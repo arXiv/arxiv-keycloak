@@ -1,9 +1,13 @@
-import React, { createContext, useState, useEffect, } from 'react';
+import React, {createContext, useState, useEffect} from 'react';
 import CircularProgress from '@mui/material/CircularProgress';
 import {Box} from '@mui/material';
 import {paths} from "./types/aaa-api";
-export type User = paths["/account/profile/{user_id}"]["get"]["responses"]["200"]["content"]["application/json"];
+import {paths as adminPaths} from "./types/admin-api";
+export type User = paths["/account/{user_id}/profile"]["get"]["responses"]["200"]["content"]["application/json"];
 export type CurrentUser = paths["/account/current"]["get"]["responses"]["200"]["content"]["application/json"];
+
+import { Fetcher } from 'openapi-typescript-fetch';
+
 
 export interface ArxivSiteURLs {
     arXiv: string,
@@ -71,11 +75,14 @@ export interface RuntimeProps
     isSystem: boolean;
     updateCurrentUser: () => void;
     setCurrentUser: (user: User) => void;
+    aaaFetcher: ReturnType<typeof Fetcher.for<paths>>;
+    adminFetcher: ReturnType<typeof Fetcher.for<adminPaths>>;
 }
 
+// noinspection HttpUrlsUsage
 const defaultRuntimeProps : RuntimeProps = {
     AAA_URL: 'http://localhost.arxiv.org:5000/aaa',
-    ADMIN_API_BACKEND_URL: 'http://localhost.arxiv.org:5000/admin-api/v1',
+    ADMIN_API_BACKEND_URL: 'http://localhost.arxiv.org:5000/admin-api',
     ADMIN_APP_ROOT: 'http://localhost.arxiv.org:5000/admin-console/',
     ARXIV_COOKIE_NAME: "arxiv_oidc_session",
     TAPIR_COOKIE_NAME: "tapir_session",
@@ -134,6 +141,8 @@ const defaultRuntimeProps : RuntimeProps = {
     isSystem: false,
     updateCurrentUser: async () => {},
     setCurrentUser: (_user: User) => {},
+    aaaFetcher: Fetcher.for<paths>(),
+    adminFetcher: Fetcher.for<adminPaths>()
 };
 
 export const RuntimeContext = createContext<RuntimeProps>(defaultRuntimeProps);
@@ -196,7 +205,7 @@ export const RuntimeContextProvider = ({ children } : RuntimeContextProviderProp
                 baseUrl = baseUrl + "/";
                 const runtime1: Partial<RuntimeProps> = {
                     AAA_URL: baseUrl + "aaa",
-                    ADMIN_API_BACKEND_URL: baseUrl + "admin-api/v1",
+                    ADMIN_API_BACKEND_URL: baseUrl + "admin-api",
                     ADMIN_APP_ROOT: baseUrl + "admin-console/",
                     ARXIV_COOKIE_NAME: defaultRuntimeProps.ARXIV_COOKIE_NAME,
                     TAPIR_COOKIE_NAME: defaultRuntimeProps.TAPIR_COOKIE_NAME,
@@ -210,7 +219,7 @@ export const RuntimeContextProvider = ({ children } : RuntimeContextProviderProp
                 const aaa_url = baseUrl + "aaa";
                 const runtime2: Partial<RuntimeProps> = {
                     AAA_URL: aaa_url,
-                    ADMIN_API_BACKEND_URL: baseUrl + "admin-api/v1",
+                    ADMIN_API_BACKEND_URL: baseUrl + "admin-api",
                     ADMIN_APP_ROOT: baseUrl + "admin-console/",
                     ARXIV_COOKIE_NAME: cookie_names.session,
                     TAPIR_COOKIE_NAME: cookie_names.classic,
@@ -228,6 +237,18 @@ export const RuntimeContextProvider = ({ children } : RuntimeContextProviderProp
         };
         fetchRuntimeEnvironment();
     }, []);
+
+    useEffect(() => {
+        const it = Fetcher.for<paths>();
+        it.configure({baseUrl: runtimeEnv.AAA_URL});
+        runtimeEnv.aaaFetcher = it;
+    }, [runtimeEnv.AAA_URL]);
+
+    useEffect(() => {
+        const it = Fetcher.for<adminPaths>();
+        it.configure({baseUrl: runtimeEnv.ADMIN_API_BACKEND_URL});
+        runtimeEnv.adminFetcher = it;
+    }, [runtimeEnv.ADMIN_API_BACKEND_URL]);
 
     if (loading) {
         return (<Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh"><CircularProgress /></Box>);

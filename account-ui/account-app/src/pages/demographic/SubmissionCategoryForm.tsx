@@ -4,9 +4,11 @@ import {paths} from "../../types/aaa-api.ts";
 import CategoryGroupSelection, {CategoryGroupType} from "../../bits/CategoryGroupSelection.tsx";
 import CategoryChooser, {SelectedCategoryType} from "../../bits/CategoryChooser.tsx";
 import {AccountFormError} from "./AccountFormError.ts";
+import {ACCOUNT_PROFILE_URL, ACCOUNT_REGISTER_URL} from "../../types/aaa-url.ts";
 
-type SubmitRequest = paths["/account/register/"]['post']['requestBody']['content']['application/json'];
-type UpdateProfileRequest = paths["/account/profile/"]['put']['requestBody']['content']['application/json'];
+type SubmitRequest = paths[typeof ACCOUNT_REGISTER_URL]['post']['requestBody']['content']['application/json'];
+
+type UpdateProfileRequest = paths[typeof ACCOUNT_PROFILE_URL]['put']['requestBody']['content']['application/json'];
 
 // Generic component that works with both form types
 const SubmissionCategoryForm = <T extends SubmitRequest | UpdateProfileRequest>({

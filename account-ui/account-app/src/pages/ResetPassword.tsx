@@ -11,10 +11,10 @@ import {RuntimeContext} from "../RuntimeContext";
 import {useNotification} from "../NotificationContext";
 
 import {paths} from "../types/aaa-api.ts";
-import {fetchPlus} from "../fetchPlus.ts";
 
-// type AccountProfileRequest = paths["/account/profile/{user_id}"]['get']['responses']['200']['content']['application/json'];
-type ResetPasswordRequest = paths["/account/password/reset/"]['post']['requestBody']['content']['application/json'];
+// type AccountProfileRequest = paths["/account/{user_id}/profile"]['get']['responses']['200']['content']['application/json'];
+const RESET_PASSWORD_ENDPOINT = "/account/password/reset";
+type ResetPasswordRequest = paths[typeof RESET_PASSWORD_ENDPOINT]['post']['requestBody']['content']['application/json'];
 
 const ResetPassword = () => {
     const runtimeProps = useContext(RuntimeContext);
@@ -37,18 +37,13 @@ const ResetPassword = () => {
         event.preventDefault();
 
         try {
-            const response = await fetchPlus(runtimeProps.AAA_URL + "/account/password/reset/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(formData),
-            });
+            const postResetPassword = runtimeProps.aaaFetcher.path(RESET_PASSWORD_ENDPOINT).method('post').create();
+            const response = await postResetPassword(formData);
 
             if (!response.ok) {
-                const errorReply =await response.json();
                 console.error(response.statusText);
-                showNotification(errorReply.detail, "warning");
+                const errorMessage = (response.data as any)?.detail || 'Password reset failed';
+                showNotification(errorMessage, "warning");
                 return;
             }
 

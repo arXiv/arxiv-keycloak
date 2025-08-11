@@ -18,13 +18,13 @@ import Box from "@mui/material/Box";
 // import EditIcon from "@mui/icons-material/Edit";
 import Link from "@mui/material/Link";
 import DatagridPaginationMaker from "../bits/DataGridPagination.tsx";
-import {fetchPlus} from "../fetchPlus.ts";
 import {utcToNnewYorkDatePrinter} from "../bits/printer.ts";
 import IconButton from '@mui/material/IconButton';
 import CardWithTitle from "../bits/CardWithTitle.tsx";
+import {ADMIN_OWNERSHIP_REQUESTS_URL, ADMIN_OWNERSMIP_REQUESTS_ID_URL} from "../types/admin-url.ts";
 
-type OwnershipRequestType = adminApi['/v1/ownership_requests/{id}']['get']['responses']['200']['content']['application/json'];
-type OwnershipRequestsType = adminApi['/v1/ownership_requests/']['get']['responses']['200']['content']['application/json'];
+type OwnershipRequestType = adminApi[typeof ADMIN_OWNERSMIP_REQUESTS_ID_URL]['get']['responses']['200']['content']['application/json'];
+type OwnershipRequestsType = adminApi[typeof ADMIN_OWNERSHIP_REQUESTS_URL]['get']['responses']['200']['content']['application/json'];
 
 const PAGE_SIZES = [5, 20, 100];
 
@@ -59,25 +59,25 @@ const YourOwnershipRequests: React.FC<{ runtimeProps: RuntimeProps }> = ({runtim
 
         const start = paginationModel.page * paginationModel.pageSize;
         const end = start + paginationModel.pageSize;
-        const query = new URLSearchParams();
-
-        query.append("user_id", runtimeProps.currentUser.id);
-        query.append("_start", start.toString());
-        query.append("_end", end.toString());
-
-        filterModel.items.forEach((filter) => {
-            if (filter.value) {
-                query.append("filter", JSON.stringify(filter));
-            }
-        });
 
         try {
             setIsLoading(true);
-            const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/ownership_requests/?${query.toString()}`);
-            const data: OwnershipRequestsType = await response.json();
-            const total = parseInt(response.headers.get("X-Total-Count") || "0", 10);
-            setTotalCount(total);
-            setOwnershipRequests(data);
+            const getOwnershipRequests = runtimeProps.adminFetcher.path(ADMIN_OWNERSHIP_REQUESTS_URL).method('get').create();
+            const response = await getOwnershipRequests({
+                user_id: Number(runtimeProps.currentUser.id),
+                _start: start,
+                _end: end,
+                ...(filterModel.items.length > 0 && { filter: JSON.stringify(filterModel.items[0]) })
+            });
+            
+            if (response.ok) {
+                const data: OwnershipRequestsType = response.data;
+                const total = parseInt(response.headers?.get?.("X-Total-Count") || "0", 10);
+                setTotalCount(total);
+                setOwnershipRequests(data);
+            } else {
+                console.error("Error fetching ownership requests:", response.statusText);
+            }
         } catch (err) {
             console.error("Error fetching ownershipRequests:", err);
         }

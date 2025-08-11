@@ -26,7 +26,7 @@ import {LocalizationProvider} from "@mui/x-date-pickers";
 import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
 import ClaimPaperOwnership from "./pages/ClaimPaperOwnership.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
-import {GlobalAuthHandler} from "./fetchPlus.ts";
+// import {GlobalAuthHandler} from "./fetchPlus.ts";
 import ArticlesYouOwn from "./pages/DocumentOwnershipManagement.tsx";
 import {ThemeProvider, CssBaseline} from '@mui/material';
 import arxivTheme from "./arxivTheme.ts";
@@ -59,7 +59,6 @@ const App: React.FC = () => {
                                 flexDirection: 'column'
                             }}>
                                 <Router>
-                                    <GlobalAuthHandler/>
                                     <ArxivHeader/>
                                     <Container component="main">
                                         <Routes>

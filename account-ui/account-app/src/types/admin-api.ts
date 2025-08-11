@@ -174,7 +174,7 @@ export interface paths {
         get: operations["get_one_user_v1_users__user_id__get"];
         /**
          * Update User
-         * @description Update user - by PUT
+         * @description Update user property - by PUT
          */
         put: operations["update_user_v1_users__user_id__put"];
         post?: never;
@@ -243,6 +243,66 @@ export interface paths {
          * @description Creates a new user - by POST
          */
         post: operations["create_user_v1_users__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/users/{user_id}/demographic": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update User Property
+         * @description Update user property - by PUT
+         */
+        put: operations["update_user_property_v1_users__user_id__demographic_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/users/{user_id}/comment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create User Comment
+         * @description Add comment to a user by POST
+         */
+        post: operations["create_user_comment_v1_users__user_id__comment_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/users/{user_id}/veto-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update User Veto Status
+         * @description Update user veto status - by PUT
+         */
+        put: operations["update_user_veto_status_v1_users__user_id__veto_status_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2268,6 +2328,11 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /**
+         * IsAuthorEnum
+         * @enum {integer}
+         */
+        IsAuthorEnum: 0 | 1 | 2;
         /** LicenseModel */
         LicenseModel: {
             /** Id */
@@ -2605,6 +2670,11 @@ export interface components {
             /** Flag Group Econ */
             flag_group_econ: number | null;
         };
+        /** ReactAdminCreateResult */
+        ReactAdminCreateResult: {
+            /** Id */
+            id: string | number;
+        };
         /** ReactAdminUpdateResult */
         ReactAdminUpdateResult: {
             /** Id */
@@ -2666,12 +2736,11 @@ export interface components {
             sword_id?: number | null;
             /** Userinfo */
             userinfo?: number | null;
-            /** Is Author */
-            is_author: number;
+            is_author: components["schemas"]["IsAuthorEnum"];
             /** Agree Policy */
-            agree_policy?: number | null;
+            agree_policy?: boolean | null;
             /** Viewed */
-            viewed?: number | null;
+            viewed?: boolean | null;
             /** Stage */
             stage?: number | null;
             /** Submitter Id */
@@ -2689,7 +2758,7 @@ export interface components {
             /** Sticky Status */
             sticky_status?: number | null;
             /** Must Process */
-            must_process?: number | null;
+            must_process?: boolean | null;
             /** Submit Time */
             submit_time?: string | null;
             /** Release Time */
@@ -2701,9 +2770,9 @@ export interface components {
             /** Source Flags */
             source_flags?: string | null;
             /** Has Pilot Data */
-            has_pilot_data?: number | null;
+            has_pilot_data?: boolean | null;
             /** Is Withdrawn */
-            is_withdrawn: number;
+            is_withdrawn: boolean;
             /** Title */
             title?: string | null;
             /** Authors */
@@ -2728,16 +2797,15 @@ export interface components {
             license?: string | null;
             /** Version */
             version: number;
-            /** Type */
-            type?: string | null;
+            type?: components["schemas"]["SubmissionType"] | null;
             /** Is Ok */
-            is_ok?: number | null;
+            is_ok?: boolean | null;
             /** Admin Ok */
-            admin_ok?: number | null;
+            admin_ok?: boolean | null;
             /** Allow Tex Produced */
-            allow_tex_produced?: number | null;
+            allow_tex_produced?: boolean | null;
             /** Is Oversize */
-            is_oversize?: number | null;
+            is_oversize?: boolean | null;
             /** Remote Addr */
             remote_addr: string;
             /** Remote Host */
@@ -2747,13 +2815,29 @@ export interface components {
             /** Rt Ticket Id */
             rt_ticket_id?: number | null;
             /** Auto Hold */
-            auto_hold?: number | null;
+            auto_hold?: boolean | null;
             /** Is Locked */
             is_locked: number;
             /** Agreement Id */
             agreement_id?: number | null;
             /** Submission Categories */
             submission_categories?: components["schemas"]["SubmissionCategoryModel"][] | null;
+            /** Data Version */
+            data_version?: number | null;
+            /** Metadata Version */
+            metadata_version: number;
+            /** Data Needed */
+            data_needed: boolean;
+            /** Data Version Queued */
+            data_version_queued: boolean;
+            /** Metadata Version Queued */
+            metadata_version_queued: boolean;
+            /** Data Queued Time */
+            data_queued_time?: string | null;
+            /** Metadata Queued Time */
+            metadata_queued_time?: string | null;
+            /** Preflight */
+            preflight?: boolean | null;
         };
         /** SubmissionStatusModel */
         SubmissionStatusModel: {
@@ -2764,6 +2848,11 @@ export interface components {
             /** Group */
             group: string;
         };
+        /**
+         * SubmissionType
+         * @enum {string}
+         */
+        SubmissionType: "cross" | "jref" | "new" | "rep" | "wdr";
         /** TapirAdminAuditModel */
         TapirAdminAuditModel: {
             /** Id */
@@ -2805,6 +2894,11 @@ export interface components {
             end_time: string | null;
             /** Close Session */
             close_session: boolean;
+        };
+        /** UserCommentRequest */
+        UserCommentRequest: {
+            /** Comment */
+            comment: string;
         };
         /** UserDocumentSummary */
         UserDocumentSummary: {
@@ -2961,157 +3055,28 @@ export interface components {
             /** Orcid Id */
             orcid_id?: string | null;
         };
-        /** UserUpdateModel */
-        UserUpdateModel: {
-            /** Id */
-            id?: number | null;
-            /** Email */
-            email: string;
-            /** First Name */
-            first_name: string;
-            /** Last Name */
-            last_name: string;
-            /** Suffix Name */
-            suffix_name?: string | null;
-            /**
-             * Share First Name
-             * @default true
-             */
-            share_first_name: boolean;
-            /**
-             * Share Last Name
-             * @default true
-             */
-            share_last_name: boolean;
-            /** Username */
-            username: string;
-            /**
-             * Share Email
-             * @default 8
-             */
-            share_email: number;
-            /**
-             * Email Bouncing
-             * @default false
-             */
-            email_bouncing: boolean;
-            /** Policy Class */
-            policy_class: number;
-            /**
-             * Joined Date
-             * Format: date-time
-             */
-            joined_date: string;
-            /** Joined Ip Num */
-            joined_ip_num?: string | null;
-            /** Joined Remote Host */
-            joined_remote_host: string;
-            /**
-             * Flag Internal
-             * @default false
-             */
-            flag_internal: boolean;
-            /**
-             * Flag Edit Users
-             * @default false
-             */
-            flag_edit_users: boolean;
-            /**
-             * Flag Edit System
-             * @default false
-             */
-            flag_edit_system: boolean;
-            /**
-             * Flag Email Verified
-             * @default false
-             */
-            flag_email_verified: boolean;
-            /**
-             * Flag Approved
-             * @default true
-             */
-            flag_approved: boolean;
-            /**
-             * Flag Deleted
-             * @default false
-             */
-            flag_deleted: boolean;
-            /**
-             * Flag Banned
-             * @default false
-             */
-            flag_banned: boolean;
-            /** Flag Wants Email */
-            flag_wants_email?: boolean | null;
-            /** Flag Html Email */
-            flag_html_email?: boolean | null;
-            /** Tracking Cookie */
-            tracking_cookie?: string | null;
-            /** Flag Allow Tex Produced */
-            flag_allow_tex_produced?: boolean | null;
-            /** Flag Can Lock */
-            flag_can_lock?: boolean | null;
-            /** Country */
-            country?: string | null;
-            /** Affiliation */
-            affiliation?: string | null;
-            /** Url */
-            url?: string | null;
-            /** Type */
-            type?: number | null;
-            /** Archive */
-            archive?: string | null;
-            /** Subject Class */
-            subject_class?: string | null;
-            /** Original Subject Classes */
-            original_subject_classes: string;
-            /** Flag Group Physics */
-            flag_group_physics?: number | null;
-            /** Flag Group Math */
-            flag_group_math: number | null;
-            /** Flag Group Cs */
-            flag_group_cs?: number | null;
-            /** Flag Group Nlin */
-            flag_group_nlin: number | null;
-            /** Flag Proxy */
-            flag_proxy?: number | null;
-            /** Flag Journal */
-            flag_journal?: number | null;
-            /** Flag Xml */
-            flag_xml?: number | null;
-            /** Dirty */
-            dirty?: number | null;
-            /** Flag Group Test */
-            flag_group_test?: number | null;
-            /** Flag Suspect */
-            flag_suspect?: number | null;
-            /** Flag Group Q Bio */
-            flag_group_q_bio?: number | null;
-            /** Flag Group Q Fin */
-            flag_group_q_fin?: number | null;
-            /** Flag Group Stat */
-            flag_group_stat?: number | null;
-            /** Flag Group Eess */
-            flag_group_eess?: number | null;
-            /** Flag Group Econ */
-            flag_group_econ?: number | null;
-            veto_status?: components["schemas"]["VetoStatusEnum"] | null;
-            /** Flag Is Mod */
-            flag_is_mod?: boolean | null;
-            /** Moderated Categories */
-            moderated_categories?: string[] | null;
-            /** Moderated Archives */
-            moderated_archives?: string[] | null;
-            /** Tapir Policy Classes */
-            tapir_policy_classes?: number[] | null;
-            /** Orcid Id */
-            orcid_id?: string | null;
+        /** UserPropertyUpdateRequest */
+        UserPropertyUpdateRequest: {
+            /** Property Name */
+            property_name: string;
+            /** Property Value */
+            property_value: string | boolean;
+            /** Comment */
+            comment?: string | null;
         };
         /**
          * UserVetoStatus
+         * @description User status enum.
          * @enum {string}
          */
-        UserVetoStatus: "ok" | "no-endorse" | "no-upload" | "no-replace";
+        UserVetoStatus: "ok" | "no-upload" | "no-replace" | "no-endorse";
+        /** UserVetoStatusRequest */
+        UserVetoStatusRequest: {
+            status_before: components["schemas"]["UserVetoStatus"];
+            status_after: components["schemas"]["UserVetoStatus"];
+            /** Comment */
+            comment?: string | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -3149,6 +3114,7 @@ export interface operations {
                 _order?: string | null;
                 _start?: number | null;
                 _end?: number | null;
+                /** @description arXid Submission ID */
                 submission_id?: number | null;
                 /** @description arXid Paper ID */
                 paper_id?: string | null;
@@ -3575,7 +3541,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UserUpdateModel"];
+                "application/json": components["schemas"]["UserModel"];
             };
         };
         responses: {
@@ -3777,6 +3743,111 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserModel"];
+                };
+            };
+        };
+    };
+    update_user_property_v1_users__user_id__demographic_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserPropertyUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_user_comment_v1_users__user_id__comment_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserCommentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReactAdminCreateResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_user_veto_status_v1_users__user_id__veto_status_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserVetoStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -4290,6 +4361,8 @@ export interface operations {
                 suspected?: boolean | null;
                 /** @description Endorsement request secret */
                 secret_code?: string | null;
+                /** @description Endorsement request endorsee ID */
+                endorsee_id?: string | null;
                 /** @description Endorsement request endorsee first_name */
                 endorsee_first_name?: string | null;
                 /** @description Endorsement request endorsee last_name */
@@ -5910,12 +5983,14 @@ export interface operations {
                 end_date?: string | null;
                 /** @description Stage */
                 stage?: number[] | null;
-                /** @description Status */
-                status?: string[] | string | null;
+                /** @description Submission status */
+                submission_status?: number | number[] | null;
+                /** @description Submission status group [current|processing|accepted|expired] */
+                submission_status_group?: string[] | string | null;
                 /** @description Title */
                 title_like?: string | null;
-                /** @description Submission status */
-                submission_status?: number[] | null;
+                /** @description Submission Type list */
+                type?: string[] | null;
                 /** @description List of user IDs to filter by */
                 id?: number[] | null;
                 /** @description Document ID */

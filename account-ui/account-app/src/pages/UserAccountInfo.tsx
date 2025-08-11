@@ -29,15 +29,15 @@ import {useNotification} from "../NotificationContext.tsx";
 
 import {paths as adminApi} from "../types/admin-api";
 import MathJaxToggle from "../bits/MathJaxToggle.tsx";
-import {fetchPlus} from "../fetchPlus.ts";
 import EndorsedCategories from "../bits/EndorsedCategories.tsx";
 import {useNavigate} from "react-router-dom";
 import CategoryGroup from "../bits/CategoryGroup.tsx";
 import CountryName from "../bits/CountryName.tsx";
 import CardWithTitle from "../bits/CardWithTitle.tsx";
+import {ADMIN_ENDORSEMENTS_URL} from "../types/admin-url.ts";
+import {ACCOUNT_USER_EMAIL_VERIFY_URL} from "../types/aaa-url.ts";
 
-type EndorsementListType = adminApi["/v1/endorsements/"]["get"]['responses']["200"]['content']['application/json'];
-// type DemographicType = adminApi['/v1/demographics/{id}']['get']['responses']['200']['content']['application/json'];
+type EndorsementListType = adminApi[typeof ADMIN_ENDORSEMENTS_URL]["get"]['responses']["200"]['content']['application/json'];
 
 
 const VerifyEmailButton: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimeProps}) => {
@@ -46,15 +46,13 @@ const VerifyEmailButton: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimePro
 
     const verifyEmailRequest = useCallback(() => {
         async function requestEmail() {
+            if (!user?.id) return;
             try {
-                const reply = await fetchPlus(`${runtimeProps.AAA_URL}/account/email/verify/`, {
-                    method: "POST",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({email: user?.email}), // Convert object to JSON string
-                });
+                const postEmailVerify = runtimeProps.aaaFetcher.path(ACCOUNT_USER_EMAIL_VERIFY_URL).method('post').create();
+                const reply = await postEmailVerify({user_id: user.id, email: user?.email || ''});
 
                 if (!reply.ok) {
-                    console.error("Failed to send verification email", reply.status, await reply.text());
+                    console.error("Failed to send verification email", reply.status, reply.statusText);
                 } else {
                     console.log("Verification email sent successfully!");
                 }
@@ -65,7 +63,7 @@ const VerifyEmailButton: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimePro
 
         requestEmail();
         setDialogOpen(false); // Close dialog after sending request
-    }, [user?.email, runtimeProps.AAA_URL]);
+    }, [user?.email, user?.id, runtimeProps.aaaFetcher]);
     /*
              <Button variant="outlined" startIcon={<VerifiedUser />} href="/user-account/verify-email" disabled={user?.email_verified}>Send verification email</Button>
 
@@ -132,13 +130,14 @@ const UserAccountInfo = () => {
 
     useEffect(() => {
         async function doGetEndorsedCategories() {
-            if (!runtimeProps.currentUser) return;
-            const query = new URLSearchParams();
-            query.set("endorsee_id", runtimeProps.currentUser.id);
-            query.set("type", "user");
+            if (!runtimeProps.currentUser?.id) return;
             try {
-                const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/endorsements/?${query.toString()}`);
-                const body: EndorsementListType = await response.json();
+                const getEndorsements = runtimeProps.adminFetcher.path(ADMIN_ENDORSEMENTS_URL).method('get').create();
+                const response = await getEndorsements({
+                    endorsee_id: Number(runtimeProps.currentUser.id),
+                    type: "user"
+                });
+                const body: EndorsementListType = response.data;
                 setEndorsements(body);
             } catch (error) {
                 console.error(error);
@@ -154,7 +153,7 @@ const UserAccountInfo = () => {
         async function doGetDemographic() {
             if (!runtimeProps.currentUser) return;
             try {
-                const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/demographics/${runtimeProps.currentUser.id}/`);
+                const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/v1/demographics/${runtimeProps.currentUser.id}/`);
                 const body: DemographicType = await response.json();
                 setDemographic(body);
             }

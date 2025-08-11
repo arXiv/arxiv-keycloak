@@ -23,7 +23,7 @@ const DocumentMetadata: React.FC<DocumentMetadataProps> = ({arxivId}) => {
         async function fetchMetadata () {
             if (arxivId) {
                 try {
-                    const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/metadata/${arxivId}`);
+                    const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/v1//metadata/${arxivId}`);
                     if (response.ok) {
                         const body: MetadataType = await response.json();
                         setMetadata(body);

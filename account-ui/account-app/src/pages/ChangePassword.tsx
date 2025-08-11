@@ -14,11 +14,12 @@ import {paths} from "../types/aaa-api.ts";
 import {passwordValidator} from "../bits/validators.ts";
 import PasswordWrapper from "../bits/PasswordWrapper.tsx";
 import {useNavigate} from "react-router-dom";
-import {fetchPlus} from "../fetchPlus.ts";
 import CardWithTitle from "../bits/CardWithTitle.tsx";
 
+
 // type AccountProfileRequest = paths["/account/profile/{user_id}"]['get']['responses']['200']['content']['application/json'];
-type ChangePasswordRequest = paths["/account/password/"]['put']['requestBody']['content']['application/json'];
+const USER_PASSWORD_URL = "/account/{user_id}/password";
+type ChangePasswordRequest = paths[typeof USER_PASSWORD_URL]['put']['requestBody']['content']['application/json'];
 
 const ChangePassword = () => {
     const runtimeProps = useContext(RuntimeContext);
@@ -28,7 +29,6 @@ const ChangePassword = () => {
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState<ChangePasswordRequest>({
-        user_id: "",
         old_password: "",
         new_password: "",
     });
@@ -41,47 +41,40 @@ const ChangePassword = () => {
         secondPassword?: string,
     }>({old_password: "Not provided", new_password: "Not provided", secondPassword: "Not provided",});
 
-    useEffect(() => {
-        async function doSetCurrentUserID() {
-            if (!user)
-                return;
-            setFormData({...formData, user_id: user.id});
-        }
-
-        doSetCurrentUserID();
-    }, [user])
-
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         console.log("change password");
         setInProgress(true);
         event.preventDefault();
+        const putPassword = runtimeProps.aaaFetcher.path(USER_PASSWORD_URL).method('put').create();
+
+        if (!user?.id)
+            return;
 
         try {
-            const response = await fetchPlus(runtimeProps.AAA_URL + "/account/password/", {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(formData),
-            });
+            const response = await putPassword({user_id: user.id, ...formData});
 
-            if (!response.ok) {
+            if (response.ok) {
+                showNotification("Password updated successfully", "success");
+                navigate(runtimeProps.URLS.userAccountInfo);
+            }
+            else {
                 if (response.status === 401) {
-                    showMessageDialog("Please log-out and re-login before changing the password. Your log-in session has expired.", "Pleas log-in again");
+                    showMessageDialog("Please log-out and re-login before changing the password. Your log-in session has expired.", "Please log-in again");
                 } else {
-                    const errorReply = await response.json();
-                    console.error(response.statusText);
-                    showNotification(errorReply.detail, "warning");
-                    return;
+                    const errorMessage = (response.data as any)?.detail || response.statusText || "Password update failed";
+                    showNotification(errorMessage, "warning");
                 }
             }
-
-            showNotification("Password updated successfully", "success");
-            navigate(runtimeProps.URLS.userAccountInfo);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error:", error);
-            showNotification(JSON.stringify(error), "warning");
+            let errorMessage = "An unexpected error occurred. Please try again.";
+            if (error?.data?.detail) {
+                errorMessage = error.data.detail;
+            } else if (error?.message) {
+                errorMessage = error.message;
+            }
+            showNotification(errorMessage, "error");
         } finally {
             setInProgress(false);
         }
@@ -117,8 +110,6 @@ const ChangePassword = () => {
             <CardWithTitle title="">
                 <Box component="form" sx={{display: "flex", flexDirection: "column", gap: 2}} onSubmit={handleSubmit}>
                     <PasswordRequirements/>
-                    <input name="user_id" id="user_id" type="text" disabled={true} value={formData.user_id}
-                           hidden={true}/>
                     <PasswordWrapper>
                         <TextField name="old_password" id="old_password" label="Old Password" type="password"
                                    fullWidth onChange={handleChange} value={formData.old_password}

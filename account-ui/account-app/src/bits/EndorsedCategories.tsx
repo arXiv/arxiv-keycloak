@@ -9,10 +9,11 @@ import { styled } from '@mui/material/styles';
 
 import {RuntimeProps, } from "../RuntimeContext.tsx";
 import { paths as adminApi } from "../types/admin-api";
+import {ADMIN_ENDORSEMENT_URL, ADMIN_ENDORSEMENTS_URL} from "../types/admin-url";
 import PublicUser from "./PublicUser.tsx";
 
-type EndorsementListType = adminApi["/v1/endorsements/"]["get"]['responses']["200"]['content']['application/json'];
-type EndorsementType = adminApi["/v1/endorsements/{id}"]["get"]['responses']["200"]['content']['application/json'];
+type EndorsementListType = adminApi[typeof ADMIN_ENDORSEMENTS_URL]["get"]['responses']["200"]['content']['application/json'];
+type EndorsementType = adminApi[typeof ADMIN_ENDORSEMENT_URL]["get"]['responses']["200"]['content']['application/json'];
 
 type EndorsedCategoriesProps = {
     runtimeProps: RuntimeProps,

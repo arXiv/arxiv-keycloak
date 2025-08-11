@@ -8,23 +8,22 @@ import Typography from "@mui/material/Typography";
 import React, {useContext, useEffect, useState} from "react";
 import {RuntimeContext} from "../RuntimeContext";
 import {paths} from "../types/aaa-api.ts";
-import {fetchPlus} from "../fetchPlus.ts";
+// import {fetchPlus} from "../fetchPlus.ts";
 import {useNavigate} from "react-router-dom";
 import CardWithTitle from "../bits/CardWithTitle.tsx";
 import LineDivider from "../bits/LineDevider.tsx";
 import {AccountFormError} from "./demographic/AccountFormError.ts";
-import UserInfoForm from "./demographic/UserInforForm.tsx";
+import UserInfoForm from "./demographic/UserInfoForm.tsx";
 import SubmissionCategoryForm from "./demographic/SubmissionCategoryForm.tsx";
+import {ACCOUNT_PROFILE_URL, ACCOUNT_REGISTER_URL} from "../types/aaa-url.ts";
 
-type AccountProfileRequest = paths["/account/profile/{user_id}"]['get']['responses']['200']['content']['application/json'];
-type UpdateProfileRequest = paths["/account/profile/"]['put']['requestBody']['content']['application/json'];
-type UpdateProfileResponse = paths["/account/profile/"]['put']['responses']['200']['content']['application/json'];
-// type RegistrationSuccessReply = paths["/account/register/"]['post']['responses']['200']['content']['application/json'];
-type RegistrationErrorReply = paths["/account/register/"]['post']['responses']['400']['content']['application/json'];
 
+type AccountProfileRequest = paths[typeof ACCOUNT_PROFILE_URL]['get']['responses']['200']['content']['application/json'];
+type UpdateProfileRequest = paths[typeof ACCOUNT_PROFILE_URL]['put']['requestBody']['content']['application/json'];
+type RegistrationErrorReply = paths[typeof ACCOUNT_REGISTER_URL]['post']['responses']['400']['content']['application/json'];
 
 /*
-User registration and profile update shares a lot of similarity. NEEDS REFACTOR.
+User registration and profile update share a lot of similarities. NEEDS REFACTOR.
  */
 
 const UpdateProfile = () => {
@@ -62,13 +61,12 @@ const UpdateProfile = () => {
         async function doFetchCurrentUser() {
             if (!user)
                 return;
+
+            const getProfile = runtimeProps.aaaFetcher.path(ACCOUNT_PROFILE_URL).method('get').create();
+
             try {
-                const response = await fetchPlus(runtimeProps.AAA_URL + `/account/profile/${user.id}`);
-                if (!response.ok) {
-                    showNotification("Fetching user failed", "error")
-                    return;
-                }
-                const profile: AccountProfileRequest = await response.json();
+                const response = await getProfile({user_id: user.id});
+                const profile: AccountProfileRequest = response.data;
                 console.log(JSON.stringify(profile));
                 setFormData(Object.assign({}, formData,
                     {
@@ -87,12 +85,13 @@ const UpdateProfile = () => {
                     }
                 ));
             } catch (e) {
-
+                console.error("Error fetching user profile:", e);
+                showNotification("Error fetching user profile", "error");
             }
         }
 
         doFetchCurrentUser();
-    }, [])
+    }, [runtimeProps.aaaFetcher])
 
 
     // Handle form submission
@@ -100,38 +99,26 @@ const UpdateProfile = () => {
         console.log("update " + JSON.stringify(formData));
         event.preventDefault();
 
+        const putProfile = runtimeProps.aaaFetcher.path(ACCOUNT_PROFILE_URL).method('put').create();
+
         try {
-            const response = await fetchPlus(runtimeProps.AAA_URL + "/account/profile/", {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(formData),
-            });
-
-            if (response.ok) {
-                const data: UpdateProfileResponse = await response.json();
-                console.log("Response:", data);
-                showNotification("Updated successfully", "success");
-                setUser(data);
-                runtimeProps.setCurrentUser(data);
-            } else if (response.status === 400) {
-                const message: RegistrationErrorReply = await response.json();
-                showMessageDialog(message.message, "Profile update Unsuccessful");
-            } else if (response.status === 401) {
-                showMessageDialog("You are not logged in, or the session has expired.", "Please log-in");
-            } else if (response.status === 422) {
-                const data = await response.json();
-                showMessageDialog(data.detail, "Failed to update your profile");
-            } else {
-                const message = await response.text();
-                showMessageDialog(message, "Failed to update your profile");
-            }
-
+            const response = await putProfile({user_id: user?.id || "", ...formData});
+            showNotification("Updated successfully", "success");
+            runtimeProps.setCurrentUser(response.data);
+            setUser(response.data);
             runtimeProps.updateCurrentUser();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error:", error);
-            showMessageDialog(JSON.stringify(error), "Profile update was unsuccessful");
+            if (error.status === 400 && error.data) {
+                const message: RegistrationErrorReply = error.data;
+                showMessageDialog(message.message, "Profile update Unsuccessful");
+            } else if (error.status === 401) {
+                showMessageDialog("You are not logged in, or the session has expired.", "Please log-in");
+            } else if (error.status === 422 && error.data) {
+                showMessageDialog(error.data.detail, "Failed to update your profile");
+            } else {
+                showMessageDialog(error.message || JSON.stringify(error), "Profile update was unsuccessful");
+            }
             runtimeProps.updateCurrentUser();
         }
     };

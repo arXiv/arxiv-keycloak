@@ -15,8 +15,8 @@ import {RuntimeContext} from "../../RuntimeContext.tsx";
 import {AccountFormError} from "./AccountFormError.ts";
 
 // type TokenResponse = paths["/account/register/"]['get']['responses']['200']['content']['application/json'];
-type SubmitRequest = paths["/account/register/"]['post']['requestBody']['content']['application/json'];
-type UpdateProfileRequest = paths["/account/profile/"]['put']['requestBody']['content']['application/json'];
+type SubmitRequest = paths["/account/register"]['post']['requestBody']['content']['application/json'];
+type UpdateProfileRequest = paths["/account/{user_id}/profile"]['put']['requestBody']['content']['application/json'];
 
 // type RegistrationSuccessReply = paths["/account/register/"]['post']['responses']['200']['content']['application/json'];
 // type RegistrationErrorReply = paths["/account/register/"]['post']['responses']['400']['content']['application/json'];

@@ -4,7 +4,8 @@ import Autocomplete from "@mui/material/Autocomplete";
 
 import { paths } from "../types/aaa-api.ts";
 
-export type AccountProfileType = paths["/account/profile/{user_id}"]["get"]["responses"]["200"]["content"]["application/json"];
+const ACCOUNT_PROFILE_URL = "/account/{user_id}/profile";
+export type AccountProfileType = paths[typeof ACCOUNT_PROFILE_URL]["get"]["responses"]["200"]["content"]["application/json"];
 export type CareerStatusType = AccountProfileType['career_status'];
 
 const career_status_options = ["Unknown", "Staff", "Professor", "Post Doc", "Grad Student", "Other"];

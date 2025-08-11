@@ -1,10 +1,9 @@
 import React, {useContext, useState, useEffect} from "react";
 
 import { RuntimeContext } from "../RuntimeContext.tsx";
-import {paths as adminApi} from "../types/admin-api";
 import Typography, {TypographyProps} from "@mui/material/Typography";
+import {ADMIN_TAXONOMY_GROUPS_URL} from "../types/admin-url.ts";
 
-type GroupType = adminApi['/v1/taxonomy/groups/{group_id}']['get']['responses']['200']['content']['application/json'];
 
 interface CategoryGroupProps extends TypographyProps {
     groupId: string;
@@ -15,11 +14,14 @@ const CategoryGroup: React.FC<CategoryGroupProps> = ({ groupId, ...props }) => {
     const [description, setDescription] = useState<string>("");
 
     useEffect(() => {
+        const getTaxonomyGroups = runtimeProps.adminFetcher.path(ADMIN_TAXONOMY_GROUPS_URL).method('get').create();
+
         const fetchGroup = async () => {
             try {
-                const response = await fetch(`${runtimeProps.ADMIN_API_BACKEND_URL}/taxonomy/groups/${groupId}`);
-                const result: GroupType = await response.json();
-                setDescription(result.full_name);
+                const response = await getTaxonomyGroups({
+                    group_id: groupId,
+                });
+                setDescription(response.data.full_name);
             } catch (error) {
                 console.error("Failed to fetch group info", error);
                 setDescription("Failed to load group name");
@@ -27,7 +29,7 @@ const CategoryGroup: React.FC<CategoryGroupProps> = ({ groupId, ...props }) => {
         };
 
         fetchGroup();
-    }, [groupId, runtimeProps.ADMIN_API_BACKEND_URL]);
+    }, [groupId, runtimeProps.adminFetcher]);
 
     return (<Typography {...props} >{description}</Typography>);
 };

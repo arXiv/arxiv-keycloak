@@ -19,7 +19,7 @@ import HearingIcon from "@mui/icons-material/Hearing";
 import LinkIcon from "@mui/icons-material/Launch";
 import {emailValidator, passwordValidator} from "../bits/validators.ts";
 import {useNotification} from "../NotificationContext.tsx";
-import {fetchPlus} from "../fetchPlus.ts";
+
 import CardWithTitle from "../bits/CardWithTitle.tsx";
 import FormControlLabel from "@mui/material/FormControlLabel";
 
@@ -28,9 +28,10 @@ import TextField from "@mui/material/TextField";
 import LineDivider from "../bits/LineDevider.tsx";
 import PasswordWrapper from "../bits/PasswordWrapper.tsx";
 import PasswordRequirements from "../bits/PasswordRequirements.tsx";
-import UserInfoForm from "./demographic/UserInforForm.tsx";
+import UserInfoForm from "./demographic/UserInfoForm.tsx";
 import {AccountFormError} from "./demographic/AccountFormError.ts";
 import SubmissionCategoryForm from "./demographic/SubmissionCategoryForm.tsx";
+import {ACCOUNT_REGISTER_URL} from "../types/aaa-url.ts";
 /* import IconButton from '@mui/material/IconButton';
 import Collapse from '@mui/material/Collapse';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -38,11 +39,10 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import AccentedCharactersGuide from "../bits/AccentedChars.tsx";
 
  */
-
-type TokenResponse = paths["/account/register/"]['get']['responses']['200']['content']['application/json'];
-type SubmitRequest = paths["/account/register/"]['post']['requestBody']['content']['application/json'];
+type TokenResponse = paths[typeof ACCOUNT_REGISTER_URL]['get']['responses']['200']['content']['application/json'];
+type SubmitRequest = paths[typeof ACCOUNT_REGISTER_URL]['post']['requestBody']['content']['application/json'];
 // type RegistrationSuccessReply = paths["/account/register/"]['post']['responses']['200']['content']['application/json'];
-type RegistrationErrorReply = paths["/account/register/"]['post']['responses']['400']['content']['application/json'];
+type RegistrationErrorReply = paths[typeof ACCOUNT_REGISTER_URL]['post']['responses']['400']['content']['application/json'];
 
 interface PostSubmitDialogProps {
     title: string;
@@ -137,8 +137,9 @@ const AccountRegistration = () => {
 
     const fetchCaptchaToken = async () => {
         try {
-            const response = await fetchPlus(runtimeContext.AAA_URL + "/account/register/");
-            const data: TokenResponse = await response.json();
+            const getCaptchaToken = runtimeContext.aaaFetcher.path(ACCOUNT_REGISTER_URL).method('get').create();
+            const response = await getCaptchaToken({});
+            const data: TokenResponse = response.data;
             console.log("Setting captcha token", data.token);
             setFormData(prev => ({
                 ...prev, token: data.token,
@@ -279,14 +280,9 @@ const AccountRegistration = () => {
             return;
         }
         try {
-            const response = await fetchPlus(runtimeContext.AAA_URL + "/account/register/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(formData),
-            });
-            const data = await response.json();
+            const postRegistration = runtimeContext.aaaFetcher.path(ACCOUNT_REGISTER_URL).method('post').create();
+            const response = await postRegistration(formData);
+            const data = response.data;
             console.log("Response:", data);
 
             if (response.ok) {

@@ -19,16 +19,18 @@ import Box from "@mui/material/Box";
 // import Checkbox from "@mui/material/Checkbox";
 import EditIcon from "@mui/icons-material/Edit";
 import DatagridPaginationMaker from "../bits/DataGridPagination.tsx";
-import {fetchPlus} from "../fetchPlus.ts";
 import CardWithTitle from "../bits/CardWithTitle.tsx";
+import {
+    ADMIN_SUBMISSIONS_METADATA_STATUS_LIST_URL,
+    ADMIN_SUBMISSIONS_URL,
+    ADMIN_SUBMISSIONS_ID_URL
+} from "../types/admin-url.ts";
 
 
-type SubmissionType = adminApi['/v1/submissions/{id}']['get']['responses']['200']['content']['application/json'];
+type SubmissionType = adminApi[typeof ADMIN_SUBMISSIONS_ID_URL]['get']['responses']['200']['content']['application/json'];
+type SubmissionsType = adminApi[typeof ADMIN_SUBMISSIONS_URL]['get']['responses']['200']['content']['application/json'];
 
-type SubmissionsType = adminApi['/v1/submissions/']['get']['responses']['200']['content']['application/json'];
-
-
-type SubmissionsStatusListType = adminApi['/v1/submissions/metadata/status-list']['get']['responses']['200']['content']['application/json'];
+type SubmissionsStatusListType = adminApi[typeof ADMIN_SUBMISSIONS_METADATA_STATUS_LIST_URL]['get']['responses']['200']['content']['application/json'];
 type SubmissionsStatusType = SubmissionsStatusListType[number];
 type SubmissionStatusIdType = SubmissionsStatusType['id'];
 type SubmissionStatusRecordType = Record<SubmissionStatusIdType, SubmissionsStatusType>;
@@ -56,8 +58,9 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps, vetoed: boolean }>
             if (submissinStatusList === noSSRT) {
                 try {
                     setIsLoading(true);
-                    const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + "/submissions/metadata/status-list");
-                    const data: SubmissionsStatusListType = await response.json();
+                    const getSubmissionStatusList = runtimeProps.adminFetcher.path(ADMIN_SUBMISSIONS_METADATA_STATUS_LIST_URL).method('get').create();
+                    const response = await getSubmissionStatusList({});
+                    const data: SubmissionsStatusListType = response.data;
                     const record: SubmissionStatusRecordType =
                         data.reduce((acc: SubmissionStatusRecordType,
                                      item) => {
@@ -92,25 +95,18 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps, vetoed: boolean }>
 
         const start = paginationModel.page * paginationModel.pageSize;
         const end = start + paginationModel.pageSize;
-        const query = new URLSearchParams();
-
-        query.append("submitter_id", runtimeProps.currentUser.id);
-        query.append("submission_status_group", "current");
-        // query.append("submission_status_group", "processing");
-        query.append("_start", start.toString());
-        query.append("_end", end.toString());
-
-        filterModel.items.forEach((filter) => {
-            console.log("filter " + JSON.stringify(filter));
-            if (filter.value) {
-                query.append("filter", JSON.stringify(filter));
-            }
-        });
 
         try {
             setIsLoading(true);
-            const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/submissions/?${query.toString()}`);
-            const data: SubmissionType[] = await response.json();
+            const getSubmissions = runtimeProps.adminFetcher.path(ADMIN_SUBMISSIONS_URL).method('get').create();
+            const response = await getSubmissions({
+                submitter_id: Number(runtimeProps.currentUser.id),
+                submission_status_group: "current",
+                _start: start,
+                _end: end,
+                ...(filterModel.items.length > 0 && { filter: JSON.stringify(filterModel.items[0]) })
+            });
+            const data: SubmissionType[] = response.data;
             const total = parseInt(response.headers.get("X-Total-Count") || "0", 10);
             setTotalCount(total);
 

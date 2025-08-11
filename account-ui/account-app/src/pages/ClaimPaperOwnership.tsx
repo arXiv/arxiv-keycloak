@@ -19,13 +19,13 @@ import Checkbox from "@mui/material/Checkbox";
 // import Link from "@mui/material/Link";
 import {paths as adminApi} from "../types/admin-api";
 
-type DocumentType = adminApi['/v1/documents/paper_id/{paper_id}']['get']['responses']['200']['content']['application/json'];
-type PaperOwnerRequestType = adminApi['/v1/paper_owners/authorize/']['post']['requestBody']['content']['application/json'];
+type DocumentType = adminApi[typeof ADMIN_DOCUMENT_PAPER_ID_UPL]['get']['responses']['200']['content']['application/json'];
+type PaperOwnerRequestType = adminApi[typeof ADMIN_PAPER_OWNERS_AUTHORIZE_URL]['post']['requestBody']['content']['application/json'];
 
 import {printUserName} from "../bits/printer.ts";
 import {useNotification} from "../NotificationContext.tsx";
-import {fetchPlus} from "../fetchPlus.ts";
 import CardWithTitle from "../bits/CardWithTitle.tsx";
+import {ADMIN_DOCUMENT_PAPER_ID_UPL, ADMIN_PAPER_OWNERS_AUTHORIZE_URL} from "../types/admin-url.ts";
 // import Switch from "@mui/material/Switch";
 
 
@@ -45,20 +45,23 @@ const ClaimPaperOwnership: React.FC = () => {
     useEffect(() => {
         async function fetchDocument() {
             if (runtimeProps.currentUser && formData.paper_id) {
+                const getPaper = runtimeProps.adminFetcher.path(ADMIN_DOCUMENT_PAPER_ID_UPL).method('get').create();
                 try {
                     setInProgress(true);
-                    const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + "/documents/paper_id/" + formData.paper_id);
+                    const response = await getPaper({paper_id: formData.paper_id});
                     if (response.ok) {
-                        const doc = await response.json();
-                        setDocument(doc);
+                        setDocument(response.data);
                     } else {
                         setDocument(null);
                         if (response.status >= 500) {
                             showNotification("Server is not responding", "error");
                         }
                     }
-                } catch (error) {
-
+                } catch (error: any) {
+                    setDocument(null);
+                    if (error.status >= 500) {
+                        showNotification("Server is not responding", "error");
+                    }
                 } finally {
                     setInProgress(false);
                 }
@@ -66,7 +69,7 @@ const ClaimPaperOwnership: React.FC = () => {
         }
 
         fetchDocument();
-    }, [runtimeProps.currentUser, formData.paper_id]);
+    }, [runtimeProps.currentUser, formData.paper_id, runtimeProps.adminFetcher]);
 
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -75,28 +78,23 @@ const ClaimPaperOwnership: React.FC = () => {
         event.preventDefault();
 
         try {
-            const response = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + "/paper_owners/authorize/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(formData),
-            });
+            const postPaperOwnerAuthorize = runtimeProps.adminFetcher.path(ADMIN_PAPER_OWNERS_AUTHORIZE_URL).method('post').create();
+            const response = await postPaperOwnerAuthorize(formData);
 
             if (response.status === 201) {
                 showMessageDialog(document?.title || formData.paper_id, "You claimed successfully!");
             } else {
-                const reply = await response.json();
+                const errorMessage = (response.data as any)?.detail || "Unknown error";
                 if (response.status >= 500) {
                     showNotification("Server is not responding", "error");
                 } else if (response.status === 409) {
-                    showMessageDialog(reply.detail, "You have the ownership");
+                    showMessageDialog(errorMessage, "You have the ownership");
                 } else if (response.status === 403) {
-                    showMessageDialog(reply.detail, "It is forbidden");
+                    showMessageDialog(errorMessage, "It is forbidden");
                 } else if (response.status === 400) {
-                    showMessageDialog(reply.detail, "Incorrect input");
+                    showMessageDialog(errorMessage, "Incorrect input");
                 } else {
-                    showMessageDialog(reply.detail, `Unexpected error (${response.status})`);
+                    showMessageDialog(errorMessage, `Unexpected error (${response.status})`);
                 }
             }
 

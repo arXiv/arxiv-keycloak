@@ -1,7 +1,6 @@
 import React, {useCallback, useContext, useEffect, useState} from "react";
 import CircularProgress from "@mui/material/CircularProgress";
 import {useNotification} from "../NotificationContext";
-import {fetchPlus} from "../fetchPlus.ts";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import {RuntimeContext} from "../RuntimeContext";
@@ -12,14 +11,16 @@ import Typography from "@mui/material/Typography/Typography";
 // import NavigateLink from "../bits/NavigateLink";
 import {paths as adminApi} from "../types/admin-api";
 import CardWithTitle from "../bits/CardWithTitle.tsx";
+import { ADMIN_USER_ID_DOCUMENT_SUMMARY_URL } from "../types/admin-url.ts";
 
-type DocumentSummaryProps = adminApi['/v1/users/{user_id}/document-summary']['get']['responses']['200']['content']['application/json'];
+type DocumentSummaryProps = adminApi[typeof ADMIN_USER_ID_DOCUMENT_SUMMARY_URL]['get']['responses']['200']['content']['application/json'];
 
 
-const ArticleInfo: React.FC<DocumentSummaryProps> = ({
-                                                         owns_count,
-                                                         submitted_count,
-                                                         authored_count,
+const ArticleInfo: React.FC<DocumentSummaryProps & {isLoading: boolean}> = ({
+                                                                                owns_count,
+                                                                                submitted_count,
+                                                                                authored_count,
+                                                                                isLoading
                                                      }) => {
     const runtimeProps = useContext(RuntimeContext);
     return (
@@ -30,8 +31,13 @@ const ArticleInfo: React.FC<DocumentSummaryProps> = ({
                 </Typography>
                 <CardWithTitle title={"Summary"}>
                     <Box sx={{py: 0}}>
-                        <AuthorInfoTable ownerCount={owns_count} submitCount={submitted_count}
-                                         authorCount={authored_count}/>
+                        {
+                            isLoading ? (<CircularProgress color="secondary"/>) : (
+                                <AuthorInfoTable ownerCount={owns_count} submitCount={submitted_count}
+                                                 authorCount={authored_count}/>
+
+                                )
+                        }
                         <p>
                             {"Are you incorrectly registered as an author or a non-author of any articles you own? If so, update the authorship status "}
                             <Link component={RouterLink} to={"/user-account/owned-documents"}>
@@ -88,33 +94,36 @@ const YourDocuments: React.FC = () => {
             return;
         const user_id = runtimeProps.currentUser.id;
         try {
-            const response1 = await fetchPlus(runtimeProps.ADMIN_API_BACKEND_URL + `/users/${user_id}/document-summary`);
-            if (!response1.ok) {
-                if (response1.status >= 500) {
+            setIsLoading(true);
+            const getDocumentSummary = runtimeProps.adminFetcher.path(ADMIN_USER_ID_DOCUMENT_SUMMARY_URL).method('get').create();
+            const response = await getDocumentSummary({user_id: Number(user_id)});
+            
+            if (response.ok) {
+                const summary: DocumentSummaryProps = response.data;
+                setDocumentSummary(summary);
+            } else {
+                if (response.status >= 500) {
                     showNotification("Data service is not responding", "warning");
                     return;
                 }
-                const message = await response1.text();
-                showNotification(message, "warning");
-                return;
+                const errorMessage = (response.data as any)?.detail || response.statusText || "Error fetching document summary";
+                showNotification(errorMessage, "warning");
             }
-            const summary: DocumentSummaryProps = await response1.json();
-            setDocumentSummary(summary);
         } catch (err) {
             console.error("Error fetching document summary:", err);
         } finally {
             setIsLoading(false);
         }
-    }, [runtimeProps.currentUser]);
+    }, [runtimeProps.currentUser, runtimeProps.adminFetcher]);
 
     useEffect(() => {
         fetchSummary();
     }, [fetchSummary]);
 
-    const info = isLoading ? (<CircularProgress color="secondary"/>) : (
-        <ArticleInfo key="article-info" authored_count={documentSummary.authored_count}
-                     owns_count={documentSummary.owns_count} submitted_count={documentSummary.submitted_count}/>);
-    return (info);
+    return (
+        <ArticleInfo key="article-info" authored_count={documentSummary.authored_count} isLoading={isLoading}
+                     owns_count={documentSummary.owns_count} submitted_count={documentSummary.submitted_count}/>
+    );
 }
 
 export default YourDocuments;

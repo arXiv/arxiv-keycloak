@@ -146,7 +146,7 @@ async def oauth2_callback(request: Request,
     return make_cookie_response(request, user_claims, tapir_cookie, next_page)
 
 
-@router.post('/impersonate/{user_id:str}/')
+@router.post('/impersonate/{user_id:str}')
 async def impersonate(request: Request,
                       user_id: str,
                       session = Depends(get_db),
