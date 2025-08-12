@@ -5,31 +5,20 @@ substitutions:
   _IMAGE_NAME: "keycloak"
   
 steps:
-  # Step 1: Install make, python, and other tools if needed
   - name: 'gcr.io/cloud-builders/git'
     entrypoint: 'bash'
     args:
       - -c
       - |
         apt-get update && apt-get install -y make python3 python3-venv
-
-  # Step 2: Set environment variables from .env
-  - name: 'ubuntu'
-    entrypoint: 'bash'
-    args:
-      - -c
-      - |
-        echo "Loading environment from ../.env"
         set -a
         [ -f ../.env ] && source ../.env
         set +a
         cd tools
         make docker-image
-
     env:
       - 'DOCKER_BUILDKIT=1'
 
-  # Optional: Push the built image
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
