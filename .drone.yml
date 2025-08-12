@@ -226,6 +226,8 @@ steps:
       GIT_SHA: ${DRONE_COMMIT_SHA}
       PLUGIN_JSON_KEY:
         from_secret: drone_runner_sa_key
+      GITHUB_TOKEN:
+        from_secret: github_token
     settings:
       slack_webhook_url:
         from_secret: slack_webhook
@@ -239,6 +241,7 @@ steps:
         git config --global user.email "drone@arxiv.org"
         git config --global user.name "Drone CI"
         git tag -f "$LAST_SUCCESS_TAG" "$DRONE_COMMIT_SHA"
+        git remote set-url origin "https://${GITHUB_TOKEN}@github.com/${DRONE_REPO}.git"
         git push origin "refs/tags/$LAST_SUCCESS_TAG" --force
     depends_on:
       - build-keycloak-bend
