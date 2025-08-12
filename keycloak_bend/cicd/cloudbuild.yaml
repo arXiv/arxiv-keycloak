@@ -14,8 +14,8 @@ steps:
         set -a
         [ -f ../.env ] && source ../.env
         set +a
-        pwd
         cd keycloak_bend/keycloak_migration
+        pwd
         make OS=debian all 
         #keycloak-user-migration/target/keycloak-rest-provider-5.0.1-SNAPSHOT.jar
         #cd ../pubsub-listener
