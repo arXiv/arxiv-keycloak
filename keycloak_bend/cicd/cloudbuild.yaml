@@ -16,7 +16,7 @@ steps:
         set +a
         pwd
         cd keycloak_bend/keycloak_migration
-        make all
+        make keycloak-user-migration/target/keycloak-rest-provider-5.0.1-SNAPSHOT.jar
         cd ../pubsub-listener
         make all
         cd ../arxiv-username-validator
