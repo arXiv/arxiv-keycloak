@@ -34,15 +34,23 @@ steps:
       # Improved git fetch and diff logic that works for both direct pushes and PRs
       - git fetch --all || echo "Failed to fetch all branches"
       - |
-        if [ "$DRONE_COMMIT_BEFORE" = "0000000000000000000000000000000000000000" ] ; then
-            touch .run-keycloak_bend
-            touch .run-account-ui
-            touch .run-keycloak_tapir_bridge
-            touch .run-oauth2-authenticator
-            touch .run-user-portal
-            touch .run-test-mta
-            touch .run-legacy_auth_provider
-            exit 0
+        # Check for last successful build tag for this branch
+        LAST_SUCCESS_TAG="last-successful-build-${DRONE_BRANCH}"
+        git fetch origin "refs/tags/${LAST_SUCCESS_TAG}:refs/tags/${LAST_SUCCESS_TAG}" || echo "No previous successful build tag found"
+        
+        if git rev-parse --verify "refs/tags/${LAST_SUCCESS_TAG}" >/dev/null 2>&1; then
+          LAST_SUCCESS_SHA=$(git rev-parse "refs/tags/${LAST_SUCCESS_TAG}")
+          echo "Found last successful build: $LAST_SUCCESS_SHA"
+        else
+          echo "No previous successful build found for branch ${DRONE_BRANCH}, building all components"
+          touch .run-keycloak_bend
+          touch .run-account-ui
+          touch .run-keycloak_tapir_bridge
+          touch .run-oauth2-authenticator
+          touch .run-user-portal
+          touch .run-test-mta
+          touch .run-legacy_auth_provider
+          exit 0
         fi
       # Try to fetch the before commit, but don't fail if it doesn't exist
       - git fetch origin $DRONE_COMMIT_BEFORE || echo "Could not fetch $DRONE_COMMIT_BEFORE directly"
@@ -53,29 +61,10 @@ steps:
           git fetch origin $DRONE_SOURCE_BRANCH || echo "Could not fetch source branch"
           git fetch origin $DRONE_TARGET_BRANCH || echo "Could not fetch target branch"
         fi
-      # Choose the appropriate comparison based on what's available
+      # Compare against last successful build
       - |
-        if git rev-parse --verify $DRONE_COMMIT_BEFORE >/dev/null 2>&1; then
-          echo "Comparing $DRONE_COMMIT_BEFORE → $DRONE_COMMIT_SHA"
-          git diff --name-only $DRONE_COMMIT_BEFORE $DRONE_COMMIT_SHA > changed_files.txt
-        elif [ ! -z "$DRONE_SOURCE_BRANCH" ] && [ ! -z "$DRONE_TARGET_BRANCH" ]; then
-          # For PRs, compare with merge-base of target branch
-          MERGE_BASE=$(git merge-base origin/$DRONE_TARGET_BRANCH $DRONE_COMMIT_SHA || echo "")
-          if [ ! -z "$MERGE_BASE" ]; then
-            echo "Using merge-base comparison: $MERGE_BASE → $DRONE_COMMIT_SHA"
-            git diff --name-only $MERGE_BASE $DRONE_COMMIT_SHA > changed_files.txt
-          else
-            # Ultimate fallback: just look at files changed in the current commit
-            echo "Falling back to single commit changes"
-            git show --name-only $DRONE_COMMIT_SHA > changed_files.txt
-          fi
-        else
-          # Try to use parent commit as base for comparison
-          echo "Trying parent commit comparison"
-          git diff --name-only $DRONE_COMMIT_SHA^ $DRONE_COMMIT_SHA > changed_files.txt || git show --name-only $DRONE_COMMIT_SHA > changed_files.txt
-        fi      
-      - echo "Comparing $DRONE_COMMIT_BEFORE → $DRONE_COMMIT_SHA"
-      - git diff --name-only $DRONE_COMMIT_BEFORE $DRONE_COMMIT_SHA > changed_files.txt
+        echo "Comparing last successful build $LAST_SUCCESS_SHA → $DRONE_COMMIT_SHA"
+        git diff --name-only $LAST_SUCCESS_SHA $DRONE_COMMIT_SHA > changed_files.txt
       - cat changed_files.txt
       - grep -q '^keycloak_bend/' changed_files.txt && touch .run-keycloak_bend || echo "No changes in keycloak_bend"
       - grep -q '^account-ui/' changed_files.txt && touch .run-account-ui || echo "No changes in account-ui"
@@ -233,11 +222,24 @@ steps:
   - name: success
     image: gcr.io/arxiv-stage/arxiv-devops/arxiv-builder:e7a4be9
     privileged: true
+    environment:
+      GIT_SHA: ${DRONE_COMMIT_SHA}
+      PLUGIN_JSON_KEY:
+        from_secret: drone_runner_sa_key
     settings:
       slack_webhook_url:
         from_secret: slack_webhook
     commands:
       - echo SUCCESS
+      - |
+        # Update last successful build tag for this branch
+        LAST_SUCCESS_TAG="last-successful-build-${DRONE_BRANCH}"
+        echo "Updating successful build tag: $LAST_SUCCESS_TAG -> $DRONE_COMMIT_SHA"
+        python3 /arxiv/setup_sa.py
+        git config --global user.email "drone@arxiv.org"
+        git config --global user.name "Drone CI"
+        git tag -f "$LAST_SUCCESS_TAG" "$DRONE_COMMIT_SHA"
+        git push origin "refs/tags/$LAST_SUCCESS_TAG" --force
     depends_on:
       - build-keycloak-bend
       - build-account-ui
