@@ -14,8 +14,12 @@ steps:
         set -a
         [ -f ../.env ] && source ../.env
         set +a
-        cd tools
-        make docker-image
+        cd keycload_migration
+        make all
+        cd ../pubsub-listener
+        make all
+        cd ../arxiv-username-validator
+        make all
     env:
       - 'DOCKER_BUILDKIT=1'
 
