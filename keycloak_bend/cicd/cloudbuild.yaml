@@ -15,16 +15,13 @@ steps:
         [ -f ../.env ] && source ../.env
         set +a
         pwd
-        cd keycloak_bend/tools
-        ls -asl
-        pwd
-        ##cd keycload_migration
-        #make all
-        #cd ../pubsub-listener
-        #make all
-        #cd ../arxiv-username-validator
-        #make all
-        make docker-image
+        cd keycloak_bend/keycload_migration
+        make all
+        cd ../pubsub-listener
+        make all
+        cd ../arxiv-username-validator
+        make all
+        #make docker-image
     env:
       - 'DOCKER_BUILDKIT=1'
 
