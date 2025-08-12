@@ -15,7 +15,7 @@ steps:
         [ -f ../.env ] && source ../.env
         set +a
         pwd
-        cd keycloak_bend/keycload_migration
+        cd keycloak_bend/keycloak_migration
         make all
         cd ../pubsub-listener
         make all
