@@ -15,6 +15,7 @@ steps:
         [ -f ../.env ] && source ../.env
         set +a
         pwd
+        ls -asl
         cd keycload_migration
         make all
         cd ../pubsub-listener
