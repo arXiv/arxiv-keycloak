@@ -18,7 +18,7 @@ steps:
         cd keycloak_bend/tools
         ls -asl
         pwd
-        #cd keycload_migration
+        ##cd keycload_migration
         #make all
         #cd ../pubsub-listener
         #make all
