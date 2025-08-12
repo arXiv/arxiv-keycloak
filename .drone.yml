@@ -33,6 +33,17 @@ steps:
       - ls
       # Improved git fetch and diff logic that works for both direct pushes and PRs
       - git fetch --all || echo "Failed to fetch all branches"
+      - |
+        if [ "$DRONE_COMMIT_BEFORE" = "0000000000000000000000000000000000000000" ] ; then
+            touch .run-keycloak_bend
+            touch .run-account-ui
+            touch .run-keycloak_tapir_bridge
+            touch .run-oauth2-authenticator
+            touch .run-user-portal
+            touch .run-test-mta
+            touch .run-legacy_auth_provider
+            exit 0
+        fi
       # Try to fetch the before commit, but don't fail if it doesn't exist
       - git fetch origin $DRONE_COMMIT_BEFORE || echo "Could not fetch $DRONE_COMMIT_BEFORE directly"
       # For PRs, ensure we have both source and target branches
