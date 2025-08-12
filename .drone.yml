@@ -234,15 +234,9 @@ steps:
     commands:
       - echo SUCCESS
       - |
-        # Update last successful build tag for this branch
-        LAST_SUCCESS_TAG="last-successful-build-${DRONE_BRANCH}"
-        echo "Updating successful build tag: $LAST_SUCCESS_TAG -> $DRONE_COMMIT_SHA"
-        python3 /arxiv/setup_sa.py
-        git config --global user.email "drone@arxiv.org"
-        git config --global user.name "Drone CI"
-        git tag -f "$LAST_SUCCESS_TAG" "$DRONE_COMMIT_SHA"
-        git remote set-url origin "https://${GITHUB_TOKEN}@github.com/${DRONE_REPO}.git"
-        git push origin "refs/tags/$LAST_SUCCESS_TAG" --force
+        # Store successful build SHA for future reference
+        echo "Build succeeded for commit: $DRONE_COMMIT_SHA on branch: $DRONE_BRANCH"
+        echo "TODO: Implement persistent storage of successful build SHA"
     depends_on:
       - build-keycloak-bend
       - build-account-ui
