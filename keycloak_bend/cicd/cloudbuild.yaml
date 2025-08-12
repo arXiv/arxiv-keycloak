@@ -17,10 +17,10 @@ steps:
         pwd
         cd keycloak_bend/keycloak_migration
         make keycloak-user-migration/target/keycloak-rest-provider-5.0.1-SNAPSHOT.jar
-        cd ../pubsub-listener
-        make all
-        cd ../arxiv-username-validator
-        make all
+        #cd ../pubsub-listener
+        #make all
+        #cd ../arxiv-username-validator
+        #make all
         #make docker-image
     env:
       - 'DOCKER_BUILDKIT=1'
