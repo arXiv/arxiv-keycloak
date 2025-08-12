@@ -10,7 +10,7 @@ keycloak-user-migration/target/keycloak-rest-provider-5.0.1-SNAPSHOT.jar: keyclo
 
 setup-debian: /usr/bin/java /usr/bin/mvn
 
-setup-arch:
+#setup-arch:
 
 /usr/bin/java:
 	sudo apt install -y openjdk-21-jdk
