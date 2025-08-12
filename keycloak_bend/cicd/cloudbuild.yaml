@@ -3,7 +3,7 @@ options:
 
 substitutions:
   _IMAGE_NAME: "keycloak"
-  _DOCKERFILE: "Dockerfile"
+  _DOCKERFILE: "keycloak_bend/Dockerfile"
   
 steps:
   - name: "gcr.io/cloud-builders/docker"
