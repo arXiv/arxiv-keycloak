@@ -105,6 +105,9 @@ def handle_keycloak_event(session: Session, data: dict[str, Any], dispatch_funct
     if event_type in ["login", "logout"]:
         resource_type = "authn"
         op = event_type
+    elif event_type in ["verify_email"]:
+        resource_type = "user"
+        op = event_type
     else:
         resource_type = data.get("resourceType", "no_resource").lower()
         op = data.get("operationType", "").lower()
@@ -118,6 +121,11 @@ def handle_keycloak_event(session: Session, data: dict[str, Any], dispatch_funct
         except NoSuchUser:
             logger.warning("No such user: %s", repr(data))
             pass
+
+        except TimeoutError:
+            logger.warning("Time out srror: %s", repr(data))
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=repr(exc))
+
         except Exception as exc:
             logger.warning("Error: %s", repr(data), exc_info=exc)
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=repr(exc))

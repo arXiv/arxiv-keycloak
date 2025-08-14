@@ -35,7 +35,7 @@ from .biz.account_biz import (AccountInfoModel, get_account_info,
                               update_tapir_account, AccountIdentifierModel, kc_login_with_client_credential)
 from .biz.cold_migration import cold_migrate
 from .biz.email_history_biz import TapirEmailChangeTokenModel, EmailHistoryBiz, \
-    EmailChangeEntry
+    EmailChangeEntry, EmailChangeRequest
 # from . import stateless_captcha
 from .captcha import CaptchaTokenReplyModel, get_captcha_token
 from .stateless_captcha import InvalidCaptchaToken, InvalidCaptchaValue
@@ -408,19 +408,34 @@ def change_email(
         authn_user: ArxivUserClaims = Depends(get_authn_user),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ):
+    #
+    # Case 1 - Admin changes her own
+    #    Let her change the email? Most likely yes. She should be able to change anyone's email -> but
+    #    leaves audit record.
+    #
+    # Case 2 - Admin changes someone else's email
+    #    Make the change.
+    #
+    # Case 3 - User changes hre own email
+    #    Ask Keycloak to update the email, but not update the tapir email.
+    #    This is done with the audit event.
+    #
+
+    # All cases, you cannot change email to someone else's email.
+    #
     check_authnz(authn_user, None, user_id)
 
     if not is_valid_email(body.new_email):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New email is invalid.")
 
-    user: TapirUser | None = session.query(TapirUser).filter(TapirUser.email == body.email).one_or_none()
+    user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Old email does not exist")
 
     other_user: TapirUser | None = session.query(TapirUser).filter(TapirUser.email == body.new_email).one_or_none()
     if other_user:
-        if other_user.user_id != user_id:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="New email already exists")
+        if str(other_user.user_id) != str(user_id):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="New email {} is used by other user.".format(body.new_email))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Old and new email are the same")
 
     current_email = user.email
@@ -437,6 +452,7 @@ def change_email(
         # admin change email
         # We can short circuit the rate limit, etc.
         email_verified = True if body.email_verified is None else body.email_verified
+        old_email = user.email[:]
 
         if kc_user:
             # The user has not migrated to KC? Trying to log in should have done the migration
@@ -457,71 +473,80 @@ def change_email(
         if claims:
             tapir_session_id = claims.tapir_session_id
 
-        biz.set_user_email_by_admin(
-            body.new_email,
-            admin_id=get_super_user_id(authn_user),
-            session_id=tapir_session_id,
-            remote_addr=remote_ip,
-            remote_host=remote_hostname,
-            comment=body.comment if body.comment else "Not given",
-            email_verified=email_verified,
-            )
+        # add audit record
+        admin_audit(
+            session,
+            AdminAudit_ChangeEmail(
+                authn_user.user_id,
+                user_id,
+                tapir_session_id,
+                email=body.new_email,
+                remote_ip=remote_ip,
+                remote_hostname=remote_hostname,
+                tracking_cookie=tracking_cookie,
+                comment='' if body.comment is None else body.comment,
+            ))
+        logger.info("User %s email set by admin %s from %s to %s", user_id, authn_user.user_id, old_email, body.new_email)
 
-        session.commit()
+        # Audit the email verified
+        admin_audit(
+            session,
+            AdminAudit_SetEmailVerified(
+                authn_user.user_id,
+                user_id,
+                tapir_session_id,
+                email_verified,
+                remote_ip=remote_ip,
+                remote_hostname=remote_hostname,
+                tracking_cookie=tracking_cookie,
+                comment='' if body.comment is None else body.comment,
+            ))
+        logger.info("User %s email verified set by admin %s to %s", user_id, authn_user.user_id, repr(email_verified))
 
         if not email_verified and kc_user:
             kc_send_verify_email(kc_admin, kc_user["id"], force_verify=True)
+
+        session.commit()
         return
 
+    # Case 3 - Normal user change email
     if biz.is_rate_exceeded():
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many email change request.")
 
-    user.email = body.new_email
-    user.flag_email_verified = False
+    # user.email = body.new_email
+    # user.flag_email_verified = False
 
-    if kc_user:
-        # The user has not migrated to KC? Trying to log in should have done the migration
-        try:
-            kc_admin.update_user(kc_user["id"], payload={"email": body.new_email, "emailVerified": False})
-        except KeycloakError as e:
-            logger.error("Updating Keycloak user failed.", exc_info=e)
-            session.rollback()
-            detail = "Account service not available at the moment. Please contact help@arxiv.org: " + str(e)
-            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=detail)
-    else:
+    if not kc_user:
         # Force the issue, and create the account
         client_secret = request.app.extra['ARXIV_USER_SECRET']
         kc_user = cold_migrate(kc_admin, session, user_id, client_secret)
 
-    entry = biz.add_email_change_request(
-        TapirEmailChangeTokenModel(
-            user_id=user_id,
-            email=current_email,
-            new_email=body.new_email,
-            secret="",  # This is filled by add_email_history
-            remote_addr=remote_ip,
-            remote_host=remote_hostname,
-            used=False,
-            issued_when=datetime.now(),
-        )
+    # KC has the new email and is set to not verified.
+    try:
+        kc_admin.update_user(kc_user["id"], payload={"email": body.new_email, "emailVerified": False})
+
+    except KeycloakError as e:
+        logger.error("Updating Keycloak user failed.", exc_info=e)
+        session.rollback()
+        detail = "Account service not available at the moment. Please contact help@arxiv.org: " + str(e)
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=detail)
+
+    starter = EmailChangeRequest(
+        user_id=user_id,
+        new_email=body.new_email,
+        remote_ip=remote_ip,
+        remote_hostname=remote_hostname,
+        email=user.email,
+        tracking_cookie=tracking_cookie,
+        tapir_session_id=authn_user.tapir_session_id,
     )
-
-    # add audit record
-    admin_audit(
-        session,
-        AdminAudit_ChangeEmail(
-            authn_user.user_id,
-            user_id,
-            authn_user.tapir_session_id,
-            email=body.new_email,
-            remote_ip=remote_ip,
-            remote_hostname=remote_hostname,
-            tracking_cookie=tracking_cookie,
-    ))
-
+    _new_token = biz.add_email_change_request(starter)
     session.commit()
+
     if kc_user:
+        # Sends the verify request email
         kc_send_verify_email(kc_admin, kc_user["id"], force_verify=True)
+
     return
 
 

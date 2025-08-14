@@ -1,5 +1,9 @@
+from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional
+
+from arxiv_bizlogic.audit_event import admin_audit, AdminAudit_ChangeEmail
+from arxiv_bizlogic.fastapi_helpers import datetime_to_epoch
 from sqlalchemy import Integer, String, Boolean
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func, union_all, select
@@ -8,7 +12,7 @@ import logging
 import time
 
 from arxiv.db.models import TapirEmailChangeToken, TapirUser, t_tapir_email_change_tokens_used, TapirNickname, \
-    TapirAdminAudit
+    TapirAdminAudit, TapirSession
 from pydantic import BaseModel
 from arxiv_bizlogic.randomness import generate_random_string
 
@@ -64,6 +68,7 @@ class TapirEmailChangeTokenModel(BaseModel):
     email: str  # Current email
     new_email: str  # New email to change to
     secret: str  # Token secret
+    tapir_session_id: Optional[int] = None
     remote_host: str
     remote_addr: str
     issued_when: datetime
@@ -71,6 +76,22 @@ class TapirEmailChangeTokenModel(BaseModel):
     used_when: Optional[datetime] = None  # When the token was used (if used)
     used_from_ip: Optional[str] = None  # IP address from which token was used
     used_from_host: Optional[str] = None  # Hostname from which token was used
+
+
+@dataclass
+class EmailChangeRequest:
+    user_id: str
+    new_email: str
+    remote_ip: str
+    remote_hostname: str
+    email: Optional[str] = None
+    tapir_session_id: Optional[int] = None
+    timestamp: Optional[datetime] = None
+    tracking_cookie: Optional[str] = None
+
+
+def get_last_tapir_session(session: Session, user_id: str) -> Optional[TapirSession]:
+     return session.query(TapirSession).filter(TapirSession.user_id == user_id).order_by(TapirSession.session_id.desc()).first()
 
 
 
@@ -236,61 +257,6 @@ def get_user_email_history(session: Session, user_id: str) -> UserEmailHistory:
     )
 
 
-def add_admin_email_change_log(
-        session: Session,
-        admin_id: int,
-        affected_user_id: int,
-        old_email: str,
-        new_email: str,
-        session_id: Optional[int] = None,
-        ip_addr: str = "",
-        remote_host: str = "",
-        tracking_cookie: str = "",
-        comment: str = ""
-) -> TapirAdminAudit:
-    """
-    Add an admin audit log entry for an email change action.
-
-    Args:
-        session: SQLAlchemy session
-        admin_id: The user ID of the admin performing the action
-        affected_user_id: The user ID whose email is being changed
-        old_email: The previous email address
-        new_email: The new email address
-        session_id: Optional session ID
-        ip_addr: IP address of the admin (default: empty string)
-        remote_host: Remote host of the admin (default: empty string)
-        tracking_cookie: Tracking cookie (default: empty string)
-        comment: Additional comment for the log (default: empty string)
-
-    Returns:
-        TapirAdminAudit: The created audit log entry
-    """
-
-    # Create the data field in the format expected by the history function
-    # This matches the admin email change format: "old_email new_email"
-    data = f"{old_email} {new_email}"
-
-    # Create the audit log entry
-    audit_entry = TapirAdminAudit(
-        log_date=int(time.time()),  # Current Unix timestamp
-        session_id=session_id,
-        ip_addr=ip_addr,
-        remote_host=remote_host,
-        admin_user=admin_id,
-        affected_user=affected_user_id,
-        tracking_cookie=tracking_cookie,
-        action='change-email',
-        data=data,
-        comment=comment
-    )
-
-    session.add(audit_entry)
-    session.flush()  # Flush to get the entry_id if needed
-
-    return audit_entry
-
-
 class EmailHistoryBiz:
     """
     Class to handle retrieving and managing email change history for a user.
@@ -347,7 +313,7 @@ class EmailHistoryBiz:
         return time_since_last_request < self.rate_limit
 
 
-    def add_email_change_request(self, entry: TapirEmailChangeTokenModel, timestamp: Optional[datetime] = None) -> TapirEmailChangeTokenModel:
+    def add_email_change_request(self, change_request: EmailChangeRequest) -> TapirEmailChangeTokenModel:
         """
         Adds a new email change history entry to the database.
         
@@ -355,49 +321,54 @@ class EmailHistoryBiz:
         If timestamp is provided, it is used as the issued_when value, otherwise current time is used.
         
         Args:
-            entry: The EmailHistoryEntry containing the new email change information
-            timestamp: Optional datetime to use as the issued_when value
-            
+            change_request: The EmailChangeRequest containing the new email change information
+
         Returns:
             TapirEmailChangeTokenModel: The created entry with all fields populated
         """
         # If email is empty, retrieve it from TapirUsers
-        if not entry.email:
+        old_email = change_request.email
+        if not old_email:
             user: TapirUser | None = self.session.query(TapirUser).filter(TapirUser.user_id == self.user_id).one_or_none()
             if user:
-                entry.email = user.email
+                old_email = user.email
             else:
                 raise ValueError(f"User with ID {self.user_id} not found")
         
+        tapir_session_id = change_request.tapir_session_id
+        if tapir_session_id is None:
+            last_session = get_last_tapir_session(self.session, self.user_id)
+            if last_session:
+                tapir_session_id = last_session.session_id
+                change_request.tapir_session_id = tapir_session_id
+
         # Use provided timestamp or current time
-        if timestamp:
-            entry.issued_when = timestamp
-        else:
-            entry.issued_when = datetime.now()
+        timestamp = change_request.timestamp if change_request.timestamp else datetime.now(tz=timezone.utc)
         
         # Generate a random secret if not provided
-        email_secret = self.generate_email_verify_token(entry)
+        email_secret = self.generate_email_verify_token(change_request)
 
         # Create a new token in the database
         new_token = TapirEmailChangeToken(
             user_id=int(self.user_id),
-            email=entry.email,
-            new_email=entry.new_email,
+            old_email=old_email,
+            new_email=change_request.new_email,
             secret=email_secret,
-            remote_host=entry.remote_host,
-            remote_addr=entry.remote_addr,
-            issued_when=entry.issued_when,
-            used=entry.used or False,
-            used_when=entry.used_when,
-            used_from_ip=entry.used_from_ip,
-            used_from_host=entry.used_from_host
+            remote_host=change_request.remote_ip, # entry.remote_host?
+            issued_when=datetime_to_epoch(None, timestamp),
+            tracking_cookie=change_request.tracking_cookie,
+            used=False,
+            session_id=tapir_session_id,
+            consumed_when=None,
+            consumed_from=None,
         )
         
         self.session.add(new_token)
-        return entry
+        return new_token
     
-    def email_verified(self, timestampL: datetime | None = None, remote_ip: str = "", remote_host: str = "",
-                       session_id: str = "") -> bool:
+    def email_verified(self, timestamp: datetime | None = None, remote_ip: str = "", remote_host: str = "",
+                       session_id: str = "",
+                       new_email: str = "") -> bool:
         """
         Marks the latest unused email change token as used.
         
@@ -428,54 +399,45 @@ class EmailHistoryBiz:
             logger.warning(f"No email history found for user {self.user_id}")
             return False
             
-        # Find the most recent unused token
-        # Since the list is already ordered by issued_when desc, we can find the first unused token
-        unused_token = None
-        for token in self.email_history.change_history:
-            if not token.used:
-                unused_token = token
-                break
+        # Find the most recent unused token directly from TapirEmailChangeToken table
+        unused_token = (
+            self.session.query(TapirEmailChangeToken)
+            .filter(
+                TapirEmailChangeToken.user_id == self.user_id,
+                TapirEmailChangeToken.new_email == new_email,
+                TapirEmailChangeToken.used == 0  # 0 means unused
+            )
+            .order_by(TapirEmailChangeToken.issued_when.desc())
+            .first()
+        )
                 
         if unused_token is None:
             logger.warning(f"No unused email tokens found for user {self.user_id}")
             return False
-        
-        # Get the corresponding database record
-        db_token = (
-            self.session.query(TapirEmailChangeToken)
-            .filter(
-                TapirEmailChangeToken.user_id == self.user_id,
-                TapirEmailChangeToken.new_email == unused_token.new_email,
-                TapirEmailChangeToken.secret == unused_token.secret,
-                TapirEmailChangeToken.used == False  # This ensures we only update if it's still unused
-            )
-            .first()
-        )
-        
-        if not db_token:
-            logger.warning(f"Could not find the unused token in the database for user {self.user_id}")
-            return False
+
+        # Use the latest unused token
+        email_change_token = unused_token
         
         # Get current timestamp
-        now = datetime.now(tz=timezone.utc)
-        unix_timestamp = int(time.time())  # Convert to Unix timestamp for used_when
-            
+        if timestamp is None:
+            timestamp = datetime.now(tz=timezone.utc)
+
+        epoch_timestamp =datetime_to_epoch(None, timestamp)
+
         try:
-            # Begin transaction
-            
             # 1. Update the token as used
-            db_token.used = True
-            db_token.used_when = now
-            db_token.used_from_ip = remote_ip
-            db_token.used_from_host = remote_host
+            email_change_token.used = True
+            email_change_token.consumed_when = epoch_timestamp
+            email_change_token.consumed_from = remote_ip
+            email_change_token.remote_host = remote_host
             
             # 2. Insert a record into the tapir_email_change_tokens_used table
             # Using the raw SQL connection to insert directly into the table
             self.session.execute(
                 t_tapir_email_change_tokens_used.insert().values(
                     user_id=int(self.user_id),
-                    secret=unused_token.secret,
-                    used_when=unix_timestamp,
+                    secret=email_change_token.secret,
+                    used_when=epoch_timestamp,
                     used_from=remote_ip[:16] if remote_ip else "",  # Limit to 16 chars as per schema
                     remote_host=remote_host[:255] if remote_host else "",  # Limit to 255 chars as per schema
                     session_id=session_id
@@ -483,12 +445,16 @@ class EmailHistoryBiz:
             )
             
             # 3. Also update the user's email_verified flag
-            user = self.session.query(TapirUser).filter(TapirUser.user_id == self.user_id).one_or_none()
+            user: TapirUser | None = self.session.query(TapirUser).filter(TapirUser.user_id == self.user_id).one_or_none()
             if user:
                 if not user.flag_email_verified:
                     user.flag_email_verified = True
                     logger.info(f"User {self.user_id} email flag marked as verified")
-            
+
+                if email_change_token.new_email and user.email != email_change_token.new_email:
+                    logger.info(f"User {self.user_id} email changes from {user.email} to {email_change_token.new_email}")
+                    user.email = email_change_token.new_email
+
             logger.info(f"Email change token for user {self.user_id} marked as verified")
             return True
             
@@ -498,7 +464,7 @@ class EmailHistoryBiz:
             return False
 
 
-    def generate_email_verify_token(self, entry: TapirEmailChangeTokenModel) -> str:
+    def generate_email_verify_token(self, change_request: EmailChangeRequest) -> str:
         """
         Generates a unique email verification token.
         
@@ -510,8 +476,13 @@ class EmailHistoryBiz:
         Returns:
             str: A unique email verification token
         """
-        # Import at function level to avoid circular imports
 
+        tapir_session_id = change_request.tapir_session_id
+
+        if tapir_session_id is None:
+            last_session = get_last_tapir_session(self.session, self.user_id)
+            if last_session:
+                tapir_session_id = last_session.session_id
         
         for _ in range(10):  # Try up to 10 times to get a unique token
             # Generate a token using the global function
@@ -545,9 +516,9 @@ class EmailHistoryBiz:
                             user_id=int(self.user_id),
                             secret=token,
                             used_when=unix_timestamp,
-                            used_from=entry.remote_addr,
-                            remote_host=entry.remote_host,
-                            session_id=0
+                            used_from=change_request.remote_ip,
+                            remote_host=change_request.remote_hostname,
+                            session_id=tapir_session_id
                         )
                     )
                     self.session.flush()
@@ -560,46 +531,3 @@ class EmailHistoryBiz:
         # If we tried 10 times and still couldn't get a unique token, raise an error
         raise RuntimeError("Unable to generate a unique email verification token")
 
-
-    def set_user_email_by_admin(self, new_email,
-                                admin_id: str | None = None,
-                                session_id: Optional[int] = None,
-                                remote_addr: str = "",
-                                remote_host: str = "",
-                                tracking_cookie: str = "",
-                                comment: str = "",
-                                email_verified: bool = True
-                                ):
-        """ Set a user's email by admin. This updates TapirUser.email and TapirUser.flag_email_verified,
-        then, add the admin audit log entry.
-
-        :param new_email:
-        :param admin_id:
-        :param session_id:
-        :param remote_addr:
-        :param remote_host:
-        :param tracking_cookie:
-        :param comment:
-        :param email_verified:
-        :return: None
-        """
-        user: TapirUser | None = self.session.query(TapirUser).filter(TapirUser.user_id == self.user_id).one_or_none()
-        if not user:
-            raise ValueError(f"User with ID {self.user_id} not found")
-        old_email = user.email
-        user.email = new_email
-        user.flag_email_verified = email_verified
-        self.session.add(user)
-        add_admin_email_change_log(
-            self.session,
-            int(admin_id),
-            int(self.user_id),
-            old_email,
-            new_email,
-            session_id=session_id,
-            ip_addr=remote_addr,
-            remote_host=remote_host,
-            tracking_cookie=tracking_cookie,
-            comment=comment
-        )
-        logger.info("User %s email set by admin %s from %s to %s", self.user_id, admin_id, old_email, new_email)

@@ -99,6 +99,13 @@ echo "GCP_PROJECT_ID=$GCP_PROJECT_ID"
 echo "GCP_EVENT_TOPIC_ID=$GCP_EVENT_TOPIC_ID"
 
 # -------------------------------------------------------------------------------------------
+# HTTP Header/Cookie Buffer Size - using JVM options
+#
+# Increase buffer sizes for large cookies/headers via JVM system properties
+# These need to be set as environment variables for the JVM
+export JAVA_OPTS_APPEND="${JAVA_OPTS_APPEND} -Dio.undertow.max-header-size=65536 -Dio.undertow.max-headers=200"
+
+# -------------------------------------------------------------------------------------------
 # NETWORK
 #
 

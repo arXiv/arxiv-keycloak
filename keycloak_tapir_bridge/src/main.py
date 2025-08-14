@@ -16,7 +16,6 @@ from time import sleep, gmtime, strftime as time_strftime
 from functools import partial
 
 import httpx
-from requests import ReadTimeout
 from sqlalchemy import Engine
 
 import json
@@ -153,8 +152,7 @@ def handle_keycloak_event(
                 else:
                     msg.nack()
                     logger.info("POST[%s](%s): nack %s", url, response_code, kc_data.get('id', '<no-id>'))
-                    if response_code == 520:
-                        sleep(1)
+                    sleep(1)
             else:
                 logger.warning("Forgot setting AAA URL and secret?")
                 # This is deprecated in favor of using the API
@@ -166,13 +164,13 @@ def handle_keycloak_event(
                 logger.info("SELF: ack %s", kc_data.get('id', '<no-id>'))
                 msg.ack()
 
-        except ReadTimeout as exc:
+        except httpx.ReadTimeout as exc:
             logger.warning("[%s] Communication timeout (%s): %s", str(exc), msg.message_id, repr(kc_data), extra=log_extra)
             msg.nack()
             sleep(1)
 
-        except Exception as exc:
-            logger.warning("[%s] bad(%s): %s", str(exc), msg.message_id, repr(kc_data), extra=log_extra)
+        except Exception as gexc:
+            logger.warning("[%s] bad(%s): %s", str(gexc), msg.message_id, repr(kc_data), extra=log_extra, exc_info=True)
             msg.nack()
             sleep(1)
 
