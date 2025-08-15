@@ -21,3 +21,6 @@ class UserFlags(str, Enum):
     TAPIR_FLAG_EDIT_SYSTEM = "tapir_users.flag_edit_system"
     TAPIR_FLAG_EDIT_USERS = "tapir_users.flag_edit_users"
     TAPIR_FLAG_EMAIL_VERIFIED = "tapir_users.flag_email_verified"
+    # more completeness
+    TAPIR_FLAG_APPROVED = "tapir_users.flag_approved"
+    TAPIR_FLAG_CAN_LOCK = "tapir_users.flag_can_lock"
