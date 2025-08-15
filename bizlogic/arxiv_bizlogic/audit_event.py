@@ -1692,6 +1692,48 @@ class AdminAudit_SetEmailVerified(AdminAudit_SetFlag):
         return self.data
 
 
+class AdminAudit_SetCanLock(AdminAudit_SetFlag):
+    """Audit event for setting/unsetting the can_lock flag."""
+    _flag = UserFlags.TAPIR_FLAG_CAN_LOCK
+    _value_name = "can_lock"
+    _value_type = bool
+
+    def __init__(self, 
+                 admin_id: str,
+                 affected_user: str,
+                 session_id: str | None,
+                 can_lock: bool,
+                 remote_ip: str | None = None,
+                 remote_hostname: str | None = None,
+                 tracking_cookie: str | None = None,
+                 comment: str | None = None,
+                 timestamp: int | None = None):
+        """Initialize an AdminAudit_SetCanLock.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param can_lock: Boolean value for the can_lock flag
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        """
+        super().__init__(admin_id, affected_user, session_id, can_lock=can_lock,
+                        remote_ip=remote_ip, remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie, comment=comment, timestamp=timestamp)
+
+    def describe(self, session: Session) -> str:
+        elements = self.data.split("=")
+        if len(elements) == 2:
+            value1 = elements[1]
+            if int(value1):
+                return f"{self.describe_admin_user(session)} granted can_lock privilege to {self.describe_affected_user(session)}"
+            else:
+                return f"{self.describe_admin_user(session)} revoked can_lock privilege from {self.describe_affected_user(session)}"
+        return self.data
+
 
 def admin_audit(session: Session, event: AdminAuditEvent) -> TapirAdminAudit:
     """Audit function for admin actions.
@@ -1745,6 +1787,7 @@ flag_setter_classes: Dict[str, Type[AdminAudit_SetFlag]] = {
         AdminAudit_SetEditSystem,
         AdminAudit_SetEditUsers,
         AdminAudit_SetEmailVerified,
+        AdminAudit_SetCanLock,
     ]
 }
 
