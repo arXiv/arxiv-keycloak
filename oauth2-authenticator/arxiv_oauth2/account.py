@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 import random
 from typing import Optional, List
 
+import keycloak
 from arxiv.auth.openid.oidc_idp import ArxivOidcIdpClient
 from arxiv_bizlogic.bizmodels.user_model import UserModel
 from arxiv_bizlogic.validation.email_validation import is_valid_email
@@ -252,8 +253,8 @@ def email_verify_requset(
 
 
 class EmailVerifiedStatus(BaseModel):
-    user_id: str
     email_verified: bool
+    user_id: Optional[str] = None
 
 @router.get("/email/verified", description="Is the email verified for this user?")
 def get_email_verified_status_current_user(
@@ -269,7 +270,7 @@ def get_email_verified_status_current_user(
     return EmailVerifiedStatus(email_verified=bool(user.flag_email_verified), user_id =str(user.user_id))
 
 
-@router.get("/{user_id:str}/email/verified", description="Is the email verified for this usea?")
+@router.get("/{user_id:str}/email/verified", description="Is the email verified for this user?")
 def get_email_verified_status(
         user_id: str,
         authn: Optional[ArxivUserClaims] = Depends(get_authn_or_none),
@@ -293,7 +294,10 @@ def set_email_verified_status(
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ) -> EmailVerifiedStatus:
-    assert user_id == body.user_id
+    if body.user_id:
+        if not body.user_id == user_id:
+            logger.warning(f"User ID {user_id} does not match the expected ID {body.user_id}")
+        assert user_id == body.user_id, "user_id == body.user_id"
     check_authnz(authed_user, None, user_id)
     user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
     if not user:
@@ -312,24 +316,42 @@ def set_email_verified_status(
         # Handle errors here
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(kce)) from kce
 
-    biz: EmailHistoryBiz = EmailHistoryBiz(session, user_id=user_id)
+    email_verified = 1 if body.email_verified else 0
 
-    user.flag_email_verified = 1 if body.email_verified else 0
+    if authed_user.is_admin:
+        if user.flag_email_verified != email_verified:
+            logger.info(f"User {user_id} email flag being updated to {email_verified!r}")
+            user.flag_email_verified = email_verified
+            admin_audit(
+                session,
+                AdminAudit_SetEmailVerified(
+                    str(authed_user.user_id),
+                    str(user_id),
+                    str(authed_user.tapir_session_id),
+                    body.email_verified,
+                    remote_ip=remote_ip,
+                    remote_hostname=remote_hostname,
+                ),
+            )
+        else:
+            logger.info(f"User {user_id} email flag no-change as {email_verified!r}")
+    else:
+        biz: EmailHistoryBiz = EmailHistoryBiz(session, user_id=user_id)
+        if not biz.email_verified(remote_ip=remote_ip, remote_host=remote_hostname,
+                                  session_id=str(authed_user.tapir_session_id)):
 
-    if not biz.email_verified(remote_ip=remote_ip, remote_host=remote_hostname):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is not verified.")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is not verified.")
+        user.flag_email_verified = email_verified
 
-    admin_audit(
-        session,
-        AdminAudit_SetEmailVerified(
-            str(authed_user.user_id),
-            str(user_id),
-            str(authed_user.tapir_session_id),
-            verified = body.email_verified,
-            remote_ip=remote_ip,
-            remote_hostname=remote_hostname,
-        ),
-    )
+    if kc_user_id:
+        try:
+            kc_admin.user_logout(kc_user_id)
+        except keycloak.exceptions.KeycloakPostError as exc:
+            # if 404, user hasn't migrated to Keycloak yet.
+            # Update Tapir entry and move on
+            if  exc.response_code != 404:
+                logger.error(f"Error logging out user {user_id}: {exc!r}")
+                raise
 
     session.commit()
     return EmailVerifiedStatus(email_verified=bool(user.flag_email_verified), user_id = user_id)
