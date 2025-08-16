@@ -495,7 +495,8 @@ def make_cookie_response(request: Request,
                          user_claims: Optional[ArxivUserClaims],
                          tapir_cookie: Optional[str],
                          next_page: Optional[str],
-                         content: Optional[Any] = None) -> Response | JSONResponse | RedirectResponse:
+                         content: Optional[Any] = None,
+                         ) -> Response | JSONResponse | RedirectResponse:
 
     # Create the response with all of cookies made
     cparam = cookie_params(request)

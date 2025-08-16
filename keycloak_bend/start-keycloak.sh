@@ -83,8 +83,12 @@ export KC_HOSTNAME_STRICT=false
 # -------------------------------------------------------------------------------------------
 # Logging
 #
-LOG_LEVEL="${LOG_LEVEL:-info}"
+LOG_LEVEL="${LOG_LEVEL:-DEBUG}"
 LOG_OUTPUT_FORMAT="${LOG_OUTPUT_FORMAT:- --log-console-output=json}"
+
+# Enable HTTP access logging - using keycloak.conf instead of JVM options
+export JAVA_OPTS_APPEND="${JAVA_OPTS_APPEND} -Dquarkus.log.level=DEBUG"
+export JAVA_OPTS_APPEND="${JAVA_OPTS_APPEND} -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 
 # -------------------------------------------------------------------------------------------
 # Event Listener
@@ -98,12 +102,13 @@ export GCP_ADMIN_EVENT_TOPIC_ID=keycloak-arxiv-events
 echo "GCP_PROJECT_ID=$GCP_PROJECT_ID"
 echo "GCP_EVENT_TOPIC_ID=$GCP_EVENT_TOPIC_ID"
 
-# -------------------------------------------------------------------------------------------
-# HTTP Header/Cookie Buffer Size - using JVM options
-#
-# Increase buffer sizes for large cookies/headers via JVM system properties
-# These need to be set as environment variables for the JVM
-export JAVA_OPTS_APPEND="${JAVA_OPTS_APPEND} -Dio.undertow.max-header-size=65536 -Dio.undertow.max-headers=200"
+# HTTP buffer settings - force via JVM system properties (keycloak.conf not working)
+echo "HTTP Buffer Settings: Forcing 2MB header limit via JVM properties"
+
+# Force HTTP limits via correct JVM system properties
+export JAVA_OPTS_APPEND="${JAVA_OPTS_APPEND} -Dquarkus.http.limits.max-header-size=2097152"
+export JAVA_OPTS_APPEND="${JAVA_OPTS_APPEND} -Dvertx.http.maxHeaderSize=2097152" 
+export JAVA_OPTS_APPEND="${JAVA_OPTS_APPEND} -Dio.vertx.core.http.HttpServerOptions.maxHeaderSize=2097152"
 
 # -------------------------------------------------------------------------------------------
 # NETWORK
@@ -139,6 +144,7 @@ KEYCLOAK_START="${KEYCLOAK_START:-start-dev}"
 export KC_DB_URL="jdbc:$JDBC_DRIVER://$DB_ADDR/$DB_DATABASE$KC_JDBC_CONNECTION"
 echo KC_DB_URL=$KC_DB_URL
 
+# Start Keycloak using keycloak.conf for HTTP settings
 /opt/keycloak/bin/kc.sh $KEYCLOAK_START \
   --log-level=$LOG_LEVEL \
   --http-port=$KC_PORT \
@@ -150,4 +156,5 @@ echo KC_DB_URL=$KC_DB_URL
   --db-password=$KC_DB_PASS \
   $HTTPS_ARGS \
   --http-management-port=$KC_MANAGEMENT_PORT \
+  $HTTP_OPTS \
   $DB_SCHEMA $PROXY_MODE $LOG_OUTPUT_FORMAT

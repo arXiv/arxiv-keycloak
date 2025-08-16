@@ -422,10 +422,10 @@ def um_to_group_name(group_flag: Tuple[str, str], um: UserModel) -> Optional[str
 
 
 
-def get_account_info(session: Session, user_id: str) -> Optional[AccountInfoModel]:
+def get_account_info(session: Session, user_id: str, include_invalid_user: bool=True) -> Optional[AccountInfoModel]:
     um = UserModel.one_user(session, user_id)
     if um:
-        if um.flag_deleted or um.flag_banned:
+        if (not include_invalid_user) and (um.flag_deleted or um.flag_banned):
             return None
 
         groups = [um_to_group_name(group_flag, um) for group_flag in Demographic.GROUP_FLAGS]
