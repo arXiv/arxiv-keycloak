@@ -431,7 +431,7 @@ def change_email(
         tracking_cookie: Optional[str] = Depends(get_tapir_tracking_cookie),
         authn_user: ArxivUserClaims = Depends(get_authn_user),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
-):
+) -> UserModel:
     #
     # Case 1 - Admin changes her own
     #    Let her change the email? Most likely yes. She should be able to change anyone's email -> but
@@ -531,7 +531,7 @@ def change_email(
             kc_send_verify_email(kc_admin, kc_user["id"], force_verify=True)
 
         session.commit()
-        return
+        return UserModel.one_user(session, user)
 
     # Case 3 - Normal user change email
     if biz.is_rate_exceeded():
@@ -571,8 +571,7 @@ def change_email(
         # Sends the verify request email
         kc_send_verify_email(kc_admin, kc_user["id"], force_verify=True)
 
-    return
-
+    return UserModel.one_user(session, user)
 
 
 @router.get("/{user_id:str}/email/history", description="Get the past email history")
@@ -1236,7 +1235,7 @@ def update_user_authorization(
         remote_hostname: str = Depends(get_client_host_name),
         tracking_cookie: Optional[str] = Depends(get_tapir_tracking_cookie),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
-) -> AccountInfoModel:
+) -> UserModel:
     check_authnz(admin_user, None, user_id)
     idp: ArxivOidcIdpClient = request.app.extra["idp"]
 
@@ -1479,4 +1478,4 @@ def update_user_authorization(
     if not valid_request:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request")
 
-    return reply_account_info(session, user_id)
+    return UserModel.one_user(session, user_id)
