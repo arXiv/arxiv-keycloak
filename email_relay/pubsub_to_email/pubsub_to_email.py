@@ -1,3 +1,4 @@
+import datetime
 import json
 import smtplib
 from email.message import EmailMessage
@@ -15,12 +16,13 @@ SMTP_PORT = 25
 smtp_user = None
 smtp_pass = None
 
+
 def send_email_via_smtp(email_data: dict):
-    sender = email_data["mail_from"]
-    recipient = email_data["mail_to"]
-    subject = email_data["subject"]
-    timestamp = email_data["timestamp"]
-    body = email_data["body"]
+    sender = email_data.get("mail_from", "nobody@arxiv.org")
+    recipient = email_data.get("mail_to", "root@localhost")
+    subject = email_data.get("subject", "No Subject")
+    timestamp = email_data.get("timestamp", datetime.datetime.now().isoformat())
+    body = email_data.get("body", "?")
     headers = email_data.get("headers", "")
 
     try:
