@@ -1,10 +1,13 @@
+import base64
+import functions_framework
 import os
 import datetime
 import json
 import smtplib
 from email.message import EmailMessage
-from google.cloud import pubsub_v1
 
+from cloudevents.http import CloudEvent
+from google.cloud import pubsub_v1
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -62,14 +65,15 @@ def send_email_via_smtp(email_data: dict):
                 key, value = header_line.split(":", 1)
                 msg[key.strip()] = value.strip()
 
-        # Send email to localhost SMTP server
+        # Send email to SMTP server
         with smtplib.SMTP(mta["server"], mta["port"]) as server:
             server.ehlo()
-            server.starttls()
+            if server.has_extn("STARTTLS"):
+                server.starttls()
             server.ehlo()
 
             if mta["user"] and mta["password"]:
-                server.login(smtp_user, smtp_pass)
+                server.login(mta["user"], mta["password"])
 
             server.sendmail(sender, recipient, msg.as_string())
 
@@ -101,6 +105,14 @@ def main():
     except KeyboardInterrupt:
         logger.info("Shutting down...")
         future.cancel()
+
+
+@functions_framework.cloud_event
+def pubsub_to_email(cloud_event: CloudEvent):
+    """This reads from a queue, and try to send a email"""
+    data = json.loads(base64.b64decode(cloud_event.data["message"]["data"]).decode())
+    send_email_via_smtp(data)
+
 
 if __name__ == "__main__":
     main()

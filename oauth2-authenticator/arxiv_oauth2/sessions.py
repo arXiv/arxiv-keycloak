@@ -26,7 +26,7 @@ def create_tapir_session(
     tapir_cookie = None
     tapir_session = None
     try:
-        ts = create_tapir_session_from_user_claims(user_claims, client_host, client_ip)
+        ts = create_tapir_session_from_user_claims(session, user_claims, client_host, client_ip)
         if ts:
             tapir_cookie = ts[0]
             tapir_session = ts[1]

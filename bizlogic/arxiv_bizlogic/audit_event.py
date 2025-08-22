@@ -10,6 +10,7 @@ from enum import Enum
 from typing import Optional, Tuple, Dict, Type
 
 from sqlalchemy.orm import Session
+from sqlalchemy import func, update, cast, LargeBinary
 from arxiv.db.models import TapirAdminAudit
 
 from .user_status import UserVetoStatus, UserFlags
@@ -1756,6 +1757,8 @@ def admin_audit(session: Session, event: AdminAuditEvent) -> TapirAdminAudit:
     """
 
     timestamp = event.timestamp if event.timestamp else int(time.time())
+    
+    # Create entry without comment first
     entry = TapirAdminAudit(
         log_date=timestamp,
         session_id=event.session_id,
@@ -1766,9 +1769,19 @@ def admin_audit(session: Session, event: AdminAuditEvent) -> TapirAdminAudit:
         tracking_cookie=event.tracking_cookie if event.tracking_cookie else '',
         action=event.action,
         data=event.data if event.data else '',
-        comment=event.comment if event.comment else '',
+        comment='',  # Temporary empty string
     )
     session.add(entry)
+    session.flush()  # Get the entry_id
+    
+    # Update comment with binary data using direct SQL
+    comment_utf8 = (event.comment if event.comment else '').encode('utf-8')
+    session.execute(
+        update(TapirAdminAudit.__table__)
+        .where(TapirAdminAudit.entry_id == entry.entry_id)
+        .values(comment=func.binary(comment_utf8))
+    )
+    
     return entry
 
 
@@ -1833,17 +1846,17 @@ event_classes: Dict[str, AdminAuditEvent] = {
 }
 
 
-def create_admin_audit_event(audit_record: TapirAdminAudit) -> AdminAuditEvent:
+def create_admin_audit_event(audit_record: TapirAdminAudit, session: Session = None) -> AdminAuditEvent:
     """Create an AdminAuditEvent instance from a TapirAdminAudit database record.
 
     This function is the reverse of admin_audit(). It examines the action type
     in the audit record and instantiates the appropriate AdminAuditEvent subclass.
 
     :param audit_record: The TapirAdminAudit database record
+    :param session: SQLAlchemy session for fetching binary comment data
     :return: An instance of the appropriate AdminAuditEvent subclass
     :rtype: AdminAuditEvent
     """
-
 
     # Find the appropriate event class or use this base class as fallback
     event_class: Optional[Type[AdminAuditEvent]] = event_classes.get(audit_record.action)
@@ -1854,4 +1867,21 @@ def create_admin_audit_event(audit_record: TapirAdminAudit) -> AdminAuditEvent:
         return event_class(audit_record)
 
     args, kwargs = event_class.get_init_params(audit_record)
+    
+    # Fetch comment as binary and decode as UTF-8 if session is provided
+    if session and "comment" in kwargs:
+        comment_binary = session.execute(
+            session.query(cast(TapirAdminAudit.comment, LargeBinary))
+            .filter(TapirAdminAudit.entry_id == audit_record.entry_id)
+        ).scalar()
+        
+        if comment_binary:
+            try:
+                kwargs["comment"] = comment_binary.decode('utf-8')
+            except UnicodeDecodeError:
+                # Fallback to original comment if decode fails
+                kwargs["comment"] = audit_record.comment
+        else:
+            kwargs["comment"] = ""
+    
     return event_class(*args, **kwargs)

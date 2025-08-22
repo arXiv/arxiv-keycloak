@@ -7,7 +7,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional, List
 
-from sqlalchemy import select, case, exists, cast, LargeBinary #, func
+from sqlalchemy import select, case, exists, cast, LargeBinary, func, inspect, update
 from sqlalchemy.orm import Session
 from sqlalchemy.engine.row import Row
 from pydantic import BaseModel, field_validator
@@ -17,6 +17,11 @@ from arxiv.db.models import (TapirUser, TapirNickname, t_arXiv_moderators, Demog
 from logging import getLogger
 
 logger = getLogger(__name__)
+
+ACCOUNT_MANAGEMENT_FIELDS = {
+    'first_name', 'flag_approved', 'flag_banned', 'flag_can_lock', 'flag_deleted', 'flag_edit_system', 'flag_edit_users',
+    'flag_internal', 'joined_date', 'joined_ip_num', 'joined_remote_host', 'last_name', 'policy_class',  'suffix_name',
+}
 
 _tapir_user_utf8_fields_ = ["first_name", "last_name", "suffix_name", "email"]
 _demographic_user_utf8_fields_ = ["url", "affiliation", ]
@@ -256,7 +261,7 @@ class UserModel(BaseModel):
                 data[field] = USER_MODEL_DEFAULTS[from_field]
         for field in utf8_fields:
             if data[field] and isinstance(data[field], str):
-                data[field] = data[field].encode("utf-8").decode('iso-8859-1')
+                data[field] = data[field].encode("utf-8")
         return data
 
     @staticmethod
@@ -322,6 +327,68 @@ class UserModel(BaseModel):
         return UserModel.one_user(session, str(nick.user_id))
 
     @staticmethod
+    def _update_model_fields(session: Session, db_object, model_class, data: dict, user_id: int,
+                            skip_fields: set = None):
+        """
+        Helper function to update database model fields with type conversion and UTF-8 handling.
+
+        :param session: SQLAlchemy session
+        :param db_object: Database object instance to update
+        :param model_class: SQLAlchemy model class for column metadata
+        :param data: Dictionary of field values to update
+        :param user_id: User ID for update queries
+        :param skip_fields: Set of field names to skip during update
+        """
+        if skip_fields is None:
+            skip_fields = set()
+
+        inspector = inspect(model_class)
+        columns = {column.key: column for column in model_class.__mapper__.column_attrs}
+
+        for field, column in columns.items():
+            if field in skip_fields:
+                continue
+
+            if field not in data:
+                continue
+
+            column_property = inspector.get_property(field)
+            column_type = column_property.columns[0].type
+
+            old_value = getattr(db_object, field)
+            new_value = data[field]
+
+            if isinstance(column_type, str):
+                old_value = bytes(old_value) if old_value is not None else None
+                if isinstance(new_value, str):
+                    new_value = new_value.encode("utf-8")
+
+                if new_value != old_value:
+                    session.execute(
+                        update(model_class)
+                        .where(model_class.user_id == user_id)
+                        .values({field: func.binary(new_value)})
+                    )
+            elif isinstance(column_type, bytes):
+                if new_value != old_value:
+                    session.execute(
+                        update(model_class)
+                        .where(model_class.user_id == user_id)
+                        .values({field: func.binary(new_value)})
+                    )
+            elif isinstance(column_type, int):
+                if isinstance(new_value, bool):
+                    new_value = 1 if new_value else 0
+                setattr(db_object, field, new_value)
+            elif isinstance(column_type, bool):
+                if isinstance(new_value, int):
+                    new_value = True if new_value else False
+                setattr(db_object, field, new_value)
+            else:
+                setattr(db_object, field, new_value)
+
+
+    @staticmethod
     def _upsert_user(session: Session, user: dict) -> TapirUser | None:
         """
         Insert or update user data (TapirUser and Demographic)
@@ -331,22 +398,29 @@ class UserModel(BaseModel):
         :return:
         """
 
-        tapir_user_fields = set([column.key for column in TapirUser.__mapper__.column_attrs])
-        data = UserModel.map_to_row_data(user, tapir_user_fields, _tapir_user_utf8_fields_)
-        if data.get("user_id") is None:
-            db_user = TapirUser(**data)
+        # Handle TapirUser
+        tapir_user_columns = {column.key: column for column in TapirUser.__mapper__.column_attrs}
+        data = UserModel.map_to_row_data(user, list(tapir_user_columns.keys()), _tapir_user_utf8_fields_)
+        user_id = data.get("user_id")
+
+        if user_id is None:
+            # FIXME: TapirNickname needs to be created
+            db_user = TapirUser(**data) # Very likely this does not work right.
             session.add(db_user)
             session.flush()
             session.refresh(db_user)
         else:
-            db_user = session.query(TapirUser).filter(TapirUser.user_id == data.get("user_id")).one_or_none()
+            db_user = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
             if db_user is None:
                 raise ValueError("User not found")
-            for field in tapir_user_fields:
-                # Changing of email needs a special care
-                if field not in ["user_id", "email"]:
-                    setattr(db_user, field, data[field])
+            
+            # Use the refactored helper function
+            UserModel._update_model_fields(
+                session, db_user, TapirUser, data, user_id, 
+                skip_fields={"user_id", "email"}
+            )
 
+        # Handle Demographic
         to_demographics_fields = set([column.key for column in Demographic.__mapper__.column_attrs])
         demographic_data = UserModel.map_to_row_data(user, to_demographics_fields, _demographic_user_utf8_fields_)
         demographic_data["user_id"] = db_user.user_id
@@ -356,9 +430,11 @@ class UserModel(BaseModel):
             db_demographic = Demographic(**demographic_data)
             session.add(db_demographic)
         else:
-            for field in to_demographics_fields:
-                if field not in ["user_id"]:
-                    setattr(db_demographic, field, demographic_data[field])
+            # Use the refactored helper function
+            UserModel._update_model_fields(
+                session, db_demographic, Demographic, demographic_data, db_user.user_id,
+                skip_fields={"user_id"}
+            )
         return db_user
 
     @staticmethod
