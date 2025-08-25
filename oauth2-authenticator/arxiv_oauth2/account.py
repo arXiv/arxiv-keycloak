@@ -96,21 +96,21 @@ async def update_account_profile(
     check_authnz(authn, None, user_id)
 
     # class AccountInfoModel:
-    #    username: str  # aka nickname in Tapir
-    #    email: Optional[str] = None
+    #    NOPE: username: str  # aka nickname in Tapir
+    #    NOPE: email: Optional[str] = None
     #    first_name: str
     #    last_name: str
     #    suffix_name: Optional[str] = None
     #    country: Optional[str] = None
     #    affiliation: Optional[str] = None
     #    default_category: Optional[CategoryIdModel] = None
-    #    groups: Optional[List[CategoryGroup]] = None
+    #    NOPE: groups: Optional[List[CategoryGroup]] = None
     #    url: Optional[str] = None
     #    joined_date: Optional[int] = None
-    #    oidc_id: Optional[str] = None
+    #    NOPE: oidc_id: Optional[str] = None
     #    career_status: Optional[CAREER_STATUS] = None
-    #    tracking_cookie: Optional[str] = None
-    #    veto_status: Optional[VetoStatusEnum] = None
+    #    NOPE: tracking_cookie: Optional[str] = None
+    #    NOPE: veto_status: Optional[VetoStatusEnum] = None
     #
     #    id
     #    email_verified: Optional[bool] = None
@@ -120,8 +120,20 @@ async def update_account_profile(
     if existing_user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    if existing_user.username != data.username:
+    if data.username is not None and existing_user.username != data.username:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username/user id do not match")
+
+    if data.email is not None and existing_user.email != data.email:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Setting email is not allowed with profile update. Use 'account/{user_id}/email'")
+
+    if data.flag_email_verified is not Nnes and existing_user.flag_email_verified != data.flag_email_verified:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Setting email is not allowed with profile update. Use 'account/{user_id}/email/verified'")
+
+    if data.veto_status is not None and existing_user.veto_status != data.veto_status:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Setting email is not allowed with profile update. Use Admin API")
+
+    if data.scrpes is not None and existing_user.scopes != data.scrpes:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Setting email is not allowed with profile update.")
 
     updates = data.to_user_model_data(exclude_defaults=True, exclude_unset=True)
     for field in ["email", "joined_date", "tracking_cookie", "veto_status", "email_verified", "scopes"]:
@@ -129,6 +141,7 @@ async def update_account_profile(
             del updates[field]
 
     scrubbed = AccountInfoModel.from_user_model_data(updates)
+
     tapir_user = update_tapir_account(session, scrubbed)
     if not isinstance(tapir_user, TapirUser):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Tapir User")
@@ -238,7 +251,7 @@ class EmailModel(BaseModel):
 
 
 @router.post("/{user_id:str}/email/verify", description="Request to send verify email")
-def email_verify_requset(
+def request_email_verify(
         request: Request,
         user_id: str,
         body: EmailModel,

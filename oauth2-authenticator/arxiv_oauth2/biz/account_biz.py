@@ -547,6 +547,8 @@ def update_tapir_account(session: Session, profile: AccountInfoModel) -> Account
     """
     updates TapirUser and arXiv_demographics tables but not username or password
     """
+    # ntai 2025-08-25: I think this is oniony
+
     updates = profile.to_user_model_data(exclude_defaults=True, exclude_unset=True)
     um0 = UserModel.one_user(session, profile.id)
     if um0 is None:
