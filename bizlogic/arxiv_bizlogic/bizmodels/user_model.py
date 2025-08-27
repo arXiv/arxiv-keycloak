@@ -422,7 +422,8 @@ class UserModel(BaseModel):
 
         if skip_fields is not None:
             for field in skip_fields:
-                columns.remove(field)
+                if field in columns:
+                    columns.remove(field)
 
         return update_model_fields(session, db_object, data, columns, primary_key_field="user_id", primary_key_value=user_id)
 
@@ -467,6 +468,7 @@ class UserModel(BaseModel):
             "flag_allow_tex_produced",
             "flag_can_lock",
             "tracking_cookie",
+            "flag_group_test"
         }
 
         if user_id is None:
