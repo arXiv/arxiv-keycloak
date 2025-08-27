@@ -104,10 +104,16 @@ def update_model_fields(session: Session, model: Base,
                 
                 elif isinstance(column_type, (String, Text)):
                     # String column with latin1 charset - convert to binary
-                    if charset == 'latin1' and isinstance(value, str):
-                        value = value.encode('utf-8')
-                        direct_update = True
-                
+                    if charset == 'latin1':
+                        if isinstance(value, str):
+                            value = value.encode('utf-8')
+                            direct_update = True
+                        elif isinstance(value, bytes):
+                            # The column value is fetched as bytes, or it is already encoded in utf-8
+                            direct_update = True
+                        else:
+                            raise ValueError(f"Invalid value type for {key}: {type(value)}")
+
                 # Only update if the value has changed
                 if direct_update:
                     # Get current value as bytes using cast to LargeBinary
