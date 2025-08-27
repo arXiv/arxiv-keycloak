@@ -124,12 +124,15 @@ class AccountIdentifierModel(BaseModel):
     author_id: Optional[str] = None
 
 
-class AccountInfoBaseModel(BaseModel):
-    username: str  # aka nickname in Tapir
-    email: Optional[str] = None
-    first_name: str
-    last_name: str
+class AccountUserNameBaseModel(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     suffix_name: Optional[str] = None
+    username: Optional[str] = None  # aka nickname in Tapir
+
+
+class AccountInfoBaseModel(AccountUserNameBaseModel):
+    email: Optional[str] = None
     country: Optional[str] = None
     affiliation: Optional[str] = None
     default_category: Optional[CategoryIdModel] = None
@@ -560,6 +563,7 @@ def update_tapir_account(session: Session, profile: AccountInfoModel) -> Account
     try:
         tapir_user = UserModel.update_user(session, um1)
     except RegistrationFailed as this_e:
+        logger.warning("update_tapir_account failed: %s", this_e)
         session.rollback()
 
         tb_exception = traceback.TracebackException.from_exception(this_e)

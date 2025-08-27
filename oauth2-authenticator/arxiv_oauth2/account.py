@@ -10,6 +10,7 @@ from typing import Optional, List
 import keycloak
 from arxiv.auth.openid.oidc_idp import ArxivOidcIdpClient
 from arxiv_bizlogic.bizmodels.user_model import UserModel
+from arxiv_bizlogic.sqlalchemy_helper import update_model_fields
 from arxiv_bizlogic.validation.email_validation import is_valid_email
 from arxiv_bizlogic.fastapi_helpers import get_current_user_access_token, get_client_host_name, get_authn_user, \
     get_tapir_tracking_cookie
@@ -17,6 +18,7 @@ from arxiv_bizlogic.audit_event import admin_audit, AdminAudit_ChangeEmail, Admi
     AdminAudit_SetEmailVerified, AdminAudit_SuspendUser, AdminAudit_UnuspendUser, AdminAudit_SetEditUsers, \
     AdminAudit_SetEditSystem, AdminAudit_MakeModerator, AdminAudit_UnmakeModerator, AdminAudit_SetCanLock
 from fastapi import APIRouter, Depends, status, HTTPException, Request, Response, Query
+
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from keycloak import KeycloakAdmin
@@ -36,7 +38,8 @@ from .biz.account_biz import (AccountInfoModel, get_account_info,
                               AccountRegistrationError, AccountRegistrationModel, validate_password,
                               migrate_to_keycloak,
                               kc_validate_access_token, kc_send_verify_email, register_arxiv_account,
-                              update_tapir_account, AccountIdentifierModel, kc_login_with_client_credential)
+                              update_tapir_account, AccountIdentifierModel, kc_login_with_client_credential,
+                              AccountUserNameBaseModel)
 from .biz.cold_migration import cold_migrate
 from .biz.email_history_biz import EmailHistoryBiz, EmailChangeEntry, EmailChangeRequest
 # from . import stateless_captcha
@@ -126,14 +129,12 @@ async def update_account_profile(
     if data.email is not None and existing_user.email != data.email:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Setting email is not allowed with profile update. Use 'account/{user_id}/email'")
 
-    if data.flag_email_verified is not Nnes and existing_user.flag_email_verified != data.flag_email_verified:
+    if data.email_verified is not None and existing_user.flag_email_verified != data.email_verified:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Setting email is not allowed with profile update. Use 'account/{user_id}/email/verified'")
 
     if data.veto_status is not None and existing_user.veto_status != data.veto_status:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Setting email is not allowed with profile update. Use Admin API")
 
-    if data.scrpes is not None and existing_user.scopes != data.scrpes:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Setting email is not allowed with profile update.")
 
     updates = data.to_user_model_data(exclude_defaults=True, exclude_unset=True)
     for field in ["email", "joined_date", "tracking_cookie", "veto_status", "email_verified", "scopes"]:
@@ -141,12 +142,136 @@ async def update_account_profile(
             del updates[field]
 
     scrubbed = AccountInfoModel.from_user_model_data(updates)
+    tapir_user = update_tapir_account(session, AccountInfoModel.model_validate(scrubbed))
 
-    tapir_user = update_tapir_account(session, scrubbed)
     if not isinstance(tapir_user, TapirUser):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Tapir User")
 
+    old_data = existing_user.model_dump()
+    um = UserModel.one_user(session, user_id)
+    if um is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    new_data = um.model_dump()
+
+    update_name = False
+    for field in ["first_name", "last_name", "suffix_name"]:
+        if old_data[field] != new_data[field]:
+            update_name = True
+            break
+
+    if update_name:
+        kc_admin.update_user(user_id=str(tapir_user.user_id),
+                             payload={"firstName": new_data["first_name"],
+                                      "lastName": new_data["last_name"]})
+
+    session.commit()
     return reply_account_info(session, str(tapir_user.user_id))
+
+
+class AccountUserNameUpdateModel(AccountUserNameBaseModel):
+    comment: Optional[str] = None
+
+#
+# Profile update and registering user is VERY similar. It is essentially upsert. At some point, I should think
+# about refactor these two.
+@router.put('/{user_id:str}/name', description="Update the user account profile for both Keycloak and user in db")
+async def update_user_name(
+        request: Request,
+        user_id: str,
+        data: AccountUserNameUpdateModel,
+        current_user: ArxivUserClaims = Depends(get_authn_user),
+        _remote_hostname: Optional[str] = Depends(get_client_host_name),
+        _remote_ip:Optional[str] = Depends(get_client_host),
+        session: Session = Depends(get_db),
+        kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
+) -> AccountInfoModel:
+    """
+    Update the profile name of a user.
+    """
+    check_authnz(current_user, None, user_id)
+    existing_user = UserModel.one_user(session, user_id)
+    if existing_user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    kc_user = None
+    try:
+        kc_user = kc_admin.get_user(user_id)
+    except KeycloakGetError as kce:
+        logger.info(f"Failed to get user {user_id} from Keycloak: {kce}")
+        pass
+
+    if kc_user is None:
+        kc_user = cold_migrate(kc_admin, session, user_id, request.app.extra['ARXIV_USER_SECRET'],
+                               email_verified=existing_user.flag_email_verified)
+
+    changed = False
+    if data.username is not None and existing_user.username != data.username:
+        changed = True
+        nick: TapirNickname | None = session.query(TapirNickname).filter(TapirNickname.user_id == user_id).one_or_none()
+        if nick is None:
+            nick =  TapirNickname(nickname=data.username, user_id=user_id, user_seq=0,
+                                  flag_valid=1,
+                                  role=0,
+                                  policy=0,
+                                  flag_primary=1)
+            session.add(nick)
+            session.flush()
+            session.refresh(nick)
+        else:
+            nick.nickname = data.username
+
+        kc_admin.update_user(user_id=user_id, payload={"username": data.username})
+
+    if (data.first_name is not None and existing_user.first_name != data.first_name) or \
+            (data.last_name is not None and existing_user.last_name != data.last_name):
+        changed = True
+        kc_admin.update_user(user_id=user_id, payload={"firstName": data.first_name, "lastName": data.last_name})
+        tapir_user = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
+        if tapir_user is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        update_model_fields(
+            session,
+            TapirUser,
+            data.model_dump(),
+            {'first_name', 'last_name'},
+            primary_key_field="user_id",
+            primary_key_value=user_id
+        )
+
+    if data.suffix_name is not None and existing_user.suffix_name != data.suffix_name:
+        changed = True
+        tapir_user = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
+        if tapir_user is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        update_model_fields(
+            session,
+            TapirUser,
+            data.model_dump(),
+            {'suffix_name'},
+            primary_key_field="user_id",
+            primary_key_value=user_id
+        )
+
+    # ntai: 2025-08-27
+    # I think an audit event is missing. If an admin changes a user's name, it should leave a record of it.
+    #
+    # if current_user.is_admin and str(user_id) != str(current_user.user_id):
+    #     changed = True
+    #     admin_audit(AdminAudit_ChangeUserProfile(
+    #         str(current_user.user_id),
+    #         str(user_id),
+    #         str(current_user.tapir_session_id),
+    #         remote_ip=remote_ip,
+    #         remote_hostname=remote_hostname,
+    #         comment=data.comment,
+    #         data=f"name: {data.first_name!r}"
+    #     ))
+
+    if changed:
+        session.commit()
+
+    return reply_account_info(session, str(user_id))
+
 
 
 # See profile update comment.
@@ -177,7 +302,7 @@ async def register_account(
 
     if not registration.email:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="email is required")
-    if not registration.username.strip():
+    if not registration.username or not registration.username.strip():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="username is required")
 
     # registration = sanitize_model_data(registration)
@@ -526,6 +651,10 @@ def change_email(
         logger.info("User %s email set by admin %s from %s to %s", user_id, authn_user.user_id, old_email, body.new_email)
 
         # Audit the email verified
+        if not authn_user.user_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                                detail="Authorized user has no user ID. ")
+
         admin_audit(
             session,
             AdminAudit_SetEmailVerified(
@@ -544,7 +673,8 @@ def change_email(
             kc_send_verify_email(kc_admin, kc_user["id"], force_verify=True)
 
         session.commit()
-        return UserModel.one_user(session, user)
+        return UserModel.one_user(session, user_id)
+
 
     # Case 3 - Normal user change email
     if biz.is_rate_exceeded():
@@ -584,7 +714,7 @@ def change_email(
         # Sends the verify request email
         kc_send_verify_email(kc_admin, kc_user["id"], force_verify=True)
 
-    return UserModel.one_user(session, user)
+    return UserModel.one_user(session, user_id)
 
 
 @router.get("/{user_id:str}/email/history", description="Get the past email history")

@@ -126,6 +126,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/archive_group/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Archive Groups */
+        get: operations["list_archive_groups_v1_archive_group__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/demographics/": {
         parameters: {
             query?: never;
@@ -360,6 +377,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/users-by-username/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Users By Username
+         * @description List users
+         */
+        get: operations["list_users_by_username_v1_users_by_username__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/email_templates/": {
         parameters: {
             query?: never;
@@ -392,6 +429,23 @@ export interface paths {
         post?: never;
         /** Delete Email Template */
         delete: operations["delete_email_template_v1_email_templates__id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/email_templates/{id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send Test Email Template */
+        post: operations["send_test_email_template_v1_email_templates__id__test_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -430,7 +484,11 @@ export interface paths {
         /** Update Endorsement */
         put: operations["update_endorsement_v1_endorsements__id__put"];
         post?: never;
-        delete?: never;
+        /**
+         * Delete Endorsement
+         * @description Delete an endorsement (admin user only)
+         */
+        delete: operations["delete_endorsement_v1_endorsements__id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -456,21 +514,18 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/endorsements/{id}/": {
+    "/v1/endorsements/ids/": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Endorsement Ids */
+        get: operations["list_endorsement_ids_v1_endorsements_ids__get"];
         put?: never;
         post?: never;
-        /**
-         * Delete Endorsement
-         * @description Delete an endorsement (admin user only)
-         */
-        delete: operations["delete_endorsement_v1_endorsements__id___delete"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -503,7 +558,16 @@ export interface paths {
         };
         /** Get Endorsement Request */
         get: operations["get_endorsement_request_v1_endorsement_requests__id__get"];
-        /** Update Endorsement Request */
+        /**
+         * Update Endorsement Request
+         * @description Update an endorsement request.
+         *                 - flag_valid: set to 1 to activate the request, 0 to deactivate it.
+         *                 - flag_open: set to 1 to open the request, 0 to close it.
+         *                 - archive: set to the archive name to change the archive.
+         *                 - subject_class: set to the subject class to change the subject class.
+         *                 - endorsee_id: set to the endorsee ID to change the endorsee.
+         *                 - endorsee_username: set to the endorsee username to change the endorsee.
+         */
         put: operations["update_endorsement_request_v1_endorsement_requests__id__put"];
         post?: never;
         /** Delete Endorsement Request */
@@ -1238,7 +1302,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/metadata/document_id/{document_id}": {
+    "/v1/metadata/document/{document_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1249,7 +1313,7 @@ export interface paths {
          * Get Metadata From Document Id
          * @description Display a paper.
          */
-        get: operations["get_metadata_from_document_id_v1_metadata_document_id__document_id__get"];
+        get: operations["get_metadata_from_document_id_v1_metadata_document__document_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1351,6 +1415,23 @@ export interface paths {
          * @description Display a paper.
          */
         get: operations["get_submission_by_document_id_v1_submissions_document__document_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/submissions/navigate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Navigate */
+        get: operations["navigate_v1_submissions_navigate_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1473,7 +1554,8 @@ export interface paths {
          * @description Display a paper.
          */
         get: operations["get_tapir_session_v1_tapir_sessions__id__get"];
-        put?: never;
+        /** Close Tapir Session */
+        put: operations["close_tapir_session_v1_tapir_sessions__id__put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1494,23 +1576,6 @@ export interface paths {
          */
         get: operations["get_tapir_session_for_user_v1_tapir_sessions_user__user_id__get"];
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/tapir_sessions/{id}/close": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Close Tapir Session */
-        put: operations["close_tapir_session_v1_tapir_sessions__id__close_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1824,6 +1889,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/email_patterns/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Email Patterns */
+        get: operations["list_email_patterns_v1_email_patterns__get"];
+        put?: never;
+        /** Create Email Pattern */
+        post: operations["create_email_pattern_v1_email_patterns__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/email_patterns/{purpose}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Email Patterns */
+        delete: operations["delete_email_patterns_v1_email_patterns__purpose__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/email_patterns/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Email Patterns */
+        post: operations["upload_email_patterns_v1_email_patterns_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/email_patterns/export/{purpose}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Email Patterns */
+        get: operations["export_email_patterns_v1_email_patterns_export__purpose__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/ping": {
         parameters: {
             query?: never;
@@ -1932,6 +2066,13 @@ export interface components {
             /** End Date */
             end_date?: string | null;
         };
+        /** ArchiveGroupModel */
+        ArchiveGroupModel: {
+            /** Archive */
+            archive: string;
+            /** Group */
+            group: string;
+        };
         /** AuthorIDModel */
         AuthorIDModel: {
             /** Id */
@@ -1940,6 +2081,31 @@ export interface components {
             author_id: string | null;
             /** Updated */
             updated: string | null;
+        };
+        /** Body_upload_email_patterns_v1_email_patterns_import_post */
+        Body_upload_email_patterns_v1_email_patterns_import_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+            /** Purpose */
+            purpose: string;
+            /** Operation */
+            operation: string;
+        };
+        /** BulkUploadResult */
+        BulkUploadResult: {
+            /** Processed Count */
+            processed_count: number;
+            /** Skipped Count */
+            skipped_count: number;
+            /** Error Count */
+            error_count: number;
+            /** Operation */
+            operation: string;
+            /** Purpose */
+            purpose: string;
         };
         /**
          * Category
@@ -2108,6 +2274,18 @@ export interface components {
          * @enum {string}
          */
         DocumentUserAction: "replace" | "withdraw" | "cross" | "jref" | "pwc_code";
+        /** EmailPatternListModel */
+        EmailPatternListModel: {
+            /** Ids */
+            ids: string[];
+        };
+        /** EmailPatternModel */
+        EmailPatternModel: {
+            /** Id */
+            id: string;
+            /** Purpose */
+            purpose: string;
+        };
         /** EmailTemplateModel */
         EmailTemplateModel: {
             /** Id */
@@ -2132,14 +2310,6 @@ export interface components {
             workflow_status: string;
             /** Flag System */
             flag_system: boolean;
-            /** Creator First Name */
-            creator_first_name: string;
-            /** Creator Last Name */
-            creator_last_name: string;
-            /** Updater First Name */
-            updater_first_name: string;
-            /** Updater Last Name */
-            updater_last_name: string;
         };
         /** EndorsementCodeModel */
         EndorsementCodeModel: {
@@ -2839,6 +3009,13 @@ export interface components {
             /** Preflight */
             preflight?: boolean | null;
         };
+        /** SubmissionNavi */
+        SubmissionNavi: {
+            /** Prev Id */
+            prev_id: number | null;
+            /** Next Id */
+            next_id: number | null;
+        };
         /** SubmissionStatusModel */
         SubmissionStatusModel: {
             /** Id */
@@ -2883,7 +3060,7 @@ export interface components {
         /** TapirSessionModel */
         TapirSessionModel: {
             /** Id */
-            id: number;
+            id?: number | null;
             /** User Id */
             user_id: number;
             /** Last Reissue */
@@ -2894,6 +3071,100 @@ export interface components {
             end_time: string | null;
             /** Close Session */
             close_session: boolean;
+        };
+        /** TapirSessionUpdateModel */
+        TapirSessionUpdateModel: {
+            /** Close Session */
+            close_session: boolean;
+        };
+        /** UserByUsernameModel */
+        UserByUsernameModel: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: number;
+            /** Email */
+            email: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Suffix Name */
+            suffix_name?: string | null;
+            /**
+             * Share First Name
+             * @default true
+             */
+            share_first_name: boolean;
+            /**
+             * Share Last Name
+             * @default true
+             */
+            share_last_name: boolean;
+            /**
+             * Share Email
+             * @default 8
+             */
+            share_email: number;
+            /**
+             * Email Bouncing
+             * @default false
+             */
+            email_bouncing: boolean;
+            /**
+             * Joined Date
+             * Format: date-time
+             */
+            joined_date: string;
+            /** Joined Ip Num */
+            joined_ip_num?: string | null;
+            /** Joined Remote Host */
+            joined_remote_host: string;
+            /**
+             * Flag Internal
+             * @default false
+             */
+            flag_internal: boolean;
+            /**
+             * Flag Edit Users
+             * @default false
+             */
+            flag_edit_users: boolean;
+            /**
+             * Flag Edit System
+             * @default false
+             */
+            flag_edit_system: boolean;
+            /**
+             * Flag Email Verified
+             * @default false
+             */
+            flag_email_verified: boolean;
+            /**
+             * Flag Approved
+             * @default true
+             */
+            flag_approved: boolean;
+            /**
+             * Flag Deleted
+             * @default false
+             */
+            flag_deleted: boolean;
+            /**
+             * Flag Banned
+             * @default false
+             */
+            flag_banned: boolean;
+            /** Flag Wants Email */
+            flag_wants_email?: boolean | null;
+            /** Flag Html Email */
+            flag_html_email?: boolean | null;
+            /** Tracking Cookie */
+            tracking_cookie?: string | null;
+            /** Flag Allow Tex Produced */
+            flag_allow_tex_produced?: boolean | null;
+            /** Flag Can Lock */
+            flag_can_lock?: boolean | null;
         };
         /** UserCommentRequest */
         UserCommentRequest: {
@@ -3430,6 +3701,44 @@ export interface operations {
             };
         };
     };
+    list_archive_groups_v1_archive_group__get: {
+        parameters: {
+            query?: {
+                /** @description sort order */
+                _order?: string | null;
+                _start?: number | null;
+                _end?: number | null;
+                archive?: string | null;
+                group?: string | null;
+                /** @description active */
+                active?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArchiveGroupModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_demographics_v1_demographics__get: {
         parameters: {
             query?: {
@@ -3945,6 +4254,56 @@ export interface operations {
             };
         };
     };
+    list_users_by_username_v1_users_by_username__get: {
+        parameters: {
+            query?: {
+                /** @description sort by */
+                _sort?: string | null;
+                /** @description sort order */
+                _order?: string | null;
+                _start?: number | null;
+                _end?: number | null;
+                /** @description moderator */
+                flag_is_mod?: boolean | null;
+                email?: string | null;
+                name?: string | null;
+                last_name?: string | null;
+                first_name?: string | null;
+                flag_edit_users?: boolean | null;
+                flag_email_verified?: boolean | null;
+                /** @description Start date for filtering */
+                start_joined_date?: string | null;
+                /** @description End date for filtering */
+                end_joined_date?: string | null;
+                /** @description List of username  to filter by */
+                id?: string[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserByUsernameModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_templates_v1_email_templates__get: {
         parameters: {
             query?: {
@@ -4086,6 +4445,40 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_test_email_template_v1_email_templates__id__test_post: {
+        parameters: {
+            query?: {
+                /** @description Subject of the test email */
+                subject?: string;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailTemplateModel"];
+                };
             };
             /** @description Validation Error */
             422: {
@@ -4251,6 +4644,37 @@ export interface operations {
             };
         };
     };
+    delete_endorsement_v1_endorsements__id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     endorse_v1_endorsements_endorse_post: {
         parameters: {
             query?: never;
@@ -4305,15 +4729,44 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
+            /** @description Endorsement failed due to database operation error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndorsementOutcomeModel"];
+                };
+            };
         };
     };
-    delete_endorsement_v1_endorsements__id___delete: {
+    list_endorsement_ids_v1_endorsements_ids__get: {
         parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
+            query?: {
+                _start?: number | null;
+                _end?: number | null;
+                /** @description sort order */
+                _order?: string | null;
+                preset?: string | null;
+                current_id?: number | null;
+                /** @description Start date for filtering */
+                start_date?: string | null;
+                /** @description End date for filtering */
+                end_date?: string | null;
+                /** @description user, auto, admin */
+                type?: string[] | string | null;
+                /** @description Valid endorsements only */
+                flag_valid?: boolean | null;
+                endorsee_id?: number | null;
+                endorser_id?: number | null;
+                by_suspect?: boolean | null;
+                positive_endorsement?: boolean | null;
+                request_id?: number | null;
+                /** @description Category */
+                category?: string | null;
             };
+            header?: never;
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -4324,7 +4777,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": number[];
                 };
             };
             /** @description Validation Error */
@@ -5870,7 +6323,7 @@ export interface operations {
             };
         };
     };
-    get_metadata_from_document_id_v1_metadata_document_id__document_id__get: {
+    get_metadata_from_document_id_v1_metadata_document__document_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -6123,6 +6576,39 @@ export interface operations {
             };
         };
     };
+    navigate_v1_submissions_navigate_get: {
+        parameters: {
+            query: {
+                id: number;
+                /** @description Submission status list */
+                submission_status?: number[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionNavi"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_submission_status_v1_submissions_metadata_status_list_get: {
         parameters: {
             query?: never;
@@ -6286,6 +6772,8 @@ export interface operations {
                 _end?: number | null;
                 /** @description User id */
                 user_id?: number | null;
+                /** @description Open sessions */
+                is_open?: boolean | null;
                 /** @description List of user IDs to filter by */
                 id?: number[] | null;
                 preset?: string | null;
@@ -6351,6 +6839,41 @@ export interface operations {
             };
         };
     };
+    close_tapir_session_v1_tapir_sessions__id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TapirSessionUpdateModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TapirSessionModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_tapir_session_for_user_v1_tapir_sessions_user__user_id__get: {
         parameters: {
             query?: {
@@ -6376,37 +6899,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TapirSessionModel"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    close_tapir_session_v1_tapir_sessions__id__close_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TapirSessionModel"];
                 };
             };
             /** @description Validation Error */
@@ -7040,6 +7532,176 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LicenseModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_email_patterns_v1_email_patterns__get: {
+        parameters: {
+            query?: {
+                /** @description sort order */
+                _order?: string | null;
+                _start?: number | null;
+                _end?: number | null;
+                /** @description Email pattern */
+                pattern?: string | null;
+                /** @description black, block or white */
+                purpose?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailPatternModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_email_pattern_v1_email_patterns__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailPatternModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailPatternModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_email_patterns_v1_email_patterns__purpose__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                purpose: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailPatternListModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_email_patterns_v1_email_patterns_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_email_patterns_v1_email_patterns_import_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkUploadResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_email_patterns_v1_email_patterns_export__purpose__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                purpose: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

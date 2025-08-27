@@ -337,7 +337,7 @@ const AccountRegistration = () => {
     const hasErrors = Object.values(errors).some(value =>
         Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && value !== ''
     );
-    const invalidFormData = hasErrors || formData.username.length < 2 || formData.password !== secondPassword;
+    const invalidFormData = hasErrors || !formData.username|| formData.username.length < 2 || formData.password !== secondPassword;
 
     return (
         <Container maxWidth="md" sx={{my: "4em"}} >

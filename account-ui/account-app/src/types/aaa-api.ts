@@ -250,6 +250,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/account/{user_id}/name": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update User Name
+         * @description Update the user account profile for both Keycloak and user in db
+         */
+        put: operations["update_user_name_account__user_id__name_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/account/register": {
         parameters: {
             query?: never;
@@ -281,10 +301,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Email Verify Requset
+         * Request Email Verify
          * @description Request to send verify email
          */
-        post: operations["email_verify_requset_account__user_id__email_verify_post"];
+        post: operations["request_email_verify_account__user_id__email_verify_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -300,7 +320,7 @@ export interface paths {
         };
         /**
          * Get Email Verified Status Current User
-         * @description Is the email verified for this usea?
+         * @description Is the email verified for this user?
          */
         get: operations["get_email_verified_status_current_user_account_email_verified_get"];
         put?: never;
@@ -320,7 +340,7 @@ export interface paths {
         };
         /**
          * Get Email Verified Status
-         * @description Is the email verified for this usea?
+         * @description Is the email verified for this user?
          */
         get: operations["get_email_verified_status_account__user_id__email_verified_get"];
         /**
@@ -472,7 +492,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/account/{user_id}/status": {
+    "/account/{user_id}/authorization": {
         parameters: {
             query?: never;
             header?: never;
@@ -481,10 +501,10 @@ export interface paths {
         };
         get?: never;
         /**
-         * Update User Status
-         * @description Update User flags
+         * Update User Authorization
+         * @description Update User authorization
          */
-        put: operations["update_user_status_account__user_id__status_put"];
+        put: operations["update_user_authorization_account__user_id__authorization_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -639,16 +659,16 @@ export interface components {
         };
         /** AccountInfoModel */
         AccountInfoModel: {
-            /** Username */
-            username: string;
-            /** Email */
-            email?: string | null;
             /** First Name */
-            first_name: string;
+            first_name?: string | null;
             /** Last Name */
-            last_name: string;
+            last_name?: string | null;
             /** Suffix Name */
             suffix_name?: string | null;
+            /** Username */
+            username?: string | null;
+            /** Email */
+            email?: string | null;
             /** Country */
             country?: string | null;
             /** Affiliation */
@@ -688,16 +708,16 @@ export interface components {
         };
         /** AccountRegistrationModel */
         AccountRegistrationModel: {
-            /** Username */
-            username: string;
-            /** Email */
-            email?: string | null;
             /** First Name */
-            first_name: string;
+            first_name?: string | null;
             /** Last Name */
-            last_name: string;
+            last_name?: string | null;
             /** Suffix Name */
             suffix_name?: string | null;
+            /** Username */
+            username?: string | null;
+            /** Email */
+            email?: string | null;
             /** Country */
             country?: string | null;
             /** Affiliation */
@@ -730,6 +750,19 @@ export interface components {
              * @default false
              */
             keycloak_migration: boolean;
+        };
+        /** AccountUserNameUpdateModel */
+        AccountUserNameUpdateModel: {
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
+            /** Suffix Name */
+            suffix_name?: string | null;
+            /** Username */
+            username?: string | null;
+            /** Comment */
+            comment?: string | null;
         };
         /** AuthorIdUpdateModel */
         AuthorIdUpdateModel: {
@@ -809,10 +842,10 @@ export interface components {
         };
         /** EmailVerifiedStatus */
         EmailVerifiedStatus: {
-            /** User Id */
-            user_id: string;
             /** Email Verified */
             email_verified: boolean;
+            /** User Id */
+            user_id?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -872,14 +905,170 @@ export interface components {
             /** Refresh */
             refresh: string;
         };
-        /** UserStatusModel */
-        UserStatusModel: {
-            /** User Id */
-            user_id: string;
+        /** UserAuthorizationModel */
+        UserAuthorizationModel: {
             /** Deleted */
-            deleted: boolean | null;
-            /** Banned */
-            banned: boolean | null;
+            deleted?: boolean | null;
+            /** Administrator */
+            administrator?: boolean | null;
+            /** Approved */
+            approved?: boolean | null;
+            /** Suspend */
+            suspend?: boolean | null;
+            /** Can Lock */
+            can_lock?: boolean | null;
+            /** Moderator */
+            moderator?: boolean | null;
+            /** Owner */
+            owner?: boolean | null;
+            /** Comment */
+            comment?: string | null;
+        };
+        /** UserModel */
+        UserModel: {
+            /** Id */
+            id?: number | null;
+            /** Email */
+            email: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Suffix Name */
+            suffix_name?: string | null;
+            /**
+             * Share First Name
+             * @default true
+             */
+            share_first_name: boolean;
+            /**
+             * Share Last Name
+             * @default true
+             */
+            share_last_name: boolean;
+            /** Username */
+            username: string;
+            /**
+             * Share Email
+             * @default 8
+             */
+            share_email: number;
+            /**
+             * Email Bouncing
+             * @default false
+             */
+            email_bouncing: boolean;
+            /** Policy Class */
+            policy_class: number;
+            /**
+             * Joined Date
+             * Format: date-time
+             */
+            joined_date: string;
+            /** Joined Ip Num */
+            joined_ip_num?: string | null;
+            /** Joined Remote Host */
+            joined_remote_host: string;
+            /**
+             * Flag Internal
+             * @default false
+             */
+            flag_internal: boolean;
+            /**
+             * Flag Edit Users
+             * @default false
+             */
+            flag_edit_users: boolean;
+            /**
+             * Flag Edit System
+             * @default false
+             */
+            flag_edit_system: boolean;
+            /**
+             * Flag Email Verified
+             * @default false
+             */
+            flag_email_verified: boolean;
+            /**
+             * Flag Approved
+             * @default true
+             */
+            flag_approved: boolean;
+            /**
+             * Flag Deleted
+             * @default false
+             */
+            flag_deleted: boolean;
+            /**
+             * Flag Banned
+             * @default false
+             */
+            flag_banned: boolean;
+            /** Flag Wants Email */
+            flag_wants_email?: boolean | null;
+            /** Flag Html Email */
+            flag_html_email?: boolean | null;
+            /** Tracking Cookie */
+            tracking_cookie?: string | null;
+            /** Flag Allow Tex Produced */
+            flag_allow_tex_produced?: boolean | null;
+            /** Flag Can Lock */
+            flag_can_lock?: boolean | null;
+            /** Country */
+            country?: string | null;
+            /** Affiliation */
+            affiliation?: string | null;
+            /** Url */
+            url?: string | null;
+            /** Type */
+            type?: number | null;
+            /** Archive */
+            archive?: string | null;
+            /** Subject Class */
+            subject_class?: string | null;
+            /** Original Subject Classes */
+            original_subject_classes: string;
+            /** Flag Group Physics */
+            flag_group_physics?: number | null;
+            /** Flag Group Math */
+            flag_group_math: number | null;
+            /** Flag Group Cs */
+            flag_group_cs?: number | null;
+            /** Flag Group Nlin */
+            flag_group_nlin: number | null;
+            /** Flag Proxy */
+            flag_proxy?: number | null;
+            /** Flag Journal */
+            flag_journal?: number | null;
+            /** Flag Xml */
+            flag_xml?: number | null;
+            /** Dirty */
+            dirty?: number | null;
+            /** Flag Group Test */
+            flag_group_test?: number | null;
+            /** Flag Suspect */
+            flag_suspect?: number | null;
+            /** Flag Group Q Bio */
+            flag_group_q_bio?: number | null;
+            /** Flag Group Q Fin */
+            flag_group_q_fin?: number | null;
+            /** Flag Group Stat */
+            flag_group_stat?: number | null;
+            /** Flag Group Eess */
+            flag_group_eess?: number | null;
+            /** Flag Group Econ */
+            flag_group_econ?: number | null;
+            veto_status?: components["schemas"]["VetoStatusEnum"] | null;
+            /** Flag Is Mod */
+            flag_is_mod?: boolean | null;
+            /** Moderated Categories */
+            moderated_categories?: string[] | null;
+            /** Moderated Archives */
+            moderated_archives?: string[] | null;
+            /** Tapir Policy Classes */
+            tapir_policy_classes?: number[] | null;
+            /** Orcid Id */
+            orcid_id?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -1269,6 +1458,41 @@ export interface operations {
             };
         };
     };
+    update_user_name_account__user_id__name_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountUserNameUpdateModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountInfoModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_register_account_register_get: {
         parameters: {
             query?: never;
@@ -1340,7 +1564,7 @@ export interface operations {
             };
         };
     };
-    email_verify_requset_account__user_id__email_verify_post: {
+    request_email_verify_account__user_id__email_verify_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -1482,7 +1706,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["UserModel"];
                 };
             };
             /** @description Old and new email are the same. Or bad new email address */
@@ -1821,7 +2045,7 @@ export interface operations {
             };
         };
     };
-    update_user_status_account__user_id__status_put: {
+    update_user_authorization_account__user_id__authorization_put: {
         parameters: {
             query?: never;
             header?: never;
@@ -1832,12 +2056,21 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UserStatusModel"];
+                "application/json": components["schemas"]["UserAuthorizationModel"];
             };
         };
         responses: {
             /** @description Successful Response */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserModel"];
+                };
+            };
+            /** @description Request data is not valid */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
