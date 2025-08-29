@@ -13,7 +13,7 @@ from sqlalchemy.engine.row import Row
 from pydantic import BaseModel, field_validator
 from datetime import datetime, timezone
 
-from arxiv.db.models import (TapirUser, TapirNickname, t_arXiv_moderators, Demographic, OrcidIds)
+from arxiv.db.models import (TapirUser, TapirNickname, t_arXiv_moderators, Demographic, OrcidIds, TapirPolicyClass)
 from logging import getLogger
 from ..sqlalchemy_helper import update_model_fields
 
@@ -141,7 +141,7 @@ class UserModel(BaseModel):
     suffix_name: Optional[str] = None
     share_first_name: bool = True
     share_last_name: bool = True
-    username: str
+    username: Optional[str] = None
     share_email: int = 8
     email_bouncing: bool = False
     policy_class: int
@@ -215,10 +215,6 @@ class UserModel(BaseModel):
 
     @staticmethod
     def base_select(session: Session):
-        is_mod_subquery = exists().where(t_arXiv_moderators.c.user_id == TapirUser.user_id).correlate(TapirUser)
-        nick_subquery = select(TapirNickname.nickname).where(TapirUser.user_id == TapirNickname.user_id).correlate(
-            TapirUser).limit(1).scalar_subquery()
-
         """
         mod_subquery = select(
             func.concat(t_arXiv_moderators.c.user_id, "+",
@@ -260,7 +256,7 @@ class UserModel(BaseModel):
         )
         """
 
-        return (session.query(
+        return session.query(
             TapirUser.user_id.label("id"),
             cast(TapirUser.email, LargeBinary).label("email"),
             cast(TapirUser.first_name, LargeBinary).label("first_name"),
@@ -268,7 +264,6 @@ class UserModel(BaseModel):
             cast(TapirUser.suffix_name, LargeBinary).label("suffix_name"),
             TapirUser.share_first_name,
             TapirUser.share_last_name,
-            nick_subquery.label("username"),
             TapirUser.share_email,
             TapirUser.email_bouncing,
             TapirUser.policy_class,
@@ -287,10 +282,6 @@ class UserModel(BaseModel):
             TapirUser.tracking_cookie,
             TapirUser.flag_allow_tex_produced,
             TapirUser.flag_can_lock,
-            case(
-                (is_mod_subquery, True),  # Pass each "when" condition as a separate positional argument
-                else_=False
-            ).label("flag_is_mod"),
             # mod_subquery.label("moderator_id"),
             Demographic.country,
             cast(Demographic.affiliation, LargeBinary).label("affiliation"),
@@ -315,10 +306,7 @@ class UserModel(BaseModel):
             Demographic.flag_group_eess,
             Demographic.flag_group_econ,
             Demographic.veto_status,
-            OrcidIds.orcid
-        )
-                .outerjoin(Demographic, TapirUser.user_id == Demographic.user_id)
-                .outerjoin(OrcidIds, TapirUser.user_id == OrcidIds.user_id))
+        ).outerjoin(Demographic, TapirUser.user_id == Demographic.user_id)
 
     @property
     def is_admin(self) -> bool:
@@ -373,6 +361,14 @@ class UserModel(BaseModel):
 
         if session:
             result.moderated_categories, result.moderated_archives = list_mod_cats_n_arcs(session, result.id)
+            result.flag_is_mod = session.query(exists().where(t_arXiv_moderators.c.user_id == result.id)).scalar()
+            nicks = session.query(TapirNickname.nickname).where(TapirNickname.user_id == result.id).all()
+            if nicks and len(nicks) > 0:
+                result.username = nicks[0].nickname
+            orcid = session.query(OrcidIds).where(OrcidIds.user_id == result.id).all()
+            if orcid and len(orcid) > 0:
+                result.orcid_id = orcid[0].orcid
+
         return result
 
 
