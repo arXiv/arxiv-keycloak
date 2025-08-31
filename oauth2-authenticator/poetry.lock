@@ -83,7 +83,7 @@ google-cloud-storage = "^2.5.0"
 jwcrypto = "^1.5.6"
 markupsafe = "*"
 mysqlclient = ">=2.1"
-pydantic = "^2.8.2"
+pydantic = "^2.11.7"
 pydantic-settings = "^2.5.2"
 pyjwt = "^2.9.0"
 pytz = "*"
@@ -105,8 +105,8 @@ sphinx = ["sphinx", "sphinx-autodoc-typehints", "sphinxcontrib-websupport"]
 [package.source]
 type = "git"
 url = "https://github.com/arXiv/arxiv-base.git"
-reference = "98ae3177f62f6d3e5be583c6e02d668001979c7b"
-resolved_reference = "98ae3177f62f6d3e5be583c6e02d668001979c7b"
+reference = "153d95f1a446c76395cb59af85dba5e6a7e97970"
+resolved_reference = "153d95f1a446c76395cb59af85dba5e6a7e97970"
 
 [[package]]
 name = "arxiv-bizlogic"
@@ -3302,4 +3302,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "6f043cb1c7671ee5b5380121efb8b567630bfb49fd856c3de68429cdd80f5957"
+content-hash = "50e10832cb37963747ca25bc39287bcfc303de10e9dfc3fd1ccd98f6a01ca42c"
