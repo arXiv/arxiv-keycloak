@@ -24,9 +24,30 @@ steps:
       - "--all-tags"
       - "gcr.io/$PROJECT_ID/${_IMAGE_NAME}"
 
+  # Trigger infrastructure deployment after successful Docker build
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # Determine environment based on branch/tag
+        if [ "${BRANCH_NAME}" = "main" ] || [ "${BRANCH_NAME}" = "master" ]; then
+          ENV_SUBSTITUTION="_ENVIRONMENT=dev"
+        elif [[ "${TAG_NAME}" =~ ^v(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])([0-9]{4})\.[0-9]+$ ]]; then
+          ENV_SUBSTITUTION="_ENVIRONMENT=prod"
+        else
+          echo "No deployment condition met, skipping infrastructure deployment"
+          exit 0
+        fi
+        
+        echo "Triggering infrastructure deployment with: $ENV_SUBSTITUTION"
+        gcloud builds submit \
+          --config=keycloak_bend/cicd/cloudbuild-infra.yaml \
+          --substitutions="$ENV_SUBSTITUTION" \
+          --async
+
 images:
   [
     "gcr.io/$PROJECT_ID/${_IMAGE_NAME}:latest",
     "gcr.io/$PROJECT_ID/${_IMAGE_NAME}:$COMMIT_SHA",
   ]
-  

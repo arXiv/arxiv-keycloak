@@ -1,0 +1,16 @@
+gcp_project_id = "arxiv-development"
+#gcp_project_id = "874717964009"
+gcp_region     = "us-central1"
+terraform_state_bucket = "arxiv-terraform-state-dev"
+db_addr = "172.26.51.12"
+proxy_mode = "--proxy-headers=forwarded"
+kc_bootstrap_admin_username = "admin"
+bootstrap = "no"
+log_output_format = "--log-console-output=json"
+kc_port = "8080"
+grpc_log_level = "DEBUG"
+grpc_trace = "tcp,http,api"
+arxiv_user_registration_url = "https://dev9.arxiv.org/user-account/register"
+kc_hostname = "https://keycloak-874717964009.us-central1.run.app" 
+min_scale = 1
+max_scale = 1 

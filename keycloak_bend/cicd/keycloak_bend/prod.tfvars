@@ -1,0 +1,15 @@
+gcp_project_id = "arxiv-production"
+gcp_region     = "us-central1"
+terraform_state_bucket = "arxiv-terraform-state-prod"
+db_addr = ""
+proxy_mode = "--proxy-headers=forwarded"
+kc_bootstrap_admin_username = "admin"
+bootstrap = "no"
+log_output_format = "--log-console-output=json"
+kc_port = "8080"
+grpc_log_level = "DEBUG"
+grpc_trace = "tcp,http,api"
+arxiv_user_registration_url = ""
+kc_hostname = ""
+min_scale = 1
+max_scale = 4 

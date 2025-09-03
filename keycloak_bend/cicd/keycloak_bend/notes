@@ -1,0 +1,11 @@
+# Create dev service account
+gcloud iam service-accounts create terraform-dev-sa --display-name="Terraform Development Service Account" --description="Service account for Terraform infrastructure management in development environment"
+
+# Create dev state bucket
+gsutil mb gs://arxiv-terraform-state-dev
+
+# Enable versioning
+gsutil versioning set on gs://arxiv-terraform-state-dev
+
+# Set permissions (adjust service account as needed)
+gsutil iam ch serviceAccount:terraform-dev-sa@arxiv-development.iam.gserviceaccount.com:objectAdmin gs://arxiv-terraform-state-dev
