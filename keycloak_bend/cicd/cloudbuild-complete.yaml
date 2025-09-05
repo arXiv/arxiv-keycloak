@@ -1,0 +1,98 @@
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _IMAGE_NAME: "keycloak"
+  _DOCKERFILE: "keycloak_bend/Dockerfile"
+  
+steps:
+  # Step 1: Build Docker image
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "-f"
+      - "${_DOCKERFILE}"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/${_IMAGE_NAME}:$COMMIT_SHA"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/${_IMAGE_NAME}:latest"
+      - "keycloak_bend"
+    id: Build
+
+  # Step 2: Push Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - "--all-tags"
+      - "gcr.io/$PROJECT_ID/${_IMAGE_NAME}"
+
+  # Step 3: Deploy infrastructure (only if conditions are met)
+  - name: 'hashicorp/terraform:1.13.1'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        cd keycloak_bend/cicd/keycloak_bend
+        
+        # Determine environment and tfvars file
+        if [ -n "${_ENVIRONMENT}" ]; then
+          # Manual environment specified
+          ENV_NAME="${_ENVIRONMENT}"
+          TFVARS_FILE="${_ENVIRONMENT}.tfvars"
+          echo "Manual environment specified: $ENV_NAME"
+        elif [ "${BRANCH_NAME}" = "main" ] || [ "${BRANCH_NAME}" = "master" ]; then
+          # Default branch -> dev
+          ENV_NAME="dev"
+          TFVARS_FILE="dev.tfvars"
+          echo "Default branch detected: $BRANCH_NAME -> deploying to dev"
+        elif [[ "${TAG_NAME}" =~ ^v(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])([0-9]{4})\.[0-9]+$ ]]; then
+          # Release tag -> prod
+          ENV_NAME="prod"
+          TFVARS_FILE="prod.tfvars"
+          echo "Release tag detected: $TAG_NAME -> deploying to prod"
+        else
+          echo "No deployment condition met:"
+          echo "  BRANCH_NAME: ${BRANCH_NAME}"
+          echo "  TAG_NAME: ${TAG_NAME}"
+          echo "  _ENVIRONMENT: ${_ENVIRONMENT}"
+          echo "Skipping infrastructure deployment"
+          exit 0
+        fi
+        
+        # Check if tfvars file exists
+        if [ ! -f "$TFVARS_FILE" ]; then
+          echo "Error: $TFVARS_FILE not found for environment $ENV_NAME"
+          exit 1
+        fi
+        
+        echo "Deploying to environment: $ENV_NAME using $TFVARS_FILE"
+        
+        # Extract bucket name from tfvars
+        BUCKET_NAME=$(grep terraform_state_bucket "$TFVARS_FILE" | cut -d'"' -f2)
+        if [ -z "$BUCKET_NAME" ]; then
+          echo "Error: terraform_state_bucket not found in $TFVARS_FILE"
+          exit 1
+        fi
+        
+        echo "Using state bucket: $BUCKET_NAME"
+        
+        # Initialize Terraform with the correct bucket
+        terraform init -backend-config="bucket=$BUCKET_NAME"
+        
+        # Plan the changes
+        echo "Running terraform plan..."
+        terraform plan -var-file="$TFVARS_FILE" -out=tfplan
+        
+        # Apply the changes
+        echo "Running terraform apply..."
+        terraform apply tfplan
+        
+        echo "Infrastructure deployment to $ENV_NAME completed successfully"
+    env:
+      - 'GOOGLE_CREDENTIALS=${_TERRAFORM_SA_KEY}'
+
+images:
+  [
+    "gcr.io/$PROJECT_ID/${_IMAGE_NAME}:latest",
+    "gcr.io/$PROJECT_ID/${_IMAGE_NAME}:$COMMIT_SHA",
+  ]

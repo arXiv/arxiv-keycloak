@@ -1,0 +1,126 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: keycloak-service
+  namespace: '874717964009'
+  selfLink: /apis/serving.knative.dev/v1/namespaces/874717964009/services/keycloak-service
+  uid: 8ed2c251-2a84-4c04-b0f6-fffd49f063e0
+  resourceVersion: AAY9SsBCmKI
+  generation: 43
+  creationTimestamp: '2024-08-20T18:25:12.212108Z'
+  labels:
+    cloud.googleapis.com/location: us-central1
+  annotations:
+    serving.knative.dev/creator: ntai@arxiv.org
+    serving.knative.dev/lastModifier: mike@arxiv.org
+    run.googleapis.com/client-name: cloud-console
+    run.googleapis.com/operation-id: 5d33b4aa-f50e-4f15-922e-e0507d0d93d5
+    run.googleapis.com/ingress: all
+    run.googleapis.com/ingress-status: all
+    run.googleapis.com/urls: '["https://keycloak-service-874717964009.us-central1.run.app","https://keycloak-service-6lhtms3oua-uc.a.run.app"]'
+spec:
+  template:
+    metadata:
+      labels:
+        client.knative.dev/nonce: 7286184b-2211-4c68-b657-8f3ea4f3262f
+        run.googleapis.com/startupProbeType: Default
+      annotations:
+        autoscaling.knative.dev/maxScale: '1'
+        autoscaling.knative.dev/minScale: '1'
+        run.googleapis.com/client-name: cloud-console
+        run.googleapis.com/sessionAffinity: 'true'
+        run.googleapis.com/vpc-access-connector: projects/arxiv-development/locations/us-central1/connectors/clourrunconnector
+        run.googleapis.com/vpc-access-egress: private-ranges-only
+        run.googleapis.com/startup-cpu-boost: 'true'
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      serviceAccountName: 874717964009-compute@developer.gserviceaccount.com
+      containers:
+      - name: keycloak
+        image: gcr.io/arxiv-development/arxiv-keycloak/keycloak:latest
+        ports:
+        - name: http1
+          containerPort: 8080
+        env:
+        - name: DB_ADDR
+          value: 172.26.51.12
+        - name: PROXY_MODE
+          value: --proxy-headers=forwarded
+        - name: KC_BOOTSTRAP_ADMIN_USERNAME
+          value: admin
+        - name: BOOTSTRAP
+          value: 'no'
+        - name: LOG_OUTPUT_FORMAT
+          value: --log-console-output=json
+        - name: GCP_PROJECT_ID
+          value: arxiv-development
+        - name: KC_PORT
+          value: '8080'
+        - name: GRPC_LOG_LEVEL
+          value: DEBUG
+        - name: GRPC_TRACE
+          value: tcp,http,api
+        - name: ARXIV_USER_REGISTRATION_URL
+          value: https://dev9.arxiv.org/user-account/register
+        - name: KC_HOSTNAME
+          value: https://keycloak-service-874717964009.us-central1.run.app
+        - name: KC_DB_PASS
+          valueFrom:
+            secretKeyRef:
+              key: latest
+              name: authdb-password
+        - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: latest
+              name: keycloak-admin-password
+        - name: GCP_CREDENTIALS
+          valueFrom:
+            secretKeyRef:
+              key: latest
+              name: keycloak-pubsub-event-sa
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+        volumeMounts:
+        - name: authdb-certs-puf-bif-mep
+          mountPath: /secrets/authdb-certs
+        startupProbe:
+          timeoutSeconds: 240
+          periodSeconds: 240
+          failureThreshold: 1
+          tcpSocket:
+            port: 8080
+      volumes:
+      - name: authdb-certs-puf-bif-mep
+        secret:
+          secretName: authdb-certs
+          items:
+          - key: latest
+            path: db-certs-expand.sh
+  traffic:
+  - percent: 100
+    latestRevision: true
+status:
+  observedGeneration: 43
+  conditions:
+  - type: Ready
+    status: 'True'
+    lastTransitionTime: '2025-08-26T20:45:22.728098Z'
+  - type: ConfigurationsReady
+    status: 'True'
+    lastTransitionTime: '2025-08-26T20:45:21.486148Z'
+  - type: RoutesReady
+    status: 'True'
+    lastTransitionTime: '2025-08-26T20:45:22.697382Z'
+  latestReadyRevisionName: keycloak-service-00043-2mp
+  latestCreatedRevisionName: keycloak-service-00043-2mp
+  traffic:
+  - revisionName: keycloak-service-00043-2mp
+    percent: 100
+    latestRevision: true
+  url: https://keycloak-service-6lhtms3oua-uc.a.run.app
+  address:
+    url: https://keycloak-service-6lhtms3oua-uc.a.run.app
