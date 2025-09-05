@@ -9,3 +9,33 @@ gsutil versioning set on gs://arxiv-terraform-state-dev
 
 # Set permissions (adjust service account as needed)
 gsutil iam ch serviceAccount:terraform-dev-sa@arxiv-development.iam.gserviceaccount.com:objectAdmin gs://arxiv-terraform-state-dev
+
+
+terraform init -backend-config="bucket=arxiv-terraform-state-dev"
+terraform plan -var-file="dev.tfvars"
+terraform apply -var-file="dev.tfvars"
+
+gcloud builds submit --config=keycloak_bend/cicd/cloudbuild-infra.yaml --substitutions=_ENVIRONMENT=dev
+
+
+# # Create prod service account
+# gcloud iam service-accounts create terraform-prod-sa --display-name="Terraform Production Service Account" --description="Service account for Terraform infrastructure management in production environment"
+
+
+# # Create prod state bucket
+# gsutil mb gs://arxiv-terraform-state-prod
+
+# # Enable versioning
+# gsutil versioning set on gs://arxiv-terraform-state-prod
+
+# # Set permissions (adjust service account as needed)
+# gsutil iam ch serviceAccount:terraform-prod-sa@arxiv-production.iam.gserviceaccount.com:objectAdmin gs://arxiv-terraform-state-prod
+
+
+# Allow arxiv-production to pull images from arxiv-development
+gcloud projects add-iam-policy-binding arxiv-development \
+  --member="serviceAccount:terraform-prod-sa@arxiv-production.iam.gserviceaccount.com" \
+  --role="roles/storage.objectViewer"
+
+# Or more specifically, grant access to the container registry
+gsutil iam ch serviceAccount:terraform-prod-sa@arxiv-production.iam.gserviceaccount.com:objectViewer gs://artifacts.arxiv-development.appspot.com
