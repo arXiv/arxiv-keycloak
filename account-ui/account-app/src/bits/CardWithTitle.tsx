@@ -77,6 +77,7 @@ const CardWithTitle: React.FC<CardWithTitleProps> = ({
                 sx={{
                     color: titleColor,
                     fontWeight: 500,
+                    mb: 0
                 }}
             >
                 {title}
