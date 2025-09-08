@@ -434,7 +434,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/email_templates/{id}/test": {
+    "/v1/email_templates/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish Test Email Template */
+        post: operations["publish_test_email_template_v1_email_templates__id__publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/email_templates/{id}/send": {
         parameters: {
             query?: never;
             header?: never;
@@ -444,7 +461,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Send Test Email Template */
-        post: operations["send_test_email_template_v1_email_templates__id__test_post"];
+        post: operations["send_test_email_template_v1_email_templates__id__send_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -656,7 +673,8 @@ export interface paths {
         /** List Ownerships For User */
         get: operations["list_ownerships_for_user_v1_paper_owners_user__user_id__get"];
         put?: never;
-        post?: never;
+        /** Bulk Upload Ownership Request */
+        post: operations["bulk_upload_ownership_request_v1_paper_owners_user__user_id__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1397,10 +1415,18 @@ export interface paths {
         get: operations["get_submission_v1_submissions__id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete Submission
+         * @description Delete a submission
+         */
+        delete: operations["delete_submission_v1_submissions__id__delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update Submission
+         * @description Update a submission
+         */
+        patch: operations["update_submission_v1_submissions__id__patch"];
         trace?: never;
     };
     "/v1/submissions/document/{document_id}": {
@@ -1467,7 +1493,8 @@ export interface paths {
         /** List Membership Institutions */
         get: operations["list_membership_institutions_v1_membership_institutions__get"];
         put?: never;
-        post?: never;
+        /** Create Membership Institution Data */
+        post: operations["create_membership_institution_data_v1_membership_institutions__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1481,8 +1508,27 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Membership Institution Data */
-        get: operations["membership_institution_data_v1_membership_institutions__id__get"];
+        /** Get Membership Institution Data */
+        get: operations["get_membership_institution_data_v1_membership_institutions__id__get"];
+        /** Update Membership Institution Data */
+        put: operations["update_membership_institution_data_v1_membership_institutions__id__put"];
+        post?: never;
+        /** Create Membership Institution Data */
+        delete: operations["create_membership_institution_data_v1_membership_institutions__id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/membership_institutions_ip/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Membership Institutions Ip */
+        get: operations["list_membership_institutions_ip_v1_membership_institutions_ip__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1958,6 +2004,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/endorsement_domains/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Endorsement Domains */
+        get: operations["list_endorsement_domains_v1_endorsement_domains__get"];
+        put?: never;
+        /** Create Endorsement Domain */
+        post: operations["create_endorsement_domain_v1_endorsement_domains__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/endorsement_domains/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Endorsement Domain Data */
+        get: operations["get_endorsement_domain_data_v1_endorsement_domains__id__get"];
+        /** Update Endorsement Domain */
+        put: operations["update_endorsement_domain_v1_endorsement_domains__id__put"];
+        post?: never;
+        /** Delete Endorsement Domain */
+        delete: operations["delete_endorsement_domain_v1_endorsement_domains__id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/ping": {
         parameters: {
             query?: never;
@@ -2081,6 +2164,18 @@ export interface components {
             author_id: string | null;
             /** Updated */
             updated: string | null;
+        };
+        /** Body_bulk_upload_ownership_request_v1_paper_owners_user__user_id__post */
+        Body_bulk_upload_ownership_request_v1_paper_owners_user__user_id__post: {
+            /** File */
+            file?: string | null;
+            /** Content */
+            content?: string | null;
+            /**
+             * File Format
+             * @default csv
+             */
+            file_format: string;
         };
         /** Body_upload_email_patterns_v1_email_patterns_import_post */
         Body_upload_email_patterns_v1_email_patterns_import_post: {
@@ -2354,6 +2449,19 @@ export interface components {
             /** Comment */
             comment?: string | null;
         };
+        /** EndorsementDomainModel */
+        EndorsementDomainModel: {
+            /** Id */
+            id: string;
+            /** Endorse All */
+            endorse_all: boolean;
+            /** Mods Endorse All */
+            mods_endorse_all: boolean;
+            /** Endorse Email */
+            endorse_email: boolean;
+            /** Papers To Endorse */
+            papers_to_endorse: number;
+        };
         /** EndorsementModel */
         EndorsementModel: {
             /** Id */
@@ -2516,10 +2624,23 @@ export interface components {
             /** Sequence */
             sequence?: number | null;
         };
+        /** MemberInstitutionIPModel */
+        MemberInstitutionIPModel: {
+            /** Id */
+            id?: number | null;
+            /** Sid */
+            sid?: number | null;
+            /** Exclude */
+            exclude?: number | null;
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+        };
         /** MemberInstitutionModel */
         MemberInstitutionModel: {
             /** Id */
-            id: number | null;
+            id?: number | null;
             /** Resolver Url */
             resolver_URL?: string | null;
             /** Name */
@@ -2536,6 +2657,10 @@ export interface components {
             email?: string | null;
             /** Contact Name */
             contact_name?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Ip Ranges */
+            ip_ranges?: components["schemas"]["MemberInstitutionIPModel"][] | null;
         };
         /** MetadataModel */
         MetadataModel: {
@@ -3030,6 +3155,11 @@ export interface components {
          * @enum {string}
          */
         SubmissionType: "cross" | "jref" | "new" | "rep" | "wdr";
+        /** SubmissionUpdateModel */
+        SubmissionUpdateModel: {
+            /** Status */
+            status: string | null;
+        };
         /** TapirAdminAuditModel */
         TapirAdminAuditModel: {
             /** Id */
@@ -3203,7 +3333,7 @@ export interface components {
              */
             share_last_name: boolean;
             /** Username */
-            username: string;
+            username?: string | null;
             /**
              * Share Email
              * @default 8
@@ -4457,7 +4587,7 @@ export interface operations {
             };
         };
     };
-    send_test_email_template_v1_email_templates__id__test_post: {
+    publish_test_email_template_v1_email_templates__id__publish_post: {
         parameters: {
             query?: {
                 /** @description Subject of the test email */
@@ -4469,7 +4599,13 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                } | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -4477,7 +4613,47 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EmailTemplateModel"];
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_test_email_template_v1_email_templates__id__send_post: {
+        parameters: {
+            query?: {
+                /** @description Subject of the test email */
+                subject?: string;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                } | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -5188,6 +5364,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OwnershipModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_upload_ownership_request_v1_paper_owners_user__user_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_bulk_upload_ownership_request_v1_paper_owners_user__user_id__post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperOwnershipUpdateRequest"];
                 };
             };
             /** @description Validation Error */
@@ -6545,6 +6756,72 @@ export interface operations {
             };
         };
     };
+    delete_submission_v1_submissions__id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_submission_v1_submissions__id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmissionUpdateModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_submission_by_document_id_v1_submissions_document__document_id__get: {
         parameters: {
             query?: never;
@@ -6668,7 +6945,40 @@ export interface operations {
             };
         };
     };
-    membership_institution_data_v1_membership_institutions__id__get: {
+    create_membership_institution_data_v1_membership_institutions__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberInstitutionModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberInstitutionModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_membership_institution_data_v1_membership_institutions__id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -6686,6 +6996,112 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MemberInstitutionModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_membership_institution_data_v1_membership_institutions__id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberInstitutionModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberInstitutionModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_membership_institution_data_v1_membership_institutions__id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberInstitutionModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_membership_institutions_ip_v1_membership_institutions_ip__get: {
+        parameters: {
+            query?: {
+                /** @description sort by */
+                _sort?: string | null;
+                /** @description sort order */
+                _order?: string | null;
+                _start?: number | null;
+                _end?: number | null;
+                /** @description List of primary keys */
+                id?: string[] | null;
+                /** @description Member institution ID */
+                sid?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberInstitutionIPModel"][];
                 };
             };
             /** @description Validation Error */
@@ -7703,6 +8119,172 @@ export interface operations {
                 content: {
                     "application/json": unknown;
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_endorsement_domains_v1_endorsement_domains__get: {
+        parameters: {
+            query?: {
+                /** @description sort by */
+                _sort?: string | null;
+                /** @description sort order */
+                _order?: string | null;
+                _start?: number | null;
+                _end?: number | null;
+                name?: string | null;
+                id?: string[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndorsementDomainModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_endorsement_domain_v1_endorsement_domains__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndorsementDomainModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndorsementDomainModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_endorsement_domain_data_v1_endorsement_domains__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndorsementDomainModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_endorsement_domain_v1_endorsement_domains__id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndorsementDomainModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndorsementDomainModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_endorsement_domain_v1_endorsement_domains__id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

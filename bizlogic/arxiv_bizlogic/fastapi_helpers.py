@@ -140,7 +140,13 @@ async def get_hostname(ip_address: str, timeout: float = 1.0) -> str:
 
 
 async def get_client_host_name(request: Request) -> Optional[str]:
-    return await get_hostname(get_client_host(request))
+    remote = get_client_host(request)
+    if remote:
+        # For pytest, the api_client's most is "testclient". So, special case it.
+        if remote == "testclient":
+            remote = "127.0.0.1"
+        return await get_hostname(remote)
+    return None
 
 
 def datetime_to_epoch(timestamp: datetime.datetime | datetime.date | None,

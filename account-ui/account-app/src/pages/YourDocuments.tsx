@@ -11,76 +11,11 @@ import Typography from "@mui/material/Typography/Typography";
 // import NavigateLink from "../bits/NavigateLink";
 import {paths as adminApi} from "../types/admin-api";
 import CardWithTitle from "../bits/CardWithTitle.tsx";
-import { ADMIN_USER_ID_DOCUMENT_SUMMARY_URL } from "../types/admin-url.ts";
+import {ADMIN_USER_ID_DOCUMENT_SUMMARY_URL} from "../types/admin-url.ts";
 
 type DocumentSummaryProps = adminApi[typeof ADMIN_USER_ID_DOCUMENT_SUMMARY_URL]['get']['responses']['200']['content']['application/json'];
 
-
-const ArticleInfo: React.FC<DocumentSummaryProps & {isLoading: boolean}> = ({
-                                                                                owns_count,
-                                                                                submitted_count,
-                                                                                authored_count,
-                                                                                isLoading
-                                                     }) => {
-    const runtimeProps = useContext(RuntimeContext);
-    return (
-        <Container maxWidth={"md"}>
-            <Box display="flex" flexDirection={"column"} sx={{my: "2em"}}>
-                <Typography variant={"h1"}>
-                    Your Articles
-                </Typography>
-                <CardWithTitle title={"Summary"}>
-                    <Box sx={{py: 0}}>
-                        {
-                            isLoading ? (<CircularProgress color="secondary"/>) : (
-                                <AuthorInfoTable ownerCount={owns_count} submitCount={submitted_count}
-                                                 authorCount={authored_count}/>
-
-                                )
-                        }
-                        <p>
-                            {"Are you incorrectly registered as an author or a non-author of any articles you own? If so, update the authorship status "}
-                            <Link component={RouterLink} to={"/user-account/owned-documents"}>
-                                here.
-                            </Link>
-                        </p>
-
-                        <Typography component="div" sx={{mt: 2}}>
-                            Are there articles you are an author of on arXiv that are not listed here?
-                            <ul style={{paddingLeft: '1.5em', marginTop: 0}}>
-                                <li>
-                                    If you have the paper password, use&nbsp;
-                                    <Link component={RouterLink} to={runtimeProps.URLS.userClaimDocumentOwnership}>
-                                        the Claim Ownership with a password form
-                                    </Link>
-                                    .
-                                </li>
-                                <li>
-                                    If you do not have the paper password or are claiming multiple papers, use&nbsp;
-                                    <Link component={RouterLink} to={runtimeProps.URLS.userRequestDocumentOwnership}>
-                                        the Request Authorship form
-                                    </Link>
-                                    .
-                                </li>
-                                <li>
-                                    For more information, please see our help page on&nbsp;
-                                    <Link href="https://info.arxiv.org/help/authority" target="_blank" rel="noreferrer">
-                                        authority records
-                                    </Link>.
-                                </li>
-                            </ul>
-                        </Typography>
-
-                    </Box>
-
-                </CardWithTitle>
-            </Box>
-        </Container>
-    );
-};
-
-
-const YourDocuments: React.FC = () => {
+export const ArticleInfo: React.FC = () => {
     const runtimeProps = useContext(RuntimeContext);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [documentSummary, setDocumentSummary] = useState<DocumentSummaryProps>({
@@ -97,7 +32,7 @@ const YourDocuments: React.FC = () => {
             setIsLoading(true);
             const getDocumentSummary = runtimeProps.adminFetcher.path(ADMIN_USER_ID_DOCUMENT_SUMMARY_URL).method('get').create();
             const response = await getDocumentSummary({user_id: Number(user_id)});
-            
+
             if (response.ok) {
                 const summary: DocumentSummaryProps = response.data;
                 setDocumentSummary(summary);
@@ -120,9 +55,72 @@ const YourDocuments: React.FC = () => {
         fetchSummary();
     }, [fetchSummary]);
 
+    const owns_count = documentSummary.owns_count;
+    const submitted_count = documentSummary.submitted_count;
+    const authored_count = documentSummary.authored_count;
+
     return (
-        <ArticleInfo key="article-info" authored_count={documentSummary.authored_count} isLoading={isLoading}
-                     owns_count={documentSummary.owns_count} submitted_count={documentSummary.submitted_count}/>
+        <CardWithTitle title={"Summary"}>
+            <Box sx={{py: 1}}>
+                {
+                    isLoading ? (<CircularProgress color="secondary"/>) : (
+                        <AuthorInfoTable ownerCount={owns_count} submitCount={submitted_count}
+                                         authorCount={authored_count}/>
+
+                    )
+                }
+
+                <Typography component="div" sx={{mt: 2}}>
+                    <ul style={{paddingLeft: '1.5em', marginTop: 0}}>
+                        <li>
+                            {"Are you incorrectly registered as an author or a non-author of any articles you own? If so, update the authorship status "}
+                            <Link component={RouterLink} to={"/user-account/owned-documents"}>
+                                here.
+                            </Link>
+                        </li>
+
+                        <li>
+                            If you have the paper password, use&nbsp;
+                            <Link component={RouterLink} to={runtimeProps.URLS.userClaimDocumentOwnership}>
+                                the Claim Ownership with a password form
+                            </Link>
+                            .
+                        </li>
+                        <li>
+                            If you do not have the paper password or are claiming multiple papers, use&nbsp;
+                            <Link component={RouterLink} to={runtimeProps.URLS.userRequestDocumentOwnership}>
+                                the Request Authorship form
+                            </Link>
+                            .
+                        </li>
+                        <li>
+                            For more information, please see our help page on&nbsp;
+                            <Link href="https://info.arxiv.org/help/authority" target="_blank" rel="noreferrer">
+                                authority records
+                            </Link>.
+                        </li>
+                    </ul>
+                </Typography>
+
+            </Box>
+
+        </CardWithTitle>
+    );
+};
+
+
+const YourDocuments: React.FC = () => {
+    return (
+        <Container maxWidth={"md"}>
+            <Box display="flex" flexDirection={"column"} sx={{my: "2em"}}>
+                <Typography variant={"h1"}>
+                    Your Articles
+                </Typography>
+
+                <ArticleInfo key="article-info"/>
+            </Box>
+        </Container>
+
     );
 }
 

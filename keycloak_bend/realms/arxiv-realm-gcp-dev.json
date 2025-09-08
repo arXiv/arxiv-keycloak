@@ -1297,8 +1297,8 @@
       ],
       "defaultClientScopes": [
         "openid",
-        "profile",
         "roles",
+        "profile",
         "basic",
         "email"
       ],
@@ -2491,15 +2491,15 @@
     "password": "**********",
     "replyToDisplayName": "",
     "starttls": "false",
-    "auth": "false",
+    "auth": "true",
     "port": "465",
     "host": "smtp-relay.gmail.com",
-    "replyTo": "help@arxiv.org",
-    "from": "help@arxiv.org",
-    "fromDisplayName": "arXiv account administrator",
+    "replyTo": "",
+    "from": "noreply@arxiv.org",
+    "fromDisplayName": "keycloak (develop)",
     "envelopeFrom": "",
     "ssl": "true",
-    "user": "ntai@arxiv.org"
+    "user": "smtp-relay@arxiv.org"
   },
   "loginTheme": "kc-arXiv-react",
   "accountTheme": "kc-arXiv-react",
