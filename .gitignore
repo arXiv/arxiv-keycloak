@@ -131,11 +131,20 @@ celerybeat.pid
 .env
 .venv
 env/
+
 venv/
 ENV/
 env.bak/
 venv.bak/
 .env*
+# Terraform state files
+*.tfstate
+*.tfstate.*
+tfplan
+.terraform/
+.terraform.lock.hcl
+# Explicitly unignore keycloak_bend/cicd/env
+!/keycloak_bend/cicd/env/
 
 # Spyder project settings
 .spyderproject

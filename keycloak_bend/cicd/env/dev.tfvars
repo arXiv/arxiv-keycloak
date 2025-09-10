@@ -1,0 +1,5 @@
+gcp_project_id = "arxiv-development"
+#gcp_project_id = "874717964009"
+gcp_region     = "us-central1"
+terraform_state_bucket = "arxiv-terraform-state-dev"
+environment_name = "dev"

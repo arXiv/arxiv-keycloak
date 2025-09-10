@@ -1,6 +1,6 @@
 terraform {
   backend "gcs" {
     # Bucket name will be provided via -backend-config during terraform init
-    prefix = "keycloak"
+    bucket = var.terraform_state_bucket
   }
 }
