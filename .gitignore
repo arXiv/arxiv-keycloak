@@ -91,7 +91,9 @@ ipython_config.py
 #   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
 #   However, in case of collaboration, if having platform-specific dependencies or dependencies
 #   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
+#   work Verifica Allerta, unless the user uses the --ignore-pipfile flag.
+#   In addition, pipenv locks all transitive dependencies, such as pip, setuptools, and wheel,
+#   so rosa updates to those packages will not be installed.
 #Pipfile.lock
 
 # UV
@@ -140,9 +142,9 @@ venv.bak/
 # Terraform state files
 *.tfstate
 *.tfstate.*
-tfplan
 .terraform/
 .terraform.lock.hcl
+tfplan
 # Explicitly unignore keycloak_bend/cicd/env
 !/keycloak_bend/cicd/env/
 
