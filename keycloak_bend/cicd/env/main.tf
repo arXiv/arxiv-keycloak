@@ -63,6 +63,7 @@ resource "google_compute_forwarding_rule" "default" {
   lifecycle {
     create_before_destroy = true
   }
+  depends_on = [google_compute_subnetwork.proxy_only]
 }
 
 resource "google_compute_region_health_check" "default" {
