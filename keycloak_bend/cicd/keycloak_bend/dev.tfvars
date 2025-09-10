@@ -11,6 +11,6 @@ kc_port = "8080"
 grpc_log_level = "DEBUG"
 grpc_trace = "tcp,http,api"
 arxiv_user_registration_url = "https://dev9.arxiv.org/user-account/register"
-kc_hostname = "https://keycloak-874717964009.us-central1.run.app" 
+#kc_hostname = "https://keycloak-dev-874717964009.us-central1.run.app" 
 min_scale = 1
 max_scale = 1 

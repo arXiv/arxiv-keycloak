@@ -91,8 +91,23 @@ variable "arxiv_user_registration_url" {
   default     = ""
 }
 
-variable "kc_hostname" {
-  description = "Keycloak hostname."
+# variable "kc_hostname" {
+#   description = "Keycloak hostname."
+#   type        = string
+#   default     = ""
+# }
+
+variable "load_balancer_ip_address" {
+  description = "The IP address of the load balancer."
   type        = string
-  default     = ""
+}
+
+variable "load_balancer_name" {
+  description = "The name of the load balancer URL map."
+  type        = string
+}
+
+variable "default_backend_service_link" {
+  description = "The self_link of the default backend service."
+  type        = string
 } 

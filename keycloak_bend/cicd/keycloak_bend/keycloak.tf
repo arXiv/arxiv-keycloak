@@ -1,13 +1,26 @@
 provider "google" {
-  project = var.gcp_project_id # default inherited by all resources
-  region  = var.gcp_region     # default inherited by all resources
+  project = var.gcp_project_id
+  region  = var.gcp_region
+}
+
+data "terraform_remote_state" "env" {
+  backend = "gcs"
+  config = {
+    bucket = var.terraform_state_bucket
+    prefix = "env"
+  }
+}
+
+data "google_compute_network" "default" {
+  name    = "${var.environment_name}-network"
+  project = var.gcp_project_id
 }
 
 resource "google_cloud_run_service" "keycloak" {
-  name     = "keycloak"
-  location = "us-central1" # This could also be a variable if needed
+  name     = "keycloak-${var.environment_name}"
+  location = "us-central1"
   project  = var.gcp_project_id
-  
+
   template {
     metadata {
       annotations = {
@@ -22,11 +35,9 @@ resource "google_cloud_run_service" "keycloak" {
     spec {
       container_concurrency = 80
       timeout_seconds       = 300
-      #service_account_name  = "${var.gcp_project_id}-compute@developer.gserviceaccount.com"
-      #service_account_name  = "874717964009-compute@developer.gserviceaccount.com"
 
       containers {
-        image = "gcr.io/arxiv-development/arxiv-keycloak/keycloak:latest"
+        image = "gcr.io/${var.gcp_project_id}/arxiv-keycloak/keycloak:latest"
 
         ports {
           container_port = 8080
@@ -72,10 +83,10 @@ resource "google_cloud_run_service" "keycloak" {
           name  = "ARXIV_USER_REGISTRATION_URL"
           value = var.arxiv_user_registration_url
         }
-        env {
-          name  = "KC_HOSTNAME"
-          value = var.kc_hostname
-        }
+        # env {
+        #   name  = "KC_HOSTNAME"
+        #   value = var.load_balancer_ip_address
+        # }
         env {
           name = "KC_DB_PASS"
           value_from {
@@ -155,9 +166,67 @@ resource "google_cloud_run_service_iam_member" "keycloak_service_public_access" 
   member   = "allUsers"
 }
 
-# The YAML specifies ingress: all, which means external access is allowed.
-# This is usually handled by a separate ingress resource or by setting the
-# appropriate IAM policy on the Cloud Run service. Since the YAML explicitly
-# mentions `run.googleapis.com/ingress: all`, we'll add an IAM member to allow
-# unauthenticated invocations, which is the equivalent for a publicly accessible
-# Cloud Run service. 
+resource "google_compute_region_network_endpoint_group" "keycloak_neg" {
+  name                  = "keycloak-${var.environment_name}-neg"
+  network_endpoint_type = "SERVERLESS"
+  region                = "us-central1"
+  cloud_run {
+    service = google_cloud_run_service.keycloak.name
+  }
+}
+
+resource "google_compute_region_backend_service" "keycloak_backend" {
+  name                  = "keycloak-${var.environment_name}-backend"
+  region                = "us-central1"
+  protocol              = "HTTP"
+  load_balancing_scheme = "EXTERNAL_MANAGED"
+
+  backend {
+    group           = google_compute_region_network_endpoint_group.keycloak_neg.id
+    capacity_scaler = 1.0
+    balancing_mode  = ""
+  }
+}
+
+resource "google_compute_firewall" "allow_lb_to_cloud_run" {
+  name    = "allow-lb-to-cloud-run-keycloak"
+  network = data.google_compute_network.default.self_link
+  project = var.gcp_project_id
+
+  allow {
+    protocol = "tcp"
+    ports    = ["8080"]
+  }
+
+  source_ranges = ["35.191.0.0/16", "130.211.0.0/22"]
+}
+
+resource "null_resource" "update_backend_service" {
+  triggers = {
+    backend_service_id = google_compute_region_backend_service.keycloak_backend.id
+  }
+
+  provisioner "local-exec" {
+    command = "gcloud compute backend-services update keycloak-${var.environment_name}-backend --region=us-central1 --no-health-checks"
+  }
+}
+
+resource "google_compute_region_url_map" "default" {
+  name            = var.load_balancer_name
+  project         = var.gcp_project_id
+  region          = var.gcp_region
+  default_service = var.default_backend_service_link
+
+  path_matcher {
+    name            = "keycloak-matcher"
+    default_service = var.default_backend_service_link
+    path_rule {
+      paths   = ["/admin","/admin/*","/auth", "/auth/*","/realms","/realms/*",]
+      service = google_compute_region_backend_service.keycloak_backend.id
+    }
+  }
+}
+
+output "keycloak_backend_service_id" {
+  value = google_compute_region_backend_service.keycloak_backend.id
+} 
