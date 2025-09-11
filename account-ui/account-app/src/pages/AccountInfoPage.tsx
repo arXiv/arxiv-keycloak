@@ -1,6 +1,5 @@
 import React, {useCallback, useContext, useEffect, useState} from "react";
 import Container from '@mui/material/Container'
-import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
 import Box from "@mui/material/Box";
 
@@ -8,17 +7,12 @@ import VerifiedUser from "@mui/icons-material/VerifiedUser";
 
 import {RuntimeContext, RuntimeProps} from "../RuntimeContext.tsx";
 import YesNoDialog from "../bits/YesNoDialog.tsx";
-// import SubmissionsTable from "../bits/SubmissionsTable.tsx";
-import YourSubmissions from "../components/YourSubmissions.tsx";
 import {useNotification} from "../NotificationContext.tsx";
 
 import {ACCOUNT_USER_EMAIL_VERIFY_URL} from "../types/aaa-url.ts";
-import UserDocumentList from "../components/UserDocumentList.tsx";
 import YourAccountInfo from "../components/YourAccountInfo.tsx";
 import Button from "@mui/material/Button";
-import CardWithTitle from "../bits/CardWithTitle.tsx";
-import {ArticleInfo} from "./YourDocuments.tsx";
-
+// import CardWithTitle from "../bits/CardWithTitle.tsx";
 
 
 const VerifyEmailButton: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimeProps}) => {
@@ -72,7 +66,7 @@ const VerifyEmailButton: React.FC<{ runtimeProps: RuntimeProps }> = ({runtimePro
 };
 
 
-const UserAccountInfo = () => {
+const AccountInfoPage = () => {
     const runtimeProps = useContext(RuntimeContext);
     const user = runtimeProps.currentUser;
     const {showMessageDialog} = useNotification();
@@ -89,8 +83,6 @@ const UserAccountInfo = () => {
         if (!runtimeProps.currentUser)
             showMessageDialog("Please log in first", "No user", () => <Link href={"/login"}/>);
     }, [runtimeProps.currentUser]);
-
-
 
     /*
     useEffect(() => {
@@ -109,24 +101,18 @@ const UserAccountInfo = () => {
         if (runtimeProps.currentUser)
             doGetDemographic()
     }, [runtimeProps.currentUser]);
+    const vetoed = !!(runtimeProps.currentUser?.veto_status && runtimeProps.currentUser?.veto_status !== "ok");
+
     */
 
-    const vetoed = !!(runtimeProps.currentUser?.veto_status && runtimeProps.currentUser?.veto_status !== "ok");
 
     return (
         <Container maxWidth={"lg"} sx={{my: "4em", gap: 1}}>
             <Box display={"flex"} flexDirection={"column"} sx={{gap: "0.75em"}}>
-                <Typography variant={"h1"} >Account for {user?.first_name} {user?.last_name} </Typography>
-
-                <YourSubmissions runtimeProps={runtimeProps} vetoed={vetoed}/>
-                <CardWithTitle title={"Articles You Own"}>
-                    <UserDocumentList />
-                    <ArticleInfo />
-                </CardWithTitle>
                 <YourAccountInfo runtimeProps={runtimeProps} VerifyEmailButton={VerifyEmailButton}/>
             </Box>
         </Container>
     );
 };
 
-export default UserAccountInfo;
+export default AccountInfoPage;

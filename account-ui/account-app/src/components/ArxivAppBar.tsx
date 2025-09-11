@@ -23,6 +23,8 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 // import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 // import {breadcrumbItems} from "../bits/breadcrums.ts";
+import EditIcon from '@mui/icons-material/Edit';
+
 import RouteBreadcrumbs from "../bits/RouteBreadcrumbs.tsx";
 
 const ownershipOptions = [
@@ -61,7 +63,8 @@ const ArxivAppBar = () => {
     const email_verified = user === undefined || user === null || user.email_verified === true;
 
     const accountMenuItems = [
-        { id: "change_user_info", name: "Change User Information", icon: <AccountCircleIcon />, disabled: false, navigate: "/user-account/update-profile" },
+        { id: "account_info", name: "Account Information", icon: <AccountCircleIcon />, disabled: false, navigate: "/user-account/info" },
+        { id: "change_user_info", name: "Change User Information", icon: <EditIcon />, disabled: false, navigate: "/user-account/update-profile" },
         { id: "change_password", name: "Change Password", icon: <ChangePasswordIcon />, disabled: false, navigate: "/user-account/change-password" },
         { id: "change_email", name: "Change Email", icon: <ChangeEmailIcon />, disabled: false, navigate: "/user-account/change-email"},
         { id: "resend_verification", name: "Resend Email Verification", icon: <ResendVerificationIcon />, disabled: email_verified, navigate: "/user-account/change-email" },

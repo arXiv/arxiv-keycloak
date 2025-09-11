@@ -250,6 +250,8 @@ const SubmissionDatagrid = forwardRef<SubmissionDatagridRef, SubmissionDatagridP
         });
 
         columns.push({
+            sortable: false,
+            filterable: false,
             field: 'editable',
             headerName: '',
             width: 32,
@@ -265,14 +267,18 @@ const SubmissionDatagrid = forwardRef<SubmissionDatagridRef, SubmissionDatagridP
 
     if (submissionStatusGroup === 'current')
         columns.push({
+            sortable: false,
+            filterable: false,
             field: 'undoable',
-            headerName: '',
-            width: 32,
+            headerName: 'Unsubmit',
+            width: 60,
             renderCell: (cell: GridRenderCellParams<SubmissionWithActionType>) => {
                 return <IconButton sx={{visibility: cell.row.undoable ? 'visible' : 'hidden'}} onClick={() => handleUnsubmit(cell.row)}><UndoIcon color={"warning"} /></IconButton>;
             }});
 
     columns.push({
+        sortable: false,
+        filterable: false,
         field: 'deletable',
         headerName: '',
         width: 32,

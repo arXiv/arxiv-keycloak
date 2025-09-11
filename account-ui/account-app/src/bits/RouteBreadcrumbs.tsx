@@ -8,6 +8,7 @@ import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
 const breadcrumbNameMap: Record<string, string> = {
     'user-account': 'Account',
+    'info': 'Account Information',
     'login': 'Login',
     'logout': 'Logout',
     'register': 'Register',

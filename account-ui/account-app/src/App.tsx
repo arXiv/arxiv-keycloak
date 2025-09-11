@@ -12,7 +12,7 @@ import AccountRegistration from "./pages/AccountRegistration.tsx";
 import ArxivHeader from "./components/ArxivHeader";
 import {Box, Container} from "@mui/material";
 import ArxivFooter from "./components/ArxivFooter.tsx";
-import UserAccountInfo from "./pages/UserAccountInfo.tsx";
+import UserPortalLandingPage from "./pages/UserPortalLandingPage.tsx";
 import OwnershipRequest from "./pages/OwnershipRequest.tsx";
 import NotFound404 from "./components/NotFound404.tsx";
 import AuthorshipStatus from "./pages/AuthorshipStatus.tsx";
@@ -29,6 +29,7 @@ import ResetPassword from "./pages/ResetPassword.tsx";
 import ArticlesYouOwn from "./pages/DocumentOwnershipManagement.tsx";
 import {ThemeProvider, CssBaseline} from '@mui/material';
 import arxivTheme from "./arxivTheme.ts";
+import AccountInfoPage from "./pages/AccountInfoPage.tsx";
 
 
 const App: React.FC = () => {
@@ -58,7 +59,8 @@ const App: React.FC = () => {
                                 <ArxivHeader/>
                                 <Container component="main">
                                     <Routes>
-                                        <Route path="/user-account" element={<UserAccountInfo/>}/>
+                                        <Route path="/user-account" element={<UserPortalLandingPage/>}/>
+                                        <Route path="/user-account/info" element={<AccountInfoPage/>}/>
                                         <Route path="/user-account/login"
                                                element={<ExternalRedirect to={"/login"}/>}/>
                                         <Route path="/user-account/logout" element={<Logout/>}/>
