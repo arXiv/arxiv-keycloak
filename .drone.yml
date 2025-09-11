@@ -259,6 +259,8 @@ volumes:
       path: /var/run
 
 trigger:
+  branch:
+    - master
   event:
     - push
 ---
@@ -313,7 +315,7 @@ steps:
   - name: refresh dockers
     commands:
       - whoami
-      - export HOME=/home/drone
+      - export HOME=/users/jenkins
       - export GOOGLE_APPLICATION_CREDENTIALS=/opt_arxiv/bomb-range/cred/drone-runner-sa.json
       - gcloud auth activate-service-account --key-file=/opt_arxiv/bomb-range/cred/drone-runner-sa.json
       - gcloud auth configure-docker gcr.io
