@@ -189,7 +189,7 @@ resource "google_compute_region_backend_service" "keycloak_backend" {
 }
 
 resource "google_compute_firewall" "allow_lb_to_cloud_run" {
-  name    = "allow-lb-to-cloud-run-keycloak"
+  name    = "allow-lb-to-keycloak-${var.environment_name}"
   network = data.google_compute_network.default.self_link
   project = var.gcp_project_id
 
@@ -227,8 +227,4 @@ resource "null_resource" "update_url_map" {
         --project=${var.gcp_project_id}
 EOT
   }
-}
-
-output "keycloak_backend_service_id" {
-  value = google_compute_region_backend_service.keycloak_backend.id
 } 
