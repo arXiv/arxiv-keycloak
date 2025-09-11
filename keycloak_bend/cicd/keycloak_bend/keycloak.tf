@@ -83,10 +83,6 @@ resource "google_cloud_run_service" "keycloak" {
           name  = "ARXIV_USER_REGISTRATION_URL"
           value = var.arxiv_user_registration_url
         }
-        # env {
-        #   name  = "KC_HOSTNAME"
-        #   value = var.load_balancer_ip_address
-        # }
         env {
           name = "KC_DB_PASS"
           value_from {
@@ -175,16 +171,14 @@ resource "google_compute_region_network_endpoint_group" "keycloak_neg" {
   }
 }
 
-resource "google_compute_region_backend_service" "keycloak_backend" {
+resource "google_compute_backend_service" "keycloak_backend" {
   name                  = "keycloak-${var.environment_name}-backend"
-  region                = "us-central1"
+  project               = var.gcp_project_id
   protocol              = "HTTP"
   load_balancing_scheme = "EXTERNAL_MANAGED"
 
   backend {
-    group           = google_compute_region_network_endpoint_group.keycloak_neg.id
-    capacity_scaler = 1.0
-    balancing_mode  = ""
+    group = google_compute_region_network_endpoint_group.keycloak_neg.id
   }
 }
 
@@ -203,28 +197,28 @@ resource "google_compute_firewall" "allow_lb_to_cloud_run" {
 
 resource "null_resource" "update_backend_service" {
   triggers = {
-    backend_service_id = google_compute_region_backend_service.keycloak_backend.id
+    backend_service_id = google_compute_backend_service.keycloak_backend.id
   }
 
   provisioner "local-exec" {
-    command = "gcloud compute backend-services update keycloak-${var.environment_name}-backend --region=us-central1 --no-health-checks"
+    command = "gcloud compute backend-services update keycloak-${var.environment_name}-backend --global --no-health-checks"
   }
 }
 
 resource "null_resource" "update_url_map" {
   triggers = {
-    keycloak_backend_service_id = google_compute_region_backend_service.keycloak_backend.id
+    keycloak_backend_service_id = google_compute_backend_service.keycloak_backend.id
     url_map_name                = data.terraform_remote_state.env.outputs.load_balancer_name
   }
 
   provisioner "local-exec" {
     command = <<EOT
       gcloud compute url-maps add-path-matcher ${self.triggers.url_map_name} \
-        --region=${var.gcp_region} \
+        --global \
         --path-matcher-name=keycloak-matcher \
         --default-service=${data.terraform_remote_state.env.outputs.backend_service_self_link} \
-        --path-rules='/admin/*=${google_compute_region_backend_service.keycloak_backend.self_link},/auth/*=${google_compute_region_backend_service.keycloak_backend.self_link},/realms/*=${google_compute_region_backend_service.keycloak_backend.self_link}' \
+        --backend-service-path-rules='/admin/*=${google_compute_backend_service.keycloak_backend.self_link},/auth/*=${google_compute_backend_service.keycloak_backend.self_link},/realms/*=${google_compute_backend_service.keycloak_backend.self_link}' \
         --project=${var.gcp_project_id}
 EOT
   }
-} 
+}

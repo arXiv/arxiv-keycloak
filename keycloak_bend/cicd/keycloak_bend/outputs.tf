@@ -1,5 +1,5 @@
 output "keycloak_backend_service_id" {
-  value = google_compute_region_backend_service.keycloak_backend.id
+  value = google_compute_backend_service.keycloak_backend.id
 }
 
 output "keycloak_cloud_run_url" {
@@ -9,5 +9,5 @@ output "keycloak_cloud_run_url" {
 
 output "keycloak_lb_url" {
   description = "The URL to the Keycloak admin console through the load balancer."
-  value       = "http://${data.terraform_remote_state.env.outputs.load_balancer_ip_address}/auth/admin/"
+  value       = "https://${data.terraform_remote_state.env.outputs.dns_hostnames[0]}/auth/admin/"
 }

@@ -1,6 +1,6 @@
 output "load_balancer_ip_address" {
   description = "The IP address of the load balancer."
-  value       = google_compute_address.default.address
+  value       = google_compute_global_address.default.address
 }
 
 output "network_self_link" {
@@ -9,26 +9,31 @@ output "network_self_link" {
 }
 
 output "backend_service_self_link" {
-  description = "The self-link of the default regional backend service."
-  value       = google_compute_region_backend_service.default.self_link
+  description = "The self-link of the default backend service."
+  value       = google_compute_backend_service.default.self_link
 }
 
 output "default_url_map_self_link" {
-  description = "The self-link of the default regional URL map."
-  value       = google_compute_region_url_map.default.self_link
+  description = "The self-link of the default URL map."
+  value       = google_compute_url_map.default.self_link
 }
 
-output "default_http_proxy_self_link" {
-  description = "The self-link of the default regional HTTP proxy."
-  value       = google_compute_region_target_http_proxy.default.self_link
+output "default_https_proxy_self_link" {
+  description = "The self-link of the default HTTPS proxy."
+  value       = google_compute_target_https_proxy.default.self_link
 }
 
 output "default_forwarding_rule_self_link" {
-  description = "The self-link of the default regional forwarding rule."
-  value       = google_compute_forwarding_rule.default.self_link
+  description = "The self-link of the default forwarding rule."
+  value       = google_compute_global_forwarding_rule.default.self_link
 }
 
 output "load_balancer_name" {
   description = "The name of the load balancer URL map."
-  value       = google_compute_region_url_map.default.name
+  value       = google_compute_url_map.default.name
+}
+
+output "dns_hostnames" {
+  description = "The DNS hostnames for this environment."
+  value       = local.dns_hostnames
 }
