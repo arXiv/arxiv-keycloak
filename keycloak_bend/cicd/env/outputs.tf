@@ -27,3 +27,8 @@ output "default_forwarding_rule_self_link" {
   description = "The self-link of the default regional forwarding rule."
   value       = google_compute_forwarding_rule.default.self_link
 }
+
+output "load_balancer_name" {
+  description = "The name of the load balancer URL map."
+  value       = google_compute_region_url_map.default.name
+}

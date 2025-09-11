@@ -7,7 +7,7 @@ data "terraform_remote_state" "env" {
   backend = "gcs"
   config = {
     bucket = var.terraform_state_bucket
-    prefix = "env"
+    prefix = "${var.environment_name}-env"
   }
 }
 
@@ -211,19 +211,21 @@ resource "null_resource" "update_backend_service" {
   }
 }
 
-resource "google_compute_region_url_map" "default" {
-  name            = var.load_balancer_name
-  project         = var.gcp_project_id
-  region          = var.gcp_region
-  default_service = var.default_backend_service_link
+resource "null_resource" "update_url_map" {
+  triggers = {
+    keycloak_backend_service_id = google_compute_region_backend_service.keycloak_backend.id
+    url_map_name                = data.terraform_remote_state.env.outputs.load_balancer_name
+  }
 
-  path_matcher {
-    name            = "keycloak-matcher"
-    default_service = var.default_backend_service_link
-    path_rule {
-      paths   = ["/admin","/admin/*","/auth", "/auth/*","/realms","/realms/*",]
-      service = google_compute_region_backend_service.keycloak_backend.id
-    }
+  provisioner "local-exec" {
+    command = <<EOT
+      gcloud compute url-maps add-path-matcher ${self.triggers.url_map_name} \
+        --region=${var.gcp_region} \
+        --path-matcher-name=keycloak-matcher \
+        --default-service=${data.terraform_remote_state.env.outputs.backend_service_self_link} \
+        --path-rules='/admin/*=${google_compute_region_backend_service.keycloak_backend.self_link},/auth/*=${google_compute_region_backend_service.keycloak_backend.self_link},/realms/*=${google_compute_region_backend_service.keycloak_backend.self_link}' \
+        --project=${var.gcp_project_id}
+EOT
   }
 }
 

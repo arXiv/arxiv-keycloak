@@ -45,9 +45,6 @@ resource "google_compute_region_target_http_proxy" "default" {
   name    = "${var.environment_name}-default-http-proxy"
   region  = var.gcp_region
   url_map = google_compute_region_url_map.default.self_link
-  lifecycle {
-    create_before_destroy = true
-  }
 }
 
 resource "google_compute_forwarding_rule" "default" {
@@ -60,10 +57,7 @@ resource "google_compute_forwarding_rule" "default" {
   load_balancing_scheme = "EXTERNAL_MANAGED"
   target              = google_compute_region_target_http_proxy.default.self_link
   ip_address          = google_compute_address.default.address
-  lifecycle {
-    create_before_destroy = true
-  }
-  depends_on = [google_compute_subnetwork.proxy_only]
+  depends_on          = [google_compute_subnetwork.proxy_only]
 }
 
 resource "google_compute_region_health_check" "default" {
