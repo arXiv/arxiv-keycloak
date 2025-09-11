@@ -7,101 +7,27 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional, List
 
+from arxiv_bizlogic.fastapi_helpers import datetime_to_epoch
 from sqlalchemy import select, case, exists, cast, LargeBinary, func, inspect, update
 from sqlalchemy.orm import Session
 from sqlalchemy.engine.row import Row
+from sqlalchemy.sql.sqltypes import Integer
 from pydantic import BaseModel, field_validator
-from datetime import datetime, timezone
+from datetime import datetime
 
-from arxiv.db.models import (TapirUser, TapirNickname, t_arXiv_moderators, Demographic, OrcidIds, TapirPolicyClass)
+from arxiv.db.models import (TapirUser, TapirNickname, t_arXiv_moderators, Demographic, OrcidIds)
 from logging import getLogger
-from ..sqlalchemy_helper import update_model_fields
 
 logger = getLogger(__name__)
 
 ACCOUNT_MANAGEMENT_FIELDS = {
-    'first_name', 'flag_approved', 'flag_banned', 'flag_can_lock', 'flag_deleted', 'flag_edit_system', 'flag_edit_users',
-    'flag_internal', 'joined_date', 'joined_ip_num', 'joined_remote_host', 'last_name', 'policy_class',  'suffix_name',
+    'first_name', 'flag_approved', 'flag_banned', 'flag_can_lock', 'flag_deleted', 'flag_edit_system',
+    'flag_edit_users',
+    'flag_internal', 'joined_date', 'joined_ip_num', 'joined_remote_host', 'last_name', 'policy_class', 'suffix_name',
 }
 
 _tapir_user_utf8_fields_ = ["first_name", "last_name", "suffix_name", "email"]
 _demographic_user_utf8_fields_ = ["url", "affiliation", ]
-
-TAPIR_USER_EMPTY_DATA = {
-    "share_first_name": 1,
-    "share_last_name": 1,
-    "email": "",
-    "share_email": 1,
-    "email_bouncing": 0,
-    "policy_class": 0,
-    "joined_date": datetime.now(tz=timezone.utc), # overwrite
-    "joined_ip_num": "128.0.0.1", # overwrite
-    "joined_remote_host": "localhost", # overwrite
-    "flag_internal": 0,
-    "flag_edit_users": 0,
-    "flag_edit_system": 0,
-    "flag_email_verified": 0,
-    "flag_approved": 1,
-    "flag_deleted": 0,
-    "flag_banned": 0,
-    "flag_wants_email": 0,
-    "flag_html_email": 0,
-    "tracking_cookie": "",
-    "flag_allow_tex_produced": 0,
-    "flag_can_lock": 0,
-}
-
-ARXIV_DEMOGRAPHIC_EMTPY_DATA = {
-    "user_id": 0, # You need to copy and overwrite
-    "country": "",
-    "affiliation": "",
-    "url": "",
-    "type": None,
-    "archive": None,
-    "subject_class": None,
-    "original_subject_classes": "",
-    "flag_group_physics": None,
-    "flag_group_math": 0,
-    "flag_group_cs": 0,
-    "flag_group_nlin": 0,
-    "flag_proxy": 0,
-    "flag_journal": 0,
-    "flag_xml": 0,
-    "dirty": 0,
-    "flag_group_test": 0,
-    "flag_suspect": 0,
-    "flag_group_q_bio": 0,
-    "flag_group_q_fin": 0,
-    "flag_group_stat": 0,
-    "flag_group_eess": 0,
-    "flag_group_econ": 0,
-    "veto_status": "ok"
-}
-
-
-USER_MODEL_DEFAULTS = {
-    "policy_class": 2,
-    "joined_remote_host": "",
-    "tracking_cookie": "",
-    "share_first_name": True,
-    "share_last_name": True,
-    "share_email": 8,
-    "email_bouncing": False,
-    "flag_internal": False,
-    "flag_edit_users": False,
-    "flag_edit_system": False,
-    "flag_email_verified": False,
-    "flag_approved": True,
-    "flag_deleted": False,
-    "flag_banned": False,
-    "flag_wants_email": False,
-    "flag_html_email": False,
-    "flag_allow_tex_produced": False,
-    "flag_can_lock": False,
-    "dirty": False,
-    "veto_status": "ok",
-    "flag_proxy": False,
-}
 
 
 def dict_merge(dict1: dict, dict2: dict) -> dict:
@@ -141,7 +67,7 @@ class UserModel(BaseModel):
     suffix_name: Optional[str] = None
     share_first_name: bool = True
     share_last_name: bool = True
-    username: Optional[str] = None
+    username: str
     share_email: int = 8
     email_bouncing: bool = False
     policy_class: int
@@ -207,14 +133,17 @@ class UserModel(BaseModel):
     orcid_id: Optional[str] = None
 
     @field_validator('first_name', 'last_name', 'suffix_name', 'username', 'country', 'affiliation', 'url',
-                     'archive', 'subject_class', 'original_subject_classes', 'orcid_id',)
+                     'archive', 'subject_class', 'original_subject_classes', 'orcid_id', )
     @classmethod
     def strip_field_value(cls, value: str | None) -> str | None:
         return value.strip() if value else value
 
-
     @staticmethod
     def base_select(session: Session):
+        is_mod_subquery = exists().where(t_arXiv_moderators.c.user_id == TapirUser.user_id).correlate(TapirUser)
+        nick_subquery = select(TapirNickname.nickname).where(TapirUser.user_id == TapirNickname.user_id).correlate(
+            TapirUser).limit(1).scalar_subquery()
+
         """
         mod_subquery = select(
             func.concat(t_arXiv_moderators.c.user_id, "+",
@@ -256,7 +185,7 @@ class UserModel(BaseModel):
         )
         """
 
-        return session.query(
+        return (session.query(
             TapirUser.user_id.label("id"),
             cast(TapirUser.email, LargeBinary).label("email"),
             cast(TapirUser.first_name, LargeBinary).label("first_name"),
@@ -264,6 +193,7 @@ class UserModel(BaseModel):
             cast(TapirUser.suffix_name, LargeBinary).label("suffix_name"),
             TapirUser.share_first_name,
             TapirUser.share_last_name,
+            nick_subquery.label("username"),
             TapirUser.share_email,
             TapirUser.email_bouncing,
             TapirUser.policy_class,
@@ -282,6 +212,10 @@ class UserModel(BaseModel):
             TapirUser.tracking_cookie,
             TapirUser.flag_allow_tex_produced,
             TapirUser.flag_can_lock,
+            case(
+                (is_mod_subquery, True),  # Pass each "when" condition as a separate positional argument
+                else_=False
+            ).label("flag_is_mod"),
             # mod_subquery.label("moderator_id"),
             Demographic.country,
             cast(Demographic.affiliation, LargeBinary).label("affiliation"),
@@ -306,7 +240,10 @@ class UserModel(BaseModel):
             Demographic.flag_group_eess,
             Demographic.flag_group_econ,
             Demographic.veto_status,
-        ).outerjoin(Demographic, TapirUser.user_id == Demographic.user_id)
+            OrcidIds.orcid
+        )
+                .outerjoin(Demographic, TapirUser.user_id == Demographic.user_id)
+                .outerjoin(OrcidIds, TapirUser.user_id == OrcidIds.user_id))
 
     @property
     def is_admin(self) -> bool:
@@ -327,6 +264,13 @@ class UserModel(BaseModel):
         for field in utf8_fields:
             if data[field] and isinstance(data[field], str):
                 data[field] = data[field].encode("utf-8")
+
+        for field in TapirUser.__mapper__.columns:
+            field_name = field.key
+            if field_name in data:
+                if isinstance(data[field_name], datetime) and isinstance(field.type, Integer):
+                    data[field_name] = datetime_to_epoch(None, data[field_name])
+
         return data
 
     @staticmethod
@@ -351,7 +295,8 @@ class UserModel(BaseModel):
                 if isinstance(row[field], bytes):
                     row[field] = row[field].decode("utf-8") if row[field] is not None else None
                 elif isinstance(row[field], str):
-                    logger.warning(f"Field {field} is unexpectedly string. value = '{row[field]}'. You may need to fix it")
+                    logger.warning(
+                        f"Field {field} is unexpectedly string. value = '{row[field]}'. You may need to fix it")
                     pass
                 else:
                     raise ValueError(f"Field {field} needs to be BLOB access")
@@ -361,16 +306,7 @@ class UserModel(BaseModel):
 
         if session:
             result.moderated_categories, result.moderated_archives = list_mod_cats_n_arcs(session, result.id)
-            result.flag_is_mod = session.query(exists().where(t_arXiv_moderators.c.user_id == result.id)).scalar()
-            nicks = session.query(TapirNickname.nickname).where(TapirNickname.user_id == result.id).all()
-            if nicks and len(nicks) > 0:
-                result.username = nicks[0].nickname
-            orcid = session.query(OrcidIds).where(OrcidIds.user_id == result.id).all()
-            if orcid and len(orcid) > 0:
-                result.orcid_id = orcid[0].orcid
-
         return result
-
 
     @staticmethod
     def one_user(session: Session, user_id: str) -> UserModel | None:
@@ -401,7 +337,7 @@ class UserModel(BaseModel):
 
     @staticmethod
     def _update_model_fields(session: Session, db_object, model_class, data: dict, user_id: int,
-                            skip_fields: set = None) -> bool:
+                             skip_fields: set = None):
         """
         Helper function to update database model fields with type conversion and UTF-8 handling.
 
@@ -412,24 +348,59 @@ class UserModel(BaseModel):
         :param user_id: User ID for update queries
         :param skip_fields: Set of field names to skip during update
         """
+        if skip_fields is None:
+            skip_fields = set()
 
         inspector = inspect(model_class)
-        columns = {column.key for column in model_class.__mapper__.column_attrs}
+        columns = {column.key: column for column in model_class.__mapper__.column_attrs}
 
-        if skip_fields is not None:
-            for field in skip_fields:
-                if field in columns:
-                    columns.remove(field)
+        for field, column in columns.items():
+            if field in skip_fields:
+                continue
 
-        return update_model_fields(session, db_object, data, columns, primary_key_field="user_id", primary_key_value=user_id)
+            if field not in data:
+                continue
 
+            column_property = inspector.get_property(field)
+            column_type = column_property.columns[0].type
+
+            old_value = getattr(db_object, field)
+            new_value = data[field]
+
+            if isinstance(column_type, str):
+                old_value = bytes(old_value) if old_value is not None else None
+                if isinstance(new_value, str):
+                    new_value = new_value.encode("utf-8")
+
+                if new_value != old_value:
+                    session.execute(
+                        update(model_class)
+                        .where(model_class.user_id == user_id)
+                        .values({field: func.binary(new_value)})
+                    )
+            elif isinstance(column_type, bytes):
+                if new_value != old_value:
+                    session.execute(
+                        update(model_class)
+                        .where(model_class.user_id == user_id)
+                        .values({field: func.binary(new_value)})
+                    )
+            elif isinstance(column_type, int):
+                if isinstance(new_value, bool):
+                    new_value = 1 if new_value else 0
+                setattr(db_object, field, new_value)
+            elif isinstance(column_type, bool):
+                if isinstance(new_value, int):
+                    new_value = True if new_value else False
+                setattr(db_object, field, new_value)
+            else:
+                setattr(db_object, field, new_value)
 
     @staticmethod
     def _upsert_user(session: Session, user: dict) -> TapirUser | None:
         """
         Insert or update user data (TapirUser and Demographic)
-        This is intended for "public info" part of user data such as names. Admin/authz is not covered here.
-        NOTE: No password record is created when the user is created
+        NOTE: No password or TapirNickname created/updated
         :param session: DB session
         :param user: DB ready data
         :return:
@@ -439,72 +410,23 @@ class UserModel(BaseModel):
         tapir_user_columns = {column.key: column for column in TapirUser.__mapper__.column_attrs}
         data = UserModel.map_to_row_data(user, list(tapir_user_columns.keys()), _tapir_user_utf8_fields_)
         user_id = data.get("user_id")
-        # Upsert user does not touch following fields
-        skip_fields = {
-            "user_id",
-            "share_first_name",
-            "share_last_name",
-            "email",
-            "share_email",
-            "email_bouncing",
-            "policy_class",
-            "joined_date",
-            "joined_ip_num",
-            "joined_remote_host",
-            "flag_internal",
-            "flag_edit_users",
-            "flag_edit_system",
-            "flag_email_verified",
-            "flag_approved",
-            "flag_deleted",
-            "flag_banned",
-            "flag_wants_email",
-            "flag_html_email",
-            "tracking_cookie",
-            "flag_allow_tex_produced",
-            "flag_can_lock",
-            "tracking_cookie",
-            "flag_group_test"
-        }
 
         if user_id is None:
             # FIXME: TapirNickname needs to be created
-            min_data = TAPIR_USER_EMPTY_DATA.copy()
-            min_data.update(
-                {
-                "joined_date": datetime.now(tz=timezone.utc),
-                "joined_ip_num": data.get("joined_ip_num"),
-                "joined_remote_host": data.get("joined_remote_host"),
-                })
-            db_user = TapirUser(**min_data) # Make an emtpy and fill up later
+            db_user = TapirUser(**data)  # Very likely this does not work right.
             session.add(db_user)
             session.flush()
             session.refresh(db_user)
-            user_id = db_user.user_id
-
-            db_nick = TapirNickname(
-                nickname=data.get("username"),
-                user_id=user_id,
-                user_seq=0,
-                flag_valid=1,
-                role=0,
-                policy=0,
-                flag_primary=1)
-            session.add(db_nick)
-            session.flush()
-            session.refresh(db_nick)
         else:
             db_user = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
             if db_user is None:
-                raise ValueError(f"User {user_id} not found")
+                raise ValueError("User not found")
 
-        updated = UserModel._update_model_fields(
-            session, db_user, TapirUser, data, user_id,
-            skip_fields=skip_fields
-        )
-
-        if updated:
-            logger.info(f"_upsert_user: Updated user {user_id}")
+            # Use the refactored helper function
+            UserModel._update_model_fields(
+                session, db_user, TapirUser, data, user_id,
+                skip_fields={"user_id", "email"}
+            )
 
         # Handle Demographic
         to_demographics_fields = set([column.key for column in Demographic.__mapper__.column_attrs])
@@ -513,21 +435,14 @@ class UserModel(BaseModel):
 
         db_demographic = session.query(Demographic).filter(Demographic.user_id == db_user.user_id).one_or_none()
         if db_demographic is None:
-            demo_data = ARXIV_DEMOGRAPHIC_EMTPY_DATA.copy()
-            demo_data.update({
-                "user_id": db_user.user_id,
-            })
-            db_demographic = Demographic(**demo_data)
+            db_demographic = Demographic(**demographic_data)
             session.add(db_demographic)
-            session.flush()
-            session.refresh(db_demographic)
-        # Use the refactored helper function
-        updated2 = UserModel._update_model_fields(
-            session, db_demographic, Demographic, demographic_data, db_user.user_id,
-            skip_fields={"user_id"}
-        )
-        if updated2:
-            logger.info(f"_upsert_user: Updated user demographic {user_id}")
+        else:
+            # Use the refactored helper function
+            UserModel._update_model_fields(
+                session, db_demographic, Demographic, demographic_data, db_user.user_id,
+                skip_fields={"user_id"}
+            )
         return db_user
 
     @staticmethod
@@ -563,3 +478,27 @@ class UserModel(BaseModel):
             data[key] = value
         return UserModel._upsert_user(session, data)
 
+
+USER_MODEL_DEFAULTS = {
+    "policy_class": 2,
+    "joined_remote_host": "",
+    "tracking_cookie": "",
+    "share_first_name": True,
+    "share_last_name": True,
+    "share_email": 8,
+    "email_bouncing": False,
+    "flag_internal": False,
+    "flag_edit_users": False,
+    "flag_edit_system": False,
+    "flag_email_verified": False,
+    "flag_approved": True,
+    "flag_deleted": False,
+    "flag_banned": False,
+    "flag_wants_email": False,
+    "flag_html_email": False,
+    "flag_allow_tex_produced": False,
+    "flag_can_lock": False,
+    "dirty": False,
+    "veto_status": "ok",
+    "flag_proxy": False,
+}

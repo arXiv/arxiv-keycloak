@@ -287,3 +287,42 @@ steps:
       - cd /opt_arxiv/bomb-range
       - make down
       - make up
+
+trigger:
+  branch:
+    - master
+  event:
+    - push
+
+---
+# Pipeline for web40
+kind: pipeline
+type: exec
+name: web40-deploy
+
+node:
+  environment: web40
+depends_on:
+  - build-docker-images
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+  - name: refresh dockers
+    commands:
+      - whoami
+      - export HOME=/home/drone
+      - export GOOGLE_APPLICATION_CREDENTIALS=/opt_arxiv/bomb-range/cred/drone-runner-sa.json
+      - gcloud auth activate-service-account --key-file=/opt_arxiv/bomb-range/cred/drone-runner-sa.json
+      - gcloud auth configure-docker gcr.io
+      - cd /opt_arxiv/bomb-range
+      - make down
+      - make up
+
+trigger:
+  branch:
+    - master
+  event:
+    - push

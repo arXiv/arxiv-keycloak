@@ -35,6 +35,7 @@ class AdminAuditActionEnum(str, Enum):
     ARXIV_UNREVOKE_PAPER_OWNER = "arXiv-unrevoke-paper-owner"
     BECOME_USER = "become-user"
     CHANGE_EMAIL = "change-email"
+    CHANGE_DEMOGRAPHIC = "change-demographic"
     CHANGE_PAPER_PW = "change-paper-pw"
     CHANGE_PASSWORD = "change-password"
     ENDORSED_BY_SUSPECT = "endorsed-by-suspect"
@@ -730,6 +731,64 @@ class AdminAudit_ChangePassword(AdminAuditEvent):
 
     def describe(self, session: Session) -> str:
         return f"{self.describe_admin_user(session)} changed password of {self.describe_affected_user(session)}"
+
+
+class AdminAudit_ChangeDemographic(AdminAuditEvent):
+    """Audit event for changing a user's email address.
+
+    This event is logged when an administrator changes a user's email address.
+    The new email address is validated and stored as data.
+    """
+    _action = AdminAuditActionEnum.CHANGE_DEMOGRAPHIC
+
+    @classmethod
+    @property
+    def data_keyword(cls) -> str:
+        return "data"
+
+    def __init__(self, *argc, **kwargs):
+        """Initialize an AdminAudit_ChangeEmail.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param data: The thing changed
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        :raises ValueError: If the provided email address is not valid
+        """
+        super().__init__(*argc, **kwargs)
+        pass
+
+    @classmethod
+    def get_init_params(cls, audit_record: TapirAdminAudit) -> Tuple[list, dict]:
+        """Generate constructor parameters from an audit record.
+
+        This method can be overridden by subclasses to provide custom
+        parameter generation for their __init__ methods.
+
+        :param audit_record: The TapirAdminAudit database record
+        :return: A tuple of (args, kwargs) for the constructor
+        :rtype: Tuple[list, dict]
+        """
+        return [
+            audit_record.admin_user,
+            audit_record.affected_user,
+            audit_record.session_id,
+        ], {
+            cls.data_keyword: audit_record.data,
+            "comment": audit_record.comment,
+            "remote_ip": audit_record.ip_addr,
+            "remote_hostname": audit_record.remote_host,
+            "tracking_cookie": audit_record.tracking_cookie,
+            "timestamp": audit_record.log_date,
+        }
+
+    def describe(self, session: Session) -> str:
+        return f"{self.describe_admin_user(session)} changed demographic of {self.describe_affected_user(session)} to {self.data}"
 
 
 class AdminAudit_EndorseEvent(AdminAuditEvent):
@@ -1831,6 +1890,7 @@ event_classes: Dict[str, AdminAuditEvent] = {
         AdminAudit_BecomeUser,
         AdminAudit_ChangeEmail,
         AdminAudit_ChangePassword,
+        AdminAudit_ChangeDemographic,
         AdminAudit_EndorsedBySuspect,
         AdminAudit_GotNegativeEndorsement,
         AdminAudit_MakeModerator,
