@@ -1018,7 +1018,8 @@ async def get_user_profile_with_query(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Username not found")
     user, nick, demo, orcid, xauth = user_data
     return AccountIdentifierModel(user_id=str(user.user_id), username=nick.nickname, email=user.email,
-                                  orcid=orcid.orcid, author_id=xauth.author_id)
+                                  orcid=orcid.orcid if orcid else None,
+                                  author_id=xauth.author_id if xauth else None)
 
 
 #

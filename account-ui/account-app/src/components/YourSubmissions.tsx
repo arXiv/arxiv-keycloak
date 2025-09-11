@@ -25,7 +25,7 @@ const YourSubmissions: React.FC<{ runtimeProps: RuntimeProps, vetoed: boolean }>
                 onDataChange={handleRefreshAll}
             />
 
-            <Box display="flex" gap={2} justifyContent="flex-start" mt={1}>
+            <Box display="flex" gap={1} justifyContent="flex-start" mt={1}>
                 <Box flexGrow={1}> {/* vetoedOrNot */} </Box>
                 <Button
                     disabled={vetoed || runtimeProps.currentUser === null}

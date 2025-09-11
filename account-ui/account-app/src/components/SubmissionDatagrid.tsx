@@ -298,6 +298,9 @@ const SubmissionDatagrid = forwardRef<SubmissionDatagridRef, SubmissionDatagridP
             columns={columns}
             rows={submissions}
             rowCount={totalCount}
+            rowHeight={32}
+
+            columnHeaderHeight={32}
 
             getDetailPanelContent={({row}: GridRowParams<SubmissionWithActionType>) => (
                 <Box sx={{padding: 2, backgroundColor: "#f9f9f9"}}>

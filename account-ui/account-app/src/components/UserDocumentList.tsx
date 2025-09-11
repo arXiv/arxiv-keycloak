@@ -401,6 +401,9 @@ const UserDocumentList: React.FC = () => {
                     columns={columns}
                     rows={papers}
                     rowCount={paperCount}
+                    rowHeight={32}
+
+                    columnHeaderHeight={32}
 
                     checkboxSelection
                     disableRowSelectionOnClick

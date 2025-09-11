@@ -114,8 +114,8 @@ const UserAccountInfo = () => {
     const vetoed = !!(runtimeProps.currentUser?.veto_status && runtimeProps.currentUser?.veto_status !== "ok");
 
     return (
-        <Container maxWidth={"lg"} sx={{my: "4em", gap: 2}}>
-            <Box display={"flex"} flexDirection={"column"} sx={{gap: "2em"}}>
+        <Container maxWidth={"lg"} sx={{my: "4em", gap: 1}}>
+            <Box display={"flex"} flexDirection={"column"} sx={{gap: "0.75em"}}>
                 <Typography variant={"h1"} >Account for {user?.first_name} {user?.last_name} </Typography>
 
                 <YourSubmissions runtimeProps={runtimeProps} vetoed={vetoed}/>
