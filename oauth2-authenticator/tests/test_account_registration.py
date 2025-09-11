@@ -15,7 +15,7 @@ from arxiv_bizlogic.fastapi_helpers import datetime_to_epoch
 from datetime import datetime
 from time import sleep
 
-from arxiv_oauth2.biz.account_biz import CAREER_STATUS, AccountRegistrationModel, AccountInfoModel
+from arxiv_oauth2.biz.account_biz import AccountRegistrationModel, CategoryIdModel, CAREER_STATUS, AccountInfoModel
 
 from test_mta_client.client import Client as MtaClient
 from test_mta_client.api.default import get_emails_emails_get

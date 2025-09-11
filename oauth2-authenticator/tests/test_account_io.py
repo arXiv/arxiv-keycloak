@@ -11,7 +11,7 @@ from arxiv_bizlogic.bizmodels.user_model import UserModel
 
 #from pygments.lexer import default
 
-from arxiv_oauth2 import datetime_to_epoch
+from arxiv_bizlogic.fastapi_helpers import datetime_to_epoch
 from arxiv_oauth2.biz.account_biz import register_tapir_account, AccountRegistrationModel, get_account_info, \
     CategoryIdModel, CAREER_STATUS, CategoryGroup, AccountInfoModel, update_tapir_account
 

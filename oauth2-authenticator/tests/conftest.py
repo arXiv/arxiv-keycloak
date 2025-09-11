@@ -4,8 +4,12 @@
 
 import subprocess
 from pathlib import Path
-from typing import Dict, Optional, List
+from typing import Dict, Optional
+
+from arxiv.auth.user_claims import ArxivUserClaims, ArxivUserClaimsModel
 from dotenv import dotenv_values, load_dotenv
+
+from arxiv_oauth2.biz.account_biz import AccountIdentifierModel
 
 AAA_TEST_DIR = Path(__file__).parent
 ARXIV_KEYCLOAK_DIR = AAA_TEST_DIR.parent.parent
@@ -131,6 +135,34 @@ def aaa_api_headers(test_env):
     aaa_api_token = test_env['AAA_API_TOKEN']
     headers = {
         "Authorization": f"Bearer {aaa_api_token}",
+        "Content-Type": "application/json"
+    }
+    return headers
+
+
+@pytest.fixture(scope="module", autouse=True)
+def aaa_user0001_headers(test_env, aaa_client, aaa_api_headers):
+    response1 = aaa_client.get("/account/identifier/?username=user0001", headers=aaa_api_headers)
+    ident: AccountIdentifierModel = AccountIdentifierModel.model_validate(response1.json())
+
+    user_claims = ArxivUserClaims(
+        ArxivUserClaimsModel(
+            sub = ident.user_id,
+            exp = 0x7FFFFFFFFFFFFFFFFFFFFFF,
+            iat = 0x7FFFFFFFFFFFFFFFFFFFFFF,
+            sid = "kc-session",
+            roles = ["Approved", "Public user"],
+            email_verified = True,
+            email = ident.email,
+            first_name = ident.first_name,
+            last_name = ident.last_name,
+            username = ident.username,
+            ts_id = 1,
+        )
+    )
+    token = user_claims.encode_jwt_token(secret=test_env['JWT_SECRET'])
+    headers = {
+        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
     return headers

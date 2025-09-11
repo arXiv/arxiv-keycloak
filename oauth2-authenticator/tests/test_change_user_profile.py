@@ -18,15 +18,14 @@ def test_change_user_profile(docker_compose, test_env, aaa_client, aaa_api_heade
     response1 = aaa_client.get("/account/identifier/?username=user0001", headers=aaa_api_headers)
     ident = AccountIdentifierModel.model_validate(response1.json())
 
-    response2 = aaa_client.get(f"/account/profile/{ident.user_id}", headers=aaa_api_headers)
+    response2 = aaa_client.get(f"/account/{ident.user_id}/profile", headers=aaa_api_headers)
     profile2 = AccountInfoModel.model_validate(response2.json())
 
     profile2.affiliation = "Mandalore"
-    response3 = aaa_client.put("/account/profile/", json=profile2.model_dump(), headers=aaa_api_headers)
-
+    response3 = aaa_client.put(f"/account/{ident.user_id}/profile", json=profile2.model_dump(), headers=aaa_api_headers)
     assert response3.status_code == 200
 
-    response3 = aaa_client.get(f"/account/profile/{ident.user_id}", headers=aaa_api_headers)
+    response3 = aaa_client.get(f"/account/{ident.user_id}/profile", headers=aaa_api_headers)
     profile3 = AccountInfoModel.model_validate(response3.json())
 
     assert profile3.affiliation == "Mandalore"
