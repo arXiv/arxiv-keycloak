@@ -32,13 +32,6 @@ resource "google_compute_backend_service" "default" {
   health_checks         = [google_compute_health_check.default.self_link]
 }
 
-resource "google_compute_managed_ssl_certificate" "default" {
-  project = var.gcp_project_id
-  name    = "${var.environment_name}-ssl-cert"
-  managed {
-    domains = local.dns_hostnames
-  }
-}
 
 resource "google_compute_url_map" "default" {
   project         = var.gcp_project_id
@@ -50,7 +43,7 @@ resource "google_compute_target_https_proxy" "default" {
   project          = var.gcp_project_id
   name             = "${var.environment_name}-https-proxy"
   url_map          = google_compute_url_map.default.self_link
-  ssl_certificates = [google_compute_managed_ssl_certificate.default.self_link]
+  ssl_certificates = [var.ssl_certificate_name]
 }
 
 resource "google_compute_global_forwarding_rule" "default" {

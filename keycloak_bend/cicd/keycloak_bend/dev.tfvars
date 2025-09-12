@@ -1,7 +1,7 @@
 gcp_project_id = "arxiv-development"
 gcp_region     = "us-central1"
 environment_name = "dev"
-terraform_state_bucket = "arxiv-terraform-state-dev"
+terraform_state_bucket  = "dev-arxiv-terraform-state"
 db_addr = "172.26.51.12"
 proxy_mode = "--proxy-headers=forwarded"
 kc_bootstrap_admin_username = "admin"
@@ -13,4 +13,5 @@ grpc_trace = "tcp,http,api"
 arxiv_user_registration_url = "https://dev9.arxiv.org/user-account/register"
 #kc_hostname = "https://keycloak-dev-874717964009.us-central1.run.app" 
 min_scale = 1
-max_scale = 1 
+max_scale = 1
+keycloak_docker_tag = "latest"

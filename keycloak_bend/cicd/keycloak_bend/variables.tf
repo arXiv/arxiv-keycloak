@@ -91,6 +91,12 @@ variable "arxiv_user_registration_url" {
   default     = ""
 }
 
+variable "keycloak_docker_tag" {
+  description = "Keycloak Docker tag."
+  type        = string
+  default     = "latest"
+}
+
 # variable "kc_hostname" {
 #   description = "Keycloak hostname."
 #   type        = string

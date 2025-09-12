@@ -18,3 +18,8 @@ variable "terraform_state_bucket" {
   description = "The GCS bucket to store the Terraform state file."
   type        = string
 }
+
+variable "ssl_certificate_name" {
+  description = "The name of the existing SSL certificate to use (e.g., wildcard certificate)."
+  type        = string
+}

@@ -37,7 +37,7 @@ resource "google_cloud_run_service" "keycloak" {
       timeout_seconds       = 300
 
       containers {
-        image = "gcr.io/${var.gcp_project_id}/arxiv-keycloak/keycloak:latest"
+        image = "gcr.io/${var.gcp_project_id}/arxiv-keycloak/keycloak:${var.keycloak_docker_tag}"
 
         ports {
           container_port = 8080

@@ -1,5 +1,6 @@
 gcp_project_id          = "arxiv-development"
 #gcp_project_id = "874717964009"
 gcp_region              = "us-central1"
-terraform_state_bucket  = "arxiv-terraform-state-dev"
+terraform_state_bucket  = "dev-arxiv-terraform-state"
 environment_name        = "dev"
+ssl_certificate_name    = "backend-dev-arxiv-org"
