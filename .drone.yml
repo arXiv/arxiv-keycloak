@@ -34,6 +34,19 @@ steps:
       # Improved git fetch and diff logic that works for both direct pushes and PRs
       - git fetch --all || echo "Failed to fetch all branches"
       - |
+        # Check for forced rebuild in commit message
+        if echo "$DRONE_COMMIT_MESSAGE" | grep -q "\\[rebuild-all\\]"; then
+          echo "Forced rebuild requested via commit message"
+          touch .run-keycloak_bend
+          touch .run-account-ui
+          touch .run-keycloak_tapir_bridge
+          touch .run-oauth2-authenticator
+          touch .run-user-portal
+          touch .run-test-mta
+          touch .run-legacy_auth_provider
+          exit 0
+        fi
+        
         # Check for last successful build tag for this branch
         LAST_SUCCESS_TAG="last-successful-build-${DRONE_BRANCH}"
         git fetch origin "refs/tags/${LAST_SUCCESS_TAG}:refs/tags/${LAST_SUCCESS_TAG}" || echo "No previous successful build tag found"
