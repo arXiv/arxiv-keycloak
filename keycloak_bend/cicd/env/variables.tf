@@ -19,7 +19,7 @@ variable "terraform_state_bucket" {
   type        = string
 }
 
-variable "ssl_certificate_name" {
-  description = "The name of the existing SSL certificate to use (e.g., wildcard certificate)."
+variable "domain_name" {
+  description = "The domain name for the environment (e.g., arxivd.org, arxiv.org)."
   type        = string
 }

@@ -1,6 +1,7 @@
 gcp_project_id = "arxiv-development"
 gcp_region     = "us-central1"
 environment_name = "dev"
+domain_name = "arxivd.org"
 terraform_state_bucket  = "dev-arxiv-terraform-state"
 db_addr = "172.26.51.12"
 proxy_mode = "--proxy-headers=forwarded"

@@ -8,6 +8,11 @@ variable "environment_name" {
   type        = string
 }
 
+variable "domain_name" {
+  description = "The domain name for the environment (e.g., arxivd.org, arxiv.org)."
+  type        = string
+}
+
 variable "gcp_region" {
   description = "The GCP region to deploy resources in."
   type        = string

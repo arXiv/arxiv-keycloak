@@ -222,3 +222,40 @@ resource "null_resource" "update_url_map" {
 EOT
   }
 }
+
+resource "null_resource" "remove_backend_from_url_map" {
+  depends_on = [google_compute_backend_service.keycloak_backend]
+  
+  triggers = {
+    backend_service_id = google_compute_backend_service.keycloak_backend.id
+    backend_service_name = google_compute_backend_service.keycloak_backend.name
+    project_id        = var.gcp_project_id
+  }
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<EOT
+      # Try to remove path matcher if URL map still exists
+      echo "Attempting to clean up URL map references..."
+      
+      # List all URL maps and try to remove the keycloak path matcher from each
+      gcloud compute url-maps list --format="value(name)" --project=${self.triggers.project_id} | while read urlmap; do
+        if [ ! -z "$urlmap" ]; then
+          echo "Checking URL map: $urlmap"
+          # Check if this URL map has the keycloak path matcher
+          if gcloud compute url-maps describe "$urlmap" --global --project=${self.triggers.project_id} --format="value(pathMatchers[].name)" | grep -q "keycloak-matcher"; then
+            echo "Removing keycloak path matcher from URL map: $urlmap"
+            gcloud compute url-maps remove-path-matcher "$urlmap" \
+              --global \
+              --path-matcher-name=keycloak-matcher \
+              --project=${self.triggers.project_id} || true
+          fi
+        fi
+      done
+      
+      # Also try to remove the backend service directly
+      echo "Attempting to delete backend service directly..."
+      gcloud compute backend-services delete ${self.triggers.backend_service_name} --global --quiet --project=${self.triggers.project_id} || true
+EOT
+  }
+}
