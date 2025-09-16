@@ -84,6 +84,30 @@ resource "google_cloud_run_service" "keycloak" {
           value = var.arxiv_user_registration_url
         }
         env {
+          name  = "KC_HOSTNAME"
+          value = data.terraform_remote_state.env.outputs.load_balancer_ip_address
+        }
+        env {
+          name  = "KC_HOSTNAME_URL"
+          value = "http://${data.terraform_remote_state.env.outputs.load_balancer_ip_address}"
+        }
+        # env {
+        #   name  = "KC_FRONTEND_URL"
+        #   value = "http://${data.terraform_remote_state.env.outputs.load_balancer_ip_address}/auth"
+        # }
+        # env {
+        #   name  = "KC_HOSTNAME_STRICT"
+        #   value = "false"
+        # }
+        # env {
+        #   name  = "KC_HOSTNAME_STRICT_HTTPS"
+        #   value = "false"
+        # }
+        # env {
+        #   name  = "KC_HTTP_ENABLED"
+        #   value = "true"
+        # }
+        env {
           name = "KC_DB_PASS"
           value_from {
             secret_key_ref {
@@ -195,15 +219,6 @@ resource "google_compute_firewall" "allow_lb_to_cloud_run" {
   source_ranges = ["35.191.0.0/16", "130.211.0.0/22"]
 }
 
-resource "null_resource" "update_backend_service" {
-  triggers = {
-    backend_service_id = google_compute_backend_service.keycloak_backend.id
-  }
-
-  provisioner "local-exec" {
-    command = "gcloud compute backend-services update keycloak-${var.environment_name}-backend --global --no-health-checks"
-  }
-}
 
 resource "null_resource" "update_url_map" {
   triggers = {
@@ -213,12 +228,21 @@ resource "null_resource" "update_url_map" {
 
   provisioner "local-exec" {
     command = <<EOT
+      # Remove existing path matcher if it exists
+      gcloud compute url-maps remove-path-matcher ${self.triggers.url_map_name} \
+        --global \
+        --path-matcher-name=keycloak-matcher \
+        --project=${var.gcp_project_id} || true
+      
+      # Add updated path matcher with root path - make it handle all traffic
       gcloud compute url-maps add-path-matcher ${self.triggers.url_map_name} \
         --global \
         --path-matcher-name=keycloak-matcher \
-        --default-service=${data.terraform_remote_state.env.outputs.backend_service_self_link} \
-        --backend-service-path-rules='/admin/*=${google_compute_backend_service.keycloak_backend.self_link},/auth/*=${google_compute_backend_service.keycloak_backend.self_link},/realms/*=${google_compute_backend_service.keycloak_backend.self_link}' \
+        --default-service=${google_compute_backend_service.keycloak_backend.self_link} \
+        --backend-service-path-rules='/=${google_compute_backend_service.keycloak_backend.self_link},/admin/*=${google_compute_backend_service.keycloak_backend.self_link},/auth/*=${google_compute_backend_service.keycloak_backend.self_link},/realms/*=${google_compute_backend_service.keycloak_backend.self_link}' \
         --project=${var.gcp_project_id}
+      
+      
 EOT
   }
 }
@@ -230,6 +254,8 @@ resource "null_resource" "remove_backend_from_url_map" {
     backend_service_id = google_compute_backend_service.keycloak_backend.id
     backend_service_name = google_compute_backend_service.keycloak_backend.name
     project_id        = var.gcp_project_id
+    environment_name  = var.environment_name
+    url_map_name      = data.terraform_remote_state.env.outputs.load_balancer_name
   }
 
   provisioner "local-exec" {
