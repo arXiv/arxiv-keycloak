@@ -216,7 +216,7 @@ resource "google_compute_firewall" "allow_lb_to_cloud_run" {
     ports    = ["8080"]
   }
 
-  source_ranges = ["35.191.0.0/16", "130.211.0.0/22"]
+  source_ranges = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
 }
 
 
@@ -241,8 +241,7 @@ resource "null_resource" "update_url_map" {
         --default-service=${google_compute_backend_service.keycloak_backend.self_link} \
         --backend-service-path-rules='/=${google_compute_backend_service.keycloak_backend.self_link},/admin/*=${google_compute_backend_service.keycloak_backend.self_link},/auth/*=${google_compute_backend_service.keycloak_backend.self_link},/realms/*=${google_compute_backend_service.keycloak_backend.self_link}' \
         --project=${var.gcp_project_id}
-      
-      
+            
 EOT
   }
 }
