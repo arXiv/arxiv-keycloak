@@ -16,9 +16,15 @@ data "google_compute_network" "default" {
   project = var.gcp_project_id
 }
 
+data "google_compute_subnetwork" "proxy_only" {
+  name    = "${var.environment_name}-proxy-only-subnet"
+  region  = var.gcp_region
+  project = var.gcp_project_id
+}
+
 resource "google_cloud_run_service" "keycloak" {
   name     = "keycloak-${var.environment_name}"
-  location = "us-central1"
+  location = var.gcp_region
   project  = var.gcp_project_id
 
   template {
@@ -189,7 +195,7 @@ resource "google_cloud_run_service_iam_member" "keycloak_service_public_access" 
 resource "google_compute_region_network_endpoint_group" "keycloak_neg" {
   name                  = "keycloak-${var.environment_name}-neg"
   network_endpoint_type = "SERVERLESS"
-  region                = "us-central1"
+  region                = var.gcp_region
   cloud_run {
     service = google_cloud_run_service.keycloak.name
   }
@@ -216,7 +222,8 @@ resource "google_compute_firewall" "allow_lb_to_cloud_run" {
     ports    = ["8080"]
   }
 
-  source_ranges = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+  source_ranges = ["35.191.0.0/16", "130.211.0.0/22"]
+  #source_ranges = [data.google_compute_subnetwork.proxy_only.ip_cidr_range]
 }
 
 
