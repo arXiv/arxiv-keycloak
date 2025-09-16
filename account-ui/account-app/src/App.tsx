@@ -19,7 +19,8 @@ import AuthorshipStatus from "./pages/AuthorshipStatus.tsx";
 import UpdateProfile from "./pages/UpdateProfile.tsx";
 import ChangePassword from "./pages/ChangePassword.tsx";
 import ChangeEmail from "./pages/ChangeEmail.tsx";
-import EnterEndorsementCode from "./pages/EnterEndorsementCode.tsx";
+// import EnterEndorsementCode from "./pages/EnterEndorsementCode.tsx";
+import EndorsementStepper from "./pages/EndorsementStepper.tsx";
 import YourDocuments from "./pages/YourDocuments.tsx";
 import {LocalizationProvider} from "@mui/x-date-pickers";
 import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
@@ -72,7 +73,7 @@ const App: React.FC = () => {
                                         <Route path="/user-account/update-profile" element={<UpdateProfile/>}/>
                                         <Route path="/user-account/change-password" element={<ChangePassword/>}/>
                                         <Route path="/user-account/change-email" element={<ChangeEmail/>}/>
-                                        <Route path="/user-account/endorse" element={<EnterEndorsementCode/>}/>
+                                        <Route path="/user-account/endorse" element={<EndorsementStepper/>}/>
                                         <Route path="/user-account/article-information" element={<YourDocuments/>}/>
                                         <Route path="/user-account/owned-documents" element={<ArticlesYouOwn/>}/>
                                         <Route path="/user-account/claim-document-ownership"

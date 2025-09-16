@@ -4,6 +4,11 @@ import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Container from "@mui/material/Container";
+import Stepper from "@mui/material/Stepper";
+import Step from "@mui/material/Step";
+import StepLabel from "@mui/material/StepLabel";
+import StepContent from "@mui/material/StepContent";
+import Paper from "@mui/material/Paper";
 
 import {RuntimeContext, User} from "../RuntimeContext";
 import {useNotification} from "../NotificationContext";
@@ -12,7 +17,6 @@ import {paths as adminApi} from "../types/admin-api";
 import {endorsementCodeValidator} from "../bits/validators";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
-// import{RadioButtonChecked from "@mui/icons-material";
 import FormControl from "@mui/material/FormControl";
 import RadioGroup from "@mui/material/RadioGroup";
 import Radio from "@mui/material/Radio";
@@ -35,12 +39,19 @@ type EndorsementRequestType = adminApi[typeof ADMIN_ENDORSEMENT_REQUESTS_CODE]['
 type PublicUserType = EndorsementOutcomeModel["endorsee"];
 type CategoryResponse = adminApi[typeof ADMIN_CATEGORY_ARCHIVE_SUBJECT_CLASS_URL]['get']['responses']['200']['content']['application/json'];
 
+const steps = [
+    'Enter Endorsement Code',
+    'Review Endorsement Details',
+    'Make Endorsement Decision',
+    'Complete Endorsement'
+];
 
-const EnterEndorsementCode = () => {
+const EndorsementStepper = () => {
     const runtimeProps = useContext(RuntimeContext);
     const location = useLocation();
     const user = runtimeProps.currentUser;
     const {showNotification, showMessageDialog} = useNotification();
+    const [activeStep, setActiveStep] = useState(0);
     const [inProgress, setInProgress] = useState(false);
     const [endorsementOutcome, setEndorsementOutcome] = useState<EndorsementOutcomeModel | null>(null);
     const [endorsementCategoryName, setEndorsementCategoryName] = useState<string | null>(null);
@@ -62,7 +73,6 @@ const EnterEndorsementCode = () => {
         seen_paper: false
     };
     const [formData, setFormData] = useState<EndorsementCodeRequest>(initialFormData);
-
 
     const [errors, setErrors] = useState<{
         endorser_id?: string,
@@ -86,7 +96,6 @@ const EnterEndorsementCode = () => {
         doSetCurrentUserID();
     }, [user])
 
-
     useEffect(() => {
         async function findEndorsementRequest() {
             if (formData?.endorsement_code && formData?.preflight) {
@@ -95,11 +104,15 @@ const EnterEndorsementCode = () => {
                 try {
                     const postEndorsement = runtimeProps.adminFetcher.path(ADMIN_ENDORSEMENT_ENDORSE_URL).method('post').create();
                     const response = await postEndorsement(formData);
-                    
+
                     if (response.ok) {
                         setErrors({...errors, endorsement_code: ""});
                         const body: EndorsementOutcomeModel = response.data;
                         setEndorsementOutcome(body);
+                        // Auto-advance to next step if code is valid
+                        if (activeStep === 0) {
+                            setActiveStep(1);
+                        }
                     } else {
                         setEndorsementOutcome(null);
                         if (response.status === 404) {
@@ -132,7 +145,6 @@ const EnterEndorsementCode = () => {
             setEndorsementOutcome(null);
         }
     }, [formData.endorsement_code]);
-
 
     useEffect(() => {
         async function getCategoryName() {
@@ -170,7 +182,6 @@ const EnterEndorsementCode = () => {
             return "";
         return `${endoresementRequest?.archive}${endoresementRequest?.subject_class ? "." + endoresementRequest.subject_class : ""}`;
     }
-
 
     const endorseeName = printUserName(endorsee);
     const endorser_name = printUser(user);
@@ -226,17 +237,18 @@ const EnterEndorsementCode = () => {
                     message in error or need help, please contact {emailLink}.</p>
             </div>);
             showMessageDialog(msg, title,
-                () => setFormData(initialFormData), "Understood");
+                () => {
+                    setFormData(initialFormData);
+                    setActiveStep(0);
+                }, "Understood");
         } else {
             setErrors({...errors, reason: endorsementOutcome?.reason || "Reason is not given."});
         }
 
     }, [endorsementOutcome]);
 
-
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async () => {
         setInProgress(true);
-        event.preventDefault();
 
         try {
             const postEndorsement = runtimeProps.adminFetcher.path(ADMIN_ENDORSEMENT_ENDORSE_URL).method('post').create();
@@ -266,7 +278,10 @@ const EnterEndorsementCode = () => {
                                 {`we've informed ${endorseeName} of this by sending an e-mail. (We did not tell ${endorseeName} that the endorsement came from you.)`}</p>
                         </>),
                         `Thank you for endorsing ${endorseeName}`
-                        , () => setFormData(initialFormData), "Restart");
+                        , () => {
+                            setFormData(initialFormData);
+                            setActiveStep(0);
+                        }, "Restart");
                 } else {
                     showMessageDialog(
                         (<>
@@ -284,7 +299,10 @@ const EnterEndorsementCode = () => {
                                 responsibility to tell (or not tell) {endorseeName} of your decision.</p>
                         </>),
                         `Thank you for your feedback on ${endorseeName}`
-                        , () => setFormData(initialFormData), "Restart");
+                        , () => {
+                            setFormData(initialFormData);
+                            setActiveStep(0);
+                        }, "Restart");
 
                 }
                 return;
@@ -333,123 +351,129 @@ const EnterEndorsementCode = () => {
         }
     };
 
+    const handleNext = () => {
+        setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    };
+
+    const handleBack = () => {
+        setActiveStep((prevActiveStep) => prevActiveStep - 1);
+    };
+
+    const handleReset = () => {
+        setActiveStep(0);
+        setFormData(initialFormData);
+        setEndorsementOutcome(null);
+        setEndorsementCategoryName(null);
+    };
+
     const invalidFormData = Object.values(errors).some(value =>
         Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && value !== ''
     );
 
-    const endorsementLabel = endorsementRequest && endorsee ? (
-        <CardHeader title={`Endorsement of ${endorseeName} for ${categoryFullName}`}/>
-    ) : null;
-
-    const endorserInfo = (<Typography>
-            <Typography component={"span"} fontWeight={"bold"}> {"Endorser (You): "}</Typography>
-            <Typography component={"span"}
-                        sx={{textDecoration: "underline"}}>{endorser_name}</Typography>
-        </Typography>
-    );
-
-    const endorseeInfo = endorsee && endorsementRequest ? (
-        <Typography>
-            <Typography component="p">
-                {endorseeName} has requested your endorsement to submit papers to {printCategory(endorsementRequest)}
-                {" ("}{endorsementCategoryName}).
-            </Typography>
-            <Typography component="p" sx={{p: 2}}>
-                {endorsementOutcome?.request_acceptable ?
-                    (
-                        <Typography>
-                            Acceptance reason:
-                            <Typography>{endorsementOutcome?.reason || "Endorsement request is valid."}</Typography>
-                        </Typography>
-                    )
-                    :
-                    (
-                        <Typography>
-                            Reject reason:
-                            <Typography
-                                sx={{fontStyle: "italic"}}>{endorsementOutcome.reason || "Endorsee cannot receive any endorsement."}</Typography>
-                        </Typography>
-                    )
-                }
-            </Typography>
-            <Typography component={"span"} fontWeight={"bold"}>{"Endorsement: "}</Typography>
-            <Typography component={"span"}
-                        sx={{textDecoration: "underline"}}> {printUser(endorsee)}</Typography>
-            {" for category "}
-            <Typography component={"span"}
-                        sx={{textDecoration: "underline"}}>{printCategory(endorsementRequest)}</Typography>
-
-        </Typography>
-    ) : null;
-
     const ok_to_submit = endorsementRequest && endorsementOutcome?.request_acceptable && endorsementOutcome.endorser_capability === "credited";
 
-    const endorsementSelection = ok_to_submit ? (
-        <Box>
-            <Typography sx={{fontWeight: "bold"}}>
-                arXiv will only inform {endorseeName} if you choose to endorse.
-            </Typography>
-            <FormControl component="fieldset"
-                         disabled={!!errors?.endorsement_code?.length}>
-                <RadioGroup
-                    tabIndex={2}
-                    name="positive"
-                    id="positive"
-                    value={formData.positive ? "true" : "false"}
-                    onChange={handleChange}
-                >
-                    <FormControlLabel tabIndex={3} value="true" control={<Radio/>}
-                                      label={`Endorse ${endorseeName} (Allow submitting to category)`}/>
-                    <FormControlLabel tabIndex={4} value="false" control={<Radio/>}
-                                      label={`Deny ${endorseeName} (Vote of no confidence, do not allow submitting to category)`}/>
-                    <FormControlLabel tabIndex={5} value="undefined" control={<Radio/>}
-                                      label={"I don't know."}/>
+    const getStepContent = (step: number) => {
+        switch (step) {
+            case 0:
+                return (
+                    <Box sx={{display: "flex", flexDirection: "column", gap: 2}}>
+                        <TextField
+                            name="endorsement_code"
+                            id="endorsement_code"
+                            label="Endorsement code"
+                            onChange={handleChange}
+                            value={formData.endorsement_code}
+                            error={Boolean(errors.endorsement_code)}
+                            helperText={errors.endorsement_code}
+                            fullWidth
+                        />
+                    </Box>
+                );
+            case 1:
+                return (
+                    <Box sx={{display: "flex", flexDirection: "column", gap: 2}}>
+                        <Typography variant="h6">Endorser (You):</Typography>
+                        <Typography sx={{textDecoration: "underline"}}>{endorser_name}</Typography>
 
-                </RadioGroup>
-            </FormControl>
-        </Box>
-    ) : null;
-
-    const choices = ok_to_submit ? (
-        <>
-            <Box sx={{display: "flex", flexDirection: "row", gap: 2, alignItems: "center"}}>
-                <FormControlLabel tabIndex={6}
-                                  control={<Checkbox name="seen_paper" id="seen_paper" key={"seen_paper"}
-                                                     onChange={handleChange}/>} label={"Seen paper"}/>
-                <FormControlLabel tabIndex={7}
-                                  control={<Checkbox name="knows_personally" id="knows_personally"
-                                                     key={"knows_personally"} onChange={handleChange}/>}
-                                  label={"Knows personally"}/>
-            </Box>
-            <TextField name="comment" id="comment" label="Comment: (Optional) Enter any comments on why you would or would not endorse " multiline
-                       fullWidth onChange={handleChange}
-                       error={Boolean(errors.comment)} helperText={errors.comment}
-                       sx={{mt: 1}}
-                       minRows={4} tabIndex={8}
-            />
-
-            <Box display="flex" justifyContent="space-between" alignItems="center">
-                <Button type="submit" variant="contained" tabIndex={8} sx={{
-                    backgroundColor: "#1976d2",
-                    "&:hover": {
-                        backgroundColor: "#1420c0"
-                    }
-                }} disabled={inProgress}>
-                    Cancel
-                </Button>
-
-                <Button type="submit" variant="contained" tabIndex={9} sx={{
-                    backgroundColor: "#1976d2",
-                    "&:hover": {
-                        backgroundColor: "#1420c0"
-                    }
-                }} disabled={invalidFormData || inProgress}>
-                    Submit
-                </Button>
-            </Box>
-        </>
-    ) : null;
-
+                        {endorsee && endorsementRequest && (
+                            <Box>
+                                <Typography variant="h6">Endorsement Request:</Typography>
+                                <Typography>
+                                    {endorseeName} has requested your endorsement to submit papers to {printCategory(endorsementRequest)}
+                                    {" ("}{endorsementCategoryName}).
+                                </Typography>
+                                <Typography sx={{p: 2}}>
+                                    {endorsementOutcome?.request_acceptable ?
+                                        (<Typography>
+                                            Acceptance reason:
+                                            <Typography>{endorsementOutcome?.reason || "Endorsement request is valid."}</Typography>
+                                        </Typography>)
+                                        :
+                                        (<Typography>
+                                            Reject reason:
+                                            <Typography sx={{fontStyle: "italic"}}>
+                                                {endorsementOutcome.reason || "Endorsee cannot receive any endorsement."}
+                                            </Typography>
+                                        </Typography>)
+                                    }
+                                </Typography>
+                                <Typography sx={{fontWeight: "bold"}}>Endorsee: </Typography>
+                                <Typography sx={{textDecoration: "underline"}}> {printUser(endorsee)}</Typography>
+                                {" for category "}
+                                <Typography sx={{textDecoration: "underline"}}>{printCategory(endorsementRequest)}</Typography>
+                            </Box>
+                        )}
+                    </Box>
+                );
+            case 2:
+                return (
+                    <Box sx={{display: "flex", flexDirection: "column", gap: 2}}>
+                        <Typography sx={{fontWeight: "bold"}}>
+                            arXiv will only inform {endorseeName} if you choose to endorse.
+                        </Typography>
+                        <FormControl component="fieldset" disabled={!!errors?.endorsement_code?.length}>
+                            <RadioGroup
+                                name="positive"
+                                id="positive"
+                                value={formData.positive ? "true" : "false"}
+                                onChange={handleChange}
+                            >
+                                <FormControlLabel value="true" control={<Radio/>}
+                                                  label={`Endorse ${endorseeName} (Allow submitting to category)`}/>
+                                <FormControlLabel value="false" control={<Radio/>}
+                                                  label={`Deny ${endorseeName} (Vote of no confidence, do not allow submitting to category)`}/>
+                            </RadioGroup>
+                        </FormControl>
+                    </Box>
+                );
+            case 3:
+                return (
+                    <Box sx={{display: "flex", flexDirection: "column", gap: 2}}>
+                        <Box sx={{display: "flex", flexDirection: "row", gap: 2, alignItems: "center"}}>
+                            <FormControlLabel
+                                control={<Checkbox name="seen_paper" id="seen_paper" onChange={handleChange}/>}
+                                label={"Seen paper"}/>
+                            <FormControlLabel
+                                control={<Checkbox name="knows_personally" id="knows_personally" onChange={handleChange}/>}
+                                label={"Knows personally"}/>
+                        </Box>
+                        <TextField
+                            name="comment"
+                            id="comment"
+                            label="Comment: (Optional) Enter any comments on why you would or would not endorse "
+                            multiline
+                            fullWidth
+                            onChange={handleChange}
+                            error={Boolean(errors.comment)}
+                            helperText={errors.comment}
+                            minRows={4}
+                        />
+                    </Box>
+                );
+            default:
+                return 'Unknown step';
+        }
+    };
 
     return (
         <Container maxWidth={"md"} sx={{mt: 2}}>
@@ -458,35 +482,67 @@ const EnterEndorsementCode = () => {
                     Giving an endorsement
                 </Typography>
 
-                <CardWithTitle title={"Endorsement Form"}>
+                <CardWithTitle title={"Endorsing"}>
+                    {endorsementRequest && endorsee && (
+                        <CardHeader title={`Endorsement of ${endorseeName} for ${categoryFullName}`}/>
+                    )}
 
-                    {endorsementLabel}
-                    <Box component="form" sx={{display: "flex", flexDirection: "column", gap: 2}}
-                         onSubmit={handleSubmit}>
-                        <input name="user_id" id="user_id" type="text" disabled={true} value={formData.endorser_id}
-                               hidden={true}/>
-                        <Box sx={{display: "flex", flexDirection: "row", gap: 2, alignItems: "center"}}>
-                            <TextField tabIndex={1}
-                                       sx={{width: "10em"}}
-                                       name="endorsement_code" id="endorsement_code" label="Endorsement code"
-                                       onChange={handleChange}
-                                       value={formData.endorsement_code}
-                                       error={Boolean(errors.endorsement_code)}
-                                       helperText={errors.endorsement_code}/>
-                        </Box>
+                    <Stepper activeStep={activeStep} orientation="vertical">
+                        {steps.map((label, index) => (
+                            <Step key={label}>
+                                <StepLabel>{label}</StepLabel>
+                                <StepContent>
+                                    {getStepContent(index)}
+                                    <Box sx={{mb: 2}}>
+                                        <div>
+                                            {index === steps.length - 1 ? (
+                                                <Button
+                                                    variant="contained"
+                                                    onClick={handleSubmit}
+                                                    disabled={invalidFormData || inProgress || !ok_to_submit}
+                                                    sx={{mt: 1, mr: 1}}
+                                                >
+                                                    Submit Endorsement
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    variant="contained"
+                                                    onClick={handleNext}
+                                                    disabled={
+                                                        (index === 0 && !endorsementOutcome) ||
+                                                        (index === 1 && !ok_to_submit)
+                                                    }
+                                                    sx={{mt: 1, mr: 1}}
+                                                >
+                                                    Continue
+                                                </Button>
+                                            )}
+                                            <Button
+                                                disabled={index === 0}
+                                                onClick={handleBack}
+                                                sx={{mt: 1, mr: 1}}
+                                            >
+                                                Back
+                                            </Button>
+                                        </div>
+                                    </Box>
+                                </StepContent>
+                            </Step>
+                        ))}
+                    </Stepper>
 
-                        {endorseeInfo}
-
-                        {endorserInfo}
-
-                        {endorsementSelection}
-                        {choices}
-                    </Box>
+                    {activeStep === steps.length && (
+                        <Paper square elevation={0} sx={{p: 3}}>
+                            <Typography>Endorsement completed!</Typography>
+                            <Button onClick={handleReset} sx={{mt: 1, mr: 1}}>
+                                Start New Endorsement
+                            </Button>
+                        </Paper>
+                    )}
                 </CardWithTitle>
             </Box>
-
         </Container>
     );
 };
 
-export default EnterEndorsementCode;
+export default EndorsementStepper;
