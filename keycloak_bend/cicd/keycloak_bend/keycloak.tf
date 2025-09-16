@@ -261,23 +261,21 @@ resource "null_resource" "remove_backend_from_url_map" {
   provisioner "local-exec" {
     when    = destroy
     command = <<EOT
-      # Try to remove path matcher if URL map still exists
-      echo "Attempting to clean up URL map references..."
-      
-      # List all URL maps and try to remove the keycloak path matcher from each
-      gcloud compute url-maps list --format="value(name)" --project=${self.triggers.project_id} | while read urlmap; do
-        if [ ! -z "$urlmap" ]; then
-          echo "Checking URL map: $urlmap"
-          # Check if this URL map has the keycloak path matcher
-          if gcloud compute url-maps describe "$urlmap" --global --project=${self.triggers.project_id} --format="value(pathMatchers[].name)" | grep -q "keycloak-matcher"; then
-            echo "Removing keycloak path matcher from URL map: $urlmap"
-            gcloud compute url-maps remove-path-matcher "$urlmap" \
-              --global \
-              --path-matcher-name=keycloak-matcher \
-              --project=${self.triggers.project_id} || true
-          fi
+      # Check only the specific URL map for this environment
+      urlmap="${self.triggers.environment_name}-lb"
+      if gcloud compute url-maps describe "$urlmap" --global --project=${self.triggers.project_id} --format="value(name)" >/dev/null 2>&1; then
+        echo "Checking URL map: $urlmap"
+        # Check if this URL map has the keycloak path matcher
+        if gcloud compute url-maps describe "$urlmap" --global --project=${self.triggers.project_id} --format="value(pathMatchers[].name)" | grep -q "keycloak-matcher"; then
+          echo "Removing keycloak path matcher from URL map: $urlmap"
+          gcloud compute url-maps remove-path-matcher "$urlmap" \
+            --global \
+            --path-matcher-name=keycloak-matcher \
+            --project=${self.triggers.project_id} || true
         fi
-      done
+      else
+        echo "URL map $urlmap not found, skipping cleanup"
+      fi
       
       # Also try to remove the backend service directly
       echo "Attempting to delete backend service directly..."
