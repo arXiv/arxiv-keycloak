@@ -11,3 +11,8 @@ output "keycloak_lb_url" {
   description = "The URL to the Keycloak admin console through the load balancer."
   value       = "https://${data.terraform_remote_state.env.outputs.dns_hostnames[0]}/auth/admin/"
 }
+
+output "keycloak_lb_http_url" {
+  description = "The HTTP URL to the Keycloak admin console through the load balancer."
+  value       = "http://${data.terraform_remote_state.env.outputs.load_balancer_ip_address}/admin/master/console"
+}
