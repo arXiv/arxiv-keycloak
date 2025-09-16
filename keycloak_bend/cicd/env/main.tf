@@ -67,6 +67,12 @@ resource "google_compute_managed_ssl_certificate" "default" {
   }
 }
 
+resource "google_compute_target_http_proxy" "default" {
+  project = var.gcp_project_id
+  name    = "${var.environment_name}-http-proxy"
+  url_map = google_compute_url_map.default.self_link
+}
+
 resource "google_compute_target_https_proxy" "default" {
   project          = var.gcp_project_id
   name             = "${var.environment_name}-https-proxy"
@@ -77,9 +83,19 @@ resource "google_compute_target_https_proxy" "default" {
   ]
 }
 
-resource "google_compute_global_forwarding_rule" "default" {
+resource "google_compute_global_forwarding_rule" "http" {
   project                 = var.gcp_project_id
-  name                    = "${var.environment_name}-https-forwarding-rule"
+  name                    = "${var.environment_name}-http-forwarding-rule"
+  ip_protocol             = "TCP"
+  port_range              = "80"
+  load_balancing_scheme   = "EXTERNAL_MANAGED"
+  target                  = google_compute_target_http_proxy.default.self_link
+  ip_address              = google_compute_global_address.default.address
+}
+
+resource "google_compute_global_forwarding_rule" "https" {
+  project                 = var.gcp_project_id
+  name                    = "${var.environment_name}-https-forwarding-rule-v2"
   ip_protocol             = "TCP"
   port_range              = "443"
   load_balancing_scheme   = "EXTERNAL_MANAGED"
@@ -96,7 +112,7 @@ resource "google_compute_health_check" "default" {
   healthy_threshold     = 2
 
   http_health_check {
-    port         = 80
+    port         = 8080
     request_path = "/"
   }
 }

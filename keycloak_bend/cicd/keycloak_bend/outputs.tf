@@ -4,12 +4,12 @@ output "keycloak_backend_service_id" {
 
 output "keycloak_cloud_run_url" {
   description = "The direct URL to the Keycloak Cloud Run service."
-  value       = google_cloud_run_service.keycloak.status[0].url
+  value       = "${google_cloud_run_service.keycloak.status[0].url}/admin/master/console"
 }
 
 output "keycloak_lb_url" {
   description = "The URL to the Keycloak admin console through the load balancer."
-  value       = "https://${data.terraform_remote_state.env.outputs.dns_hostnames[0]}/auth/admin/"
+  value       = "https://${data.terraform_remote_state.env.outputs.dns_hostnames[0]}/admin/master/console"
 }
 
 output "keycloak_lb_http_url" {
