@@ -83,14 +83,14 @@ resource "google_cloud_run_service" "keycloak" {
           name  = "ARXIV_USER_REGISTRATION_URL"
           value = var.arxiv_user_registration_url
         }
-        env {
-          name  = "KC_HOSTNAME"
-          value = data.terraform_remote_state.env.outputs.load_balancer_ip_address
-        }
-        env {
-          name  = "KC_HOSTNAME_URL"
-          value = "http://${data.terraform_remote_state.env.outputs.load_balancer_ip_address}"
-        }
+        # env {
+        #   name  = "KC_HOSTNAME"
+        #   value = data.terraform_remote_state.env.outputs.load_balancer_ip_address
+        # }
+        # env {
+        #   name  = "KC_HOSTNAME_URL"
+        #   value = "http://${data.terraform_remote_state.env.outputs.load_balancer_ip_address}"
+        # }
         # env {
         #   name  = "KC_FRONTEND_URL"
         #   value = "http://${data.terraform_remote_state.env.outputs.load_balancer_ip_address}/auth"
