@@ -1,5 +1,19 @@
 
 services:
+  setup_task:
+    image: python:3.12-bookworm
+    container_name: aaat-db-setup
+    volumes:
+      - ./mysql:/var/lib/mysql
+      - ./initdb.d:/initdb.d
+    command:
+      - /bin/bash
+      - -c
+      - |
+        cd /var/lib && rm -fr ./mysql/*
+        cd /var/lib && tar xzf /initdb.d/mysql_test_data.tgz
+
+
   auth-db:
     image: postgres:16
     container_name: aaat-auth-db
@@ -56,7 +70,7 @@ services:
       KC_HOSTNAME: localhost.arxiv.org
       #
       # These are used for troubleshooting of audit event not going into pubsub.
-      # (not sure this works with te pubsub emulator)
+      # (not sure this works with the pubsub emulator)
       GRPC_LOG_LEVEL: DEBUG
       GRPC_TRACE: tcp,http,api
       #
@@ -68,7 +82,7 @@ services:
     ports:
       - "${KC_PORT}:${KC_PORT}"
       - "${KC_SSL_PORT}:${KC_SSL_PORT}"
-      - 9000:9000
+      - "9000:9000"
     depends_on:
       - auth-db
       - pubsub-emulator
@@ -86,9 +100,12 @@ services:
       MYSQL_USER: arxiv
       MYSQL_PASSWORD: arxiv_password
       MYSQL_TCP_PORT: ${ARXIV_DB_PORT}
-    # volumes:
-    #  - mysql_data:/var/lib/mysql  # Persist data locally (optional)
+    volumes:
+     - ./mysql:/var/lib/mysql  # Persist data locally (optional)
     network_mode: host
+    depends_on:
+      setup_task:
+        condition: service_completed_successfully
 
   legacy-auth-provider:
     image: ${LEGACY_AUTH_DOCKER_TAG}
@@ -156,7 +173,7 @@ services:
     volumes:
       - ../../keycloak_bend:/keycloak_bend:ro
     environment:
-      # This is running in the docker network - so use private address
+      # This is running in the docker network - so use the private address
       KC_URL: "${KC_URL_PRIVATE}"
       KC_ADMIN_PASSWORD: "${KC_ADMIN_PASSWORD}"
       ARXIV_USER_SECRET: "${KEYCLOAK_TEST_CLIENT_SECRET}"
@@ -165,21 +182,3 @@ services:
 
     entrypoint: sh /keycloak_bend/tools/setup-arxiv-realm.sh
 
-  arxiv-test-db-setup:
-    image: mysql:5.7.20
-    container_name: aaat-arxiv-test-db-setup
-    depends_on:
-      - arxiv-test-db
-    network_mode: host
-    environment:
-      MYSQL_HOST: 127.0.0.1
-      MYSQL_ROOT_PASSWORD: root_password
-      MYSQL_DATABASE: arXiv
-      MYSQL_USER: arxiv
-      MYSQL_PASSWORD: arxiv_password
-      MYSQL_TCP_PORT: ${ARXIV_DB_PORT}
-    volumes:
-      - ../../:/arxiv-keycloak/:ro
-    entrypoint: bash /arxiv-keycloak/tools/restore-arxiv-db.sh /arxiv-keycloak/tests/data/test-arxiv-db-data.sql.gz
-
-    

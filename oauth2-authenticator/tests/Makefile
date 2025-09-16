@@ -7,7 +7,7 @@ export $(shell sed 's/=.*//' test-env)
 
 ARXIV_BASE_DIR ?= $(HOME)/arxiv/arxiv-base
 
-.PHONY: HELLO all bootstrap docker-image arxiv-db nginx test up down restart images
+.PHONY: HELLO all bootstrap docker-image arxiv-db nginx test up down restart images clean sh
 
 default: HELLO
 
@@ -76,3 +76,15 @@ mta-models:
 	datamodel-codegen --url http://localhost:${MAIL_API_PORT}/openapi.json --input-file-type openapi --output mta_models.py
 	-rm -fr fast-api-client/ test_mta_client/
 	openapi-python-client generate --url http://localhost:${MAIL_API_PORT}/openapi.json && mv fast-api-client/fast_api_client ./test_mta_client
+
+#-#
+#-# clean:
+#-# 
+clean:
+
+#-#
+#-# sh:
+#-# 
+sh:
+	docker compose --env-file=test-env -f ./docker-compose-db-init.yaml up
+	# docker run python:3.12-bookworm -it -d /bin/sh

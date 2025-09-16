@@ -11,28 +11,16 @@ from arxiv_bizlogic.fastapi_helpers import  get_current_user_access_token
 from fastapi import APIRouter, Depends, status, HTTPException, Request, Response, Query
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
-from keycloak import KeycloakAdmin
-from keycloak.exceptions import (KeycloakGetError, KeycloakError)
 
 
 from arxiv.base import logging
 from arxiv.auth.user_claims import ArxivUserClaims
 from arxiv.db.models import TapirUser, TapirNickname, TapirUsersPassword, OrcidIds, AuthorIds
-from arxiv.auth.legacy import passwords
 
 from . import (get_current_user_or_none, get_db, get_keycloak_admin, stateless_captcha,
                get_client_host, sha256_base64_encode,
                verify_bearer_token, ApiToken, is_super_user, describe_super_user, check_authnz,
                is_authorized, get_authn_or_none)  # , get_client_host
-from .biz.account_biz import (AccountInfoModel, get_account_info,
-                              AccountRegistrationError, AccountRegistrationModel, validate_password,
-                              migrate_to_keycloak,
-                              kc_validate_access_token, kc_send_verify_email, register_arxiv_account,
-                              update_tapir_account, AccountIdentifierModel, kc_login_with_client_credential)
-# from . import stateless_captcha
-from .captcha import CaptchaTokenReplyModel, get_captcha_token
-from .stateless_captcha import InvalidCaptchaToken, InvalidCaptchaValue
 
 logger = logging.getLogger(__name__)
 
