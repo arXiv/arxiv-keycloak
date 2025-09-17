@@ -86,5 +86,5 @@ clean:
 #-# sh:
 #-# 
 sh:
-	docker compose --env-file=test-env -f ./docker-compose-db-init.yaml up
+	docker compose --env-file=test-env -f ./docker-compose-db-only.yaml up
 	# docker run python:3.12-bookworm -it -d /bin/sh
