@@ -29,6 +29,7 @@ from arxiv.base import logging
 from arxiv.auth.user_claims import ArxivUserClaims
 from arxiv.db.models import TapirUser, TapirNickname, TapirUsersPassword, OrcidIds, AuthorIds, Demographic
 from arxiv.auth.legacy import passwords
+from sqlalchemy.sql.functions import current_user
 
 from . import (get_current_user_or_none, get_db, get_keycloak_admin, stateless_captcha,
                get_client_host, sha256_base64_encode,
@@ -115,9 +116,9 @@ async def update_account_profile(
     #    NOPE: tracking_cookie: Optional[str] = None
     #    NOPE: veto_status: Optional[VetoStatusEnum] = None
     #
-    #    id
-    #    email_verified: Optional[bool] = None
-    #    scopes: Optional
+    #    NOPE: id
+    #    NOPE: email_verified: Optional[bool] = None
+    #    NOPE: scopes: Optional
 
     existing_user = UserModel.one_user(session, user_id)
     if existing_user is None:
@@ -163,6 +164,15 @@ async def update_account_profile(
         kc_admin.update_user(user_id=str(tapir_user.user_id),
                              payload={"firstName": new_data["first_name"],
                                       "lastName": new_data["last_name"]})
+
+    if isinstance(authn, ArxivUserClaims):
+        current_user = authn
+        if current_user.is_admin:
+            admin_audit(
+                session,
+                AdminAudit_Change
+            )
+
 
     session.commit()
     return reply_account_info(session, str(tapir_user.user_id))

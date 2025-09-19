@@ -3,7 +3,7 @@ Tapir Admin audit event interface
 
 Each admin event is represented vy a sub-class of AdminAuditEvent.
 """
-
+import json
 import re
 from datetime import datetime, timezone
 from enum import Enum
@@ -760,6 +760,10 @@ class AdminAudit_ChangeDemographic(AdminAuditEvent):
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         :raises ValueError: If the provided email address is not valid
         """
+        data = str(kwargs.pop(self.data_keyword))
+        if isinstance(data, dict):
+            data = json.dumps(data)
+            kwargs["data"] = data
         super().__init__(*argc, **kwargs)
         pass
 
@@ -788,7 +792,15 @@ class AdminAudit_ChangeDemographic(AdminAuditEvent):
         }
 
     def describe(self, session: Session) -> str:
-        return f"{self.describe_admin_user(session)} changed demographic of {self.describe_affected_user(session)} to {self.data}"
+        data = self.data
+        if data and data[0] == '{':
+            try:
+                kvs = json.loads(data)
+                data = ", ".join([f"{k}: {v}" for k, v in kvs.items()])
+            except:
+                data = repr(self.data)
+                pass
+        return f"{self.describe_admin_user(session)} changed demographic of {self.describe_affected_user(session)} to {data}"
 
 
 class AdminAudit_EndorseEvent(AdminAuditEvent):
