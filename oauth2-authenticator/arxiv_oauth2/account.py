@@ -2,6 +2,7 @@
 
 """
 import base64
+import json
 import re
 from datetime import datetime, timezone
 import random
@@ -16,7 +17,8 @@ from arxiv_bizlogic.fastapi_helpers import get_current_user_access_token, get_cl
     get_tapir_tracking_cookie
 from arxiv_bizlogic.audit_event import admin_audit, AdminAudit_ChangeEmail, AdminAudit_ChangePassword, \
     AdminAudit_SetEmailVerified, AdminAudit_SuspendUser, AdminAudit_UnuspendUser, AdminAudit_SetEditUsers, \
-    AdminAudit_SetEditSystem, AdminAudit_MakeModerator, AdminAudit_UnmakeModerator, AdminAudit_SetCanLock
+    AdminAudit_SetEditSystem, AdminAudit_MakeModerator, AdminAudit_UnmakeModerator, AdminAudit_SetCanLock, \
+    AdminAudit_ChangeDemographic
 from fastapi import APIRouter, Depends, status, HTTPException, Request, Response, Query
 
 from sqlalchemy.orm import Session
@@ -92,6 +94,8 @@ async def update_account_profile(
         authn: Optional[ArxivUserClaims | ApiToken] = Depends(get_authn_or_none),
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
+        remote_ip: Optional[str] = Depends(get_client_host),
+        remote_hostname: Optional[str] = Depends(get_client_host_name),
 ) -> AccountInfoModel:
     """
     Update the profile name of a user.
@@ -161,17 +165,25 @@ async def update_account_profile(
             break
 
     if update_name:
-        kc_admin.update_user(user_id=str(tapir_user.user_id),
-                             payload={"firstName": new_data["first_name"],
-                                      "lastName": new_data["last_name"]})
-
-    if isinstance(authn, ArxivUserClaims):
-        current_user = authn
-        if current_user.is_admin:
-            admin_audit(
-                session,
-                AdminAudit_Change
-            )
+        changes = {"firstName": new_data["first_name"],
+                   "lastName": new_data["last_name"]}
+        kc_admin.update_user(user_id=str(tapir_user.user_id), payload=changes)
+        changes['suffix_name'] = new_data['suffix_name']
+        if isinstance(authn, ArxivUserClaims):
+            current_user:ArxivUserClaims = authn
+            if current_user.is_admin:
+                admin_audit(
+                    session,
+                    AdminAudit_ChangeDemographic(
+                        admin_id=str(current_user.user_id),
+                        account_id=str(um.id),
+                        session_id=str(current_user.tapir_session_id),
+                        remote_ip=remote_ip,
+                        remote_hostname=remote_hostname,
+                        tracking_cookie=um.tracking_cookie,
+                        data=json.dumps(changes)
+                    )
+                )
 
 
     session.commit()
