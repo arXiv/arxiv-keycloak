@@ -31,13 +31,15 @@ HTTPBearer_security = HTTPBearer(auto_error=False)
 class COOKIE_ENV_NAMES_TYPE:
     classic_cookie_env: str
     auth_session_cookie_env: str
-    arxiv_keycloak_cookie_env: str
+    keycloak_access_token_env: str
+    keycloak_refresh_token_env: str
     ng_cookie_env: str
 
 COOKIE_ENV_NAMES = COOKIE_ENV_NAMES_TYPE(
     "CLASSIC_COOKIE_NAME",
     "AUTH_SESSION_COOKIE_NAME",
-    "ARXIV_KEYCLOAK_COOKIE_NAME",
+    "KEYCLOAK_ACCESS_TOKEN_NAME",
+    "KEYCLOAK_REFRESH_TOKEN_NAME",
     "ARXIVNG_COOKIE_NAME"
 )
 
@@ -51,14 +53,11 @@ def decode_user_claims(token: str, jwt_secret: str) -> ArxivUserClaims | None:
         logger.error("The app is misconfigured or no JWT secret has been set")
         return None
 
-    try:
-        tokens, jwt_payload = ArxivUserClaims.unpack_token(token)
-    except ValueError:
-        logger.error("The token is bad.")
-        return None
+    kc_tokens = {}
+    jwt_payload = token
 
     try:
-        claims = ArxivUserClaims.decode_jwt_payload(tokens, jwt_payload, jwt_secret)
+        claims = ArxivUserClaims.decode_jwt_payload(kc_tokens, jwt_payload, jwt_secret)
 
     except jwcrypto.jwt.JWTExpired:
         # normal course of token expiring

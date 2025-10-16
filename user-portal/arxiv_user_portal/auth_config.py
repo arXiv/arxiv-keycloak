@@ -37,7 +37,7 @@ CLASSIC_SESSION = AUTH_SESSION_TYPE(
 )
 
 ARXIV_CE_SESSION = AUTH_SESSION_TYPE(
-    cookie_name=os.environ.get('ARXIV_CE_SESSION_COOKIE_NAME', 'arxiv_oidc_session'),
+    cookie_name=os.environ.get('ARXIV_CE_SESSION_COOKIE_NAME', 'ARXIVNG_SESSION_ID'),
     cookie_domain=os.environ.get('AUTH_SESSION_COOKIE_DOMAIN', '.arxiv.org'),
     cookie_secure=bool(int(os.environ.get('AUTH_SESSION_COOKIE_SECURE', '1'))),
     secret=os.environ.get('JWT_SECRET', 'jwt-secret'),

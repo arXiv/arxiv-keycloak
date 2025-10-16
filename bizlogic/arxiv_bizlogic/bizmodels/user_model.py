@@ -11,7 +11,7 @@ from arxiv_bizlogic.fastapi_helpers import datetime_to_epoch
 from sqlalchemy import select, case, exists, cast, LargeBinary, func, inspect, update
 from sqlalchemy.orm import Session
 from sqlalchemy.engine.row import Row
-from sqlalchemy.sql.sqltypes import Integer
+from sqlalchemy.sql.sqltypes import Integer, String
 from pydantic import BaseModel, field_validator
 from datetime import datetime
 
@@ -367,8 +367,8 @@ class UserModel(BaseModel):
             old_value = getattr(db_object, field)
             new_value = data[field]
 
-            if isinstance(column_type, str):
-                old_value = bytes(old_value) if old_value is not None else None
+            if isinstance(column_type, str) or isinstance(column_type, String):
+                old_value = bytes(old_value, "utf-8") if old_value is not None else None
                 if isinstance(new_value, str):
                     new_value = new_value.encode("utf-8")
 

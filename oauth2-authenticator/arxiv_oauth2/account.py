@@ -153,6 +153,8 @@ async def update_account_profile(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Tapir User")
 
     old_data = existing_user.model_dump()
+    session.flush()
+
     um = UserModel.one_user(session, user_id)
     if um is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -176,7 +178,7 @@ async def update_account_profile(
                     session,
                     AdminAudit_ChangeDemographic(
                         admin_id=str(current_user.user_id),
-                        account_id=str(um.id),
+                        affected_user=str(um.id),
                         session_id=str(current_user.tapir_session_id),
                         remote_ip=remote_ip,
                         remote_hostname=remote_hostname,

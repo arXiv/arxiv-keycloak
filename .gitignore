@@ -191,3 +191,11 @@ account-ui/saver/
 tests/data/arxiv-test-db.sql
 tests/data/arXiv-1000-pii.sql
 tests/data/sanitized-test-db.sql
+
+node_modules/
+elasticsearch_data/
+foo
+foo.py
+foo.sql
+keycloak_bend/arxiv-theme/
+\.\#.*

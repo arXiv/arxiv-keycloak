@@ -37,9 +37,10 @@ from arxiv_bizlogic.audit_event import admin_audit, AdminAudit_BecomeUser
 
 @dataclasses.dataclass
 class CookieParams:
-    auth_session_cookie_name: str    # ArxivUserClaims
+    auth_session_cookie_name: str    # ArxivUserClaims (deprecated)
     classic_cookie_name: str         # classic cookie name
-    arxiv_keycloak_cookie_name: str  # Keycloak access token
+    keycloak_access_token_name: str  # Keycloak access token
+    keycloak_refresh_token_name: str # Keycloak access token
     ng_cookie_name: str              # arxivng cookie name
     domain: Optional[str]            # domain
     secure: bool                     # secure
@@ -50,20 +51,20 @@ class CookieParams:
 
 def cookie_params(request: Request) -> CookieParams:
     """
-    ,
-    request.app.extra[COOKIE_ENV_NAMES.classic_cookie_env],
-    request.app.extra[COOKIE_ENV_NAMES.arxiv_keycloak_cookie_env],  # This is the Keycloak access token
-    request.app.extra.get('DOMAIN'),
-    request.app.extra.get('SECURE', True),
-    request.app.extra.get('SAMESITE', "Lax"))
+        AUTH_SESSION_COOKIE_NAME=AUTH_SESSION_COOKIE_NAME,
+        KEYCLOAK_ACCESS_COOKIE_NAME=KEYCLOAK_ACCESS_TOKEN_NAME,
+        KEYCLOAK_REFRESH_TOKEN_NAME=KEYCLOAK_ACCESS_TOKEN_NAME,
+        CLASSIC_COOKIE_NAME=CLASSIC_COOKIE_NAME,
+        ARXIVNG_COOKIE_NAME=ARXIVNG_COOKIE_NAME,
 
     """
 
     return CookieParams(
-        auth_session_cookie_name=request.app.extra[COOKIE_ENV_NAMES.auth_session_cookie_env],
-        classic_cookie_name=request.app.extra[COOKIE_ENV_NAMES.classic_cookie_env],
-        arxiv_keycloak_cookie_name=request.app.extra[COOKIE_ENV_NAMES.arxiv_keycloak_cookie_env],
-        ng_cookie_name=request.app.extra[COOKIE_ENV_NAMES.ng_cookie_env],
+        auth_session_cookie_name=request.app.extra['AUTH_SESSION_COOKIE_NAME'],
+        classic_cookie_name=request.app.extra['CLASSIC_COOKIE_NAME'],
+        keycloak_access_token_name=request.app.extra['KEYCLOAK_ACCESS_COOKIE_NAME'],
+        keycloak_refresh_token_name=request.app.extra['KEYCLOAK_REFRESH_TOKEN_NAME'],
+        ng_cookie_name=request.app.extra['ARXIVNG_COOKIE_NAME'],
         domain=request.app.extra.get('DOMAIN'),
         secure=request.app.extra.get('SECURE', True),
         samesite=request.app.extra.get('SAMESITE', "Lax"),
@@ -294,6 +295,7 @@ async def refresh_token(
     if next_page:
         login_url = URL(f"{login_url}?next_page={urllib.parse.quote(next_page)}")
 
+    # Do I have a sesson cookie?
     session_cookie_key = request.app.extra[COOKIE_ENV_NAMES.auth_session_cookie_env]
     token = request.cookies.get(session_cookie_key)
     if not token:
@@ -305,16 +307,15 @@ async def refresh_token(
         logger.error("The app is misconfigured or no JWT secret has been set")
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
 
-    try:
-        tokens, jwt_payload = ArxivUserClaims.unpack_token(token)
-    except ValueError:
-        logger.error("The token is bad.")
-        return RedirectResponse(url=login_url, status_code=status.HTTP_303_SEE_OTHER)
+    kc_refresh_key = request.app.extra[COOKIE_ENV_NAMES.keycloak_refresh_token_env]
+    refresh_token = request.cookies.get(kc_refresh_key)
 
-    refresh_token = tokens.get('refresh')
-    if refresh_token is None:
-        logger.warning("Refresh token is not in the tokens")
-        return RedirectResponse(url=login_url, status_code=status.HTTP_303_SEE_OTHER)
+    # kc_tokens = {'refresh': refresh_token}
+    # jwt_payload = token
+    # refresh_token = kc_tokens.get('refresh')
+    # if refresh_token is None:
+    #     logger.warning("Refresh token is not in the tokens")
+    #     return RedirectResponse(url=login_url, status_code=status.HTTP_303_SEE_OTHER)
 
     idp: ArxivOidcIdpClient = request.app.extra["idp"]
     user_claims = idp.refresh_access_token(refresh_token)
@@ -361,17 +362,13 @@ async def refresh_tokens(request: Request, response: Response, body: Tokens) -> 
         logger.debug(f"There is no oidc session cookie.")
     classic_cookie = body.classic
 
-    try:
-        tokens, jwt_payload = ArxivUserClaims.unpack_token(session)
-    except ValueError:
-        logger.error("The token is bad.")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="The session token is invalid")
-
+    kc_refresh_key = request.app.extra[COOKIE_ENV_NAMES.keycloak_refresh_token_env]
+    refresh_token = body.refresh if body.refresh else request.cookies.get(kc_refresh_key)
+    tokens = {'refresh': refresh_token}
     idp: ArxivOidcIdpClient = request.app.extra["idp"]
-    refresh_token = tokens.get('refresh')
 
     if refresh_token is None:
-        logger.warning("Refresh token is not in the tokens")
+        logger.warning("Refresh token is not available")
         login_url = request.url_for("login")  # Assuming you have a route named 'login'
         return RedirectResponse(url=login_url, status_code=status.HTTP_303_SEE_OTHER)
 
@@ -431,7 +428,9 @@ async def logout(request: Request,
         email = current_user.email
         logger.debug('Request to log out, then redirect to %s', next_page)
         idp: ArxivOidcIdpClient = request.app.extra["idp"]
-        logged_out = idp.logout_user(current_user)
+        kc_refresh_key = request.app.extra[COOKIE_ENV_NAMES.keycloak_refresh_token_env]
+        refresh_token = request.cookies.get(kc_refresh_key)
+        logged_out = idp.logout_user(current_user, refresh_token=refresh_token)
 
     if logged_out:
         logger.info('%s log out', email)
@@ -464,7 +463,9 @@ async def get_token_names(request: Request) -> JSONResponse:
     return JSONResponse(content={
         "session": cparam.auth_session_cookie_name,
         "classic": cparam.classic_cookie_name,
-        "arxiv_keycloak": cparam.arxiv_keycloak_cookie_name,
+        "keycloak_access": cparam.keycloak_access_token_name,
+        "keycloak_refresh": cparam.keycloak_refresh_token_name,
+        "ng": cparam.ng_cookie_name,
     })
 
 
@@ -501,7 +502,8 @@ def make_cookie_response(request: Request,
 
     # Create the response with all of cookies made
     cparam = cookie_params(request)
-    keycloak_key = cparam.arxiv_keycloak_cookie_name
+    keycloak_access_key = cparam.keycloak_access_token_name
+    keycloak_refresh_key = cparam.keycloak_refresh_token_name
     session_cookie_key = cparam.auth_session_cookie_name
     classic_cookie_key = cparam.classic_cookie_name
     ng_cookie_key = cparam.ng_cookie_name
@@ -540,17 +542,21 @@ def make_cookie_response(request: Request,
         logger.debug('%s=%s',session_cookie_key, token)
         response.set_cookie(session_cookie_key, token, max_age=cookie_max_age,
                             domain=domain, path="/", secure=secure, samesite=samesite)
-        response.set_cookie(keycloak_key, user_claims.access_token,  max_age=cookie_max_age,
+        response.set_cookie(keycloak_access_key, user_claims.access_token,  max_age=cookie_max_age,
                             domain=domain, path="/", secure=secure, samesite=samesite)
-        try:
-            response.set_cookie(ng_cookie_key, ng_cookie_encode(create_ng_claims(user_claims), secret),
-                max_age=cookie_max_age, domain=domain, path="/", secure=secure, samesite=samesite)
-        except Exception as exc:
-            logger.warning("Setting NG cookie failed", exc_info=exc)
-            pass
+        response.set_cookie(keycloak_refresh_key, user_claims.refresh_token,  max_age=cookie_max_age,
+                            domain=domain, path="/", secure=secure, samesite=samesite)
+
+        if session_cookie_key != ng_cookie_key:
+            try:
+                response.set_cookie(ng_cookie_key, ng_cookie_encode(create_ng_claims(user_claims), secret),
+                    max_age=cookie_max_age, domain=domain, path="/", secure=secure, samesite=samesite)
+            except Exception as exc:
+                logger.warning("Setting NG cookie failed", exc_info=exc)
+                pass
 
     else:
-        for key in [session_cookie_key, keycloak_key, ng_cookie_key]:
+        for key in [session_cookie_key, keycloak_access_key, keycloak_refresh_key, ng_cookie_key]:
             response.set_cookie(key, "", max_age=0,
                                 domain=domain, path="/", secure=secure, samesite=samesite, expires=1)
 

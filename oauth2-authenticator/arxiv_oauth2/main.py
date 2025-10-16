@@ -55,7 +55,7 @@ CONFIG_DEFAULTS = {
 
 SERVER_ROOT_PATH = os.environ.get('SERVER_ROOT_PATH', "/aaa")
 #
-KEYCLOAK_SERVER_URL = os.environ.get('KEYCLOAK_SERVER_URL', 'https://oidc.arxiv.org')
+KEYCLOAK_SERVER_URL = os.environ.get('KEYCLOAK_SERVER_URL', 'https://auth.arxiv.org')
 
 # This is the public URL that OAuth2 calls back when the authentication succeeds.
 CALLBACK_URL = os.environ.get("OAUTH2_CALLBACK_URL", "https://dev3.arxiv.org/aaa/callback")
@@ -70,8 +70,9 @@ ARXIV_USER_SECRET = os.environ.get('ARXIV_USER_SECRET', '<arxiv-user-secret-is-n
 # slightly differently since it needs to be passed to arxiv-base
 AUTH_SESSION_COOKIE_NAME = os.environ.get(COOKIE_ENV_NAMES.auth_session_cookie_env, "arxiv_oidc_session")
 
-# arXiv's Keycloak access token names
-ARXIV_KEYCLOAK_COOKIE_NAME = os.environ.get(COOKIE_ENV_NAMES.arxiv_keycloak_cookie_env, "arxiv_keycloak_token")
+# arXiv's Keycloak token names
+KEYCLOAK_ACCESS_TOKEN_NAME = os.environ.get(COOKIE_ENV_NAMES.keycloak_access_token_env, "keycloak_access_token")
+KEYCLOAK_REFRESH_TOKEN_NAME = os.environ.get(COOKIE_ENV_NAMES.keycloak_refresh_token_env, "keycloak_refresh_token")
 
 # OIDC server SSL verify - this should be always true except when you are running locally and with self-signed cert
 OIDC_SERVER_SSL_VERIFY = os.environ.get('OIDC_SERVER_SSL_VERIFY', os.environ.get('SECURE', 'true')) != "false"
@@ -196,6 +197,7 @@ def create_app(*args, **kwargs) -> FastAPI:
         oidc_url=KEYCLOAK_SERVER_URL,
     )
 
+
     app = FastAPI(
         root_path=SERVER_ROOT_PATH,
         idp=_idp_,
@@ -207,7 +209,8 @@ def create_app(*args, **kwargs) -> FastAPI:
         KEYCLOAK_SERVER_URL=KEYCLOAK_SERVER_URL,
         COOKIE_MAX_AGE=int(os.environ.get('COOKIE_MAX_AGE', '99073266')),
         AUTH_SESSION_COOKIE_NAME=AUTH_SESSION_COOKIE_NAME,
-        ARXIV_KEYCLOAK_COOKIE_NAME=ARXIV_KEYCLOAK_COOKIE_NAME,
+        KEYCLOAK_ACCESS_COOKIE_NAME=KEYCLOAK_ACCESS_TOKEN_NAME,
+        KEYCLOAK_REFRESH_TOKEN_NAME=KEYCLOAK_REFRESH_TOKEN_NAME,
         CLASSIC_COOKIE_NAME=CLASSIC_COOKIE_NAME,
         ARXIVNG_COOKIE_NAME=ARXIVNG_COOKIE_NAME,
         SESSION_DURATION=SESSION_DURATION,

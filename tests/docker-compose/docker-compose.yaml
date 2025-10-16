@@ -78,7 +78,7 @@ services:
     network_mode: host
 
   arxiv-test-db:
-    image: mysql:5.7.20
+    image: mysql:8.4.5
     container_name: arxiv-test-db
     ports:
       - "${ARXIV_DB_PORT}:${ARXIV_DB_PORT}"  # Host port:Container port
@@ -224,6 +224,7 @@ services:
       - ./tests/log.d/:/log.d/
       - ./account-ui/account-app/dist:/account-app:ro
       - ../arxiv-admin-console/ui-arxiv-admin/dist:/arxiv-admin-console:ro
+      - ../../arxiv-modui/build:/arxiv-modui:ro
     ports:
       - "${NGINX_PORT}:${NGINX_PORT}"
     depends_on:
