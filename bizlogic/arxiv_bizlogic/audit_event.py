@@ -764,6 +764,8 @@ class AdminAudit_ChangeDemographic(AdminAuditEvent):
         if isinstance(data, dict):
             data = json.dumps(data)
             kwargs["data"] = data
+        else:
+            kwargs["data"] = str(data)
         super().__init__(*argc, **kwargs)
         pass
 
@@ -1839,20 +1841,20 @@ def admin_audit(session: Session, event: AdminAuditEvent) -> TapirAdminAudit:
         affected_user=int(event.affected_user) if event.affected_user else 0,
         tracking_cookie=event.tracking_cookie if event.tracking_cookie else '',
         action=event.action,
-        data=event.data if event.data else '',
+        data='',     # Temporary empty string
         comment='',  # Temporary empty string
     )
     session.add(entry)
     session.flush()  # Get the entry_id
     
-    # Update comment with binary data using direct SQL
+    # Update data and comment with binary data using direct SQL
     comment_utf8 = (event.comment if event.comment else '').encode('utf-8')
+    data_utf8 = (event.data if event.data else '').encode('utf-8')
     session.execute(
         update(TapirAdminAudit.__table__)
         .where(TapirAdminAudit.entry_id == entry.entry_id)
-        .values(comment=func.binary(comment_utf8))
-    )
-    
+        .values(data=func.binary(data_utf8), comment=func.binary(comment_utf8)))
+
     return entry
 
 
@@ -1946,7 +1948,6 @@ def create_admin_audit_event(audit_record: TapirAdminAudit, session: Session = N
             session.query(cast(TapirAdminAudit.comment, LargeBinary))
             .filter(TapirAdminAudit.entry_id == audit_record.entry_id)
         ).scalar()
-        
         if comment_binary:
             try:
                 kwargs["comment"] = comment_binary.decode('utf-8')
@@ -1956,4 +1957,18 @@ def create_admin_audit_event(audit_record: TapirAdminAudit, session: Session = N
         else:
             kwargs["comment"] = ""
     
+    if session and "data" in kwargs:
+        data_binary = session.execute(
+            session.query(cast(TapirAdminAudit.data, LargeBinary))
+            .filter(TapirAdminAudit.entry_id == audit_record.entry_id)
+        ).scalar()
+        if data_binary:
+            try:
+                kwargs["data"] = data_binary.decode('utf-8')
+            except UnicodeDecodeError:
+                # Fallback to original comment if decode fails
+                kwargs["data"] = audit_record.data
+        else:
+            kwargs["data"] = ""
+
     return event_class(*args, **kwargs)
