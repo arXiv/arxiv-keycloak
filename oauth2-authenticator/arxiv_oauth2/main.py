@@ -68,7 +68,7 @@ ARXIV_USER_SECRET = os.environ.get('ARXIV_USER_SECRET', '<arxiv-user-secret-is-n
 # session cookie names
 # NOTE: You also need the classic session cookie name "tapir_session" but it's set
 # slightly differently since it needs to be passed to arxiv-base
-AUTH_SESSION_COOKIE_NAME = os.environ.get(COOKIE_ENV_NAMES.auth_session_cookie_env, "arxiv_oidc_session")
+AUTH_SESSION_COOKIE_NAME = os.environ.get(COOKIE_ENV_NAMES.auth_session_cookie_env, "ARXIVNG_SESSION_ID")
 
 # arXiv's Keycloak token names
 KEYCLOAK_ACCESS_TOKEN_NAME = os.environ.get(COOKIE_ENV_NAMES.keycloak_access_token_env, "keycloak_access_token")
