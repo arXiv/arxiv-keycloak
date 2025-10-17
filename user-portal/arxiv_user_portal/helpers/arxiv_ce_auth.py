@@ -138,25 +138,20 @@ class ArxivCEAuthMiddleware(BaseMiddleware):
         environ['auth'] = None
         environ['claims'] = None
         session_meta: AUTH_SESSION_TYPE = self.config[ARXIV_CE_SESSION_CONFIG_NAME]
-        token = request.cookies.get(session_meta.cookie_name)    # We may not have a token.
+        secure_payload = request.cookies.get(session_meta.cookie_name)    # We may not have a token.
 
-        if token is None:
+        if secure_payload is None:
             logger.debug('No auth token')
             return super().__call__(environ, start)
 
+        kc_tokens = {}
         claims: Optional[ArxivUserClaims] = None
-        try:
-            visible_payload, secure_payload = ArxivUserClaims.unpack_token(token)
-        except ValueError as exc:
-            logger.debug('oauth2 token is not valid')
-            return super().__call__(environ, start)
-
         # classic_meta: AUTH_SESSION_TYPE = self.config[CLASSIC_SESSION_CONFIG_NAME]
         auth_config: AUTH_CONFIG_TYPE = self.config[AAA_CONFIG_NAME]
         # user_id = visible_payload["sub"]
-        claims = None
+
         try:
-            claims = ArxivUserClaims.decode_jwt_payload(visible_payload, secure_payload, session_meta.secret)
+            claims = ArxivUserClaims.decode_jwt_payload(kc_tokens, secure_payload, session_meta.secret)
             # Attach the encrypted token so that we can use it in subrequests.
             environ['claims'] = claims
             pass
