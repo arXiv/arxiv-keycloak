@@ -183,10 +183,20 @@ async def update_account_profile(
                         remote_ip=remote_ip,
                         remote_hostname=remote_hostname,
                         tracking_cookie=um.tracking_cookie,
-                        data=json.dumps(changes)
+                        data={
+                            "before": {
+                                "first_name": old_data["first_name"],
+                                "last_name": old_data["last_name"],
+                                "suffix_name": old_data["suffix_name"],
+                            },
+                            "after": {
+                                "first_name": new_data.get("first_name", old_data["first_name"]),
+                                "last_name": new_data.get("last_name", old_data["last_name"]),
+                                "suffix_name": new_data.get("suffix_name", old_data["suffix_name"]),
+                            }
+                        }
                     )
                 )
-
 
     session.commit()
     return reply_account_info(session, str(tapir_user.user_id))
@@ -204,8 +214,9 @@ async def update_user_name(
         user_id: str,
         data: AccountUserNameUpdateModel,
         current_user: ArxivUserClaims = Depends(get_authn_user),
-        _remote_hostname: Optional[str] = Depends(get_client_host_name),
-        _remote_ip:Optional[str] = Depends(get_client_host),
+        remote_hostname: Optional[str] = Depends(get_client_host_name),
+        remote_ip:Optional[str] = Depends(get_client_host),
+        tracking_cookie: Optional[str] = Depends(get_tapir_tracking_cookie),
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
 ) -> AccountInfoModel:
@@ -229,6 +240,8 @@ async def update_user_name(
                                email_verified=existing_user.flag_email_verified)
 
     changed = False
+    name_changed = False
+
     if data.username is not None and existing_user.username != data.username:
         changed = True
         nick: TapirNickname | None = session.query(TapirNickname).filter(TapirNickname.user_id == user_id).one_or_none()
@@ -249,6 +262,7 @@ async def update_user_name(
     if (data.first_name is not None and existing_user.first_name != data.first_name) or \
             (data.last_name is not None and existing_user.last_name != data.last_name):
         changed = True
+        name_changed = True
         kc_admin.update_user(user_id=user_id, payload={"firstName": data.first_name, "lastName": data.last_name})
         tapir_user = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
         if tapir_user is None:
@@ -262,8 +276,10 @@ async def update_user_name(
             primary_key_value=user_id
         )
 
+
     if data.suffix_name is not None and existing_user.suffix_name != data.suffix_name:
         changed = True
+        name_changed = True
         tapir_user = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
         if tapir_user is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -276,20 +292,31 @@ async def update_user_name(
             primary_key_value=user_id
         )
 
-    # ntai: 2025-08-27
-    # I think an audit event is missing. If an admin changes a user's name, it should leave a record of it.
-    #
-    # if current_user.is_admin and str(user_id) != str(current_user.user_id):
-    #     changed = True
-    #     admin_audit(AdminAudit_ChangeUserProfile(
-    #         str(current_user.user_id),
-    #         str(user_id),
-    #         str(current_user.tapir_session_id),
-    #         remote_ip=remote_ip,
-    #         remote_hostname=remote_hostname,
-    #         comment=data.comment,
-    #         data=f"name: {data.first_name!r}"
-    #     ))
+    if name_changed:
+        # Log the name change
+        admin_audit(
+            session,
+            AdminAudit_ChangeDemographic(
+                admin_id=str(current_user.user_id),
+                affected_user=str(user_id),
+                session_id=str(current_user.tapir_session_id),
+                remote_ip=remote_ip,
+                remote_hostname=remote_hostname,
+                tracking_cookie=tracking_cookie,
+                data={
+                    "before": {
+                        "first_name": existing_user.first_name,
+                        "last_name": existing_user.last_name,
+                        "suffix_name": existing_user.suffix_name,
+                    },
+                    "after": {
+                        "first_name": data.first_name,
+                        "last_name": data.last_name,
+                        "suffix_name": data.suffix_name,
+                    }
+                }
+            )
+        )
 
     if changed:
         session.commit()
