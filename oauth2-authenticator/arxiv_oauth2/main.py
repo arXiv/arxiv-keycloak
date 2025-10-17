@@ -27,7 +27,7 @@ from .app_logging import setup_logger
 from .mysql_retry import MySQLRetryMiddleware
 from . import get_db, COOKIE_ENV_NAMES, get_keycloak_admin
 from .biz.keycloak_audit import get_keycloak_dispatch_functions
-from arxiv_bizlogic.fastapi_helpers import TapirCookieToUserClaimsMiddleware
+from arxiv_bizlogic.fastapi_helpers import TapirCookieToUserClaimsMiddleware, COOKIE_ENV_NAMES_TYPE
 
 #
 # Since this is not a flask app, the config needs to be in the os.environ
@@ -197,6 +197,13 @@ def create_app(*args, **kwargs) -> FastAPI:
         oidc_url=KEYCLOAK_SERVER_URL,
     )
 
+    cookie_names = {
+        COOKIE_ENV_NAMES.classic_cookie_env: CLASSIC_COOKIE_NAME,
+        COOKIE_ENV_NAMES.ng_cookie_env: ARXIVNG_COOKIE_NAME,
+        COOKIE_ENV_NAMES.auth_session_cookie_env: AUTH_SESSION_COOKIE_NAME,
+        COOKIE_ENV_NAMES.keycloak_access_token_env: KEYCLOAK_ACCESS_TOKEN_NAME,
+        COOKIE_ENV_NAMES.keycloak_refresh_token_env: KEYCLOAK_REFRESH_TOKEN_NAME,
+    }
 
     app = FastAPI(
         root_path=SERVER_ROOT_PATH,
@@ -208,11 +215,6 @@ def create_app(*args, **kwargs) -> FastAPI:
         JWT_SECRET=jwt_secret,
         KEYCLOAK_SERVER_URL=KEYCLOAK_SERVER_URL,
         COOKIE_MAX_AGE=int(os.environ.get('COOKIE_MAX_AGE', '99073266')),
-        AUTH_SESSION_COOKIE_NAME=AUTH_SESSION_COOKIE_NAME,
-        KEYCLOAK_ACCESS_COOKIE_NAME=KEYCLOAK_ACCESS_TOKEN_NAME,
-        KEYCLOAK_REFRESH_TOKEN_NAME=KEYCLOAK_REFRESH_TOKEN_NAME,
-        CLASSIC_COOKIE_NAME=CLASSIC_COOKIE_NAME,
-        ARXIVNG_COOKIE_NAME=ARXIVNG_COOKIE_NAME,
         SESSION_DURATION=SESSION_DURATION,
         KEYCLOAK_ADMIN=keycloak_admin,
         ARXIV_USER_SECRET=ARXIV_USER_SECRET,
@@ -220,7 +222,8 @@ def create_app(*args, **kwargs) -> FastAPI:
         WELL_KNOWN=well_known,
         AAA_API_SECRET_KEY=os.environ.get("AAA_API_SECRET_KEY", ""),
         KEYCLOAK_DISPATCH_FUNCTIONS=get_keycloak_dispatch_functions(),
-        **URLs
+        **URLs,
+        **cookie_names
     )
 
     if CORS_ORIGINS:

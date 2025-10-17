@@ -60,11 +60,11 @@ def cookie_params(request: Request) -> CookieParams:
     """
 
     return CookieParams(
-        auth_session_cookie_name=request.app.extra['AUTH_SESSION_COOKIE_NAME'],
-        classic_cookie_name=request.app.extra['CLASSIC_COOKIE_NAME'],
-        keycloak_access_token_name=request.app.extra['KEYCLOAK_ACCESS_COOKIE_NAME'],
-        keycloak_refresh_token_name=request.app.extra['KEYCLOAK_REFRESH_TOKEN_NAME'],
-        ng_cookie_name=request.app.extra['ARXIVNG_COOKIE_NAME'],
+        auth_session_cookie_name=request.app.extra[COOKIE_ENV_NAMES.auth_session_cookie_env],
+        classic_cookie_name=request.app.extra[COOKIE_ENV_NAMES.classic_cookie_env],
+        keycloak_access_token_name=request.app.extra[COOKIE_ENV_NAMES.keycloak_access_token_env],
+        keycloak_refresh_token_name=request.app.extra[COOKIE_ENV_NAMES.keycloak_refresh_token_env],
+        ng_cookie_name=request.app.extra[COOKIE_ENV_NAMES.ng_cookie_env],
         domain=request.app.extra.get('DOMAIN'),
         secure=request.app.extra.get('SECURE', True),
         samesite=request.app.extra.get('SAMESITE', "Lax"),
