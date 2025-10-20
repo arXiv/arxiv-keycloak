@@ -31,7 +31,7 @@ import PasswordRequirements from "../bits/PasswordRequirements.tsx";
 import UserInfoForm from "./demographic/UserInfoForm.tsx";
 import {AccountFormError} from "./demographic/AccountFormError.ts";
 import SubmissionCategoryForm from "./demographic/SubmissionCategoryForm.tsx";
-import {ACCOUNT_REGISTER_URL} from "../types/aaa-url.ts";
+import {ACCOUNT_REGISTER_PREFLIGHT_URL, ACCOUNT_REGISTER_URL} from "../types/aaa-url.ts";
 /* import IconButton from '@mui/material/IconButton';
 import Collapse from '@mui/material/Collapse';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -268,6 +268,52 @@ const AccountRegistration = () => {
         }
     };
 
+    useEffect(() => {
+        // Check if errors object is empty and the form has been validated at least once
+
+        const sendPreflightRequest = async () => {
+            const hasNoErrors = Object.values(errors).every(value => value === "" || value === undefined);
+            if (hasNoErrors) {
+                try {
+                    const preflightRequest = runtimeContext.aaaFetcher.path(ACCOUNT_REGISTER_PREFLIGHT_URL).method('post').create();
+                    const response = await preflightRequest(formData);
+
+                    if (response.ok) {
+                        // Handle successful preflight
+                        response.data.forEach((detail) => {
+                            if (detail.field_name && detail.field_name in errors) {
+                                setErrors(prev => ({
+                                    ...prev,
+                                    [detail.field_name as keyof typeof errors]: detail.message
+                                }));
+                            }
+
+                            if (detail.field_name === "host") {
+                                showNotification(detail.message, "error");
+                            }
+
+                            if (detail.field_name === "token") {
+                                showNotification(detail.message, "error");
+                            }
+
+                        })
+                    } else {
+                        // Handle preflight validation errors
+                        showNotification(JSON.stringify(response.data) as any, "error");
+                    }
+                } catch (error) {
+                    console.error('Preflight request error:', error);
+                    showNotification(JSON.stringify(error) as any, "error");
+                }
+            }
+            else {
+                console.log("Errors:", hasNoErrors, errors);
+            }
+        }
+
+        sendPreflightRequest();
+
+    }, [errors, formData]); // Dependencies for the effect
 
 
     // Handle form submission
@@ -296,14 +342,15 @@ const AccountRegistration = () => {
                 })
             } else {
                 const errorReply: RegistrationErrorReply = data as unknown as RegistrationErrorReply;
-                const message = errorReply.field_name ? `${errorReply.message} (error in ${errorReply.field_name})` : errorReply.message;
-                showNotification(message, "warning");
+
+                const messages = errorReply.map(an_error => an_error.field_name ? `${an_error.message} (error in ${an_error.field_name})` : an_error.message);
+                showNotification(messages.join("\n"), "warning");
 
                 if (response.status === 400) {
                     setPostSubmitDialog({
                         open: true,
                         title: "Registration Unsuccessful",
-                        message: message,
+                        message: messages.join("\n"),
                         onClose: () => {
                             setPostSubmitDialog(
                                 {

@@ -60,7 +60,7 @@ def get_career_status_index(status: CAREER_STATUS) -> int:
     return 0
 
 
-allowed_pattern = re.compile(r"^[A-Za-z0-9_.+#\-=/:;(){}<>\[\]%^]+$")
+allowed_pattern = re.compile(r"^[A-Za-z0-9@$\*~`_.+#\-=/:;(){}<>\[\]%^]+$")
 
 def validate_password(pwd: str) -> bool:
     if len(pwd) < 8 or (not allowed_pattern.match(pwd)):

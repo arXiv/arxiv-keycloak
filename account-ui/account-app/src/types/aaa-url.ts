@@ -2,5 +2,6 @@
 
 export const ACCOUNT_EMAIL_VERIFIED_URL = "/account/email/verified";
 export const ACCOUNT_USER_EMAIL_VERIFY_URL =  '/account/{user_id}/email/verify';
+export const ACCOUNT_REGISTER_PREFLIGHT_URL = "/account/register/preflight";
 export const ACCOUNT_REGISTER_URL = "/account/register";
 export const ACCOUNT_PROFILE_URL = "/account/{user_id}/profile";

@@ -110,8 +110,9 @@ const UpdateProfile = () => {
         } catch (error: any) {
             console.error("Error:", error);
             if (error.status === 400 && error.data) {
-                const message: RegistrationErrorReply = error.data;
-                showMessageDialog(message.message, "Profile update Unsuccessful");
+                const errorData: RegistrationErrorReply = error.data;
+                const errorMessage = Array.isArray(errorData) ? errorData.map(e => e.message).join(", ") : (errorData as any).message || JSON.stringify(errorData);
+                showMessageDialog(errorMessage, "Profile update Unsuccessful");
             } else if (error.status === 401) {
                 showMessageDialog("You are not logged in, or the session has expired.", "Please log-in");
             } else if (error.status === 422 && error.data) {

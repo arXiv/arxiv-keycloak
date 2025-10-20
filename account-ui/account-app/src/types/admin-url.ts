@@ -22,7 +22,7 @@ export const ADMIN_OWNERSMIP_REQUESTS_ID_URL = '/v1/ownership_requests/{id}';
 export const ADMIN_PAPER_OWNERS_URL = '/v1/paper_owners/';
 export const ADMIN_PAPER_OWNERS_AUTHORSHIP_ACTION_URL = '/v1/paper_owners/authorship/{action}';
 export const ADMIN_PAPER_OWNERS_ID_URL = '/v1/paper_owners/{id}';
-export const ADMIN_PAPER_OWNERS_AUTHORIZE_URL ='/v1/paper_owners/authorize/';
+export const ADMIN_PAPER_OWNERS_AUTHORIZE_URL ='/v1/paper_owners/authorize';
 
 export const ADMIN_PAPER_PW_ID_URL = '/v1/paper_pw/{id}';
 

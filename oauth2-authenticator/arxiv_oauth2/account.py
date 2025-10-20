@@ -324,15 +324,78 @@ async def update_user_name(
     return reply_account_info(session, str(user_id))
 
 
+def _preflight_register_account(
+        request: Request,
+        registration: AccountRegistrationModel,
+        session: Session,
+) -> List[AccountRegistrationError]:
+    errors: List[AccountRegistrationError] = []
+    captcha_secret = request.app.extra['CAPTCHA_SECRET']
+    host = get_client_host(request)
+    if host is None:
+        errors.append(AccountRegistrationError(message="The request requires a client host", field_name="client_host"))
+
+    if registration.email and registration.email.strip():
+        if session.query(TapirNickname).filter(TapirUser.email == registration.email.strip()).scalar() is not None:
+            errors.append(AccountRegistrationError(message="Email already registered", field_name="email"))
+    else:
+        errors.append(AccountRegistrationError(message="email is required", field_name="email"))
+
+    if not registration.username or not registration.username.strip():
+        errors.append(AccountRegistrationError(message="username is required", field_name="username"))
+    else:
+        if session.query(TapirNickname).filter(TapirNickname.nickname == registration.username.strip()).scalar() is not None:
+            errors.append(
+                AccountRegistrationError(message="The username is not available.", field_name="username"))
+
+    if not validate_password(registration.password):
+        errors.append(AccountRegistrationError(message="Password does not meet the criteria.", field_name="password"))
+
+
+    # Check the captcha value against the captcha token.
+    if host is not None:
+        try:
+            stateless_captcha.check(registration.token, registration.captcha_value, captcha_secret, host)
+
+        except InvalidCaptchaToken:
+            errors.append(AccountRegistrationError(message="Captcha token is invalid. Please load new captcha",
+                                                   field_name="token"))
+            pass
+
+        except InvalidCaptchaValue:
+            errors.append(AccountRegistrationError(message="Captcha answer is incorrect.", field_name="captcha_value"))
+            pass
+
+    return errors
+
+
 
 # See profile update comment.
+@router.post('/register/preflight',
+             status_code=status.HTTP_200_OK,
+             responses={
+                 status.HTTP_200_OK: {"model": List[AccountRegistrationError], "description": "Successfully created account"},
+                 status.HTTP_400_BAD_REQUEST: {"model": List[AccountRegistrationError],
+                                               "description": "Invalid registration data"},
+                 status.HTTP_404_NOT_FOUND: {"model": List[AccountRegistrationError], "description": "User not found"},
+             }
+             )
+def preflight_register_account(
+        request: Request,
+        registration: AccountRegistrationModel,
+        token: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
+        session: Session = Depends(get_db),
+) -> List[AccountRegistrationError]:
+    return _preflight_register_account(request, registration, session)
+
+
 @router.post('/register',
              status_code=status.HTTP_201_CREATED,
              responses={
                  status.HTTP_201_CREATED: {"model": AccountInfoModel, "description": "Successfully created account"},
-                 status.HTTP_400_BAD_REQUEST: {"model": AccountRegistrationError,
+                 status.HTTP_400_BAD_REQUEST: {"model": List[AccountRegistrationError],
                                                "description": "Invalid registration data"},
-                 status.HTTP_404_NOT_FOUND: {"model": AccountRegistrationError, "description": "User not found"},
+                 status.HTTP_404_NOT_FOUND: {"model": List[AccountRegistrationError], "description": "User not found"},
              }
              )
 async def register_account(
@@ -342,48 +405,14 @@ async def register_account(
         session: Session = Depends(get_db),
         kc_admin: KeycloakAdmin = Depends(get_keycloak_admin),
         token: Optional[ArxivUserClaims | ApiToken] = Depends(verify_bearer_token),
-) -> AccountInfoModel | AccountRegistrationError:
+) -> AccountInfoModel | List[AccountRegistrationError]:
     """
     Create a new user
     """
-    captcha_secret = request.app.extra['CAPTCHA_SECRET']
-    host = get_client_host(request)
-    if host is None:
-        raise HTTPException(status_code=status.HTTP_405_METHOD_NOT_ALLOWED, detail="The request requires a client host")
-
-    if not registration.email:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="email is required")
-    if not registration.username or not registration.username.strip():
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="username is required")
-
-    # registration = sanitize_model_data(registration)
-
-    if is_super_user(token):
-        logger.info("API based user registration %s", describe_super_user(token))
-        pass
-    else:
-        # Check the captcha value against the captcha token.
-        try:
-            stateless_captcha.check(registration.token, registration.captcha_value, captcha_secret, host)
-
-        except InvalidCaptchaToken:
-            logger.warning(f"Registration: captcha token is invalid {registration.token!r} {host!r}")
-            detail = AccountRegistrationError(message="Captcha token is invalid. Restart the registration",
-                                              field_name="Captcha token")
-            response.status_code = status.HTTP_400_BAD_REQUEST
-            return detail
-
-        except InvalidCaptchaValue:
-            logger.info(f"Registration: wrong captcha value {registration.token!r} {host!r} {registration.captcha_value!r}")
-            detail = AccountRegistrationError(message="Captcha answer is incorrect.", field_name="Captcha answer")
-            response.status_code = status.HTTP_400_BAD_REQUEST
-            return detail
-
-        if not validate_password(registration.password):
-            detail = AccountRegistrationError(message="Captcha answer is incorrect.", field_name="Password")
-            response.status_code = status.HTTP_400_BAD_REQUEST
-            return detail
-        pass
+    errors = _preflight_register_account(request, registration, session)
+    if errors:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return errors
 
     client_secret = request.app.extra['ARXIV_USER_SECRET']
 

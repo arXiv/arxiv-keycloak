@@ -270,6 +270,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/account/register/preflight": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preflight Register Account */
+        post: operations["preflight_register_account_account_register_preflight_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/account/register": {
         parameters: {
             query?: never;
@@ -1493,6 +1510,57 @@ export interface operations {
             };
         };
     };
+    preflight_register_account_account_register_preflight_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountRegistrationModel"];
+            };
+        };
+        responses: {
+            /** @description Successfully created account */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountRegistrationError"][];
+                };
+            };
+            /** @description Invalid registration data */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountRegistrationError"][];
+                };
+            };
+            /** @description User not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountRegistrationError"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_register_account_register_get: {
         parameters: {
             query?: never;
@@ -1541,7 +1609,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccountRegistrationError"];
+                    "application/json": components["schemas"]["AccountRegistrationError"][];
                 };
             };
             /** @description User not found */
@@ -1550,7 +1618,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccountRegistrationError"];
+                    "application/json": components["schemas"]["AccountRegistrationError"][];
                 };
             };
             /** @description Validation Error */

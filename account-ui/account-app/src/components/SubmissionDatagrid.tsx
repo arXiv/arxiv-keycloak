@@ -188,8 +188,7 @@ const SubmissionDatagrid = forwardRef<SubmissionDatagridRef, SubmissionDatagridP
         try {
             const response = await updateSubmission({
                 id: Number(row.id),
-                status: "0", // ???
-            });
+            }, {});
             if (response.ok) {
                 if (onDataChange) {
                     onDataChange();
