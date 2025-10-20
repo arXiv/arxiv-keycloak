@@ -132,8 +132,11 @@ const YourAccountInfo: React.FC<YourAccountInfoProps> = ({ runtimeProps, VerifyE
                         variant="body1"><b>{"Default Category: "}</b>{user?.default_category?.archive}.{user?.default_category?.subject_class}
                     </Typography>
                     <Typography variant="body1" component="div"><b>{"Groups: "}</b>
-                        {user?.groups?.map((group) => (
-                            <CategoryGroup key={group} groupId={group} component="span"/>
+                        {user?.groups?.map((group, index) => (
+                            <React.Fragment key={group}>
+                                <CategoryGroup groupId={group} component="span"/>
+                                {index < (user?.groups?.length || 0) - 1 && ", "}
+                            </React.Fragment>
                         ))}
                     </Typography>
                     <Typography variant="body1"
