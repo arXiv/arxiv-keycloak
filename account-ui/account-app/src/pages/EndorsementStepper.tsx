@@ -39,6 +39,14 @@ type EndorsementRequestType = adminApi[typeof ADMIN_ENDORSEMENT_REQUESTS_CODE]['
 type PublicUserType = EndorsementOutcomeModel["endorsee"];
 type CategoryResponse = adminApi[typeof ADMIN_CATEGORY_ARCHIVE_SUBJECT_CLASS_URL]['get']['responses']['200']['content']['application/json'];
 
+type errorResponseType = {
+   headers: any,
+   url: string,
+    status: number,
+    statusText: string,
+    data: {detail: string}
+}
+
 const steps = [
     'Enter Endorsement Code',
     'Review Endorsement Details',
@@ -98,7 +106,7 @@ const EndorsementStepper = () => {
 
     useEffect(() => {
         async function findEndorsementRequest() {
-            if (formData?.endorsement_code && formData?.preflight) {
+            if (formData?.endorsement_code && formData?.preflight && endorsementCodeValidator(formData?.endorsement_code)) {
                 const query = new URLSearchParams();
                 query.set("secret", formData.endorsement_code);
                 try {
@@ -116,7 +124,7 @@ const EndorsementStepper = () => {
                     } else {
                         setEndorsementOutcome(null);
                         if (response.status === 404) {
-                            setErrors({...errors, endorsement_code: "Not Found"});
+                            /* setErrors({...errors, endorsement_code: "Not Found"}); */
                         } else if (response.status === 401) {
                             setErrors({...errors, endorsement_code: "Please login"});
                             showMessageDialog("Please re-login first.", "No User Information",
@@ -128,13 +136,30 @@ const EndorsementStepper = () => {
                             );
                         } else {
                             const errorMessage = (response.data as any)?.detail || "Unknown error";
-                            console.log(JSON.stringify(response.data));
-                            showNotification(errorMessage, "error");
+                            showNotification("Endorsement(1): " + errorMessage, "error");
                         }
                     }
-                } catch (error) {
+                } catch (a_error) {
+                    const error = a_error as errorResponseType;
+                    console.error("137 Error:", JSON.stringify(error));
                     setEndorsementOutcome(null);
-                    showNotification(JSON.stringify(error), "error");
+                    const errorMessage = (error.data as any)?.detail || "Unknown error";
+
+                    if (error.status === 404) {
+                        setErrors({...errors, endorsement_code: errorMessage});
+                    } else if (error.status === 401) {
+                        setErrors({...errors, endorsement_code: "Please login"});
+                        showMessageDialog("Please re-login first.", "No User Information",
+                            () => {
+                            }, "OK",
+                            () => {
+                                window.location.href = `/login?next_page=${window.location.href}`
+                            }, "Login"
+                        );
+                    }
+                    else {
+                        showNotification("Endorsement: " + errorMessage, "error");
+                    }
                 }
             }
         }
@@ -177,10 +202,10 @@ const EndorsementStepper = () => {
         return `${user?.first_name} ${user?.last_name}${maybe_email} - ${user?.affiliation || "No affiliation"}`;
     }
 
-    function printCategory(endoresementRequest: EndorsementRequestType | null): string {
-        if (!endoresementRequest)
+    function printCategory(endorsementRequest: EndorsementRequestType | null): string {
+        if (!endorsementRequest)
             return "";
-        return `${endoresementRequest?.archive}${endoresementRequest?.subject_class ? "." + endoresementRequest.subject_class : ""}`;
+        return `${endorsementRequest?.archive}${endorsementRequest?.subject_class ? "." + endorsementRequest.subject_class : ""}`;
     }
 
     const endorseeName = printUserName(endorsee);
@@ -261,9 +286,12 @@ const EndorsementStepper = () => {
                 if (response.status === 405) {
                     const outcome = errorReply as unknown as Endorsement405Response;
                     showMessageDialog((<span>{outcome?.reason || "Reason not given"}</span>), "Endorsement failed");
+                }
+                else if (response.status === 404) {
+
                 } else {
                     const errorMessage = (errorReply as any)?.detail || "Unknown error";
-                    showNotification(errorMessage, "warning");
+                    showNotification("272:" + errorMessage, "warning");
                 }
                 return;
             }
@@ -310,9 +338,27 @@ const EndorsementStepper = () => {
                 const errorMessage = (response.data as any)?.detail || "Unknown error";
                 showNotification(`Unexpected response ${response.statusText} - ${errorMessage}`, "warning");
             }
-        } catch (error) {
-            console.error("Error:", error);
-            showNotification(JSON.stringify(error), "warning");
+        } catch (error: any) {
+            console.error("333 Error:", error);
+            const errorMessage = (error.data as any)?.detail || "Unknown error";
+
+            if (error.status === 404) {
+                setErrors({...errors, endorsement_code: errorMessage});
+            } else if (error.status === 401) {
+                setErrors({...errors, endorsement_code: "Please login"});
+                showMessageDialog("Please re-login first.", "No User Information",
+                    () => {
+                    }, "OK",
+                    () => {
+                        window.location.href = `/login?next_page=${window.location.href}`
+                    }, "Login"
+                );
+            }
+            else {
+                showNotification("Endorsement(2): " + errorMessage, "error");
+            }
+
+            showNotification("Endorsement (2): " +  + JSON.stringify(error), "warning");
         } finally {
             setInProgress(false);
         }
@@ -346,7 +392,7 @@ const EndorsementStepper = () => {
         }
 
         if (name === "endorsement_code") {
-            const tip = (value) ? endorsementCodeValidator(value) ? "" : "Invalid" : "Empty";
+            const tip = (value) ? endorsementCodeValidator(value) ? "" : "Invalid - must be 6 letters" : "Empty";
             setErrors({...errors, endorsement_code: tip});
         }
     };
