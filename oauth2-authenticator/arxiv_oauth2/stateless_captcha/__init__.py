@@ -205,6 +205,6 @@ def check(token: str, value: str, secret: str, ip_address: str) -> None:
     """
     target = unpack(token, secret, ip_address)
     logger.debug('target: %s, value: %s', target, value)
-    if value != target:
+    if value.upper() != target.upper():
         logger.debug('incorrect value for this captcha')
         raise InvalidCaptchaValue('Incorrect value for this captcha')

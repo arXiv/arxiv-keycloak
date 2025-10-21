@@ -271,7 +271,7 @@ async def update_user_name(
             session,
             TapirUser,
             data.model_dump(),
-            {'first_name', 'last_name'},
+            updating_fields={'first_name', 'last_name'},
             primary_key_field="user_id",
             primary_key_value=user_id
         )
@@ -287,7 +287,7 @@ async def update_user_name(
             session,
             TapirUser,
             data.model_dump(),
-            {'suffix_name'},
+            updating_fields={'suffix_name'},
             primary_key_field="user_id",
             primary_key_value=user_id
         )
