@@ -5,7 +5,7 @@ from typing import Tuple, List, Dict
 from arxiv.auth.legacy.exceptions import PasswordAuthenticationFailed
 from arxiv.auth.legacy.passwords import check_password
 from arxiv.db.models import TapirUser, TapirUsersPassword, TapirNickname, Demographic, TapirPolicyClass
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from .user_model import UserModel
@@ -59,7 +59,7 @@ def _get_user_by_user_id(session: Session, user_id: int) -> TapirUser | None:
 
 def _get_user_by_email(session: Session, email: str) -> TapirUser | None:
     return session.query(TapirUser) \
-        .filter(TapirUser.email == email) \
+        .filter(TapirUser.email == email.lower()) \
         .first()
 
 
@@ -68,7 +68,7 @@ def _get_user_by_username(session: Session, username: str) -> TapirUser | None:
     if not username or '@' in username:
         raise ValueError("username must not contain a @")
     tapir_nick = session.query(TapirNickname) \
-            .filter(TapirNickname.nickname == username) \
+            .filter(TapirNickname.nickname == username.lower()) \
             .first()
     if not tapir_nick:
         return None
@@ -102,7 +102,7 @@ def get_tapir_user(session: Session, claim: str) -> TapirUser | None:
 class AuthResponse(BaseModel):
     id: str
     username: str
-    email: EmailStr
+    email: str
     firstName: str
     lastName: str
     enabled: bool

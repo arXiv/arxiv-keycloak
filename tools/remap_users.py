@@ -1,6 +1,8 @@
 import argparse
+import hashlib
 import json
 import os
+import time
 
 from arxiv.auth.legacy.passwords import hash_password
 from sqlalchemy import func, Engine, Table, update, text, select
@@ -338,11 +340,27 @@ def remap_user(db_engine: Engine) -> None:
 def smash_passwords(db_engine: Engine) -> None:
     with Session(db_engine) as session:
         user_password: TapirUsersPassword
-        for user, user_password in session.query(TapirUser, TapirUsersPassword).filter(TapirUsersPassword.user_id == TapirUser.user_id).all():
-            user_password.password_enc = hash_password('changeme')
-            session.add(user_password)
+        hasher = hashlib.md5()
 
-        session.commit()
+        # Process in batches of 1000
+        batch_size = 100
+
+        for i in range(1, 1000000000, batch_size):
+            users = session.query(TapirUser).filter(TapirUser.user_id.in_(range(i, i+batch_size))).all()
+            if len(users) == 0:
+                break
+
+            passwords = session.query(TapirUsersPassword).filter(TapirUsersPassword.user_id.in_(range(i, i+batch_size))).all()
+            if len(passwords) == 0:
+                break
+
+            # Process current batch
+            for user, user_password in zip(users, passwords):
+                hasher.update((user.email + str(time.process_time())).encode('utf-8'))
+                user_password.password_enc = hash_password(hasher.hexdigest())
+
+            # Commit the current batch
+            session.commit()
 
 
 if __name__ == '__main__':

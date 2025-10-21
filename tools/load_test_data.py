@@ -28,10 +28,10 @@ def instantiate_db_engine() -> Tuple[Engine, List[str]]:
       Engine: sqlalchemy db_engine object
       List[str]: list of table names
     """
-    db_host = os.environ.get('ARXIV_DB_HOST')
-    db_port = os.environ.get('ARXIV_DB_PORT')
-    root_user = os.environ.get('ARXIV_DB_ROOT_USER', 'root')
-    root_password = os.environ.get('ARXIV_DB_ROOT_PASSWORD', 'root_password')
+    db_host = os.environ.get('ARXIV_DB_HOST').strip()
+    db_port = os.environ.get('ARXIV_DB_PORT').strip()
+    root_user = os.environ.get('ARXIV_DB_ROOT_USER', 'root').strip()
+    root_password = os.environ.get('ARXIV_DB_ROOT_PASSWORD', 'root_password').strip()
     db_uri = f"mysql://{root_user}:{root_password}@{db_host}:{db_port}/arXiv"
 
     # conn_args = {"ssl": None}
