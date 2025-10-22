@@ -336,7 +336,7 @@ def _preflight_register_account(
         errors.append(AccountRegistrationError(message="The request requires a client host", field_name="client_host"))
 
     if registration.email and registration.email.strip():
-        if session.query(TapirNickname).filter(TapirUser.email == registration.email.strip()).scalar() is not None:
+        if session.query(TapirNickname).filter(TapirUser.email == registration.email.strip().lower()).one_or_none() is not None:
             errors.append(AccountRegistrationError(message="Email already registered", field_name="email"))
     else:
         errors.append(AccountRegistrationError(message="email is required", field_name="email"))
@@ -344,7 +344,7 @@ def _preflight_register_account(
     if not registration.username or not registration.username.strip():
         errors.append(AccountRegistrationError(message="username is required", field_name="username"))
     else:
-        if session.query(TapirNickname).filter(TapirNickname.nickname == registration.username.strip()).scalar() is not None:
+        if session.query(TapirNickname).filter(TapirNickname.nickname == registration.username.strip().lower()).one_or_none() is not None:
             errors.append(
                 AccountRegistrationError(message="The username is not available.", field_name="username"))
 
@@ -418,7 +418,7 @@ async def register_account(
 
     if registration.keycloak_migration:
         data: Optional[TapirNickname] = session.query(TapirNickname).filter(
-            TapirNickname.nickname == registration.username).one_or_none()
+            TapirNickname.nickname == registration.username.lower()).one_or_none()
         if not data:
             error_response = AccountRegistrationError(message="Username is not found", field_name="username")
             response.status_code = status.HTTP_404_NOT_FOUND
