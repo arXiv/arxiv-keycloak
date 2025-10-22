@@ -7,7 +7,7 @@ ALL_DIRS := $(DOCKER_DIRS)
 
 tag := ${KC_DOCKER_TAG}
 
-.PHONY: bootstrap run proxy sql docker-image push deploy local arxiv-realm sh-arxiv-realm test dev9-arxiv-realm local-arxiv-realm deploy2 kc-service lock
+.PHONY: bootstrap run proxy sql docker-image push deploy local arxiv-realm sh-arxiv-realm test dev9-arxiv-realm local-arxiv-realm deploy2 kc-service lock theme
 
 all: .env.localdb
 	@echo KC_DB_HOST_PUBLIC: ${KC_DB_HOST_PUBLIC}  KC_DB_HOST_PRIVATE:  ${KC_DB_HOST_PRIVATE}  KC_DB_USER: ${KC_DB_USER} KC_DB_PASS: ${KC_DB_PASS}
@@ -203,3 +203,11 @@ local-arxiv-realm:
 dev9-arxiv-realm:
 	@echo python3 tools/setup_arxiv_realm.py --server https://keycloak-service-874717964009.us-central1.run.app  --admin-secret ${KC_ADMIN_PASSWORD} --arxiv-user-secret "${KEYCLOAK_TEST_CLIENT_SECRET}" --legacy-auth-token "${LEGACY_AUTH_API_TOKEN}"
 	. venv/bin/activate && python3 tools/setup_arxiv_realm.py --server https://keycloak-service-874717964009.us-central1.run.app --admin-secret ${KC_ADMIN_PASSWORD} --arxiv-user-secret "${KEYCLOAK_TEST_CLIENT_SECRET}" --legacy-auth-token "${LEGACY_AUTH_API_TOKEN}" --source realms/arxiv-realm-gcp-dev.json
+
+
+#-#
+#-# theme:
+#-#  build keycloakify arXiv theme
+#-#
+theme:
+	cd kcfy-arxiv && make

@@ -114,6 +114,12 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
         className: bodyClassName ?? kcClsx("kcBodyClass")
     });
 
+    // Remove default body margin
+    useEffect(() => {
+        document.body.style.margin = '0';
+        document.body.style.padding = '0';
+    }, []);
+
     const { isReadyToRender } = useInitialize({ kcContext, doUseDefaultCss });
 
     if (!isReadyToRender) {
