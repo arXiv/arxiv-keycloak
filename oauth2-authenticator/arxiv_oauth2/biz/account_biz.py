@@ -18,7 +18,8 @@ from arxiv.auth.legacy.exceptions import RegistrationFailed
 from arxiv.auth.legacy import passwords
 from arxiv_bizlogic.bizmodels.tapir_to_kc_mapping import AuthResponse
 from fastapi import HTTPException, status
-from keycloak import KeycloakAdmin, KeycloakError, KeycloakAuthenticationError, KeycloakOpenID, KeycloakPostError
+from keycloak import KeycloakAdmin, KeycloakError, KeycloakAuthenticationError, KeycloakOpenID, KeycloakPostError, \
+    KeycloakPutError
 from pydantic import BaseModel, field_validator
 from sqlalchemy import and_
 from sqlalchemy.exc import IntegrityError
@@ -321,8 +322,13 @@ def migrate_to_keycloak(kc_admin: KeycloakAdmin, account: AccountInfoModel, pass
     try:
         kc_send_verify_email(kc_admin, account.id)
 
+    except KeycloakPutError:
+        logger.warning("Registration successful, but email verification not working.")
+        pass
+
     except KeycloakError as e:
         logger.warning("Registration successful, but email verification not working.")
+        pass
 
 
 def to_kc_user_profile(account: AccountInfoModel, email_verified: bool = False, attributes: dict = {}) -> dict:
