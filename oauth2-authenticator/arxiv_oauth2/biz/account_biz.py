@@ -323,11 +323,15 @@ def migrate_to_keycloak(kc_admin: KeycloakAdmin, account: AccountInfoModel, pass
         kc_send_verify_email(kc_admin, account.id)
 
     except KeycloakPutError:
-        logger.warning("Registration successful, but email verification not working.")
+        logger.warning("Registration successful, KeycloakPutError - but email verification not working.")
         pass
 
     except KeycloakError as e:
-        logger.warning("Registration successful, but email verification not working.")
+        logger.warning("Registration successful, KeycloakError error.", exc_info=e)
+        pass
+
+    except Exception as e:
+        logger.error("Registration success. Some error", exc_info=e)
         pass
 
 
@@ -360,14 +364,11 @@ emailVerified optional Boolean
 
 def kc_send_verify_email(kc_admin: KeycloakAdmin, account_id: str, force_verify: bool = False):
     """
+    This may raise KeycloakError.
     """
     user = kc_admin.get_user(account_id)
     if force_verify or not user.get("emailVerified", False):
-        try:
-            kc_admin.send_verify_email(account_id)
-        except KeycloakError as e:
-            logger.error("Creating Keycloak user failed.", exc_info=e)
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR) from e
+        kc_admin.send_verify_email(account_id)
 
 
 def kc_set_user_password(kc_admin: KeycloakAdmin, account: AccountInfoModel, password: str):
