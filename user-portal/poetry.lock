@@ -78,8 +78,8 @@ sphinx = ["sphinx", "sphinx-autodoc-typehints", "sphinxcontrib-websupport"]
 [package.source]
 type = "git"
 url = "https://github.com/arXiv/arxiv-base.git"
-reference = "990358ec36cc6cc81a7a0255376f7d2b730eed1a"
-resolved_reference = "990358ec36cc6cc81a7a0255376f7d2b730eed1a"
+reference = "343ec7afd3e86df7665ebf3d693fa522b0b521e3"
+resolved_reference = "343ec7afd3e86df7665ebf3d693fa522b0b521e3"
 
 [[package]]
 name = "bleach"
@@ -879,7 +879,7 @@ grpcio = [
 ]
 proto-plus = [
     {version = ">=1.25.0,<2.0.0", markers = "python_version >= \"3.13\""},
-    {version = ">=1.22.3,<2.0.0"},
+    {version = ">=1.22.3,<2.0.0", markers = "python_version < \"3.13\""},
 ]
 protobuf = ">=3.20.2,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<7.0.0"
 
@@ -908,7 +908,7 @@ opentelemetry-api = {version = ">=1.27.0", markers = "python_version >= \"3.8\""
 opentelemetry-sdk = {version = ">=1.27.0", markers = "python_version >= \"3.8\""}
 proto-plus = [
     {version = ">=1.25.0,<2.0.0", markers = "python_version >= \"3.13\""},
-    {version = ">=1.22.2,<2.0.0", markers = "python_version >= \"3.11\" and python_version < \"3.13\""},
+    {version = ">=1.22.2,<2.0.0", markers = "python_version >= \"3.11\""},
 ]
 protobuf = ">=3.20.2,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<7.0.0"
 
@@ -2639,4 +2639,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "8dcbe635e2d8ff9684689caf6d38e66e61f201f8e6694a74915fd095673bd4a2"
+content-hash = "b48aabe4a71d27cafc855567d950fde9e005bf1325d24cf82295f87cb31281e9"
