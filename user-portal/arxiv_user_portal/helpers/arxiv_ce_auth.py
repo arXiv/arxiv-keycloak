@@ -157,27 +157,27 @@ class ArxivCEAuthMiddleware(BaseMiddleware):
             pass
 
         except jwcrypto.jwt.JWTExpired:
-            logger.debug(f"Expired cookie cookie: jwcrypto.jwt.JWTExpired '{token}'")
+            logger.debug(f"Expired cookie cookie: jwcrypto.jwt.JWTExpired {secure_payload}")
             pass
 
         except jwt.ExpiredSignatureError:
-            logger.debug(f"Expired cookie cookie: jwt.ExpiredSignatureError '{token}'")
+            logger.debug(f"Expired cookie cookie: jwt.ExpiredSignatureError '{secure_payload}'")
             pass
 
         except jwcrypto.jwt.JWTInvalidClaimFormat as exc:
-            logger.warning(f"Chowed cookie jwcrypto.jwt.JWTInvalidClaimFormat '{token}'")
+            logger.warning(f"Chowed cookie jwcrypto.jwt.JWTInvalidClaimFormat '{secure_payload}'")
             # raise InternalServerError() from exc
             need_refresh = True
             pass
 
         except jwt.DecodeError as exc:
-            logger.warning(f"Chowed cookie jwt.DecodeError or bad jwt-secret '{token}'")
+            logger.warning(f"Chowed cookie jwt.DecodeError or bad jwt-secret '{secure_payload}'")
             # raise InternalServerError() from exc
             need_refresh = True
             pass
 
         except Exception as exc:
-            logger.warning(f"token {token} is broken?", exc_info=exc)
+            logger.warning(f"token {secure_payload} is broken?", exc_info=exc)
             # raise InternalServerError() from exc
             need_refresh = True
             pass
