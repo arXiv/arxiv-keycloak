@@ -336,7 +336,7 @@ def _preflight_register_account(
         errors.append(AccountRegistrationError(message="The request requires a client host", field_name="client_host"))
 
     if registration.email and registration.email.strip():
-        if session.query(TapirNickname).filter(TapirUser.email == registration.email.strip().lower()).one_or_none() is not None:
+        if session.query(TapirUser).filter(TapirUser.email == registration.email.strip().lower()).one_or_none() is not None:
             errors.append(AccountRegistrationError(message="Email already registered", field_name="email"))
     else:
         errors.append(AccountRegistrationError(message="email is required", field_name="email"))
