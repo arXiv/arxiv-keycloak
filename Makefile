@@ -7,7 +7,7 @@ export $(shell sed 's/=.*//' .env)
 
 ARXIV_BASE_DIR ?= $(HOME)/arxiv/arxiv-base
 
-.PHONY: HELLO all bootstrap docker-image arxiv-db nginx test up down restart images
+.PHONY: HELLO all bootstrap docker-image arxiv-db nginx test up down restart images lock
 
 default: HELLO
 
@@ -118,6 +118,13 @@ devdown:
 #-#   runs test in all of subdirectories
 test:
 	$(call run_in_all_subdirs,test)
+
+#-#
+#-# lock:
+#-#   runs lock in all of subdirectories
+lock:
+	$(call run_in_all_subdirs,lock)
+
 
 #-#
 #-# nginx:

@@ -86,6 +86,15 @@ stop:
 sh: stop
 	${APP_DOCKER_RUN}  -v ${HOME}/Downloads:/home/worker/Downloads -w /home/worker -it ${app_tag}:latest  /bin/bash
 
+
+#-#
+#-# Command: lock
+#-#   run poetry lock
+lock: venv/bin/poetry
+	. venv/bin/activate && poetry lock
+	. venv/bin/activate && poetry install
+
+
 #-#
 #-# Command: daemon
 #-#   runs the appliance container with the terminal attached (for test)

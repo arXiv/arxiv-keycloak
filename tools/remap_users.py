@@ -338,29 +338,61 @@ def remap_user(db_engine: Engine) -> None:
 
 
 def smash_passwords(db_engine: Engine) -> None:
-    with Session(db_engine) as session:
-        user_password: TapirUsersPassword
-        hasher = hashlib.md5()
+    """Generate SQL file with password updates for direct MySQL execution."""
 
-        # Process in batches of 1000
-        batch_size = 100
+    output_file = "update_passwords.sql"
+    batch_size = 10000
 
-        for i in range(1, 1000000000, batch_size):
-            users = session.query(TapirUser).filter(TapirUser.user_id.in_(range(i, i+batch_size))).all()
-            if len(users) == 0:
-                break
+    with open(output_file, 'w') as sql_file:
+        # Write SQL header
+        sql_file.write("-- Generated password update statements\n")
+        sql_file.write("-- Execute with: mysql -u user -p database < update_passwords.sql\n\n")
 
-            passwords = session.query(TapirUsersPassword).filter(TapirUsersPassword.user_id.in_(range(i, i+batch_size))).all()
-            if len(passwords) == 0:
-                break
+        total_count = 0
 
-            # Process current batch
-            for user, user_password in zip(users, passwords):
-                hasher.update((user.email + str(time.process_time())).encode('utf-8'))
-                user_password.password_enc = hash_password(hasher.hexdigest())
+        with db_engine.connect() as conn:
+            for i in range(1, 1000000000, batch_size):
+                # Fetch users in batches, sorted by user_id
+                users = conn.execute(
+                    select(TapirUser.user_id, TapirUser.email)
+                    .where(TapirUser.user_id.in_(range(i, i+batch_size)))
+                    .order_by(TapirUser.user_id)
+                ).all()
 
-            # Commit the current batch
-            session.commit()
+                if len(users) == 0:
+                    break
+
+                # Generate SQL UPDATE statements
+                for user_id, email in users:
+                    hasher = hashlib.md5()
+                    hasher.update((email + str(time.process_time())).encode('utf-8'))
+                    new_password = hash_password(hasher.hexdigest())
+
+                    # Escape single quotes in password for SQL
+                    escaped_password = new_password.replace("'", "''")
+
+                    # Write UPDATE statement
+                    sql_file.write(
+                        f"UPDATE tapir_users_password SET password_enc = '{escaped_password}' "
+                        f"WHERE user_id = {user_id};\n"
+                    )
+                    total_count += 1
+
+                    # Add progress SELECT every 1000 updates
+                    if total_count % 1000 == 0:
+                        sql_file.write(f"SELECT 'Processed {total_count} users (user_id: {user_id})' AS progress;\n")
+
+                # Write progress comment every batch
+                sql_file.write(f"-- Processed {total_count} users so far\n")
+                print(f"Generated {total_count} UPDATE statements...")
+
+        # Write SQL footer
+        sql_file.write(f"\n-- Total users updated: {total_count}\n")
+
+    print(f"\nSQL file generated: {output_file}")
+    print(f"Total UPDATE statements: {total_count}")
+    print(f"\nExecute with:")
+    print(f"  mysql -u username -p database_name < {output_file}")
 
 
 if __name__ == '__main__':

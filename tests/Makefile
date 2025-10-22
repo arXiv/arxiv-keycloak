@@ -3,7 +3,7 @@ include ../.env
 export $(shell sed 's/=.*//' ../.env)
 
 
-.PHONY: all bootstrap test HELLO help
+.PHONY: all bootstrap test HELLO help lock
 
 all: HELLO bootstrap
 
@@ -38,3 +38,8 @@ test:
 dump-arxiv-db:
 	mysqldump -n --user=root --password=root_password --host=127.0.0.1 --port=${ARXIV_DB_PORT} -q -y --skip-add-drop-table --skip-comments --skip-disable-keys --skip-lock-tables --ssl-mode=DISABLED --lock-all-tables --result-file ./data/test-db.sql arXiv
 
+#-#
+#-# Command: lock
+#-#   run poetry lock
+lock:
+	echo Nothing to be done

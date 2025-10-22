@@ -93,3 +93,11 @@ test: venv/bin/pytest
 
 
 #-#
+#-# Command: lock
+#-#   run poetry lock
+lock: venv/bin/poetry
+	. venv/bin/activate && poetry lock
+	. venv/bin/activate && poetry install
+
+
+#-#

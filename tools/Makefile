@@ -3,7 +3,7 @@ export $(shell sed 's/=.*//' ../.env)
 
 ARXIV_BASE_DIR ?= $(HOME)/arxiv/arxiv-base
 
-.PHONY: HELLO all load-test-data bootstrap test upload-test-data dump-test-data
+.PHONY: HELLO all load-test-data bootstrap test upload-test-data dump-test-data lock
 
 all: ../venv/bin/poetry HELLO 
 
@@ -40,7 +40,7 @@ venv:
 
 venv/bin/poetry: venv
 	. venv/bin/activate && pip install poetry
-	. venv/bin/activate && poetry install
+	. venv/bin/activate && poetry lock && poetry install
 
 #-#
 #-# load-arxiv-test-db-schema:
@@ -61,6 +61,13 @@ load-test-data: .bootstrap
 #-#   runs tests
 test:
 	@echo "No tests in tools yet"
+
+#-#
+#-# lock:
+#-#   poretry lock 
+lock: venv/bin/poetry
+	. venv/bin/activate && poetry lock
+	. venv/bin/activate && poetry install
 
 
 #-#

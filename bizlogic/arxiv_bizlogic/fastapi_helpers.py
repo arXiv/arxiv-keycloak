@@ -75,6 +75,10 @@ def decode_user_claims(token: str, jwt_secret: str) -> ArxivUserClaims | None:
         logger.warning(f"Chowed cookie '{token}'")
         return None
 
+    except ValueError as exc:
+        logger.warning(f"token {token} is malformed")
+        return None
+
     except Exception as exc:
         logger.warning(f"token {token} is wrong?", exc_info=exc)
         return None

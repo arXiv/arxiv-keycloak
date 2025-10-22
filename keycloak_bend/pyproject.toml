@@ -11,7 +11,7 @@ package-mode = false
 [tool.poetry.dependencies]
 python = ">=3.11,<4.0"
 python-keycloak = "^5.1.1"
-arxiv-base = {git = "https://github.com/arXiv/arxiv-base.git", rev = "d8fbd7bb6fd5d135a96812a0c36f1c50ec5dfe1c"}
+arxiv-base = {git = "https://github.com/arXiv/arxiv-base.git", rev = "990358ec36cc6cc81a7a0255376f7d2b730eed1a"}
 
 
 [tool.poetry.group.dev.dependencies]

@@ -3,7 +3,7 @@ export $(shell sed 's/=.*//' ../.env)
 
 tag := ${KC_TAPIR_BRIDGE_DOCKER_TAG}
 
-.PHONY: bootstrap docker-image
+.PHONY: bootstrap docker-image lock
 
 bootstrap: .bootstrap
 
@@ -31,3 +31,10 @@ venv/lib/python3.12/site-packages/google: venv/bin/poetry poetry.lock
 
 docker-image:
 	docker build -t ${tag} .
+
+#-#
+#-# lock:
+#-#   runs tests
+lock: . venv/bin/poetry
+	. venv/bin/activate && poetry lock
+	. venv/bin/activate && poetry install

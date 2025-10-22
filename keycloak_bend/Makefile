@@ -7,7 +7,7 @@ ALL_DIRS := $(DOCKER_DIRS)
 
 tag := ${KC_DOCKER_TAG}
 
-.PHONY: bootstrap run proxy sql docker-image push deploy local arxiv-realm sh-arxiv-realm test dev9-arxiv-realm local-arxiv-realm deploy2 kc-service
+.PHONY: bootstrap run proxy sql docker-image push deploy local arxiv-realm sh-arxiv-realm test dev9-arxiv-realm local-arxiv-realm deploy2 kc-service lock
 
 all: .env.localdb
 	@echo KC_DB_HOST_PUBLIC: ${KC_DB_HOST_PUBLIC}  KC_DB_HOST_PRIVATE:  ${KC_DB_HOST_PRIVATE}  KC_DB_USER: ${KC_DB_USER} KC_DB_PASS: ${KC_DB_PASS}
@@ -66,6 +66,14 @@ venv/lib/python3.12/site-packeages/keycloak: venv/bin/poetry
 #-#  Runs pytest
 test:
 	. venv/bin/activate && poetry run pytest
+
+#-#
+#-# Command: lock
+#-#   run poetry lock
+lock: venv/bin/poetry
+	. venv/bin/activate && poetry lock
+	. venv/bin/activate && poetry install
+
 
 #-#
 #-# run: 

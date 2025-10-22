@@ -144,7 +144,7 @@ class ArxivCEAuthMiddleware(BaseMiddleware):
             logger.debug('No auth token')
             return super().__call__(environ, start)
 
-        kc_tokens = {}
+        kc_tokens: dict = {}
         claims: Optional[ArxivUserClaims] = None
         # classic_meta: AUTH_SESSION_TYPE = self.config[CLASSIC_SESSION_CONFIG_NAME]
         auth_config: AUTH_CONFIG_TYPE = self.config[AAA_CONFIG_NAME]

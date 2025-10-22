@@ -35,6 +35,7 @@ setup-arch:
 venv:
 	python3.12 -m venv venv
 
+
 venv/lib/python3.12/site-packages/fastapi: venv
 	. venv/bin/activate && pip install -r ./requirements.txt
 
@@ -70,3 +71,11 @@ relay:
 #-#   runs the email relay docker image
 relay.push:
 	docker push  ${email_to_pubsub_app_tag}
+
+#-#
+#-# Command: lock
+#-#   run poetry lock
+lock:
+	echo "does not use poetry"
+
+
