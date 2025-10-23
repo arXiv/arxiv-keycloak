@@ -236,7 +236,7 @@ const SubmissionDatagrid = forwardRef<SubmissionDatagridRef, SubmissionDatagridP
     const currentTime = new Date().getTime();
 
 
-    if (submissionStatusGroup === 'working')
+    if (submissionStatusGroup === 'working') {
         columns.push({
             field: 'submit_time',
             headerName: 'Expires',
@@ -245,7 +245,7 @@ const SubmissionDatagrid = forwardRef<SubmissionDatagridRef, SubmissionDatagridP
             valueGetter: (value, _row) => {
                 const submitDate = new Date(value);
                 return new Date(submitDate.getTime() + fourteenDaysInMs);
-                },
+            },
         });
 
         columns.push({
@@ -259,10 +259,13 @@ const SubmissionDatagrid = forwardRef<SubmissionDatagridRef, SubmissionDatagridP
                 const submitDate = new Date(cell.row.submit_time);
                 const expiresOn = submitDate.getTime() + fourteenDaysInMs;
                 const isExpired = currentTime > expiresOn;
-                return <IconButton sx={{visibility: cell.row.editable ? 'visible' : 'hidden'}} onClick={() => handleEdit(cell.row, isExpired)}>
-                    {isExpired ? <NoEditIcon /> : <EditIcon color={"primary"}/>}
+                return <IconButton sx={{visibility: cell.row.editable ? 'visible' : 'hidden'}}
+                                   onClick={() => handleEdit(cell.row, isExpired)}>
+                    {isExpired ? <NoEditIcon/> : <EditIcon color={"primary"}/>}
                 </IconButton>;
-            }});
+            }
+        });
+    }
 
     if (submissionStatusGroup === 'current')
         columns.push({
