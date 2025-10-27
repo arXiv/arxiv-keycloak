@@ -2,4 +2,14 @@
 
 {%- block addl_head -%}
 {{ bootstrap.load_css() }}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script type="text/javascript">
+// JIRA Issue Collector
+jQuery.ajax({
+    url: "https://arxiv-org.atlassian.net/s/d41d8cd98f00b204e9800998ecf8427e-T/a1kzh2/b/0/b0105d975e9e59f24a3230a22972a71a/_/download/batch/com.atlassian.jira.collector.plugin.jira-issue-collector-plugin:issuecollector-embededjs/com.atlassian.jira.collector.plugin.jira-issue-collector-plugin:issuecollector-embededjs.js?locale=en-US&collectorId=a8345c59",
+    type: "get",
+    cache: true,
+    dataType: "script"
+});
+</script>
 {%- endblock addl_head -%}
