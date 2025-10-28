@@ -902,8 +902,10 @@ export interface components {
         };
         /** PasswordInput */
         PasswordInput: {
-            /** Password */
-            password: string;
+            /** Password Sha1 */
+            password_sha1: string;
+            /** Length */
+            length: number;
         };
         /** PasswordResetRequest */
         PasswordResetRequest: {

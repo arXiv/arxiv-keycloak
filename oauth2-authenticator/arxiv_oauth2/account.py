@@ -45,7 +45,8 @@ from .biz.account_biz import (AccountInfoModel, get_account_info,
                               AccountUserNameBaseModel)
 from .biz.cold_migration import cold_migrate
 from .biz.email_history_biz import EmailHistoryBiz, EmailChangeEntry, EmailChangeRequest
-from arxiv_bizlogic.validation.password_validator import validate_password_strength
+from arxiv_bizlogic.validation.password_validator import validate_password_strength, MIN_PASSWORD_LENGTH, \
+    check_hashed_password
 # from . import stateless_captcha
 from .captcha import CaptchaTokenReplyModel, get_captcha_token
 from .stateless_captcha import InvalidCaptchaToken, InvalidCaptchaValue
@@ -1715,11 +1716,17 @@ class PasswordValidationResult(BaseModel):
 
 
 class PasswordInput(BaseModel):
-    password: str
+    password_sha1: str
+    length: int
 
 @router.post("/password/validate", description="check the password hash")
 def validate_password_hash(
         body: PasswordInput
 ) -> PasswordValidationResult:
-    valid, reason = validate_password_strength(body.password)
-    return PasswordValidationResult(valid=valid, reason=reason)
+    if body.length < MIN_PASSWORD_LENGTH:
+        return PasswordValidationResult(valid=False, reason="Password is too short")
+
+    if check_hashed_password(body.password_sha1):
+        return PasswordValidationResult(valid=False, reason="Password is too weak")
+
+    return PasswordValidationResult(valid=True, reason="")
