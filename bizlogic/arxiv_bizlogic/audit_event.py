@@ -30,6 +30,8 @@ class AdminAuditActionEnum(str, Enum):
     ARXIV_CATEGORY = "arxiv-category"
     ARXIV_CHANGE_PAPER_PW = "arXiv-change-paper-pw"
     ARXIV_CHANGE_STATUS = "arXiv-change-status"
+    ARXIV_EMAIL_PATTERNS = "arxiv-email-patterns"
+    ARXIV_ENDORSEMENT_DOMAINS = "arxiv-endorsement-domains"
     ARXIV_MAKE_AUTHOR = "arXiv-make-author"
     ARXIV_MAKE_NONAUTHOR = "arXiv-make-nonauthor"
     ARXIV_REVOKE_PAPER_OWNER = "arXiv-revoke-paper-owner"
@@ -798,6 +800,23 @@ class AdminAudit_ChangeDemographic(AdminAudit_GenericPayload):
     """
     _action = AdminAuditActionEnum.CHANGE_DEMOGRAPHIC
 
+    def __init__(self, *argc, **kwargs):
+        """Change demographic audit event.
+
+        :param admin_id: ID of the administrator performing the action
+        :param affected_user: ID of the user being affected by the action
+        :param session_id: TAPIR session ID associated with the action
+        :param data: The thing changed
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        :raises ValueError: If the provided email address is not valid
+        """
+        super().__init__(*argc, **kwargs)
+
+
     def describe(self, session: Session) -> str:
         data = self.data
         if data and data[0] == '{':
@@ -814,6 +833,22 @@ class AdminAudit_Category(AdminAudit_GenericPayload):
     """arXiv category audit event."""
     _action = AdminAuditActionEnum.ARXIV_CATEGORY
 
+    def __init__(self,  admin_id: int, session_id: int, data: dict, **kwargs):
+        """Change category audit event..
+
+        :param admin_id: ID of the administrator performing the action
+        :param session_id: TAPIR session ID associated with the action
+        :param data: The thing changed
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        :raises ValueError: If the provided email address is not valid
+        """
+        super().__init__(admin_id, 1, session_id, data, **kwargs)
+
+
     def describe(self, session: Session) -> str:
         data = self.data
         if data and data[0] == '{':
@@ -823,7 +858,70 @@ class AdminAudit_Category(AdminAudit_GenericPayload):
             except:
                 data = repr(self.data)
                 pass
-        return f"{self.describe_admin_user(session)} changed category of {self.describe_affected_user(session)} to {data}"
+        return f"{self.describe_admin_user(session)} changed category {data}"
+
+
+class AdminAudit_EndorsementDomains(AdminAudit_GenericPayload):
+    """arXiv endorsement domain audit event."""
+    _action = AdminAuditActionEnum.ARXIV_ENDORSEMENT_DOMAINS
+
+    def __init__(self,  admin_id: int, session_id: int, data: dict, **kwargs):
+        """Change endorsemint domain.
+
+        :param admin_id: ID of the administrator performing the action
+        :param session_id: TAPIR session ID associated with the action
+        :param data: The thing changed
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        :raises ValueError: If the provided email address is not valid
+        """
+        super().__init__(admin_id, 1, session_id, data, **kwargs)
+
+
+    def describe(self, session: Session) -> str:
+        data = self.data
+        if data and data[0] == '{':
+            try:
+                kvs = json.loads(data)
+                data = ", ".join([f"{k}: {v}" for k, v in kvs.items()])
+            except:
+                data = repr(self.data)
+                pass
+        return f"{self.describe_admin_user(session)} changed endorsement domain {data}"
+
+
+class AdminAudit_EmailPatterns(AdminAudit_GenericPayload):
+    """arXiv email pattern audit event."""
+    _action = AdminAuditActionEnum.ARXIV_EMAIL_PATTERNS
+
+    def __init__(self,  admin_id: int, session_id: int, data: dict, **kwargs):
+        """Change email patterns.
+
+        :param admin_id: ID of the administrator performing the action
+        :param session_id: TAPIR session ID associated with the action
+        :param data: The thing changed
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        :raises ValueError: If the provided email address is not valid
+        """
+        super().__init__(admin_id, 1, session_id, data, **kwargs)
+
+    def describe(self, session: Session) -> str:
+        data = self.data
+        if data and data[0] == '{':
+            try:
+                kvs = json.loads(data)
+                data = ", ".join([f"{k}: {v}" for k, v in kvs.items()])
+            except:
+                data = repr(self.data)
+                pass
+        return f"{self.describe_admin_user(session)} changed email pattern {data}"
 
 
 class AdminAudit_EndorseEvent(AdminAuditEvent):
