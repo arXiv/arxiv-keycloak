@@ -115,7 +115,7 @@ async def get_current_user(request: Request) -> ArxivUserClaims | None:
 
 def get_current_user_access_token(request: Request) -> str | None:
     logger = getLogger(__name__)
-    kc_cookie_key = request.app.extra[COOKIE_ENV_NAMES.arxiv_keycloak_cookie_env]
+    kc_cookie_key = request.app.extra[COOKIE_ENV_NAMES.keycloak_access_token_env]
     return request.cookies.get(kc_cookie_key)
 
 
@@ -316,7 +316,7 @@ class TapirCookieToUserClaimsMiddleware:
         request = Request(scope, receive)
         
         # Get cookie names from app config
-        auth_session_cookie_name = request.app.extra.get(COOKIE_ENV_NAMES.auth_session_cookie_env, "arxiv_oidc_session")
+        auth_session_cookie_name = request.app.extra.get(COOKIE_ENV_NAMES.auth_session_cookie_env, "ARXIVNG_SESSION_ID")
         classic_cookie_name = request.app.extra.get(COOKIE_ENV_NAMES.classic_cookie_env, "tapir_session")
         jwt_secret = request.app.extra.get('JWT_SECRET')
         

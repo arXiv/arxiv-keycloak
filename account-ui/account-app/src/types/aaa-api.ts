@@ -529,6 +529,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/account/password/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Validate Password Hash
+         * @description check the password hash
+         */
+        post: operations["validate_password_hash_account_password_validate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/captcha/image": {
         parameters: {
             query?: never;
@@ -880,6 +900,11 @@ export interface components {
             /** Authenticated */
             authenticated: boolean;
         };
+        /** PasswordInput */
+        PasswordInput: {
+            /** Password */
+            password: string;
+        };
         /** PasswordResetRequest */
         PasswordResetRequest: {
             /** Username Or Email */
@@ -891,6 +916,13 @@ export interface components {
             old_password: string;
             /** New Password */
             new_password: string;
+        };
+        /** PasswordValidationResult */
+        PasswordValidationResult: {
+            /** Valid */
+            valid: boolean;
+            /** Reason */
+            reason?: string | null;
         };
         /**
          * RefreshedTokens
@@ -2180,6 +2212,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    validate_password_hash_account_password_validate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasswordValidationResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

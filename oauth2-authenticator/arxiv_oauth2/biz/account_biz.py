@@ -2,6 +2,8 @@
 Account Management DAO to backend UserModel mapping
 """
 from __future__ import annotations
+
+import functools
 import re
 import traceback
 from datetime import datetime
@@ -30,9 +32,9 @@ from .. import datetime_to_epoch
 # from ..account import AccountRegistrationModel, AccountRegistrationError, AccountInfoModel
 
 from arxiv_bizlogic.bizmodels.user_model import UserModel, USER_MODEL_DEFAULTS, VetoStatusEnum
+from arxiv_bizlogic.validation.password_validator import validate_password_strength
 
 logger = logging.getLogger(__name__)
-
 
 # CAREER_STATUS = ["Unknown", "Staff", "Professor", "Post Doc", "Grad Student", "Other"]
 
@@ -59,14 +61,6 @@ def get_career_status_index(status: CAREER_STATUS) -> int:
     if status in csl:
         return csl.index(status)
     return 0
-
-
-allowed_pattern = re.compile(r"^[A-Za-z0-9@$\*~`_.+#\-=/:;(){}<>\[\]%^]+$")
-
-def validate_password(pwd: str) -> bool:
-    if len(pwd) < 8 or (not allowed_pattern.match(pwd)):
-        return False
-    return True
 
 
 class CategoryGroup(str, Enum):

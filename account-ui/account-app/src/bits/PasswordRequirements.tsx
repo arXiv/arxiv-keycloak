@@ -7,8 +7,9 @@ import ListItemText from "@mui/material/ListItemText";
 const PasswordRequirements = () => {
     const passwordRequirements = [
         "8 characters or more in length",
-        "May contain uppercase letters, lowercase letters, numbers and special characters",
-        "Must contain at least one special character"
+        "May contain any letters",
+        "Strongly recommended: 16 or more characters",
+        "Some passwords are prohibited by arXiv",
     ];
 
     return (<Typography sx={{mt: 2}}>

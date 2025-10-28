@@ -90,13 +90,18 @@ const ChangePassword = () => {
     };
 
     useEffect(() => {
-        const updated = {
-            old_password: formData.old_password ? "" : "Not provided",
-            new_password: passwordValidator(formData.new_password) ? "" : "Invalid password",
-            secondPassword: formData.new_password === password ? "" : "Passwords do not match",
+        const validatePassword = async () => {
+            const validationResult = await passwordValidator(formData.new_password, runtimeProps);
+            const updated = {
+                old_password: formData.old_password ? "" : "Not provided",
+                new_password: validationResult.valid ? "" : (validationResult.reason || "Invalid password"),
+                secondPassword: formData.new_password === password ? "" : "Passwords do not match",
+            };
+            setErrors(updated);
         };
-        setErrors(updated);
-    }, [formData, password]);
+
+        validatePassword();
+    }, [formData, password, runtimeProps]);
 
     const invalidFormData = Object.values(errors).some(value =>
         Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && value !== ''

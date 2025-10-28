@@ -38,13 +38,14 @@ from . import (get_current_user_or_none, get_db, get_keycloak_admin, stateless_c
                verify_bearer_token, ApiToken, is_super_user, describe_super_user, check_authnz,
                is_authorized, get_authn_or_none, get_arxiv_user_claims)  # , get_client_host
 from .biz.account_biz import (AccountInfoModel, get_account_info,
-                              AccountRegistrationError, AccountRegistrationModel, validate_password,
+                              AccountRegistrationError, AccountRegistrationModel,
                               migrate_to_keycloak,
                               kc_validate_access_token, kc_send_verify_email, register_arxiv_account,
                               update_tapir_account, AccountIdentifierModel, kc_login_with_client_credential,
                               AccountUserNameBaseModel)
 from .biz.cold_migration import cold_migrate
 from .biz.email_history_biz import EmailHistoryBiz, EmailChangeEntry, EmailChangeRequest
+from arxiv_bizlogic.validation.password_validator import validate_password_strength
 # from . import stateless_captcha
 from .captcha import CaptchaTokenReplyModel, get_captcha_token
 from .stateless_captcha import InvalidCaptchaToken, InvalidCaptchaValue
@@ -348,9 +349,11 @@ def _preflight_register_account(
             errors.append(
                 AccountRegistrationError(message="The username is not available.", field_name="username"))
 
-    if not validate_password(registration.password):
-        errors.append(AccountRegistrationError(message="Password does not meet the criteria.", field_name="password"))
+    ok_password, reason = validate_password_strength(registration.password)
 
+    if not ok_password:
+        errors.append(AccountRegistrationError(message=f"Password does not meet the criteria. {reason}",
+                                               field_name="password"))
 
     # Check the captcha value against the captcha token.
     if host is not None:
@@ -854,8 +857,9 @@ async def change_user_password(
     if len(data.old_password) < 8:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Old password is invalid")
 
-    if not validate_password(data.new_password):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New password is invalid")
+    ok_password, reason = validate_password_strength(data.new_password)
+    if not ok_password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"New password is invalid. {reason}")
 
     user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
     if not user:
@@ -1703,3 +1707,19 @@ def update_user_authorization(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request")
 
     return UserModel.one_user(session, user_id)
+
+
+class PasswordValidationResult(BaseModel):
+    valid: bool
+    reason: Optional[str] = None
+
+
+class PasswordInput(BaseModel):
+    password: str
+
+@router.post("/password/validate", description="check the password hash")
+def validate_password_hash(
+        body: PasswordInput
+) -> PasswordValidationResult:
+    valid, reason = validate_password_strength(body.password)
+    return PasswordValidationResult(valid=valid, reason=reason)

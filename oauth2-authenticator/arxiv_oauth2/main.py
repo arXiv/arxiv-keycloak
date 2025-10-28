@@ -296,5 +296,4 @@ def create_app(*args, **kwargs) -> FastAPI:
         except Exception as exc:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="mysql: " + str(exc))
 
-
     return app

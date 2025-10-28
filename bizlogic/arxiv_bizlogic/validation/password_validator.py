@@ -11,6 +11,9 @@ with open(_HASH_FILE, 'r') as f:
     _hash_data = json.load(f)
     BAD_PASSWORD_HASHES = set(_hash_data['hashes'])
 
+def check_hashed_password(hashed_password: str) -> bool:
+    return hashed_password[:8] in BAD_PASSWORD_HASHES
+
 
 def is_bad_password(password: str) -> bool:
     """
@@ -22,8 +25,8 @@ def is_bad_password(password: str) -> bool:
     Returns:
         True if password is in the bad list, False otherwise
     """
-    password_hash = hashlib.sha256(password.lower().encode()).hexdigest()[:8]
-    return password_hash in BAD_PASSWORD_HASHES
+    password_hash = hashlib.sha256(password.lower().encode()).hexdigest()
+    return check_hashed_password(password_hash)
 
 
 def validate_password_strength(password: str) -> tuple[bool, str]:

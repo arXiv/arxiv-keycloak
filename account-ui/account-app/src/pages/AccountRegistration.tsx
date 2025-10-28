@@ -184,13 +184,24 @@ const AccountRegistration = () => {
             }
         },
         "password": (value: string) => {
-            if (!passwordValidator(value)) {
+            // Basic synchronous validation
+            if (value.length < 8) {
                 setErrors((prev) => ({
                     ...prev,
-                    password: `Password is invalid.`
+                    password: `Password must be at least 8 characters long`
                 }));
             } else {
-                setErrors((prev) => ({...prev, password: undefined}));
+                // Async validation
+                passwordValidator(value, runtimeContext).then((result) => {
+                    if (!result.valid) {
+                        setErrors((prev) => ({
+                            ...prev,
+                            password: result.reason || `Password is invalid.`
+                        }));
+                    } else {
+                        setErrors((prev) => ({...prev, password: undefined}));
+                    }
+                });
             }
         },
         "email": (value: string) => {
