@@ -3,10 +3,11 @@ import Typography from "@mui/material/Typography";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
+import {PASSWORD_MIN_LENGTH} from "./validators.ts";
 
 const PasswordRequirements = () => {
     const passwordRequirements = [
-        "8 characters or more in length",
+        `${PASSWORD_MIN_LENGTH} characters or more in length`,
         "May contain any letters",
         "Strongly recommended: 16 or more characters",
         "Some passwords are prohibited by arXiv",

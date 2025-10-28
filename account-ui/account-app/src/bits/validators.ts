@@ -1,9 +1,11 @@
 import { RuntimeProps } from "../RuntimeContext.tsx";
 import {ACCOUNT_PASSWORD_VALIDATE_URL} from "../types/aaa-url.ts";
 
+export const PASSWORD_MIN_LENGTH = 15;
+
 export async function passwordValidator(password: string, runtimeProps: RuntimeProps): Promise<{valid: boolean, reason?: string | null}> {
-    if (password.length < 8) {
-        return {valid: false, reason: "Password must be at least 8 characters long"};
+    if (password.length < PASSWORD_MIN_LENGTH) {
+        return {valid: false, reason: `Password must be at least ${PASSWORD_MIN_LENGTH} characters long`};
     }
 
     const validationEndpoint = runtimeProps.aaaFetcher.path(ACCOUNT_PASSWORD_VALIDATE_URL).method('post').create();

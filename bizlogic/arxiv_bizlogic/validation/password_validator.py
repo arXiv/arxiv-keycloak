@@ -5,6 +5,10 @@ import functools
 import json
 import os
 
+# https://pages.nist.gov/800-63-4/sp800-63b.html#passwordver
+
+MIN_PASSWORD_LENGTH = 15
+
 # Load hashes from JSON file
 _HASH_FILE = os.path.join(os.path.dirname(__file__), 'bad_passwords_hashes.json')
 with open(_HASH_FILE, 'r') as f:
@@ -25,7 +29,7 @@ def is_bad_password(password: str) -> bool:
     Returns:
         True if password is in the bad list, False otherwise
     """
-    password_hash = hashlib.sha256(password.lower().encode()).hexdigest()
+    password_hash = hashlib.sha1(password.lower().encode()).hexdigest()
     return check_hashed_password(password_hash)
 
 
@@ -39,7 +43,7 @@ def validate_password_strength(password: str) -> tuple[bool, str]:
     Returns:
         Tuple of (is_valid, error_message)
     """
-    if len(password) < 8:
+    if len(password) < MIN_PASSWORD_LENGTH:
         return False, "Too short"
 
     counts = [0] * 65536
