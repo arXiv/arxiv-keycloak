@@ -27,6 +27,7 @@ class AdminAuditActionEnum(str, Enum):
     ADD_COMMENT = "add-comment"
     ADD_PAPER_OWNER = "add-paper-owner"
     ADD_PAPER_OWNER_2 = "add-paper-owner-2"
+    ARXIV_CATEGORY = "arxiv-category"
     ARXIV_CHANGE_PAPER_PW = "arXiv-change-paper-pw"
     ARXIV_CHANGE_STATUS = "arXiv-change-status"
     ARXIV_MAKE_AUTHOR = "arXiv-make-author"
@@ -733,13 +734,8 @@ class AdminAudit_ChangePassword(AdminAuditEvent):
         return f"{self.describe_admin_user(session)} changed password of {self.describe_affected_user(session)}"
 
 
-class AdminAudit_ChangeDemographic(AdminAuditEvent):
-    """Audit event for changing a user's email address.
-
-    This event is logged when an administrator changes a user's email address.
-    The new email address is validated and stored as data.
-    """
-    _action = AdminAuditActionEnum.CHANGE_DEMOGRAPHIC
+class AdminAudit_GenericPayload(AdminAuditEvent):
+    """Audit event for generic payloads."""
 
     @classmethod
     @property
@@ -747,7 +743,7 @@ class AdminAudit_ChangeDemographic(AdminAuditEvent):
         return "data"
 
     def __init__(self, *argc, **kwargs):
-        """Initialize an AdminAudit_ChangeEmail.
+        """Initialize an AdminAudit_GenericPayload.
 
         :param admin_id: ID of the administrator performing the action
         :param affected_user: ID of the user being affected by the action
@@ -760,7 +756,7 @@ class AdminAudit_ChangeDemographic(AdminAuditEvent):
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         :raises ValueError: If the provided email address is not valid
         """
-        data = str(kwargs.pop(self.data_keyword))
+        data = kwargs.pop(self.data_keyword)
         if isinstance(data, dict):
             data = json.dumps(data)
             kwargs["data"] = data
@@ -793,6 +789,15 @@ class AdminAudit_ChangeDemographic(AdminAuditEvent):
             "timestamp": audit_record.log_date,
         }
 
+
+class AdminAudit_ChangeDemographic(AdminAudit_GenericPayload):
+    """Audit event for changing a user's demographic information.
+
+    This event is logged when an administrator changes a user's demographic data.
+    The new demographic data is stored as a JSON string.
+    """
+    _action = AdminAuditActionEnum.CHANGE_DEMOGRAPHIC
+
     def describe(self, session: Session) -> str:
         data = self.data
         if data and data[0] == '{':
@@ -803,6 +808,22 @@ class AdminAudit_ChangeDemographic(AdminAuditEvent):
                 data = repr(self.data)
                 pass
         return f"{self.describe_admin_user(session)} changed demographic of {self.describe_affected_user(session)} to {data}"
+
+
+class AdminAudit_Category(AdminAudit_GenericPayload):
+    """arXiv category audit event."""
+    _action = AdminAuditActionEnum.ARXIV_CATEGORY
+
+    def describe(self, session: Session) -> str:
+        data = self.data
+        if data and data[0] == '{':
+            try:
+                kvs = json.loads(data)
+                data = ", ".join([f"{k}: {v}" for k, v in kvs.items()])
+            except:
+                data = repr(self.data)
+                pass
+        return f"{self.describe_admin_user(session)} changed category of {self.describe_affected_user(session)} to {data}"
 
 
 class AdminAudit_EndorseEvent(AdminAuditEvent):
@@ -1896,6 +1917,7 @@ event_classes: Dict[str, AdminAuditEvent] = {
     cls._action.value : cls for cls in [
         AdminAudit_AddPaperOwner,
         AdminAudit_AddPaperOwner2,
+        AdminAudit_Category,
         AdminAudit_ChangePaperPassword,
         AdminAudit_AdminMakeAuthor,
         AdminAudit_AdminMakeNonauthor,
@@ -1914,7 +1936,7 @@ event_classes: Dict[str, AdminAuditEvent] = {
         AdminAudit_ChangeStatus,
         AdminAudit_AdminChangePaperPassword,
         AdminAudit_SetEmailVerified,
-    ]
+]
 } | {
     AdminAuditActionEnum.FLIP_FLAG.value: admin_audit_flip_flag_instantiator
 }
