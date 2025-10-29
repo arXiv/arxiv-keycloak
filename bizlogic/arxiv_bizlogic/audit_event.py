@@ -851,7 +851,7 @@ class AdminAudit_ChangeDemographic(AdminAudit_GenericPayload):
 class AdminAudit_ArxivAdmin(AdminAudit_GenericPayload):
     """arXiv admin audit event."""
 
-    def __init__(self,  admin_id: int, session_id: int, data: dict, **kwargs):
+    def __init__(self,  admin_id: int, session_id: int, **kwargs):
         """Change category audit event..
 
         :param admin_id: ID of the administrator performing the action
