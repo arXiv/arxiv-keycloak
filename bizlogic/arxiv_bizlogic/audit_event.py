@@ -5,10 +5,12 @@ Each admin event is represented vy a sub-class of AdminAuditEvent.
 """
 import json
 import re
+from abc import abstractmethod
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Optional, Tuple, Dict, Type
+from typing import Optional, Tuple, Dict, Type, Any, List
 
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import func, update, cast, LargeBinary
 from arxiv.db.models import TapirAdminAudit
@@ -736,6 +738,19 @@ class AdminAudit_ChangePassword(AdminAuditEvent):
         return f"{self.describe_admin_user(session)} changed password of {self.describe_affected_user(session)}"
 
 
+
+class AuditChangeData(BaseModel):
+    name: str
+    before: Any
+    after: Any
+
+
+class AuditAction(BaseModel):
+    action: str
+    audit_data: List[AuditChangeData] = []
+
+
+
 class AdminAudit_GenericPayload(AdminAuditEvent):
     """Audit event for generic payloads."""
 
@@ -750,7 +765,7 @@ class AdminAudit_GenericPayload(AdminAuditEvent):
         :param admin_id: ID of the administrator performing the action
         :param affected_user: ID of the user being affected by the action
         :param session_id: TAPIR session ID associated with the action
-        :param data: The thing changed
+        :param data: AuditAction - The thing changed
         :param remote_ip: Optional IP address of the administrator
         :param remote_hostname: Optional hostname of the administrator
         :param tracking_cookie: Optional tracking cookie for the session
@@ -761,6 +776,9 @@ class AdminAudit_GenericPayload(AdminAuditEvent):
         data = kwargs.pop(self.data_keyword)
         if isinstance(data, dict):
             data = json.dumps(data)
+            kwargs["data"] = data
+        elif isinstance(data, AuditAction):
+            data = data.model_dump_json()
             kwargs["data"] = data
         else:
             kwargs["data"] = str(data)
@@ -829,9 +847,8 @@ class AdminAudit_ChangeDemographic(AdminAudit_GenericPayload):
         return f"{self.describe_admin_user(session)} changed demographic of {self.describe_affected_user(session)} to {data}"
 
 
-class AdminAudit_Category(AdminAudit_GenericPayload):
-    """arXiv category audit event."""
-    _action = AdminAuditActionEnum.ARXIV_CATEGORY
+class AdminAudit_ArxivAdmin(AdminAudit_GenericPayload):
+    """arXiv admin audit event."""
 
     def __init__(self,  admin_id: int, session_id: int, data: dict, **kwargs):
         """Change category audit event..
@@ -848,24 +865,72 @@ class AdminAudit_Category(AdminAudit_GenericPayload):
         """
         super().__init__(admin_id, 1, session_id, data, **kwargs)
 
+    @abstractmethod
+    def describe(self, session: Session) -> str:
+        data = self.data
+        try:
+            action = AuditAction.model_validate(json.loads(data))
+            audit: AuditChangeData
+            changes = ", ".join([f"{audit.name} from {audit.before} to {audit.after}" for audit in action.audit_data])
+            return f"{self.describe_admin_user(session)} did {action} {self._action} {changes}"
+
+        except:
+            if data and data[0] == '{':
+                try:
+                    kvs = json.loads(data)
+                    data = ", ".join([f"{k}: {v}" for k, v in kvs.items()])
+                except:
+                    data = repr(self.data)
+                    pass
+            return f"{self.describe_admin_user(session)} changed {self._action} {data}"
+
+
+class AdminAudit_Category(AdminAudit_ArxivAdmin):
+    """arXiv category audit event."""
+    _action = AdminAuditActionEnum.ARXIV_CATEGORY
+
+    def __init__(self,  *args, **kwargs):
+        """Change category audit event..
+
+        :param admin_id: ID of the administrator performing the action
+        :param session_id: TAPIR session ID associated with the action
+        :param data: The thing changed
+        :param remote_ip: Optional IP address of the administrator
+        :param remote_hostname: Optional hostname of the administrator
+        :param tracking_cookie: Optional tracking cookie for the session
+        :param comment: Optional comment about the action
+        :param timestamp: Optional Unix timestamp (auto-generated if not provided)
+        :raises ValueError: If the provided email address is not valid
+        """
+        super().__init__(*args, **kwargs)
+
 
     def describe(self, session: Session) -> str:
         data = self.data
-        if data and data[0] == '{':
-            try:
-                kvs = json.loads(data)
-                data = ", ".join([f"{k}: {v}" for k, v in kvs.items()])
-            except:
-                data = repr(self.data)
-                pass
-        return f"{self.describe_admin_user(session)} changed category {data}"
+        try:
+            action = AuditAction.model_validate(json.loads(data))
+            audit: AuditChangeData
+            changes = ", ".join([f"{audit.name} from {audit.before} to {audit.after}" for audit in action.audit_data])
+            return f"{self.describe_admin_user(session)} did {action} category {changes}"
+
+        except:
+            if data and data[0] == '{':
+                try:
+                    kvs = json.loads(data)
+                    data = ", ".join([f"{k}: {v}" for k, v in kvs.items()])
+                except:
+                    data = repr(self.data)
+                    pass
+            return f"{self.describe_admin_user(session)} changed category {data}"
 
 
-class AdminAudit_EndorsementDomains(AdminAudit_GenericPayload):
+
+
+class AdminAudit_EndorsementDomains(AdminAudit_ArxivAdmin):
     """arXiv endorsement domain audit event."""
     _action = AdminAuditActionEnum.ARXIV_ENDORSEMENT_DOMAINS
 
-    def __init__(self,  admin_id: int, session_id: int, data: dict, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Change endorsemint domain.
 
         :param admin_id: ID of the administrator performing the action
@@ -878,7 +943,7 @@ class AdminAudit_EndorsementDomains(AdminAudit_GenericPayload):
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         :raises ValueError: If the provided email address is not valid
         """
-        super().__init__(admin_id, 1, session_id, data, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
     def describe(self, session: Session) -> str:
@@ -893,11 +958,11 @@ class AdminAudit_EndorsementDomains(AdminAudit_GenericPayload):
         return f"{self.describe_admin_user(session)} changed endorsement domain {data}"
 
 
-class AdminAudit_EmailPatterns(AdminAudit_GenericPayload):
+class AdminAudit_EmailPatterns(AdminAudit_ArxivAdmin):
     """arXiv email pattern audit event."""
     _action = AdminAuditActionEnum.ARXIV_EMAIL_PATTERNS
 
-    def __init__(self,  admin_id: int, session_id: int, data: dict, **kwargs):
+    def __init__(self,  *args, **kwargs):
         """Change email patterns.
 
         :param admin_id: ID of the administrator performing the action
@@ -910,18 +975,25 @@ class AdminAudit_EmailPatterns(AdminAudit_GenericPayload):
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         :raises ValueError: If the provided email address is not valid
         """
-        super().__init__(admin_id, 1, session_id, data, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def describe(self, session: Session) -> str:
         data = self.data
-        if data and data[0] == '{':
-            try:
-                kvs = json.loads(data)
-                data = ", ".join([f"{k}: {v}" for k, v in kvs.items()])
-            except:
-                data = repr(self.data)
-                pass
-        return f"{self.describe_admin_user(session)} changed email pattern {data}"
+        try:
+            action = AuditAction.model_validate(json.loads(data))
+            audit: AuditChangeData
+            changes = ", ".join([f"{audit.name} from {audit.before} to {audit.after}" for audit in action.audit_data])
+            return f"{self.describe_admin_user(session)} did {action} email patterns {changes}"
+
+        except:
+            if data and data[0] == '{':
+                try:
+                    kvs = json.loads(data)
+                    data = ", ".join([f"{k}: {v}" for k, v in kvs.items()])
+                except:
+                    data = repr(self.data)
+                    pass
+            return f"{self.describe_admin_user(session)} changed email patterns {data}"
 
 
 class AdminAudit_EndorseEvent(AdminAuditEvent):
