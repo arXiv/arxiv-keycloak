@@ -864,7 +864,7 @@ class AdminAudit_ArxivAdmin(AdminAudit_GenericPayload):
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         :raises ValueError: If the provided email address is not valid
         """
-        super().__init__(admin_id, 1, session_id, **kwargs)
+        super().__init__(admin_id, admin_id, session_id, **kwargs)
 
     @abstractmethod
     def describe(self, session: Session) -> str:
