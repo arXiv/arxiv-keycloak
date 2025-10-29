@@ -7,7 +7,7 @@ import os
 
 # https://pages.nist.gov/800-63-4/sp800-63b.html#passwordver
 
-MIN_PASSWORD_LENGTH = 15
+MIN_PASSWORD_LENGTH = 8
 
 # Load hashes from JSON file
 _HASH_FILE = os.path.join(os.path.dirname(__file__), 'bad_passwords_hashes.json')
