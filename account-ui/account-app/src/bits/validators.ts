@@ -2,7 +2,7 @@ import { RuntimeProps } from "../RuntimeContext.tsx";
 import {ACCOUNT_PASSWORD_VALIDATE_URL} from "../types/aaa-url.ts";
 import * as sha1Module from 'js-sha1';
 
-export const PASSWORD_MIN_LENGTH = 15;
+export const PASSWORD_MIN_LENGTH = 8;
 
 function sha1Hash(text: string): string {
     return sha1Module.sha1(text);

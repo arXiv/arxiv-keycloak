@@ -7,10 +7,10 @@ import {PASSWORD_MIN_LENGTH} from "./validators.ts";
 
 const PasswordRequirements = () => {
     const passwordRequirements = [
-        `${PASSWORD_MIN_LENGTH} characters or more in length`,
-        "May contain any letters",
-        "Strongly recommended: 16 or more characters",
-        "Some passwords are prohibited by arXiv",
+        `${PASSWORD_MIN_LENGTH} characters or more`,
+        "Can contain letters, numbers, and special characters",
+        "16 or more characters strongly recommended",
+        "Common and weak passwords are prohibited by arXiv",
     ];
 
     return (<Typography sx={{mt: 2}}>
