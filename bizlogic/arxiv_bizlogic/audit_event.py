@@ -856,7 +856,7 @@ class AdminAudit_ArxivAdmin(AdminAudit_GenericPayload):
 
         :param admin_id: ID of the administrator performing the action
         :param session_id: TAPIR session ID associated with the action
-        :param data: The thing changed
+        :param data: The thing changed - required kwarg
         :param remote_ip: Optional IP address of the administrator
         :param remote_hostname: Optional hostname of the administrator
         :param tracking_cookie: Optional tracking cookie for the session
@@ -864,7 +864,7 @@ class AdminAudit_ArxivAdmin(AdminAudit_GenericPayload):
         :param timestamp: Optional Unix timestamp (auto-generated if not provided)
         :raises ValueError: If the provided email address is not valid
         """
-        super().__init__(admin_id, 1, session_id, data, **kwargs)
+        super().__init__(admin_id, 1, session_id, **kwargs)
 
     @abstractmethod
     def describe(self, session: Session) -> str:
