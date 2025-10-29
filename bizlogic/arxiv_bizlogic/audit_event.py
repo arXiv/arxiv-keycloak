@@ -746,6 +746,7 @@ class AuditChangeData(BaseModel):
 
 
 class AuditAction(BaseModel):
+    id: str
     action: str
     audit_data: List[AuditChangeData] = []
 
@@ -872,7 +873,7 @@ class AdminAudit_ArxivAdmin(AdminAudit_GenericPayload):
             action = AuditAction.model_validate(json.loads(data))
             audit: AuditChangeData
             changes = ", ".join([f"{audit.name} from {audit.before} to {audit.after}" for audit in action.audit_data])
-            return f"{self.describe_admin_user(session)} did {action} {self._action} {changes}"
+            return f"{self.describe_admin_user(session)} did {action} {self._action} on {action.id}: {changes}"
 
         except:
             if data and data[0] == '{':
@@ -911,7 +912,7 @@ class AdminAudit_Category(AdminAudit_ArxivAdmin):
             action = AuditAction.model_validate(json.loads(data))
             audit: AuditChangeData
             changes = ", ".join([f"{audit.name} from {audit.before} to {audit.after}" for audit in action.audit_data])
-            return f"{self.describe_admin_user(session)} did {action} category {changes}"
+            return f"{self.describe_admin_user(session)} did {action} category on {action.id}: {changes}"
 
         except:
             if data and data[0] == '{':
@@ -922,8 +923,6 @@ class AdminAudit_Category(AdminAudit_ArxivAdmin):
                     data = repr(self.data)
                     pass
             return f"{self.describe_admin_user(session)} changed category {data}"
-
-
 
 
 class AdminAudit_EndorsementDomains(AdminAudit_ArxivAdmin):
@@ -948,14 +947,21 @@ class AdminAudit_EndorsementDomains(AdminAudit_ArxivAdmin):
 
     def describe(self, session: Session) -> str:
         data = self.data
-        if data and data[0] == '{':
-            try:
-                kvs = json.loads(data)
-                data = ", ".join([f"{k}: {v}" for k, v in kvs.items()])
-            except:
-                data = repr(self.data)
-                pass
-        return f"{self.describe_admin_user(session)} changed endorsement domain {data}"
+        try:
+            action = AuditAction.model_validate(json.loads(data))
+            audit: AuditChangeData
+            changes = ", ".join([f"{audit.name} from {audit.before} to {audit.after}" for audit in action.audit_data])
+            return f"{self.describe_admin_user(session)} did {action} endorsement domain {action.id}: {changes}"
+
+        except:
+            if data and data[0] == '{':
+                try:
+                    kvs = json.loads(data)
+                    data = ", ".join([f"{k}: {v}" for k, v in kvs.items()])
+                except:
+                    data = repr(self.data)
+                    pass
+            return f"{self.describe_admin_user(session)} changed endorsement domain {data}"
 
 
 class AdminAudit_EmailPatterns(AdminAudit_ArxivAdmin):
@@ -983,7 +989,7 @@ class AdminAudit_EmailPatterns(AdminAudit_ArxivAdmin):
             action = AuditAction.model_validate(json.loads(data))
             audit: AuditChangeData
             changes = ", ".join([f"{audit.name} from {audit.before} to {audit.after}" for audit in action.audit_data])
-            return f"{self.describe_admin_user(session)} did {action} email patterns {changes}"
+            return f"{self.describe_admin_user(session)} did {action} email patterns {action.id} {changes}"
 
         except:
             if data and data[0] == '{':
