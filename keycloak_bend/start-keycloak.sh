@@ -94,13 +94,14 @@ export JAVA_OPTS_APPEND="${JAVA_OPTS_APPEND} -Djava.util.logging.manager=org.jbo
 # Event Listener
 #
 
-#export GCP_CREDENTIALS
-#export GCP_PROJECT_ID
+GCP_EVENT_TOPIC_ID="${GCP_EVENT_TOPIC_ID:-keycloak-arxiv-events}"
+GCP_ADMIN_EVENT_TOPIC_ID="${GCP_ADMIN_EVENT_TOPIC_ID:-keycloak-arxiv-events}"
 export GCP_EVENT_TOPIC_ID=keycloak-arxiv-events
 export GCP_ADMIN_EVENT_TOPIC_ID=keycloak-arxiv-events
 
 echo "GCP_PROJECT_ID=$GCP_PROJECT_ID"
 echo "GCP_EVENT_TOPIC_ID=$GCP_EVENT_TOPIC_ID"
+echo "GCP_ADMIN_EVENT_TOPIC_ID=GCP_ADMIN_EVENT_TOPIC_ID"
 
 # HTTP buffer settings - force via JVM system properties (keycloak.conf not working)
 echo "HTTP Buffer Settings: Forcing 2MB header limit via JVM properties"
