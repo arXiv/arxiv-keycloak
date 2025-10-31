@@ -1,0 +1,78 @@
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _ENVIRONMENT: ""  # Optional: can be passed in manually
+
+steps:
+  - name: 'hashicorp/terraform:1.13.1'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        cd keycloak_bend/cicd/keycloak_bend
+        
+        # Determine environment and tfvars file
+        if [ -n "${_ENVIRONMENT}" ]; then
+          # Case 3: Manual environment specified
+          ENV_NAME="${_ENVIRONMENT}"
+          TFVARS_FILE="${_ENVIRONMENT}.tfvars"
+          echo "Manual environment specified: $ENV_NAME"
+        elif [ "${BRANCH_NAME}" = "main" ] || [ "${BRANCH_NAME}" = "master" ]; then
+          # Case 1: Default branch (main/master) -> dev
+          ENV_NAME="dev"
+          TFVARS_FILE="dev.tfvars"
+          echo "Default branch detected: $BRANCH_NAME -> deploying to dev"
+        elif [[ "${TAG_NAME}" =~ ^v(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])([0-9]{4})\.[0-9]+$ ]]; then
+          # Case 2: Release tag -> prod
+          ENV_NAME="prod"
+          TFVARS_FILE="prod.tfvars"
+          echo "Release tag detected: $TAG_NAME -> deploying to prod"
+        else
+          echo "No deployment condition met:"
+          echo "  BRANCH_NAME: ${BRANCH_NAME}"
+          echo "  TAG_NAME: ${TAG_NAME}"
+          echo "  _ENVIRONMENT: ${_ENVIRONMENT}"
+          echo "Skipping infrastructure deployment"
+          exit 0
+        fi
+        
+        # Check if tfvars file exists
+        if [ ! -f "$TFVARS_FILE" ]; then
+          echo "Error: $TFVARS_FILE not found for environment $ENV_NAME"
+          exit 1
+        fi
+        
+        echo "Deploying to environment: $ENV_NAME using $TFVARS_FILE"
+        
+        # Extract bucket name from tfvars
+        BUCKET_NAME=$(grep terraform_state_bucket "$TFVARS_FILE" | cut -d'"' -f2)
+        if [ -z "$BUCKET_NAME" ]; then
+          echo "Error: terraform_state_bucket not found in $TFVARS_FILE"
+          exit 1
+        fi
+        
+        echo "Using state bucket: $BUCKET_NAME"
+        
+        # Initialize Terraform with the correct bucket
+        terraform init -backend-config="bucket=$BUCKET_NAME"
+        
+        # Plan the changes first
+        echo "Running terraform plan..."
+        if terraform plan -var-file="$TFVARS_FILE" -out=tfplan; then
+          echo "Plan successful, applying changes..."
+          if terraform apply tfplan; then
+            echo "Apply successful!"
+          else
+            echo "Apply failed, check the terraform apply output above for details"
+            exit 1
+          fi
+        else
+          echo "Plan failed, aborting deployment"
+          echo "Check the terraform plan output above for details"
+          exit 1
+        fi
+        
+        echo "Infrastructure deployment to $ENV_NAME completed successfully"
+    env:
+      - 'GOOGLE_CREDENTIALS=${_TERRAFORM_SA_KEY}'
