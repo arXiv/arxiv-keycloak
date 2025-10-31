@@ -1,7 +1,5 @@
 FROM quay.io/keycloak/keycloak:26.1.2
 
-# trivial change to trigger workflow
-
 # ARG CERT_DIR
 
 USER root
