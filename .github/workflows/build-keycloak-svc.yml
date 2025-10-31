@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main
+      - ARXIVCE-4079
     paths:
       - "keycloak_bend/**"
   pull_request:
