@@ -27,7 +27,7 @@ permissions:
 
 env:
   DEPLOY_WORKFLOW: "deploy-keycloak-svc.yml"
-  DOCKERFILE: "Dockerfile"
+  DOCKERFILE: "keycloak_bend/Dockerfile"
   GCP_PROJECT_ID: "arxiv-development"
   IMAGE_NAME: "keycloak"
 
@@ -76,6 +76,9 @@ jobs:
 
       - name: Build image, caching from latest
         run: |
+          pwd
+          ls
+          ls ${DOCKERFILE}
           docker pull gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.IMAGE_NAME }}:latest
 
           BRANCH_TAG="$(printf "%.128s" "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" | sed 's/^[.-]*//')"
