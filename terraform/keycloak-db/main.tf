@@ -20,6 +20,22 @@ provider "google" {
   region  = var.gcp_region     # default inherited by all resources
 }
 
+# Reserve a private IP address range for the VPC peering connection.
+resource "google_compute_global_address" "private_ip_alloc" {
+  name          = "private-ip-alloc-for-services"
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  prefix_length = 16
+  network       = var.private_network
+}
+
+# Create a private services connection (VPC peering).
+resource "google_service_networking_connection" "private_vpc_connection" {
+  network                 = var.private_network
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.private_ip_alloc.name]
+}
+
 # Generate random password for admin user if not provided
 resource "random_password" "db_password" {
   count   = var.db_password == "" ? 1 : 0
@@ -50,6 +66,9 @@ resource "google_secret_manager_secret_version" "db_password" {
 # Postgresql Auth DB
 
 resource "google_sql_database_instance" "auth_db" {
+  depends_on = [
+    google_service_networking_connection.private_vpc_connection,
+  ]
   name             = var.instance_name
   database_version = "POSTGRES_17"
   region           = var.gcp_region
