@@ -1,0 +1,139 @@
+name: Deploy keycloak-service
+
+# Set custom run name to show project name in workflow runs list
+run-name: "Deploy keycloak-service ${{ inputs.env }} ${{ inputs.image_tag }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Environment"
+        required: true
+        type: string
+        default: ""
+      image_tag:
+        description: "Docker image tag (latest or the commit SHA)"
+        required: false
+        type: string
+        default: "latest"
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+env:
+  IMAGE_NAME: "keycloak-service"
+
+jobs:
+  format-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Check version
+        run: terraform --version
+
+      - name: Format check
+        run: terraform fmt -check
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: format-check
+    environment: ${{ inputs.env }}
+    if: >
+      (github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch') &&
+      ((inputs.env != 'production' && inputs.env != 'prod' && inputs.env != 'staging' && inputs.env != 'stage') || inputs.image_tag != 'latest')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set environment variables
+        run: |
+          # Determine environment from inputs or GitHub environment
+          if [ -n "${{ inputs.env }}" ]; then
+            ENV_NAME="${{ inputs.env }}"
+          else
+            echo "Error: No environment specified"
+            exit 1
+          fi
+          
+          REGION="${{ vars.GCP_REGION || 'us-central1' }}"
+          echo "ENVIRONMENT=$ENV_NAME" >> $GITHUB_ENV
+          echo "REGION=$REGION" >> $GITHUB_ENV
+
+          # Set project name and terraform bucket based on environment
+          if [ "$ENV_NAME" = "production" ] || [ "$ENV_NAME" = "prod" ]; then
+            echo "PROJECT_NAME=arxiv-production" >> $GITHUB_ENV
+            echo "TERRAFORM_BUCKET=prod-arxiv-terraform-state" >> $GITHUB_ENV
+            TERRAFORM_ARGS="-var-file=envs/prod.tfvars"
+          elif [ "$ENV_NAME" = "staging" ] || [ "$ENV_NAME" = "stage" ]; then
+            echo "PROJECT_NAME=arxiv-stage" >> $GITHUB_ENV
+            echo "TERRAFORM_BUCKET=stage-arxiv-terraform-state" >> $GITHUB_ENV
+            TERRAFORM_ARGS="-var-file=envs/staging.tfvars"
+          elif [ "$ENV_NAME" = "development" ] || [ "$ENV_NAME" = "develop" ] || [ "$ENV_NAME" = "dev" ]; then
+            echo "PROJECT_NAME=arxiv-development" >> $GITHUB_ENV
+            echo "TERRAFORM_BUCKET=dev-arxiv-terraform-state" >> $GITHUB_ENV
+            TERRAFORM_ARGS="-var-file=envs/dev.tfvars"
+          else
+            # For custom environments, use the environment name as project name
+            echo "PROJECT_NAME=$ENV_NAME" >> $GITHUB_ENV
+            echo "TERRAFORM_BUCKET=$ENV_NAME-arxiv-terraform-state" >> $GITHUB_ENV
+            TERRAFORM_ARGS="-var-file=envs/dev.tfvars \
+              -var=\"enable_https=true\" \
+              -var=\"domain_names=[\"auth.${ENV_NAME}.arxiv.org\"]\" \
+              -var=\"environment=$ENV_NAME\" \
+              -var=\"gcp_project_id=$ENV_NAME\" \
+              -var=\"gcp_region=$REGION\""
+          fi
+
+          # Add keycloak_image to TERRAFORM_ARGS for all environments
+          TERRAFORM_ARGS="$TERRAFORM_ARGS \
+            -var=\"keycloak_image=gcr.io/arxiv-development/${{env.IMAGE_NAME}}:${{inputs.image_tag}}\""
+
+          echo "TERRAFORM_ARGS=$TERRAFORM_ARGS" >> $GITHUB_ENV
+
+      - name: Authenticate with arxiv-development
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.ARXIV_DEVELOPMENT_PROVIDER_NAME }}
+          service_account: ${{ vars.ARXIV_DEVELOPMENT_SERVICE_ACCOUNT }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Get project number
+        run: |
+          echo "Getting project number for project: ${{ env.PROJECT_NAME }}"
+          PROJECT_NUMBER=$(gcloud projects describe ${{ env.PROJECT_NAME }} --format="value(projectNumber)")
+          echo "PROJECT_NUMBER=$PROJECT_NUMBER" >> $GITHUB_ENV
+          echo "Project number: $PROJECT_NUMBER"
+
+      - name: Authenticate with target project workload identity
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/${{ env.PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github/providers/github-actions-provider
+          service_account: github-actions-sa@${{ env.PROJECT_NAME }}.iam.gserviceaccount.com
+          project_id: ${{ env.PROJECT_NAME }}
+
+      - name: Set up terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Check version
+        run: terraform --version
+
+      - name: Initialize remote backend
+        run: terraform init -backend-config="bucket=${{ env.TERRAFORM_BUCKET }}"
+        working-directory: terraform/keycloak-service
+
+      - name: Apply
+        run: |
+          echo "Running terraform apply..."
+          terraform apply ${{ env.TERRAFORM_ARGS }} \
+            -auto-approve
+        working-directory: terraform/keycloak-service  
