@@ -94,10 +94,16 @@ resource "google_sql_user" "auth_user" {
   password = google_secret_manager_secret_version.db_password.secret_data
 }
 
+data "google_secret_manager_secret_version" "keycloak_password" {
+  project = var.gcp_project_id
+  secret  = "keycloak_password"
+}
+
 resource "google_sql_user" "keycloak_user" {
   name     = "keycloak"
   instance = google_sql_database_instance.auth_db.name
-  password = var.keycloak_password
+  #password = var.keycloak_password
+  password = data.google_secret_manager_secret_version.keycloak_password.secret_data
 }
 
 # Generate shell script that outputs SSL certificates for keycloak-service
