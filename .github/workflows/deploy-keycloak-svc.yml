@@ -4,7 +4,9 @@ name: Deploy keycloak-service
 run-name: "Deploy keycloak-service ${{ inputs.env }} ${{ inputs.image_tag }}"
 
 on:
-  workflow_call:
+  pull_request:
+    branches:
+      - ARXIVCE-4079
   workflow_dispatch:
     inputs:
       env:
