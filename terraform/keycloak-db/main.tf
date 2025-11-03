@@ -56,7 +56,7 @@ resource "google_sql_database_instance" "auth_db" {
 
   settings {
     tier = var.tier
-
+    edition          = "ENTERPRISE"
     disk_size = var.disk_size
     disk_type = "PD_SSD"
 
