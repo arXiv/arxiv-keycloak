@@ -54,12 +54,6 @@ variable "db_password" {
   sensitive   = true
 }
 
-variable "keycloak_password" {
-  type        = string
-  description = "Password for keycloak database user. This should be provided by the keycloak-service module."
-  sensitive   = true
-}
-
 variable "deletion_protection" {
   type        = bool
   description = "Enable deletion protection"
