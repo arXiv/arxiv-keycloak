@@ -90,8 +90,7 @@ jobs:
             echo "TERRAFORM_BUCKET=$ENV_NAME-arxiv-terraform-state" >> $GITHUB_ENV
             TERRAFORM_ARGS="-var-file=envs/dev.tfvars \
               -var=\"gcp_project_id=$ENV_NAME\" \
-              -var=\"gcp_region=$REGION\" \
-              -var=\"private_network=projects/$ENV_NAME/global/networks/default\""
+              -var=\"gcp_region=$REGION\""
           fi
 
           echo "TERRAFORM_ARGS=$TERRAFORM_ARGS" >> $GITHUB_ENV
