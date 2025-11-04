@@ -69,8 +69,8 @@ secrets = {
 }
 
 # Keycloak startup mode: "start-dev" (development) or "start" (production)
-KEYCLOAK_START                = "start-dev"
-ARXIV_USER_REGISTRATION_URL   = "https://dev9.arxiv.org/user-account/register"
+keycloak_start                = "start-dev"
+arxiv_user_registration_url   = "https://dev9.arxiv.org/user-account/register"
 
 # Environment variables
 additional_env_vars = {
