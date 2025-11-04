@@ -76,6 +76,7 @@ resource "google_sql_database_instance" "auth_db" {
   settings {
     tier = var.tier
     edition = var.environment == "prod" || var.environment == "staging" ? "ENTERPRISE_PLUS" : "ENTERPRISE"
+    availability_type = var.environment == "prod" || var.environment == "staging" ? "REGIONAL" : "ZONAL"
     disk_size = var.disk_size
     disk_type = "PD_SSD"
 
