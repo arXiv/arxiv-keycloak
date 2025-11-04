@@ -253,12 +253,6 @@ resource "google_compute_managed_ssl_certificate" "keycloak_ssl_cert" {
   }
 }
 
-data "google_compute_ssl_certificate" "keycloak_ssl_cert_data" {
-  count   = var.enable_https && length(var.domain_names) > 0 ? 1 : 0
-  name    = google_compute_managed_ssl_certificate.keycloak_ssl_cert[0].name
-  project = var.gcp_project_id
-}
-
 # HTTPS target proxy (for SSL/TLS termination)
 resource "google_compute_target_https_proxy" "keycloak_https_proxy" {
   count            = var.enable_https && length(var.domain_names) > 0 ? 1 : 0

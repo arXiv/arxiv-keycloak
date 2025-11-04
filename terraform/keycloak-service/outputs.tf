@@ -44,11 +44,6 @@ output "keycloak_db_password_secret_name" {
   description = "Name of the secret containing keycloak database password"
 }
 
-output "ssl_certificate_status" {
-  value       = var.enable_https && length(var.domain_names) > 0 ? data.google_compute_ssl_certificate.keycloak_ssl_cert_data[0].status : null
-  description = "SSL certificate provisioning status (ACTIVE when ready)"
-}
-
 output "domain_names" {
   value       = var.domain_names
   description = "Configured domain names for the service"
