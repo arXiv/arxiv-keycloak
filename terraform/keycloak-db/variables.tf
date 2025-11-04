@@ -65,3 +65,9 @@ variable "require_ssl" {
   description = "Require SSL/TLS connections with trusted client certificates"
   default     = true
 }
+
+variable "environment" {
+  type        = string
+  description = "The deployment environment (e.g., dev, staging, prod)"
+  default     = "dev"
+}

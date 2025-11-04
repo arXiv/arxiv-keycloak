@@ -5,7 +5,8 @@ gcp_region     = "us-central1"
 
 # Database instance configuration
 instance_name = "authdb"
-tier          = "db-f1-micro"
+#tier          = "db-f1-micro"
+tier          = "db-g1-small"
 disk_size     = 10                  # GB
 
 # Network configuration
