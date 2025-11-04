@@ -130,7 +130,6 @@ jobs:
 
       - name: Apply
         run: |
-          echo "Running terraform apply..."
           terraform apply ${{ env.TERRAFORM_ARGS }} \
             -auto-approve
         working-directory: terraform/keycloak-audit-pubsub  

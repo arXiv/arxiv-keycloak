@@ -97,9 +97,6 @@ jobs:
             echo "PROJECT_NAME=$ENV_NAME" >> $GITHUB_ENV
             echo "TERRAFORM_BUCKET=$ENV_NAME-arxiv-terraform-state" >> $GITHUB_ENV
             TERRAFORM_ARGS="-var-file=envs/dev.tfvars \
-              -var=\"auth_db_private_ip=$(cd ../keycloak-db && terraform output -raw private_ip_address)\" \
-              -var=\"auth_db_name=$(cd ../keycloak-db && terraform output -raw database_name)\" \
-              -var=\"db_user=$(cd ../keycloak-db && terraform output -raw keycloak_user_name)\" \
               -var=\"enable_https=true\" \
               -var=\"domain_names=[\"auth.${ENV_NAME}.arxiv.org\"]\" \
               -var=\"environment=$ENV_NAME\" \
@@ -142,13 +139,22 @@ jobs:
       - name: Check version
         run: terraform --version
 
-      - name: Initialize remote backend
+      - name: Initialize keycloak-db remote backend (for db output variables)
+        run: | 
+          terraform init -backend-config="bucket=${{ env.TERRAFORM_BUCKET }}"
+          TERRAFORM_ARGS="$TERRAFORM_ARGS \
+              -var=\"auth_db_private_ip=$(terraform output -raw private_ip_address)\" \
+              -var=\"auth_db_name=$(terraform output -raw database_name)\" \
+              -var=\"db_user=$(terraform output -raw keycloak_user_name)\""
+          echo "TERRAFORM_ARGS=$TERRAFORM_ARGS" >> $GITHUB_ENV
+        working-directory: terraform/keycloak-db
+
+      - name: Initialize keycloak-svc remote backend
         run: terraform init -backend-config="bucket=${{ env.TERRAFORM_BUCKET }}"
         working-directory: terraform/keycloak-service
 
       - name: Apply
         run: |
-          echo "Running terraform apply..."
           terraform apply ${{ env.TERRAFORM_ARGS }} \
             -auto-approve
         working-directory: terraform/keycloak-service  
