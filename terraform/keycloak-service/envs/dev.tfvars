@@ -68,19 +68,19 @@ secrets = {
   }
 }
 
+KEYCLOAK_START                = "start-dev"
+ARXIV_USER_REGISTRATION_URL   = "https://dev9.arxiv.org/user-account/register"
+
 # Environment variables
 additional_env_vars = {
   # Keycloak startup mode: "start-dev" (development) or "start" (production)
-  KEYCLOAK_START                = "start-dev"
   PROXY_MODE                    = "--proxy-headers=forwarded"
   KC_BOOTSTRAP_ADMIN_USERNAME   = "admin"
   BOOTSTRAP                     = "no"
   LOG_OUTPUT_FORMAT             = "--log-console-output=json"
-  GCP_PROJECT_ID                = "arxiv-development"
   KC_PORT                       = "8080"
   GRPC_LOG_LEVEL                = "DEBUG"
   GRPC_TRACE                    = "tcp,http,api"
-  ARXIV_USER_REGISTRATION_URL   = "https://dev9.arxiv.org/user-account/register"
   # Keycloak audit event publishing to GCP Pub/Sub (via SPI plugin)
   GCP_EVENT_TOPIC_ID            = "keycloak-arxiv-events"
   GCP_ADMIN_EVENT_TOPIC_ID      = "keycloak-arxiv-events"

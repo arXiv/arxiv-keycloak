@@ -158,6 +158,21 @@ resource "google_cloud_run_service" "keycloak" {
           value = var.jdbc_params
         }
 
+        env {
+          name  = "KEYCLOAK_START"
+          value = var.keycloak_start
+        }
+
+        env {
+          name  = "GCP_PROJECT_ID"
+          value = var.gcp_project_id 
+        }
+
+        env {
+          name  = "ARXIV_USER_REGISTRATION_URL"
+          value = var.arxiv_user_registration_url
+        }
+
         dynamic "env" {
           for_each = var.additional_env_vars
           content {

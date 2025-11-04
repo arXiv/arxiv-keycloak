@@ -97,8 +97,9 @@ jobs:
             echo "PROJECT_NAME=$ENV_NAME" >> $GITHUB_ENV
             echo "TERRAFORM_BUCKET=$ENV_NAME-arxiv-terraform-state" >> $GITHUB_ENV
             TERRAFORM_ARGS="-var-file=envs/dev.tfvars \
-              -var=\"enable_https=true\" \
+              -var=\"arxiv_user_registration_url=https://${ENV_NAME}.arxiv.org/user-account/register\" \
               -var='domain_names=[\"auth.${ENV_NAME}.arxiv.org\"]' \
+              -var=\"enable_https=true\" \
               -var=\"environment=$ENV_NAME\" \
               -var=\"gcp_project_id=$ENV_NAME\" \
               -var=\"gcp_region=$REGION\""
