@@ -90,3 +90,5 @@ additional_env_vars = {
 # Enable HTTPS with Google-managed SSL certificate
 enable_https = true
 domain_names = ["auth.dev.arxiv.org"]
+
+vpc_connector_name = "clourrunconnector"

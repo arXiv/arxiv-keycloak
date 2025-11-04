@@ -27,7 +27,7 @@ data "google_compute_network" "default" {
 }
 
 data "google_vpc_access_connector" "vpc_connector" {
-  name    = "clourrunconnector"
+  name    = var.vpc_connector_name
   region  = var.gcp_region
   project = var.gcp_project_id
 }

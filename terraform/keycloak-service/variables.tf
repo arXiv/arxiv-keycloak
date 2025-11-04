@@ -181,3 +181,9 @@ variable "arxiv_user_registration_url" {
   description = "URL of the user registration page"
   default     = ""
 }
+
+variable "vpc_connector_name" {
+  type        = string
+  description = "Name of the VPC connector"
+  default     = "clourrunconnector"
+}
