@@ -45,7 +45,7 @@ output "keycloak_db_password_secret_name" {
 }
 
 output "ssl_certificate_status" {
-  value       = var.enable_https && length(var.domain_names) > 0 ? data.google_compute_ssl_certificate.keycloak_ssl_cert_data[0].managed.status : null
+  value       = var.enable_https && length(var.domain_names) > 0 ? data.google_compute_ssl_certificate.keycloak_ssl_cert_data[0].status : null
   description = "SSL certificate provisioning status (ACTIVE when ready)"
 }
 
