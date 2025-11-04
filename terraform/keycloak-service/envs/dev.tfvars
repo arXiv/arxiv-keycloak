@@ -68,12 +68,12 @@ secrets = {
   }
 }
 
+# Keycloak startup mode: "start-dev" (development) or "start" (production)
 KEYCLOAK_START                = "start-dev"
 ARXIV_USER_REGISTRATION_URL   = "https://dev9.arxiv.org/user-account/register"
 
 # Environment variables
 additional_env_vars = {
-  # Keycloak startup mode: "start-dev" (development) or "start" (production)
   PROXY_MODE                    = "--proxy-headers=forwarded"
   KC_BOOTSTRAP_ADMIN_USERNAME   = "admin"
   BOOTSTRAP                     = "no"
