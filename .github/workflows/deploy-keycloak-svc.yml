@@ -154,7 +154,5 @@ jobs:
         working-directory: terraform/keycloak-service
 
       - name: Apply
-        run: |
-          terraform apply ${{ env.TERRAFORM_ARGS }} \
-            -auto-approve
-        working-directory: terraform/keycloak-service  
+        run: terraform apply ${{ env.TERRAFORM_ARGS }} -auto-approve
+        working-directory: terraform/keycloak-service
