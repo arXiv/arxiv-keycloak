@@ -74,7 +74,7 @@ data "google_secret_manager_secret_version" "secrets" {
 }
 
 resource "google_service_account" "keycloak_sa" {
-  account_id   = "${var.environment}-keycloak-sa"
+  account_id   = "${substr(var.environment, 0, 24)}-kc-sa"
   display_name = "${var.environment} Keycloak Service Account"
   project      = var.gcp_project_id
 }
