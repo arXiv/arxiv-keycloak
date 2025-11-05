@@ -118,6 +118,15 @@ resource "google_cloud_run_service" "keycloak" {
       containers {
         image = var.keycloak_image
 
+        startup_probe {
+          timeout_seconds    = 240
+          period_seconds     = 240
+          failure_threshold  = 1
+          tcp_socket {
+            port = 8080
+          }
+        }
+
         resources {
           limits = {
             cpu    = var.cpu_limit
