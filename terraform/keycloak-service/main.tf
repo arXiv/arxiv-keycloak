@@ -187,7 +187,7 @@ resource "google_cloud_run_service" "keycloak" {
           name = "KC_DB_PASS"
           value_from {
             secret_key_ref {
-              name    = "auth-db-password"
+              name    = "authdb-db-password"
               key     = "latest"
             }
           }
