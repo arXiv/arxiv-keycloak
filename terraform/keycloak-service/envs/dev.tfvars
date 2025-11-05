@@ -61,11 +61,6 @@ secrets = {
     version     = "latest"
     mount_path  = null
   }
-  gcp_credentials = {
-    secret_name = "keycloak-pubsub-event-sa"
-    version     = "latest"
-    mount_path  = null
-  }
 }
 
 # Keycloak startup mode: "start-dev" (development) or "start" (production)
