@@ -112,17 +112,17 @@ resource "google_cloud_run_service" "keycloak" {
     spec {
       service_account_name  = google_service_account.keycloak_sa.email
       container_concurrency = var.container_concurrency
-      timeout_seconds       = var.timeout_seconds
+      timeout_seconds       = 600
 
       containers {
         image = var.keycloak_image
 
         startup_probe {
-          timeout_seconds    = 240
-          period_seconds     = 240
-          failure_threshold  = 1
+          timeout_seconds   = 600
+          period_seconds    = 10
+          failure_threshold = 10
           tcp_socket {
-            port = 8080
+            port = var.container_port
           }
         }
 
@@ -180,7 +180,6 @@ resource "google_cloud_run_service" "keycloak" {
         env {
           name  = "ARXIV_USER_REGISTRATION_URL"
           value = var.arxiv_user_registration_url
-        
         }
 
         env {
