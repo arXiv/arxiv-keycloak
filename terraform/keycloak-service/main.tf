@@ -94,7 +94,7 @@ resource "google_project_iam_member" "keycloak_sa_pubsub_publisher" {
 }
 
 resource "google_cloud_run_service" "keycloak" {
-  name     = "${var.environment}-keycloak"
+  name     = "keycloak"
   location = var.gcp_region
   project  = var.gcp_project_id
 
