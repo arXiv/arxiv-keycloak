@@ -118,9 +118,9 @@ resource "google_cloud_run_service" "keycloak" {
         image = var.keycloak_image
 
         startup_probe {
-          timeout_seconds   = 600
-          period_seconds    = 10
-          failure_threshold = 10
+          timeout_seconds   = 10
+          period_seconds    = 15
+          failure_threshold = 40 // 15s * 40 = 600s = 10 min timeout
           tcp_socket {
             port = var.container_port
           }
