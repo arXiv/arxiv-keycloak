@@ -54,12 +54,6 @@ variable "db_password" {
   sensitive   = true
 }
 
-variable "keycloak_password" {
-  type        = string
-  description = "Password for keycloak database user. This should be provided by the keycloak-service module."
-  sensitive   = true
-}
-
 variable "deletion_protection" {
   type        = bool
   description = "Enable deletion protection"
@@ -70,4 +64,10 @@ variable "require_ssl" {
   type        = bool
   description = "Require SSL/TLS connections with trusted client certificates"
   default     = true
+}
+
+variable "environment" {
+  type        = string
+  description = "The deployment environment (e.g., dev, staging, prod)"
+  default     = "dev"
 }

@@ -61,26 +61,21 @@ secrets = {
     version     = "latest"
     mount_path  = null
   }
-  gcp_credentials = {
-    secret_name = "keycloak-pubsub-event-sa"
-    version     = "latest"
-    mount_path  = null
-  }
 }
+
+# Keycloak startup mode: "start-dev" (development) or "start" (production)
+keycloak_start                = "start-dev"
+arxiv_user_registration_url   = "https://dev9.arxiv.org/user-account/register"
 
 # Environment variables
 additional_env_vars = {
-  # Keycloak startup mode: "start-dev" (development) or "start" (production)
-  KEYCLOAK_START                = "start-dev"
   PROXY_MODE                    = "--proxy-headers=forwarded"
   KC_BOOTSTRAP_ADMIN_USERNAME   = "admin"
   BOOTSTRAP                     = "no"
   LOG_OUTPUT_FORMAT             = "--log-console-output=json"
-  GCP_PROJECT_ID                = "arxiv-development"
   KC_PORT                       = "8080"
   GRPC_LOG_LEVEL                = "DEBUG"
   GRPC_TRACE                    = "tcp,http,api"
-  ARXIV_USER_REGISTRATION_URL   = "https://dev9.arxiv.org/user-account/register"
   # Keycloak audit event publishing to GCP Pub/Sub (via SPI plugin)
   GCP_EVENT_TOPIC_ID            = "keycloak-arxiv-events"
   GCP_ADMIN_EVENT_TOPIC_ID      = "keycloak-arxiv-events"
@@ -90,3 +85,5 @@ additional_env_vars = {
 # Enable HTTPS with Google-managed SSL certificate
 enable_https = true
 domain_names = ["auth.dev.arxiv.org"]
+
+vpc_connector_name = "clourrunconnector"
