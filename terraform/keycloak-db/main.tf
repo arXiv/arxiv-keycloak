@@ -43,6 +43,12 @@ resource "random_password" "db_password" {
   special = true
 }
 
+resource "random_password" "keycloak_password" {
+  count   = var.keycloak_password == "" ? 1 : 0
+  length  = 32
+  special = true
+}
+
 # Secret Manager secret for database admin password
 resource "google_secret_manager_secret" "db_password" {
   secret_id = "${var.instance_name}-db-password"
@@ -114,13 +120,29 @@ resource "google_sql_user" "auth_user" {
   password = google_secret_manager_secret_version.db_password.secret_data
 }
 
+# Secret Manager secret for database admin password
+resource "google_secret_manager_secret" "keycloak_password" {
+  secret_id = "keycloak_password"
+  project   = var.gcp_project_id
+
+  replication {
+    auto {}
+  }
+
+  labels = {
+    database = var.instance_name
+    purpose  = "keycloak_password"
+  }
+}
+
 data "google_secret_manager_secret_version" "keycloak_password" {
+  secret      = google_secret_manager_secret.keycloak_password.id
+  secret_data = var.keycloak_password != "" ? var.keycloak_password : random_password.keycloak_password[0].result
   project = var.gcp_project_id
-  secret  = "keycloak_password"
 }
 
 resource "google_sql_user" "keycloak_user" {
-  name     = "keycloak"
+  name     = var.keycloak_user
   instance = google_sql_database_instance.auth_db.name
   #password = var.keycloak_password
   password = data.google_secret_manager_secret_version.keycloak_password.secret_data
