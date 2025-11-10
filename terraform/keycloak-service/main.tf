@@ -27,7 +27,7 @@ data "google_compute_network" "default" {
 }
 
 data "google_vpc_access_connector" "vpc_connector" {
-  name    = "clourrunconnector"
+  name    = var.vpc_connector_name
   region  = var.gcp_region
   project = var.gcp_project_id
 }
@@ -41,7 +41,7 @@ resource "random_password" "keycloak_db_password" {
 
 # Secret Manager secret for keycloak database user password (owned by service)
 resource "google_secret_manager_secret" "keycloak_db_password" {
-  secret_id = "${var.environment}-keycloak-db-password"
+  secret_id = "keycloak-db-password"
   project   = var.gcp_project_id
 
   replication {
@@ -74,7 +74,7 @@ data "google_secret_manager_secret_version" "secrets" {
 }
 
 resource "google_service_account" "keycloak_sa" {
-  account_id   = "${var.environment}-keycloak-sa"
+  account_id = "keycloak-sa"
   display_name = "${var.environment} Keycloak Service Account"
   project      = var.gcp_project_id
 }
@@ -93,7 +93,7 @@ resource "google_project_iam_member" "keycloak_sa_pubsub_publisher" {
 }
 
 resource "google_cloud_run_service" "keycloak" {
-  name     = "${var.environment}-keycloak"
+  name     = "keycloak"
   location = var.gcp_region
   project  = var.gcp_project_id
 
@@ -112,10 +112,19 @@ resource "google_cloud_run_service" "keycloak" {
     spec {
       service_account_name  = google_service_account.keycloak_sa.email
       container_concurrency = var.container_concurrency
-      timeout_seconds       = var.timeout_seconds
+      timeout_seconds       = 600
 
       containers {
         image = var.keycloak_image
+
+        startup_probe {
+          timeout_seconds   = 10
+          period_seconds    = 15
+          failure_threshold = 40 // 15s * 40 = 600s = 10 min timeout
+          tcp_socket {
+            port = var.container_port
+          }
+        }
 
         resources {
           limits = {
@@ -156,6 +165,41 @@ resource "google_cloud_run_service" "keycloak" {
         env {
           name  = "JDBC_PARAMS"
           value = var.jdbc_params
+        }
+
+        env {
+          name  = "KEYCLOAK_START"
+          value = var.keycloak_start
+        }
+
+        env {
+          name  = "GCP_PROJECT_ID"
+          value = var.gcp_project_id 
+        }
+
+        env {
+          name  = "ARXIV_USER_REGISTRATION_URL"
+          value = var.arxiv_user_registration_url
+        }
+
+        env {
+          name = "KC_DB_PASS"
+          value_from {
+            secret_key_ref {
+              name    = "authdb-db-password"
+              key     = "latest"
+            }
+          }
+        }
+
+        env {
+          name = "KC_BOOTSTRAP_ADMIN_PASSWORD"
+          value_from {
+            secret_key_ref {
+              name    = "keycloak-admin-password"
+              key     = "latest"
+            }
+          }
         }
 
         dynamic "env" {

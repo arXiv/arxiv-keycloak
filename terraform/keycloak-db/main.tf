@@ -20,6 +20,22 @@ provider "google" {
   region  = var.gcp_region     # default inherited by all resources
 }
 
+# Reserve a private IP address range for the VPC peering connection.
+resource "google_compute_global_address" "private_ip_alloc" {
+  name          = "private-ip-alloc-for-services"
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  prefix_length = 16
+  network       = var.private_network
+}
+
+# Create a private services connection (VPC peering).
+resource "google_service_networking_connection" "private_vpc_connection" {
+  network                 = var.private_network
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.private_ip_alloc.name]
+}
+
 # Generate random password for admin user if not provided
 resource "random_password" "db_password" {
   count   = var.db_password == "" ? 1 : 0
@@ -50,13 +66,17 @@ resource "google_secret_manager_secret_version" "db_password" {
 # Postgresql Auth DB
 
 resource "google_sql_database_instance" "auth_db" {
+  depends_on = [
+    google_service_networking_connection.private_vpc_connection,
+  ]
   name             = var.instance_name
   database_version = "POSTGRES_17"
   region           = var.gcp_region
 
   settings {
     tier = var.tier
-
+    edition = var.environment == "prod" || var.environment == "staging" ? "ENTERPRISE_PLUS" : "ENTERPRISE"
+    availability_type = var.environment == "prod" || var.environment == "staging" ? "REGIONAL" : "ZONAL"
     disk_size = var.disk_size
     disk_type = "PD_SSD"
 
@@ -70,7 +90,7 @@ resource "google_sql_database_instance" "auth_db" {
     ip_configuration {
       ipv4_enabled    = var.ipv4_enabled
       private_network = var.private_network
-      require_ssl     = var.require_ssl
+      #require_ssl     = var.require_ssl
       # No authorized_networks - use Cloud SQL Proxy for secure access
     }
 
@@ -94,10 +114,16 @@ resource "google_sql_user" "auth_user" {
   password = google_secret_manager_secret_version.db_password.secret_data
 }
 
+data "google_secret_manager_secret_version" "keycloak_password" {
+  project = var.gcp_project_id
+  secret  = "keycloak_password"
+}
+
 resource "google_sql_user" "keycloak_user" {
   name     = "keycloak"
   instance = google_sql_database_instance.auth_db.name
-  password = var.keycloak_password
+  #password = var.keycloak_password
+  password = data.google_secret_manager_secret_version.keycloak_password.secret_data
 }
 
 # Generate shell script that outputs SSL certificates for keycloak-service

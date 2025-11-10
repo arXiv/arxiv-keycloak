@@ -169,3 +169,21 @@ variable "enable_https" {
   description = "Enable HTTPS with Google-managed SSL certificate"
   default     = false
 }
+
+variable "keycloak_start" {
+  type        = string
+  description = "Keycloak startup mode: 'start-dev' (development) or 'start' (production)"
+  default     = "start-dev"
+}
+
+variable "arxiv_user_registration_url" {
+  type        = string
+  description = "URL of the user registration page"
+  default     = ""
+}
+
+variable "vpc_connector_name" {
+  type        = string
+  description = "Name of the VPC connector"
+  default     = "clourrunconnector"
+}
