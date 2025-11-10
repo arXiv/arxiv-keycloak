@@ -100,6 +100,7 @@ services:
       MYSQL_USER: arxiv
       MYSQL_PASSWORD: arxiv_password
       MYSQL_TCP_PORT: ${ARXIV_DB_PORT}
+    command: mysqld --default-authentication-plugin=mysql_native_password --ssl=0
     volumes:
      - ./mysql:/var/lib/mysql  # Persist data locally (optional)
     network_mode: host

@@ -7,6 +7,7 @@ node:
 
 environment:
   ARTIFACT_REPO: arxiv-keycloak
+  ARTIFACT_PROJECT_ID: arxiv-development  # GCP project where images are pushed
 
 services:
 - name: docker
