@@ -54,6 +54,20 @@ variable "db_password" {
   sensitive   = true
 }
 
+variable "keycloak_user" {
+  type        = string
+  description = "Keycloak connection usernahe."
+  default     = "keycloak"
+  sensitive   = true
+}
+
+variable "keycloak_password" {
+  type        = string
+  description = "Keycloak connection password. Leave empty to auto-generate a secure random password. Password is stored in Secret Manager."
+  default     = ""
+  sensitive   = true
+}
+
 variable "deletion_protection" {
   type        = bool
   description = "Enable deletion protection"
