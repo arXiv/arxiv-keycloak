@@ -43,6 +43,7 @@ resource "random_password" "db_password" {
   special = true
 }
 
+# Keep generating the random password when needed
 resource "random_password" "keycloak_password" {
   count   = var.keycloak_password == "" ? 1 : 0
   length  = 32
@@ -120,7 +121,7 @@ resource "google_sql_user" "auth_user" {
   password = google_secret_manager_secret_version.db_password.secret_data
 }
 
-# Secret Manager secret for database admin password
+# Create the Secret Manager secret
 resource "google_secret_manager_secret" "keycloak_password" {
   secret_id = "keycloak_password"
   project   = var.gcp_project_id
@@ -135,17 +136,17 @@ resource "google_secret_manager_secret" "keycloak_password" {
   }
 }
 
-data "google_secret_manager_secret_version" "keycloak_password" {
+# Create the secret version with the password (either provided or generated)
+resource "google_secret_manager_secret_version" "keycloak_password" {
   secret      = google_secret_manager_secret.keycloak_password.id
   secret_data = var.keycloak_password != "" ? var.keycloak_password : random_password.keycloak_password[0].result
-  project = var.gcp_project_id
 }
 
+# Use the created secret for the database user
 resource "google_sql_user" "keycloak_user" {
   name     = var.keycloak_user
   instance = google_sql_database_instance.auth_db.name
-  #password = var.keycloak_password
-  password = data.google_secret_manager_secret_version.keycloak_password.secret_data
+  password = google_secret_manager_secret_version.keycloak_password.secret_data
 }
 
 # Generate shell script that outputs SSL certificates for keycloak-service
