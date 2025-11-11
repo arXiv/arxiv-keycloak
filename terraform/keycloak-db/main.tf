@@ -9,6 +9,10 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.6"
     }
+    postgresql = {
+      source  = "cyrilgdn/postgresql"
+      version = "~> 1.22"
+    }
   }
   backend "gcs" {
     prefix = "keycloak-auth-db"
@@ -18,6 +22,25 @@ terraform {
 provider "google" {
   project = var.gcp_project_id # default inherited by all resources
   region  = var.gcp_region     # default inherited by all resources
+}
+
+# Configure postgresql provider to connect via the postgres superuser
+# This provider will be used to manage database permissions
+#
+# Connection modes:
+# 1. Direct connection: Uses public or private IP (var.use_cloud_sql_proxy = false)
+# 2. Cloud SQL Proxy: Uses localhost:5432 (var.use_cloud_sql_proxy = true)
+#    - Required for CI/CD environments (GitHub Actions, Cloud Build, etc.)
+#    - Start proxy before terraform apply: cloud-sql-proxy <instance-connection-name>
+provider "postgresql" {
+  host            = var.use_cloud_sql_proxy ? "localhost" : (var.ipv4_enabled ? google_sql_database_instance.auth_db.public_ip_address : google_sql_database_instance.auth_db.private_ip_address)
+  port            = 5432
+  database        = var.database_name
+  username        = "postgres"
+  password        = google_secret_manager_secret_version.postgres_password.secret_data
+  sslmode         = var.use_cloud_sql_proxy ? "disable" : "require"
+  connect_timeout = 15
+  superuser       = false
 }
 
 # Reserve a private IP address range for the VPC peering connection.
@@ -147,6 +170,71 @@ resource "google_sql_user" "keycloak_user" {
   name     = var.keycloak_user
   instance = google_sql_database_instance.auth_db.name
   password = google_secret_manager_secret_version.keycloak_password.secret_data
+}
+
+# Set up postgres superuser password for admin operations
+resource "random_password" "postgres_password" {
+  count   = 1
+  length  = 32
+  special = true
+}
+
+resource "google_secret_manager_secret" "postgres_password" {
+  secret_id = "${var.instance_name}-postgres-password"
+  project   = var.gcp_project_id
+
+  replication {
+    auto {}
+  }
+
+  labels = {
+    database = var.instance_name
+    purpose  = "postgres-superuser-password"
+  }
+}
+
+resource "google_secret_manager_secret_version" "postgres_password" {
+  secret      = google_secret_manager_secret.postgres_password.id
+  secret_data = random_password.postgres_password[0].result
+}
+
+resource "google_sql_user" "postgres" {
+  name     = "postgres"
+  instance = google_sql_database_instance.auth_db.name
+  password = google_secret_manager_secret_version.postgres_password.secret_data
+}
+
+# Grant minimal permissions to keycloak_user for database bootstrap
+# Keycloak will automatically create all its tables/sequences on first startup
+# This is the standard approach: create user + grant bootstrap permissions + let app handle schema
+
+# Grant database-level permissions
+resource "postgresql_grant" "keycloak_database" {
+  depends_on = [
+    google_sql_user.keycloak_user,
+    google_sql_user.postgres,
+    google_sql_database.auth_database
+  ]
+
+  database    = var.database_name
+  role        = var.keycloak_user
+  object_type = "database"
+  privileges  = ["CREATE", "CONNECT", "TEMPORARY"]
+}
+
+# Grant schema-level permissions on public schema
+resource "postgresql_grant" "keycloak_schema" {
+  depends_on = [
+    google_sql_user.keycloak_user,
+    google_sql_user.postgres,
+    google_sql_database.auth_database
+  ]
+
+  database    = var.database_name
+  role        = var.keycloak_user
+  schema      = "public"
+  object_type = "schema"
+  privileges  = ["CREATE", "USAGE"]
 }
 
 # Generate shell script that outputs SSL certificates for keycloak-service

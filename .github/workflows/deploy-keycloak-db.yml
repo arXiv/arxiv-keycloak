@@ -129,8 +129,73 @@ jobs:
         run: terraform init -backend-config="bucket=${{ env.TERRAFORM_BUCKET }}"
         working-directory: terraform/keycloak-db
 
+      - name: Install Cloud SQL Proxy
+        run: |
+          echo "Downloading Cloud SQL Proxy..."
+          curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.15.0/cloud-sql-proxy.linux.amd64
+          chmod +x cloud-sql-proxy
+          ./cloud-sql-proxy --version
+
+      - name: Get database instance connection name
+        id: get-connection-name
+        run: |
+          # Get the connection name from existing state (if database already exists)
+          # If this is first deployment, this will fail gracefully
+          CONNECTION_NAME=$(terraform output -raw connection_name 2>/dev/null || echo "")
+
+          if [ -z "$CONNECTION_NAME" ]; then
+            echo "Database instance not yet created. Will skip proxy setup for initial creation."
+            echo "skip_proxy=true" >> $GITHUB_OUTPUT
+          else
+            echo "Found existing database connection: $CONNECTION_NAME"
+            echo "connection_name=$CONNECTION_NAME" >> $GITHUB_OUTPUT
+            echo "skip_proxy=false" >> $GITHUB_OUTPUT
+          fi
+        working-directory: terraform/keycloak-db
+
+      - name: Start Cloud SQL Proxy
+        if: steps.get-connection-name.outputs.skip_proxy != 'true'
+        run: |
+          echo "Starting Cloud SQL Proxy for ${{ steps.get-connection-name.outputs.connection_name }}..."
+          ./cloud-sql-proxy ${{ steps.get-connection-name.outputs.connection_name }} \
+            --port 5432 \
+            --quiet &
+
+          PROXY_PID=$!
+          echo "CLOUD_SQL_PROXY_PID=$PROXY_PID" >> $GITHUB_ENV
+
+          # Wait for proxy to be ready
+          echo "Waiting for Cloud SQL Proxy to be ready..."
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 >/dev/null 2>&1; then
+              echo "Cloud SQL Proxy is ready!"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "Error: Cloud SQL Proxy failed to start"
+              exit 1
+            fi
+            sleep 1
+          done
+
       - name: Apply
         run: |
+          # If proxy is running, tell Terraform to use it
+          if [ "${{ steps.get-connection-name.outputs.skip_proxy }}" != "true" ]; then
+            PROXY_VAR="-var=\"use_cloud_sql_proxy=true\""
+          else
+            PROXY_VAR=""
+          fi
+
           terraform apply ${{ env.TERRAFORM_ARGS }} \
+            $PROXY_VAR \
             -auto-approve
-        working-directory: terraform/keycloak-db  
+        working-directory: terraform/keycloak-db
+
+      - name: Stop Cloud SQL Proxy
+        if: always() && steps.get-connection-name.outputs.skip_proxy != 'true'
+        run: |
+          if [ -n "$CLOUD_SQL_PROXY_PID" ]; then
+            echo "Stopping Cloud SQL Proxy (PID: $CLOUD_SQL_PROXY_PID)..."
+            kill $CLOUD_SQL_PROXY_PID || true
+          fi  

@@ -85,3 +85,9 @@ variable "environment" {
   description = "The deployment environment (e.g., dev, staging, prod)"
   default     = "dev"
 }
+
+variable "use_cloud_sql_proxy" {
+  type        = bool
+  description = "Whether to use Cloud SQL Proxy for database connections. Set to true in CI/CD environments (GitHub Actions, Cloud Build, etc.). When true, the PostgreSQL provider connects to localhost:5432 instead of the database IP."
+  default     = false
+}
