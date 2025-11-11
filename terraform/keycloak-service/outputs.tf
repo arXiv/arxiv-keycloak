@@ -33,15 +33,9 @@ output "service_account_email" {
   description = "The email of the service account used by Keycloak"
 }
 
-output "keycloak_db_password" {
-  value       = google_secret_manager_secret_version.keycloak_db_password.secret_data
-  description = "Keycloak database user password (pass this to keycloak-db module)"
-  sensitive   = true
-}
-
 output "keycloak_db_password_secret_name" {
-  value       = google_secret_manager_secret.keycloak_db_password.secret_id
-  description = "Name of the secret containing keycloak database password"
+  value       = var.keycloak_db_password_secret_name
+  description = "Name of the secret containing keycloak database password (from keycloak-db module)"
 }
 
 output "domain_names" {

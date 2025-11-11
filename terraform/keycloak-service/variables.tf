@@ -20,11 +20,10 @@ variable "db_user" {
   default     = "keycloak"
 }
 
-variable "keycloak_db_password" {
+variable "keycloak_db_password_secret_name" {
   type        = string
-  description = "Password for keycloak database user. Leave empty to auto-generate. This will be passed to keycloak-db module and stored in Secret Manager."
-  default     = ""
-  sensitive   = true
+  description = "Name of the Secret Manager secret containing the keycloak database password (created by keycloak-db module)"
+  default     = "keycloak_password"
 }
 
 variable "keycloak_image" {

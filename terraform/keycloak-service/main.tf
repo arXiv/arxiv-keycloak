@@ -32,37 +32,11 @@ data "google_vpc_access_connector" "vpc_connector" {
   project = var.gcp_project_id
 }
 
-# Generate random password for keycloak database user if not provided
-resource "random_password" "keycloak_db_password" {
-  count   = var.keycloak_db_password == "" ? 1 : 0
-  length  = 32
-  special = true
-}
-
-# Secret Manager secret for keycloak database user password (owned by service)
-resource "google_secret_manager_secret" "keycloak_db_password" {
-  secret_id = "keycloak-db-password"
-  project   = var.gcp_project_id
-
-  replication {
-    auto {}
-  }
-
-  labels = {
-    service = "keycloak"
-    purpose = "database-credentials"
-  }
-}
-
-resource "google_secret_manager_secret_version" "keycloak_db_password" {
-  secret      = google_secret_manager_secret.keycloak_db_password.id
-  secret_data = var.keycloak_db_password != "" ? var.keycloak_db_password : random_password.keycloak_db_password[0].result
-}
-
-# Read the keycloak database password for use in the Cloud Run service
-data "google_secret_manager_secret_version" "auth_db_keycloak_password" {
-  secret     = google_secret_manager_secret.keycloak_db_password.id
-  depends_on = [google_secret_manager_secret_version.keycloak_db_password]
+# Read the keycloak database password from Secret Manager
+# This secret is created by the keycloak-db module
+data "google_secret_manager_secret_version" "keycloak_db_password" {
+  secret  = var.keycloak_db_password_secret_name
+  project = var.gcp_project_id
 }
 
 # Dynamic data sources for additional secrets
@@ -153,13 +127,8 @@ resource "google_cloud_run_service" "keycloak" {
         }
 
         env {
-          name  = "DB_USER"
+          name  = "KC_DB_USER"
           value = var.db_user
-        }
-
-        env {
-          name  = "DB_PASSWORD"
-          value = data.google_secret_manager_secret_version.auth_db_keycloak_password.secret_data
         }
 
         env {
@@ -183,13 +152,8 @@ resource "google_cloud_run_service" "keycloak" {
         }
 
         env {
-          name = "KC_DB_PASS"
-          value_from {
-            secret_key_ref {
-              name    = "authdb-db-password"
-              key     = "latest"
-            }
-          }
+          name  = "KC_DB_PASS"
+          value = data.google_secret_manager_secret_version.keycloak_db_password.secret_data
         }
 
         env {
