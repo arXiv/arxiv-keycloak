@@ -43,11 +43,27 @@ else
 fi
 
 
+# Handle SSL certificates - supports two methods:
+# Method 1: Terraform-generated shell script (automatic, recommended)
+# Method 2: Individually mounted certificate files (manual)
+
 if [ -r /secrets/authdb-certs/db-certs-expand.sh ] ; then
-  echo "Expand db certs"
+  echo "Expanding DB certs from Terraform-generated script..."
   cd /home/keycloak/certs && sh /secrets/authdb-certs/db-certs-expand.sh
   ls -l *
   cd /home/keycloak
+elif [ -r /secrets/authdb-certs/server-ca.pem ] ; then
+  echo "Using individually mounted DB certs..."
+  mkdir -p /home/keycloak/certs
+  cp /secrets/authdb-certs/server-ca.pem /home/keycloak/certs/
+  cp /secrets/authdb-certs/client-cert.pem /home/keycloak/certs/
+  cp /secrets/authdb-certs/client-key.pem /home/keycloak/certs/
+  cp /secrets/authdb-certs/client-key.key /home/keycloak/certs/
+  chmod 644 /home/keycloak/certs/*.pem
+  chmod 600 /home/keycloak/certs/*.key
+  ls -l /home/keycloak/certs/
+else
+  echo "WARNING: No DB SSL certificates found. Database connection may fail if SSL is required."
 fi
 
 # -------------------------------------------------------------------------------------------

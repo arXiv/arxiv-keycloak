@@ -32,13 +32,6 @@ data "google_vpc_access_connector" "vpc_connector" {
   project = var.gcp_project_id
 }
 
-# Read the keycloak database password from Secret Manager
-# This secret is created by the keycloak-db module
-data "google_secret_manager_secret_version" "keycloak_db_password" {
-  secret  = var.keycloak_db_password_secret_name
-  project = var.gcp_project_id
-}
-
 # Generate random password for Keycloak admin user if not provided
 resource "random_password" "keycloak_admin_password" {
   count   = var.keycloak_admin_password == "" ? 1 : 0
@@ -65,12 +58,6 @@ resource "google_secret_manager_secret" "keycloak_admin_password" {
 resource "google_secret_manager_secret_version" "keycloak_admin_password" {
   secret      = google_secret_manager_secret.keycloak_admin_password.id
   secret_data = var.keycloak_admin_password != "" ? var.keycloak_admin_password : random_password.keycloak_admin_password[0].result
-}
-
-# Read the keycloak admin password for use in Cloud Run
-data "google_secret_manager_secret_version" "keycloak_admin_password" {
-  secret     = google_secret_manager_secret.keycloak_admin_password.id
-  depends_on = [google_secret_manager_secret_version.keycloak_admin_password]
 }
 
 # Dynamic data sources for additional secrets
@@ -186,13 +173,23 @@ resource "google_cloud_run_service" "keycloak" {
         }
 
         env {
-          name  = "KC_DB_PASS"
-          value = data.google_secret_manager_secret_version.keycloak_db_password.secret_data
+          name = "KC_DB_PASS"
+          value_from {
+            secret_key_ref {
+              name = var.keycloak_db_password_secret_name
+              key  = "latest"
+            }
+          }
         }
 
         env {
-          name  = "KC_BOOTSTRAP_ADMIN_PASSWORD"
-          value = data.google_secret_manager_secret_version.keycloak_admin_password.secret_data
+          name = "KC_BOOTSTRAP_ADMIN_PASSWORD"
+          value_from {
+            secret_key_ref {
+              name = google_secret_manager_secret.keycloak_admin_password.secret_id
+              key  = "latest"
+            }
+          }
         }
 
         dynamic "env" {

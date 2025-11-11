@@ -69,3 +69,13 @@ output "postgres_password_secret_id" {
   value       = google_secret_manager_secret.postgres_password.id
   description = "Full resource ID of the postgres password secret"
 }
+
+output "client_cert_common_name" {
+  value       = google_sql_ssl_cert.client_cert.common_name
+  description = "Common name of the client SSL certificate"
+}
+
+output "client_cert_sha1_fingerprint" {
+  value       = google_sql_ssl_cert.client_cert.sha1_fingerprint
+  description = "SHA1 fingerprint of the client SSL certificate"
+}
