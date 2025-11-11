@@ -56,11 +56,6 @@ secrets = {
     version     = "latest"
     mount_path  = "/secrets/authdb-certs/db-certs-expand.sh"
   }
-  keycloak_admin_password = {
-    secret_name = "keycloak-admin-password"
-    version     = "latest"
-    mount_path  = null
-  }
 }
 
 # Keycloak startup mode: "start-dev" (development) or "start" (production)

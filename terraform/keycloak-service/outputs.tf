@@ -38,6 +38,11 @@ output "keycloak_db_password_secret_name" {
   description = "Name of the secret containing keycloak database password (from keycloak-db module)"
 }
 
+output "keycloak_admin_password_secret_name" {
+  value       = google_secret_manager_secret.keycloak_admin_password.secret_id
+  description = "Name of the secret containing keycloak admin password"
+}
+
 output "domain_names" {
   value       = var.domain_names
   description = "Configured domain names for the service"

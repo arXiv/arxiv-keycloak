@@ -26,6 +26,13 @@ variable "keycloak_db_password_secret_name" {
   default     = "keycloak_password"
 }
 
+variable "keycloak_admin_password" {
+  type        = string
+  description = "Password for Keycloak admin user. Leave empty to auto-generate a secure random password. Password is stored in Secret Manager."
+  default     = ""
+  sensitive   = true
+}
+
 variable "keycloak_image" {
   type        = string
   description = "Keycloak Docker image"

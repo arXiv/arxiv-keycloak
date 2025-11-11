@@ -39,6 +39,40 @@ data "google_secret_manager_secret_version" "keycloak_db_password" {
   project = var.gcp_project_id
 }
 
+# Generate random password for Keycloak admin user if not provided
+resource "random_password" "keycloak_admin_password" {
+  count   = var.keycloak_admin_password == "" ? 1 : 0
+  length  = 32
+  special = true
+}
+
+# Secret Manager secret for Keycloak admin password
+resource "google_secret_manager_secret" "keycloak_admin_password" {
+  secret_id = "keycloak-admin-password"
+  project   = var.gcp_project_id
+
+  replication {
+    auto {}
+  }
+
+  labels = {
+    service = "keycloak"
+    purpose = "admin-credentials"
+  }
+}
+
+# Create the secret version with the password (either provided or generated)
+resource "google_secret_manager_secret_version" "keycloak_admin_password" {
+  secret      = google_secret_manager_secret.keycloak_admin_password.id
+  secret_data = var.keycloak_admin_password != "" ? var.keycloak_admin_password : random_password.keycloak_admin_password[0].result
+}
+
+# Read the keycloak admin password for use in Cloud Run
+data "google_secret_manager_secret_version" "keycloak_admin_password" {
+  secret     = google_secret_manager_secret.keycloak_admin_password.id
+  depends_on = [google_secret_manager_secret_version.keycloak_admin_password]
+}
+
 # Dynamic data sources for additional secrets
 data "google_secret_manager_secret_version" "secrets" {
   for_each = var.secrets
@@ -157,13 +191,8 @@ resource "google_cloud_run_service" "keycloak" {
         }
 
         env {
-          name = "KC_BOOTSTRAP_ADMIN_PASSWORD"
-          value_from {
-            secret_key_ref {
-              name    = "keycloak-admin-password"
-              key     = "latest"
-            }
-          }
+          name  = "KC_BOOTSTRAP_ADMIN_PASSWORD"
+          value = data.google_secret_manager_secret_version.keycloak_admin_password.secret_data
         }
 
         dynamic "env" {
