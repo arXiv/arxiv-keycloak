@@ -182,14 +182,13 @@ jobs:
         run: |
           # If proxy is running, tell Terraform to use it
           if [ "${{ steps.get-connection-name.outputs.skip_proxy }}" != "true" ]; then
-            PROXY_VAR="-var=\"use_cloud_sql_proxy=true\""
+            terraform apply ${{ env.TERRAFORM_ARGS }} \
+              -var="use_cloud_sql_proxy=true" \
+              -auto-approve
           else
-            PROXY_VAR=""
+            terraform apply ${{ env.TERRAFORM_ARGS }} \
+              -auto-approve
           fi
-
-          terraform apply ${{ env.TERRAFORM_ARGS }} \
-            $PROXY_VAR \
-            -auto-approve
         working-directory: terraform/keycloak-db
 
       - name: Stop Cloud SQL Proxy
