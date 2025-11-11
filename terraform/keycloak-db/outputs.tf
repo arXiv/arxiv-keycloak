@@ -21,6 +21,7 @@ output "database_name" {
 output "keycloak_user_name" {
   value       = google_sql_user.keycloak_user.name
   description = "Name of the keycloak database user"
+  sensitive = false
 }
 
 output "db_password_secret_name" {
@@ -33,6 +34,16 @@ output "db_password_secret_id" {
   description = "Full resource ID of the database admin password secret"
 }
 
+output "keycloak_password_secret_name" {
+  value       = google_secret_manager_secret.keycloak_password.secret_id
+  description = "Name of the Secret Manager secret containing the keycloak user password"
+}
+
+output "keycloak_password_secret_id" {
+  value       = google_secret_manager_secret.keycloak_password.id
+  description = "Keycloak database access secret ID"
+}
+
 output "server_ca_cert" {
   value       = google_sql_database_instance.auth_db.server_ca_cert[0].cert
   description = "Cloud SQL server CA certificate (PEM format) - use this for SSL connections"
@@ -42,9 +53,11 @@ output "server_ca_cert" {
 output "authdb_certs_secret_name" {
   value       = google_secret_manager_secret.authdb_certs.secret_id
   description = "Name of the Secret Manager secret containing the database SSL certificate script (used by keycloak-service)"
+  sensitive   = false
 }
 
 output "authdb_certs_secret_id" {
   value       = google_secret_manager_secret.authdb_certs.id
   description = "Full resource ID of the authdb-certs secret"
+  sensitive   = false
 }
