@@ -21,7 +21,7 @@ output "database_name" {
 output "keycloak_user_name" {
   value       = google_sql_user.keycloak_user.name
   description = "Name of the keycloak database user"
-  sensitive = false
+  sensitive = true
 }
 
 output "db_password_secret_name" {
@@ -53,11 +53,9 @@ output "server_ca_cert" {
 output "authdb_certs_secret_name" {
   value       = google_secret_manager_secret.authdb_certs.secret_id
   description = "Name of the Secret Manager secret containing the database SSL certificate script (used by keycloak-service)"
-  sensitive   = false
 }
 
 output "authdb_certs_secret_id" {
   value       = google_secret_manager_secret.authdb_certs.id
   description = "Full resource ID of the authdb-certs secret"
-  sensitive   = false
 }
