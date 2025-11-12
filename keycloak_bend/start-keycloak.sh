@@ -47,24 +47,78 @@ fi
 # Method 1: Terraform-generated shell script (automatic, recommended)
 # Method 2: Individually mounted certificate files (manual)
 
+echo "=== SSL Certificate Diagnostics ==="
+echo "Checking for SSL certificates at /secrets/authdb-certs/..."
+
+# Check for required tools
+echo "Checking required tools:"
+if command -v openssl >/dev/null 2>&1; then
+  echo "  ✓ openssl is available: $(openssl version)"
+else
+  echo "  ✗ WARNING: openssl is NOT available (required for cert conversion)"
+fi
+echo ""
+
+# Check if the directory exists and what's in it
+if [ -d /secrets/authdb-certs ] ; then
+  echo "Directory /secrets/authdb-certs exists"
+  echo "Contents:"
+  ls -laR /secrets/authdb-certs/ || echo "Failed to list /secrets/authdb-certs/"
+else
+  echo "Directory /secrets/authdb-certs does NOT exist"
+fi
+
+# Try Method 1: Terraform-generated script
 if [ -r /secrets/authdb-certs/db-certs-expand.sh ] ; then
-  echo "Expanding DB certs from Terraform-generated script..."
-  cd /home/keycloak/certs && sh /secrets/authdb-certs/db-certs-expand.sh
-  ls -l *
-  cd /home/keycloak
-elif [ -r /secrets/authdb-certs/server-ca.pem ] ; then
-  echo "Using individually mounted DB certs..."
+  echo "Method 1: Found Terraform-generated script at /secrets/authdb-certs/db-certs-expand.sh"
+  echo "Expanding DB certs from script..."
   mkdir -p /home/keycloak/certs
-  cp /secrets/authdb-certs/server-ca.pem /home/keycloak/certs/
-  cp /secrets/authdb-certs/client-cert.pem /home/keycloak/certs/
-  cp /secrets/authdb-certs/client-key.pem /home/keycloak/certs/
-  cp /secrets/authdb-certs/client-key.key /home/keycloak/certs/
+  cd /home/keycloak/certs
+
+  echo "Running: sh /secrets/authdb-certs/db-certs-expand.sh"
+  if sh /secrets/authdb-certs/db-certs-expand.sh ; then
+    echo "Successfully executed db-certs-expand.sh"
+    echo "Certificate files created:"
+    ls -la /home/keycloak/certs/
+  else
+    echo "ERROR: Failed to execute db-certs-expand.sh (exit code: $?)"
+    exit 1
+  fi
+  cd /home/keycloak
+
+# Try Method 2: Individually mounted files
+elif [ -r /secrets/authdb-certs/server-ca.pem ] ; then
+  echo "Method 2: Found individually mounted DB certs"
+  echo "Copying certificate files..."
+  mkdir -p /home/keycloak/certs
+  cp -v /secrets/authdb-certs/server-ca.pem /home/keycloak/certs/
+  cp -v /secrets/authdb-certs/client-cert.pem /home/keycloak/certs/
+  cp -v /secrets/authdb-certs/client-key.pem /home/keycloak/certs/
+  cp -v /secrets/authdb-certs/client-key.key /home/keycloak/certs/
   chmod 644 /home/keycloak/certs/*.pem
   chmod 600 /home/keycloak/certs/*.key
-  ls -l /home/keycloak/certs/
+  echo "Certificate files copied:"
+  ls -la /home/keycloak/certs/
 else
   echo "WARNING: No DB SSL certificates found. Database connection may fail if SSL is required."
+  echo "Checked paths:"
+  echo "  - /secrets/authdb-certs/db-certs-expand.sh (not readable)"
+  echo "  - /secrets/authdb-certs/server-ca.pem (not readable)"
 fi
+
+# Verify final certificate state
+if [ -d /home/keycloak/certs ] ; then
+  echo "Final certificate directory contents:"
+  ls -la /home/keycloak/certs/
+  echo "Certificate file checks:"
+  [ -r /home/keycloak/certs/server-ca.pem ] && echo "  ✓ server-ca.pem is readable" || echo "  ✗ server-ca.pem NOT readable"
+  [ -r /home/keycloak/certs/client-cert.pem ] && echo "  ✓ client-cert.pem is readable" || echo "  ✗ client-cert.pem NOT readable"
+  [ -r /home/keycloak/certs/client-key.key ] && echo "  ✓ client-key.key is readable" || echo "  ✗ client-key.key NOT readable"
+else
+  echo "WARNING: /home/keycloak/certs directory does not exist!"
+fi
+echo "=== End SSL Certificate Diagnostics ==="
+echo ""
 
 # -------------------------------------------------------------------------------------------
 # Backend DB - Postgres
@@ -159,7 +213,59 @@ KEYCLOAK_START="${KEYCLOAK_START:-start-dev}"
 #  --http-port ${KC_PORT} --https-port ${KC_SSL_PORT} --config-keystore=/path/to/keystore.p12 --config-keystore-password=keystorepass --config-keystore-type=PKCS12
 
 export KC_DB_URL="jdbc:$JDBC_DRIVER://$DB_ADDR/$DB_DATABASE$KC_JDBC_CONNECTION"
-echo KC_DB_URL=$KC_DB_URL
+echo "KC_DB_URL=$KC_DB_URL"
+
+echo ""
+echo "=== Environment and Resource Diagnostics ==="
+echo "Current user: $(id)"
+echo "Working directory: $(pwd)"
+echo "Memory info:"
+free -h || echo "free command not available"
+echo ""
+echo "Disk space:"
+df -h /home/keycloak || echo "df command failed"
+echo ""
+echo "Key environment variables:"
+echo "  DB_VENDOR=$DB_VENDOR"
+echo "  DB_ADDR=$DB_ADDR"
+echo "  DB_DATABASE=$DB_DATABASE"
+echo "  KC_DB_USER=$KC_DB_USER"
+echo "  KC_DB_PASS=[REDACTED - length: ${#KC_DB_PASS}]"
+echo "  KEYCLOAK_START=$KEYCLOAK_START"
+echo "  LOG_LEVEL=$LOG_LEVEL"
+echo "  GCP_PROJECT_ID=$GCP_PROJECT_ID"
+echo "  GCP_EVENT_TOPIC_ID=$GCP_EVENT_TOPIC_ID"
+echo "  ARXIV_USER_REGISTRATION_URL=$ARXIV_USER_REGISTRATION_URL"
+echo "  JAVA_OPTS_APPEND=$JAVA_OPTS_APPEND"
+echo ""
+echo "Checking database connectivity:"
+echo "  Attempting to resolve DB_ADDR: $DB_ADDR"
+if command -v getent >/dev/null 2>&1; then
+  getent hosts "$DB_ADDR" || echo "  WARNING: Could not resolve $DB_ADDR"
+else
+  echo "  getent not available, skipping DNS check"
+fi
+echo "=== End Environment and Resource Diagnostics ==="
+echo ""
+
+echo "=== Starting Keycloak ==="
+echo "Command: /opt/keycloak/bin/kc.sh $KEYCLOAK_START"
+echo "Arguments:"
+echo "  --log-level=$LOG_LEVEL"
+echo "  --http-port=$KC_PORT"
+echo "  --verbose"
+echo "  --transaction-xa-enabled=true"
+echo "  --db=$DB_VENDOR"
+echo "  --db-url=[REDACTED]"
+echo "  --db-username=$KC_DB_USER"
+echo "  --db-password=[REDACTED]"
+echo "  --http-management-port=$KC_MANAGEMENT_PORT"
+echo "  $DB_SCHEMA $PROXY_MODE $LOG_OUTPUT_FORMAT"
+[ -n "$HTTPS_ARGS" ] && echo "  HTTPS: $HTTPS_ARGS"
+echo ""
+echo "Keycloak is starting... (this may take several minutes)"
+echo "Timestamp: $(date -Iseconds)"
+echo ""
 
 # Start Keycloak using keycloak.conf for HTTP settings
 /opt/keycloak/bin/kc.sh $KEYCLOAK_START \
@@ -175,3 +281,20 @@ echo KC_DB_URL=$KC_DB_URL
   --http-management-port=$KC_MANAGEMENT_PORT \
   $HTTP_OPTS \
   $DB_SCHEMA $PROXY_MODE $LOG_OUTPUT_FORMAT
+
+KC_EXIT_CODE=$?
+echo ""
+echo "=== Keycloak Process Exited ==="
+echo "Exit code: $KC_EXIT_CODE"
+echo "Timestamp: $(date -Iseconds)"
+if [ $KC_EXIT_CODE -ne 0 ]; then
+  echo "ERROR: Keycloak exited with non-zero status: $KC_EXIT_CODE"
+  echo "Common causes:"
+  echo "  - Database connection failure"
+  echo "  - Out of memory (check Cloud Run memory limits)"
+  echo "  - Configuration error"
+  echo "  - Port already in use"
+  exit $KC_EXIT_CODE
+else
+  echo "Keycloak exited normally"
+fi
