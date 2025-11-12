@@ -54,7 +54,7 @@ secrets = {
   authdb_certs = {
     secret_name = "authdb-certs"
     version     = "latest"
-    mount_path  = "/secrets/authdb-certs/db-certs-expand.sh"
+    mount_path  = "/secrets/authdb-certs"
   }
 }
 
