@@ -61,10 +61,11 @@ variable "auth_db_name" {
   description = "Name of the auth database"
 }
 
-variable "jdbc_params" {
+
+variable "kc_jdbc_connection" {
   type        = string
   description = "JDBC connection parameters"
-  default     = "sslmode=require"
+  default     = "?ssl=false&sslmode=disabled"
 }
 
 variable "min_instances" {
