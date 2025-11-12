@@ -42,18 +42,6 @@ variable "database_name" {
   description = "Name of the database to create"
 }
 
-variable "db_username" {
-  type        = string
-  description = "Database user name"
-}
-
-variable "db_password" {
-  type        = string
-  description = "Database user password. Leave empty to auto-generate a secure random password. Password is stored in Secret Manager."
-  default     = ""
-  sensitive   = true
-}
-
 variable "keycloak_user" {
   type        = string
   description = "Keycloak connection usernahe."

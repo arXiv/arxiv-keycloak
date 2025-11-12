@@ -59,38 +59,11 @@ resource "google_service_networking_connection" "private_vpc_connection" {
   reserved_peering_ranges = [google_compute_global_address.private_ip_alloc.name]
 }
 
-# Generate random password for admin user if not provided
-resource "random_password" "db_password" {
-  count   = var.db_password == "" ? 1 : 0
-  length  = 32
-  special = true
-}
-
 # Keep generating the random password when needed
 resource "random_password" "keycloak_password" {
   count   = var.keycloak_password == "" ? 1 : 0
   length  = 32
   special = true
-}
-
-# Secret Manager secret for database admin password
-resource "google_secret_manager_secret" "db_password" {
-  secret_id = "${var.instance_name}-db-password"
-  project   = var.gcp_project_id
-
-  replication {
-    auto {}
-  }
-
-  labels = {
-    database = var.instance_name
-    purpose  = "db-admin-password"
-  }
-}
-
-resource "google_secret_manager_secret_version" "db_password" {
-  secret      = google_secret_manager_secret.db_password.id
-  secret_data = var.db_password != "" ? var.db_password : random_password.db_password[0].result
 }
 
 # Postgresql Auth DB
@@ -136,12 +109,6 @@ resource "google_sql_database_instance" "auth_db" {
 resource "google_sql_database" "auth_database" {
   name     = var.database_name
   instance = google_sql_database_instance.auth_db.name
-}
-
-resource "google_sql_user" "auth_user" {
-  name     = var.db_username
-  instance = google_sql_database_instance.auth_db.name
-  password = google_secret_manager_secret_version.db_password.secret_data
 }
 
 # Create the Secret Manager secret

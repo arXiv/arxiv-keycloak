@@ -24,16 +24,6 @@ output "keycloak_user_name" {
   sensitive = true
 }
 
-output "db_password_secret_name" {
-  value       = google_secret_manager_secret.db_password.secret_id
-  description = "Name of the Secret Manager secret containing the database admin user password"
-}
-
-output "db_password_secret_id" {
-  value       = google_secret_manager_secret.db_password.id
-  description = "Full resource ID of the database admin password secret"
-}
-
 output "keycloak_password_secret_name" {
   value       = google_secret_manager_secret.keycloak_password.secret_id
   description = "Name of the Secret Manager secret containing the keycloak user password"
