@@ -9,13 +9,15 @@ environment    = "development"
 # These MUST come from the keycloak-db module outputs
 # Do NOT hardcode these values - pass via CLI:
 #   terraform apply \
-#     -var="auth_db_private_ip=$(cd ../keycloak-db && terraform output -raw private_ip_address)" \
+#     -var="auth_db_connection_name=$(cd ../keycloak-db && terraform output -raw connection_name)" \
+#     -var="use_cloud_sql_proxy=true" \
 #     -var="auth_db_name=$(cd ../keycloak-db && terraform output -raw database_name)" \
 #     -var="db_user=$(cd ../keycloak-db && terraform output -raw keycloak_user_name)"
 # Example values:
-#   auth_db_private_ip = "172.26.51.12"
-#   auth_db_name       = "keycloak"
-#   db_user            = "keycloak"
+#   auth_db_connection_name = "wombat-81-testing:us-central1:authdb"
+#   use_cloud_sql_proxy     = true
+#   auth_db_name            = "keycloak"
+#   db_user                 = "keycloak"
 
 # Keycloak database user password - auto-generated and stored in Secret Manager
 # Leave empty to auto-generate a secure random password

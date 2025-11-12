@@ -94,14 +94,19 @@ resource "google_cloud_run_service" "keycloak" {
 
   template {
     metadata {
-      annotations = {
-        "autoscaling.knative.dev/minScale"        = var.min_instances
-        "autoscaling.knative.dev/maxScale"        = var.max_instances
-        "run.googleapis.com/vpc-access-connector" = data.google_vpc_access_connector.vpc_connector.name
-        "run.googleapis.com/vpc-access-egress"    = var.vpc_egress
-        "run.googleapis.com/cpu-boost"            = var.cpu_boost
-        "run.googleapis.com/session-affinity"     = var.session_affinity
-      }
+      annotations = merge(
+        {
+          "autoscaling.knative.dev/minScale"        = var.min_instances
+          "autoscaling.knative.dev/maxScale"        = var.max_instances
+          "run.googleapis.com/vpc-access-connector" = data.google_vpc_access_connector.vpc_connector.name
+          "run.googleapis.com/vpc-access-egress"    = var.vpc_egress
+          "run.googleapis.com/cpu-boost"            = var.cpu_boost
+          "run.googleapis.com/session-affinity"     = var.session_affinity
+        },
+        var.use_cloud_sql_proxy && var.auth_db_connection_name != "" ? {
+          "run.googleapis.com/cloudsql-instances" = var.auth_db_connection_name
+        } : {}
+      )
     }
 
     spec {
@@ -139,7 +144,7 @@ resource "google_cloud_run_service" "keycloak" {
 
         env {
           name  = "DB_ADDR"
-          value = var.auth_db_private_ip
+          value = var.use_cloud_sql_proxy ? "localhost" : var.auth_db_private_ip
         }
 
         env {

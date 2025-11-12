@@ -40,7 +40,20 @@ variable "keycloak_image" {
 
 variable "auth_db_private_ip" {
   type        = string
-  description = "Private IP of the auth database"
+  description = "Private IP of the auth database (not used when use_cloud_sql_proxy is true)"
+  default     = ""
+}
+
+variable "auth_db_connection_name" {
+  type        = string
+  description = "Cloud SQL connection name (format: PROJECT:REGION:INSTANCE) - required when use_cloud_sql_proxy is true"
+  default     = ""
+}
+
+variable "use_cloud_sql_proxy" {
+  type        = bool
+  description = "Use Cloud SQL Proxy for database connection instead of VPC networking"
+  default     = true
 }
 
 variable "auth_db_name" {
