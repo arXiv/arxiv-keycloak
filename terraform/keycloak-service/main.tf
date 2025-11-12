@@ -162,6 +162,14 @@ resource "google_cloud_run_service" "keycloak" {
           value = var.jdbc_params
         }
 
+        dynamic "env" {
+          for_each = var.use_cloud_sql_proxy ? [1] : []
+          content {
+            name  = "KC_JDBC_CONNECTION"
+            value = ""
+          }
+        }
+
         env {
           name  = "KEYCLOAK_START"
           value = var.keycloak_start
