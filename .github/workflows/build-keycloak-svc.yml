@@ -80,7 +80,7 @@ jobs:
           ls ${DOCKERFILE}
           docker pull gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.IMAGE_NAME }}:latest
 
-          BRANCH_TAG="$(printf "%.128s" "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" | sed 's/^[.-]*//')"
+          BRANCH_TAG="$(printf "%.128s" "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" | sed 's/\//-/g')"
 
           docker build -f ${DOCKERFILE} \
           --cache-from gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.IMAGE_NAME }}:latest \
