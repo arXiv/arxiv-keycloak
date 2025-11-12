@@ -82,7 +82,6 @@ if [ -r /secrets/authdb-certs/db-certs-expand.sh ] ; then
     ls -la /home/keycloak/certs/
   else
     echo "ERROR: Failed to execute db-certs-expand.sh (exit code: $?)"
-    exit 1
   fi
   cd /home/keycloak
 

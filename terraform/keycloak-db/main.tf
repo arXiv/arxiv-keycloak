@@ -238,14 +238,20 @@ KEY_EOF
 
 # Convert PEM private key to DER format (required by JDBC)
 # Using client-key.pem fails with JDBC - PEM is unsupported for client key
-openssl pkcs8 -topk8 -inform PEM -outform DER -in client-key.pem -out client-key.key -nocrypt
+# Only convert if openssl is available
+if command -v openssl &> /dev/null; then
+  openssl pkcs8 -topk8 -inform PEM -outform DER -in client-key.pem -out client-key.key -nocrypt || echo "Warning: OpenSSL conversion failed"
+else
+  echo "Warning: openssl not available, skipping DER conversion"
+  echo "JDBC connection may fail without client-key.key in DER format"
+fi
 
 # Set appropriate permissions
-chmod 644 server-ca.pem client-cert.pem client-key.pem
-chmod 600 client-key.key
+chmod 644 server-ca.pem client-cert.pem client-key.pem 2>/dev/null || true
+[ -f client-key.key ] && chmod 600 client-key.key
 
 echo "Database SSL certificates extracted to $(pwd)"
-ls -la *.pem *.key
+ls -la *.pem *.key 2>/dev/null || ls -la *.pem
 EOF
 }
 
