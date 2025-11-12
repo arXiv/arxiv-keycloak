@@ -55,6 +55,7 @@ secrets = {
     secret_name = "authdb-certs"
     version     = "latest"
     mount_path  = "/secrets/authdb-certs"
+    volume_path = "db-certs-expand.sh"
   }
 }
 

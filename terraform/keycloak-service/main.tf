@@ -226,7 +226,7 @@ resource "google_cloud_run_service" "keycloak" {
 
       # Volumes for secrets
       dynamic "volumes" {
-        for_each = { for k, v in var.secrets : k => v if v.mount_path != null }
+        for_each = { for k, v in var.secrets : k => v if v.volume_path != null }
         content {
           name = volumes.key
           secret {
@@ -234,7 +234,7 @@ resource "google_cloud_run_service" "keycloak" {
             default_mode = 0444
             items {
               key  = data.google_secret_manager_secret_version.secrets[volumes.key].version
-              path = basename(volumes.value.mount_path)
+              path = basename(volumes.value.volume_path)
             }
           }
         }
