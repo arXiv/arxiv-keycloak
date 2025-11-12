@@ -60,12 +60,12 @@ fi
 echo ""
 
 # Check if the directory exists and what's in it
-if [ -d /secrets/authdb-certs ] ; then
-  echo "Directory /secrets/authdb-certs exists"
+if [ -d /secrets ] ; then
+  echo "Directory /secrets"
   echo "Contents:"
-  ls -laR /secrets/authdb-certs/ || echo "Failed to list /secrets/authdb-certs/"
+  ls -laR /secrets || echo "Failed to list /secrets"
 else
-  echo "Directory /secrets/authdb-certs does NOT exist"
+  echo "Directory /secrets does NOT exist"
 fi
 
 # Try Method 1: Terraform-generated script
