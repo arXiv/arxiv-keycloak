@@ -53,7 +53,7 @@ variable "auth_db_connection_name" {
 variable "use_cloud_sql_proxy" {
   type        = bool
   description = "Use Cloud SQL Proxy for database connection instead of VPC networking"
-  default     = true
+  default     = false
 }
 
 variable "auth_db_name" {
