@@ -68,9 +68,10 @@ if [ -r /secrets/authdb-server-ca/server-ca.pem ] && [ -r /secrets/authdb-client
   mkdir -p /home/keycloak/certs
 
   # Copy certificates from separate mount locations
-  cp -v /secrets/authdb-server-ca/server-ca.pem /home/keycloak/certs/
-  cp -v /secrets/authdb-client-cert/client-cert.pem /home/keycloak/certs/
-  cp -v /secrets/authdb-client-key-pem/client-key.pem /home/keycloak/certs/
+  # Use cat redirection instead of cp to avoid symlink issues with Cloud Run secret mounts
+  cat /secrets/authdb-server-ca/server-ca.pem > /home/keycloak/certs/server-ca.pem
+  cat /secrets/authdb-client-cert/client-cert.pem > /home/keycloak/certs/client-cert.pem
+  cat /secrets/authdb-client-key-pem/client-key.pem > /home/keycloak/certs/client-key.pem
 
   # Set permissions
   chmod 644 /home/keycloak/certs/server-ca.pem
