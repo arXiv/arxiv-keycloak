@@ -40,14 +40,19 @@ output "server_ca_cert" {
   sensitive   = true
 }
 
-output "authdb_certs_secret_name" {
-  value       = google_secret_manager_secret.authdb_certs.secret_id
-  description = "Name of the Secret Manager secret containing the database SSL certificate script (used by keycloak-service)"
+output "authdb_server_ca_secret_name" {
+  value       = google_secret_manager_secret.authdb_server_ca.secret_id
+  description = "Name of the Secret Manager secret containing the server CA certificate"
 }
 
-output "authdb_certs_secret_id" {
-  value       = google_secret_manager_secret.authdb_certs.id
-  description = "Full resource ID of the authdb-certs secret"
+output "authdb_client_cert_secret_name" {
+  value       = google_secret_manager_secret.authdb_client_cert.secret_id
+  description = "Name of the Secret Manager secret containing the client certificate"
+}
+
+output "authdb_client_key_secret_name" {
+  value       = google_secret_manager_secret.authdb_client_key.secret_id
+  description = "Name of the Secret Manager secret containing the client private key (PEM)"
 }
 
 output "postgres_password_secret_name" {

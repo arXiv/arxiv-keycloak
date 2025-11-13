@@ -49,15 +49,28 @@ health_check_path = "/health/ready"
 
 # Secrets (to be mounted)
 secrets = {
-  # Database SSL certificates
-  # NOTE: This secret contains a shell script that outputs certificate files.
-  # At startup, Keycloak runs: cd /home/keycloak/certs && sh /secrets/authdb-certs/db-certs-expand.sh
-  # This is a workaround since Cloud Run doesn't support mounting multiple files from one secret.
-  authdb_certs = {
-    secret_name = "authdb-certs"
+  # Database SSL certificates - each certificate mounted as a separate file
+  # Cloud Run mounts secrets as read-only files at the specified paths
+
+  authdb_server_ca = {
+    secret_name = "authdb-server-ca"
     version     = "latest"
-    mount_path  = "/secrets/authdb-certs"
-    volume_path = "db-certs-expand.sh"
+    mount_path  = "/home/keycloak/certs"
+    volume_path = "server-ca.pem"
+  }
+
+  authdb_client_cert = {
+    secret_name = "authdb-client-cert"
+    version     = "latest"
+    mount_path  = "/home/keycloak/certs"
+    volume_path = "client-cert.pem"
+  }
+
+  authdb_client_key = {
+    secret_name = "authdb-client-key"
+    version     = "latest"
+    mount_path  = "/home/keycloak/certs"
+    volume_path = "client-key.pem"
   }
 }
 

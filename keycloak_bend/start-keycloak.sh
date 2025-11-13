@@ -44,79 +44,115 @@ fi
 
 
 # Handle SSL certificates - supports two methods:
-# Method 1: Terraform-generated shell script (automatic, recommended)
-# Method 2: Individually mounted certificate files (manual)
+# Method 1: Individual certificate files (new, recommended)
+#   - Certificates mounted at /home/keycloak/certs/ as separate files
+#   - server-ca.pem, client-cert.pem, client-key.pem
+# Method 2: Shell script bundle (legacy, backward compatibility)
+#   - Single secret containing shell script at /secrets/authdb-certs/db-certs-expand.sh
+#   - Script creates certificate files in /home/keycloak/certs/
 
-echo "=== SSL Certificate Diagnostics ==="
-echo "Checking for SSL certificates at /secrets/authdb-certs/..."
+echo "=== SSL Certificate Setup ==="
 
 # Check for required tools
-echo "Checking required tools:"
 if command -v openssl >/dev/null 2>&1; then
   echo "  ✓ openssl is available: $(openssl version)"
 else
-  echo "  ✗ WARNING: openssl is NOT available (required for cert conversion)"
+  echo "  ✗ WARNING: openssl is NOT available (required for DER conversion)"
 fi
 echo ""
 
-# Check if the directory exists and what's in it
-if [ -d /secrets ] ; then
-  echo "Directory /secrets"
-  echo "Contents:"
-  ls -laR /secrets || echo "Failed to list /secrets"
-else
-  echo "Directory /secrets does NOT exist"
-fi
+# Method 1: Check if certificates are already mounted individually (new approach)
+if [ -r /home/keycloak/certs/server-ca.pem ] && [ -r /home/keycloak/certs/client-cert.pem ] && [ -r /home/keycloak/certs/client-key.pem ]; then
+  echo "Method 1: Found individually mounted SSL certificates"
+  echo "Certificate directory contents:"
+  ls -la /home/keycloak/certs/
+  echo ""
 
-# Try Method 1: Terraform-generated script
-if [ -r /secrets/authdb-certs/db-certs-expand.sh ] ; then
-  echo "Method 1: Found Terraform-generated script at /secrets/authdb-certs/db-certs-expand.sh"
-  echo "Expanding DB certs from script..."
+  echo "Certificate file checks:"
+  echo "  ✓ server-ca.pem is readable"
+  echo "  ✓ client-cert.pem is readable"
+  echo "  ✓ client-key.pem is readable"
+  echo ""
+
+# Method 2: Try shell script bundle (legacy approach for backward compatibility)
+elif [ -r /secrets/authdb-certs/db-certs-expand.sh ]; then
+  echo "Method 2: Found legacy shell script bundle at /secrets/authdb-certs/db-certs-expand.sh"
+  echo "Expanding certificates from script..."
   mkdir -p /home/keycloak/certs
   cd /home/keycloak/certs
 
   echo "Running: sh /secrets/authdb-certs/db-certs-expand.sh"
-  if sh /secrets/authdb-certs/db-certs-expand.sh ; then
-    echo "Successfully executed db-certs-expand.sh"
+  if sh /secrets/authdb-certs/db-certs-expand.sh; then
+    echo "  ✓ Successfully executed db-certs-expand.sh"
     echo "Certificate files created:"
     ls -la /home/keycloak/certs/
   else
-    echo "ERROR: Failed to execute db-certs-expand.sh (exit code: $?)"
+    echo "  ✗ ERROR: Failed to execute db-certs-expand.sh (exit code: $?)"
   fi
   cd /home/keycloak
+  echo ""
 
-# Try Method 2: Individually mounted files
-elif [ -r /secrets/authdb-certs/server-ca.pem ] ; then
-  echo "Method 2: Found individually mounted DB certs"
-  echo "Copying certificate files..."
+# Method 3: Fallback to individually mounted files in old location
+elif [ -r /secrets/authdb-certs/server-ca.pem ]; then
+  echo "Method 3: Found individually mounted certificates in /secrets/authdb-certs/"
+  echo "Copying certificate files to /home/keycloak/certs/..."
   mkdir -p /home/keycloak/certs
   cp -v /secrets/authdb-certs/server-ca.pem /home/keycloak/certs/
   cp -v /secrets/authdb-certs/client-cert.pem /home/keycloak/certs/
   cp -v /secrets/authdb-certs/client-key.pem /home/keycloak/certs/
-  cp -v /secrets/authdb-certs/client-key.key /home/keycloak/certs/
-  chmod 644 /home/keycloak/certs/*.pem
-  chmod 600 /home/keycloak/certs/*.key
+  if [ -f /secrets/authdb-certs/client-key.key ]; then
+    cp -v /secrets/authdb-certs/client-key.key /home/keycloak/certs/
+  fi
+  chmod 644 /home/keycloak/certs/*.pem 2>/dev/null || true
+  chmod 600 /home/keycloak/certs/*.key 2>/dev/null || true
   echo "Certificate files copied:"
   ls -la /home/keycloak/certs/
+  echo ""
+
 else
-  echo "WARNING: No DB SSL certificates found. Database connection may fail if SSL is required."
-  echo "Checked paths:"
-  echo "  - /secrets/authdb-certs/db-certs-expand.sh (not readable)"
-  echo "  - /secrets/authdb-certs/server-ca.pem (not readable)"
+  echo "WARNING: No SSL certificates found!"
+  echo "Database connection may fail if SSL is required."
+  echo "Checked locations:"
+  echo "  - /home/keycloak/certs/ (new individual mounts)"
+  echo "  - /secrets/authdb-certs/db-certs-expand.sh (legacy shell script)"
+  echo "  - /secrets/authdb-certs/*.pem (legacy individual files)"
 fi
 
-# Verify final certificate state
-if [ -d /home/keycloak/certs ] ; then
+# Convert PEM private key to DER format if needed (JDBC requires DER)
+if [ -r /home/keycloak/certs/client-key.pem ] && [ ! -f /home/keycloak/certs/client-key.key ]; then
+  echo "Converting client-key.pem to DER format (required by JDBC)..."
+  if command -v openssl >/dev/null 2>&1; then
+    cd /home/keycloak/certs
+    if openssl pkcs8 -topk8 -inform PEM -outform DER -in client-key.pem -out client-key.key -nocrypt; then
+      chmod 600 client-key.key
+      echo "  ✓ Successfully converted client-key.pem to client-key.key (DER format)"
+    else
+      echo "  ✗ ERROR: Failed to convert PEM to DER (exit code: $?)"
+      echo "  Database connection with SSL may fail!"
+    fi
+    cd /home/keycloak
+  else
+    echo "  ✗ ERROR: openssl not available, cannot convert to DER format"
+    echo "  Database connection with SSL will fail!"
+  fi
+elif [ -f /home/keycloak/certs/client-key.key ]; then
+  echo "  ✓ client-key.key (DER format) already exists"
+fi
+echo ""
+
+# Final verification
+if [ -d /home/keycloak/certs ]; then
   echo "Final certificate directory contents:"
   ls -la /home/keycloak/certs/
-  echo "Certificate file checks:"
+  echo ""
+  echo "Final certificate checks:"
   [ -r /home/keycloak/certs/server-ca.pem ] && echo "  ✓ server-ca.pem is readable" || echo "  ✗ server-ca.pem NOT readable"
   [ -r /home/keycloak/certs/client-cert.pem ] && echo "  ✓ client-cert.pem is readable" || echo "  ✗ client-cert.pem NOT readable"
   [ -r /home/keycloak/certs/client-key.key ] && echo "  ✓ client-key.key is readable" || echo "  ✗ client-key.key NOT readable"
 else
   echo "WARNING: /home/keycloak/certs directory does not exist!"
 fi
-echo "=== End SSL Certificate Diagnostics ==="
+echo "=== End SSL Certificate Setup ==="
 echo ""
 
 # -------------------------------------------------------------------------------------------
