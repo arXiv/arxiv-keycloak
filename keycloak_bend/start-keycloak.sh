@@ -249,11 +249,12 @@ echo ""
 
 echo "=== Cloud SQL Proxy Diagnostics ==="
 echo "Checking if port 5432 (Cloud SQL Proxy) is listening..."
-if command -v ss >/dev/null 2>&1; then
-  echo "Using ss to check listening ports:"
-  ss -tuln | grep :5432 && echo "  ✓ Port 5432 is listening" || echo "  ✗ WARNING: Port 5432 is NOT listening"
+# Port 5432 in hex is 1538, check /proc/net/tcp
+if grep -q ":1538 " /proc/net/tcp 2>/dev/null; then
+  echo "  ✓ Port 5432 is listening"
 else
-  echo "  ss command not available, skipping port check"
+  echo "  ✗ WARNING: Port 5432 is NOT listening"
+  echo "  Tip: Cloud SQL Proxy might not be injected or failed to start"
 fi
 echo "=== End Cloud SQL Proxy Diagnostics ==="
 echo ""
