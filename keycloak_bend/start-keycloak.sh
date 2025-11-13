@@ -43,38 +43,60 @@ else
 fi
 
 
-# Handle SSL certificates - supports two methods:
+# Handle SSL certificates - supports three methods:
 # Method 1: Individual certificate files (new, recommended)
-#   - Certificates mounted at /home/keycloak/certs/ as separate files
-#   - server-ca.pem, client-cert.pem, client-key.pem
+#   - Certificates mounted at separate /secrets/ locations
+#   - /secrets/authdb-server-ca/server-ca.pem
+#   - /secrets/authdb-client-cert/client-cert.pem
+#   - /secrets/authdb-client-key-pem/client-key.pem
+#   - /secrets/authdb-client-key-der/client-key.key.b64
+#   - Copied to /home/keycloak/certs/ at startup
 # Method 2: Shell script bundle (legacy, backward compatibility)
 #   - Single secret containing shell script at /secrets/authdb-certs/db-certs-expand.sh
 #   - Script creates certificate files in /home/keycloak/certs/
+# Method 3: Old individual mounts (legacy)
+#   - Certificates at /secrets/authdb-certs/*.pem
 
 echo "=== SSL Certificate Setup ==="
 
-# Method 1: Check if certificates are already mounted individually (new approach)
-if [ -r /home/keycloak/certs/server-ca.pem ] && [ -r /home/keycloak/certs/client-cert.pem ] && [ -r /home/keycloak/certs/client-key.pem ]; then
-  echo "Method 1: Found individually mounted SSL certificates"
-  echo "Certificate directory contents:"
-  ls -la /home/keycloak/certs/
-  echo ""
+# Method 1: Check if certificates are mounted in separate secret locations (new approach)
+if [ -r /secrets/authdb-server-ca/server-ca.pem ] && [ -r /secrets/authdb-client-cert/client-cert.pem ] && [ -r /secrets/authdb-client-key-pem/client-key.pem ]; then
+  echo "Method 1: Found individually mounted SSL certificates in /secrets/"
+  echo "Copying certificates to /home/keycloak/certs/..."
 
+  # Create target directory
+  mkdir -p /home/keycloak/certs
+
+  # Copy certificates from separate mount locations
+  cp -v /secrets/authdb-server-ca/server-ca.pem /home/keycloak/certs/
+  cp -v /secrets/authdb-client-cert/client-cert.pem /home/keycloak/certs/
+  cp -v /secrets/authdb-client-key-pem/client-key.pem /home/keycloak/certs/
+
+  # Set permissions
+  chmod 644 /home/keycloak/certs/server-ca.pem
+  chmod 644 /home/keycloak/certs/client-cert.pem
+  chmod 600 /home/keycloak/certs/client-key.pem
+
+  echo ""
   echo "Certificate file checks:"
-  echo "  ✓ server-ca.pem is readable"
-  echo "  ✓ client-cert.pem is readable"
-  echo "  ✓ client-key.pem is readable"
+  echo "  ✓ server-ca.pem copied"
+  echo "  ✓ client-cert.pem copied"
+  echo "  ✓ client-key.pem copied"
 
   # Decode binary DER key if base64-encoded version is present
-  if [ -r /home/keycloak/certs/client-key.key.b64 ]; then
+  if [ -r /secrets/authdb-client-key-der/client-key.key.b64 ]; then
     echo "  ✓ client-key.key.b64 found, decoding to binary DER format..."
-    if base64 -d /home/keycloak/certs/client-key.key.b64 > /home/keycloak/certs/client-key.key; then
+    if base64 -d /secrets/authdb-client-key-der/client-key.key.b64 > /home/keycloak/certs/client-key.key; then
       chmod 600 /home/keycloak/certs/client-key.key
       echo "  ✓ client-key.key decoded successfully"
     else
       echo "  ✗ ERROR: Failed to decode client-key.key.b64"
     fi
   fi
+
+  echo ""
+  echo "Final certificate directory contents:"
+  ls -la /home/keycloak/certs/
   echo ""
 
 # Method 2: Try shell script bundle (legacy approach for backward compatibility)
@@ -116,7 +138,7 @@ else
   echo "WARNING: No SSL certificates found!"
   echo "Database connection may fail if SSL is required."
   echo "Checked locations:"
-  echo "  - /home/keycloak/certs/ (new individual mounts)"
+  echo "  - /secrets/authdb-server-ca/ (new individual mounts)"
   echo "  - /secrets/authdb-certs/db-certs-expand.sh (legacy shell script)"
   echo "  - /secrets/authdb-certs/*.pem (legacy individual files)"
 fi

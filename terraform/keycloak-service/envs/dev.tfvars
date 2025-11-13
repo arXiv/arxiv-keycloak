@@ -49,34 +49,35 @@ health_check_path = "/health/ready"
 
 # Secrets (to be mounted)
 secrets = {
-  # Database SSL certificates - each certificate mounted as a separate file
-  # Cloud Run mounts secrets as read-only files at the specified paths
+  # Database SSL certificates - each certificate mounted to separate location
+  # Cloud Run doesn't allow duplicate mount paths
+  # start-keycloak.sh will copy them to /home/keycloak/certs/
 
   authdb_server_ca = {
     secret_name = "authdb-server-ca"
     version     = "latest"
-    mount_path  = "/home/keycloak/certs"
+    mount_path  = "/secrets/authdb-server-ca"
     volume_path = "server-ca.pem"
   }
 
   authdb_client_cert = {
     secret_name = "authdb-client-cert"
     version     = "latest"
-    mount_path  = "/home/keycloak/certs"
+    mount_path  = "/secrets/authdb-client-cert"
     volume_path = "client-cert.pem"
   }
 
   authdb_client_key_pem = {
     secret_name = "authdb-client-key-pem"
     version     = "latest"
-    mount_path  = "/home/keycloak/certs"
+    mount_path  = "/secrets/authdb-client-key-pem"
     volume_path = "client-key.pem"
   }
 
   authdb_client_key_der = {
     secret_name = "authdb-client-key-der"
     version     = "latest"
-    mount_path  = "/home/keycloak/certs"
+    mount_path  = "/secrets/authdb-client-key-der"
     volume_path = "client-key.key.b64"
   }
 }
