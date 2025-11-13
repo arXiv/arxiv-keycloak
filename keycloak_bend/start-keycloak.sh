@@ -170,7 +170,7 @@ export GCP_ADMIN_EVENT_TOPIC_ID=keycloak-arxiv-events
 
 echo "GCP_PROJECT_ID=$GCP_PROJECT_ID"
 echo "GCP_EVENT_TOPIC_ID=$GCP_EVENT_TOPIC_ID"
-echo "GCP_ADMIN_EVENT_TOPIC_ID=GCP_ADMIN_EVENT_TOPIC_ID"
+echo "GCP_ADMIN_EVENT_TOPIC_ID=$GCP_ADMIN_EVENT_TOPIC_ID"
 
 # HTTP buffer settings - force via JVM system properties (keycloak.conf not working)
 echo "HTTP Buffer Settings: Forcing 2MB header limit via JVM properties"
@@ -245,6 +245,17 @@ else
   echo "  getent not available, skipping DNS check"
 fi
 echo "=== End Environment and Resource Diagnostics ==="
+echo ""
+
+echo "=== Cloud SQL Proxy Diagnostics ==="
+echo "Checking if port 5432 (Cloud SQL Proxy) is listening..."
+if command -v ss >/dev/null 2>&1; then
+  echo "Using ss to check listening ports:"
+  ss -tuln | grep :5432 && echo "  ✓ Port 5432 is listening" || echo "  ✗ WARNING: Port 5432 is NOT listening"
+else
+  echo "  ss command not available, skipping port check"
+fi
+echo "=== End Cloud SQL Proxy Diagnostics ==="
 echo ""
 
 echo "=== Starting Keycloak ==="

@@ -65,7 +65,7 @@ variable "auth_db_name" {
 variable "kc_jdbc_connection" {
   type        = string
   description = "JDBC connection parameters"
-  default     = "?ssl=false&sslmode=disabled"
+  default     = "?sslmode=disable"
 }
 
 variable "min_instances" {
