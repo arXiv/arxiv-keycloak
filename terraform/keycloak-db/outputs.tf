@@ -50,9 +50,14 @@ output "authdb_client_cert_secret_name" {
   description = "Name of the Secret Manager secret containing the client certificate"
 }
 
-output "authdb_client_key_secret_name" {
-  value       = google_secret_manager_secret.authdb_client_key.secret_id
-  description = "Name of the Secret Manager secret containing the client private key (PEM)"
+output "authdb_client_key_pem_secret_name" {
+  value       = google_secret_manager_secret.authdb_client_key_pem.secret_id
+  description = "Name of the Secret Manager secret containing the client private key (PEM format)"
+}
+
+output "authdb_client_key_der_secret_name" {
+  value       = google_secret_manager_secret.authdb_client_key_der.secret_id
+  description = "Name of the Secret Manager secret containing the client private key (DER format, base64-encoded)"
 }
 
 output "postgres_password_secret_name" {

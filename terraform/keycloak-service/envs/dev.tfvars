@@ -66,11 +66,18 @@ secrets = {
     volume_path = "client-cert.pem"
   }
 
-  authdb_client_key = {
-    secret_name = "authdb-client-key"
+  authdb_client_key_pem = {
+    secret_name = "authdb-client-key-pem"
     version     = "latest"
     mount_path  = "/home/keycloak/certs"
     volume_path = "client-key.pem"
+  }
+
+  authdb_client_key_der = {
+    secret_name = "authdb-client-key-der"
+    version     = "latest"
+    mount_path  = "/home/keycloak/certs"
+    volume_path = "client-key.key.b64"
   }
 }
 

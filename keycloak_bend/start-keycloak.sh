@@ -53,14 +53,6 @@ fi
 
 echo "=== SSL Certificate Setup ==="
 
-# Check for required tools
-if command -v openssl >/dev/null 2>&1; then
-  echo "  ✓ openssl is available: $(openssl version)"
-else
-  echo "  ✗ WARNING: openssl is NOT available (required for DER conversion)"
-fi
-echo ""
-
 # Method 1: Check if certificates are already mounted individually (new approach)
 if [ -r /home/keycloak/certs/server-ca.pem ] && [ -r /home/keycloak/certs/client-cert.pem ] && [ -r /home/keycloak/certs/client-key.pem ]; then
   echo "Method 1: Found individually mounted SSL certificates"
@@ -72,6 +64,17 @@ if [ -r /home/keycloak/certs/server-ca.pem ] && [ -r /home/keycloak/certs/client
   echo "  ✓ server-ca.pem is readable"
   echo "  ✓ client-cert.pem is readable"
   echo "  ✓ client-key.pem is readable"
+
+  # Decode binary DER key if base64-encoded version is present
+  if [ -r /home/keycloak/certs/client-key.key.b64 ]; then
+    echo "  ✓ client-key.key.b64 found, decoding to binary DER format..."
+    if base64 -d /home/keycloak/certs/client-key.key.b64 > /home/keycloak/certs/client-key.key; then
+      chmod 600 /home/keycloak/certs/client-key.key
+      echo "  ✓ client-key.key decoded successfully"
+    else
+      echo "  ✗ ERROR: Failed to decode client-key.key.b64"
+    fi
+  fi
   echo ""
 
 # Method 2: Try shell script bundle (legacy approach for backward compatibility)
@@ -117,28 +120,6 @@ else
   echo "  - /secrets/authdb-certs/db-certs-expand.sh (legacy shell script)"
   echo "  - /secrets/authdb-certs/*.pem (legacy individual files)"
 fi
-
-# Convert PEM private key to DER format if needed (JDBC requires DER)
-if [ -r /home/keycloak/certs/client-key.pem ] && [ ! -f /home/keycloak/certs/client-key.key ]; then
-  echo "Converting client-key.pem to DER format (required by JDBC)..."
-  if command -v openssl >/dev/null 2>&1; then
-    cd /home/keycloak/certs
-    if openssl pkcs8 -topk8 -inform PEM -outform DER -in client-key.pem -out client-key.key -nocrypt; then
-      chmod 600 client-key.key
-      echo "  ✓ Successfully converted client-key.pem to client-key.key (DER format)"
-    else
-      echo "  ✗ ERROR: Failed to convert PEM to DER (exit code: $?)"
-      echo "  Database connection with SSL may fail!"
-    fi
-    cd /home/keycloak
-  else
-    echo "  ✗ ERROR: openssl not available, cannot convert to DER format"
-    echo "  Database connection with SSL will fail!"
-  fi
-elif [ -f /home/keycloak/certs/client-key.key ]; then
-  echo "  ✓ client-key.key (DER format) already exists"
-fi
-echo ""
 
 # Final verification
 if [ -d /home/keycloak/certs ]; then

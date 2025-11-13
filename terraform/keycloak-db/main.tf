@@ -255,9 +255,8 @@ resource "google_secret_manager_secret_version" "authdb_client_cert" {
 }
 
 # Secret for client private key (PEM format)
-# Note: JDBC requires DER format, so the container will convert this at startup using openssl
-resource "google_secret_manager_secret" "authdb_client_key" {
-  secret_id = "authdb-client-key"
+resource "google_secret_manager_secret" "authdb_client_key_pem" {
+  secret_id = "authdb-client-key-pem"
   project   = var.gcp_project_id
 
   replication {
@@ -266,11 +265,65 @@ resource "google_secret_manager_secret" "authdb_client_key" {
 
   labels = {
     database = var.instance_name
-    purpose  = "ssl-client-key"
+    purpose  = "ssl-client-key-pem"
   }
 }
 
-resource "google_secret_manager_secret_version" "authdb_client_key" {
-  secret      = google_secret_manager_secret.authdb_client_key.id
+resource "google_secret_manager_secret_version" "authdb_client_key_pem" {
+  secret      = google_secret_manager_secret.authdb_client_key_pem.id
   secret_data = google_sql_ssl_cert.client_cert.private_key
+}
+
+# Secret for client private key (DER format) - required by JDBC
+# PostgreSQL JDBC driver requires the private key in DER (binary) format
+# Following the pattern from assemble-db-certs.sh:
+# 1. Convert PEM to DER using openssl pkcs8
+# 2. Base64 encode the binary DER file
+# 3. Store base64-encoded data in Secret Manager
+# 4. At runtime, decode base64 to get the binary .key file
+
+# Use null_resource to run openssl conversion locally
+resource "null_resource" "convert_client_key_to_der" {
+  # Trigger re-conversion when the PEM key changes
+  triggers = {
+    pem_data_sha256 = sha256(google_sql_ssl_cert.client_cert.private_key)
+  }
+
+  # Run openssl to convert PEM to DER, then base64 encode it
+  provisioner "local-exec" {
+    command = <<-EOT
+      set -e
+      echo '${google_sql_ssl_cert.client_cert.private_key}' > /tmp/tf-client-key.pem
+      openssl pkcs8 -topk8 -inform PEM -outform DER -in /tmp/tf-client-key.pem -out /tmp/tf-client-key.key -nocrypt
+      base64 /tmp/tf-client-key.key > /tmp/tf-client-key.key.b64
+      rm -f /tmp/tf-client-key.pem /tmp/tf-client-key.key
+    EOT
+  }
+}
+
+# Read the base64-encoded DER file
+data "local_file" "client_key_der_b64" {
+  depends_on = [null_resource.convert_client_key_to_der]
+  filename   = "/tmp/tf-client-key.key.b64"
+}
+
+resource "google_secret_manager_secret" "authdb_client_key_der" {
+  secret_id = "authdb-client-key-der"
+  project   = var.gcp_project_id
+
+  replication {
+    auto {}
+  }
+
+  labels = {
+    database = var.instance_name
+    purpose  = "ssl-client-key-der"
+  }
+}
+
+# Store the base64-encoded binary DER data
+# At runtime, the startup script will decode this: base64 -d client-key.key.b64 > client-key.key
+resource "google_secret_manager_secret_version" "authdb_client_key_der" {
+  secret      = google_secret_manager_secret.authdb_client_key_der.id
+  secret_data = data.local_file.client_key_der_b64.content
 }
