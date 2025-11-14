@@ -24,7 +24,7 @@ from fastapi import APIRouter, Depends, status, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from keycloak import KeycloakAdmin
-from keycloak.exceptions import (KeycloakGetError, KeycloakError)
+from keycloak.exceptions import (KeycloakGetError, KeycloakError, KeycloakPutError)
 
 
 from arxiv.base import logging
@@ -246,6 +246,13 @@ async def update_user_name(
 
     if data.username is not None and existing_user.username != data.username:
         changed = True
+
+        if kc_user is None:
+            try:
+                kc_admin.update_user(user_id=user_id, payload={"username": data.username})
+            except KeycloakPutError as kc_exc:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Failed to update username: {kc_exc}") from kc_exc
+
         nick: TapirNickname | None = session.query(TapirNickname).filter(TapirNickname.user_id == user_id).one_or_none()
         if nick is None:
             nick =  TapirNickname(nickname=data.username, user_id=user_id, user_seq=0,
@@ -258,8 +265,6 @@ async def update_user_name(
             session.refresh(nick)
         else:
             nick.nickname = data.username
-
-        kc_admin.update_user(user_id=user_id, payload={"username": data.username})
 
     if (data.first_name is not None and existing_user.first_name != data.first_name) or \
             (data.last_name is not None and existing_user.last_name != data.last_name):
