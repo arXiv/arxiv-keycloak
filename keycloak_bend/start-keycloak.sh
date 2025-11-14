@@ -48,7 +48,6 @@ fi
 #   - Certificates mounted at separate /secrets/ locations
 #   - /secrets/authdb-server-ca/server-ca.pem
 #   - /secrets/authdb-client-cert/client-cert.pem
-#   - /secrets/authdb-client-key-pem/client-key.pem
 #   - /secrets/authdb-client-key-der/client-key.key.b64
 #   - Copied to /home/keycloak/certs/ at startup
 # Method 2: Shell script bundle (legacy, backward compatibility)
@@ -60,7 +59,7 @@ fi
 echo "=== SSL Certificate Setup ==="
 
 # Method 1: Check if certificates are mounted in separate secret locations (new approach)
-if [ -r /secrets/authdb-server-ca/server-ca.pem ] && [ -r /secrets/authdb-client-cert/client-cert.pem ] && [ -r /secrets/authdb-client-key-pem/client-key.pem ]; then
+if [ -r /secrets/authdb-server-ca/server-ca.pem ] && [ -r /secrets/authdb-client-cert/client-cert.pem ]; then
   echo "Method 1: Found individually mounted SSL certificates in /secrets/"
   echo "Copying certificates to /home/keycloak/certs/..."
 
@@ -71,18 +70,15 @@ if [ -r /secrets/authdb-server-ca/server-ca.pem ] && [ -r /secrets/authdb-client
   # Use cat redirection instead of cp to avoid symlink issues with Cloud Run secret mounts
   cat /secrets/authdb-server-ca/server-ca.pem > /home/keycloak/certs/server-ca.pem
   cat /secrets/authdb-client-cert/client-cert.pem > /home/keycloak/certs/client-cert.pem
-  cat /secrets/authdb-client-key-pem/client-key.pem > /home/keycloak/certs/client-key.pem
 
   # Set permissions
   chmod 644 /home/keycloak/certs/server-ca.pem
   chmod 644 /home/keycloak/certs/client-cert.pem
-  chmod 600 /home/keycloak/certs/client-key.pem
 
   echo ""
   echo "Certificate file checks:"
   echo "  ✓ server-ca.pem copied"
   echo "  ✓ client-cert.pem copied"
-  echo "  ✓ client-key.pem copied"
 
   # Decode binary DER key if base64-encoded version is present
   if [ -r /secrets/authdb-client-key-der/client-key.key.b64 ]; then
@@ -125,7 +121,6 @@ elif [ -r /secrets/authdb-certs/server-ca.pem ]; then
   mkdir -p /home/keycloak/certs
   cp -v /secrets/authdb-certs/server-ca.pem /home/keycloak/certs/
   cp -v /secrets/authdb-certs/client-cert.pem /home/keycloak/certs/
-  cp -v /secrets/authdb-certs/client-key.pem /home/keycloak/certs/
   if [ -f /secrets/authdb-certs/client-key.key ]; then
     cp -v /secrets/authdb-certs/client-key.key /home/keycloak/certs/
   fi
