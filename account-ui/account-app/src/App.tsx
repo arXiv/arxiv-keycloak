@@ -31,6 +31,7 @@ import ArticlesYouOwn from "./pages/DocumentOwnershipManagement.tsx";
 import {ThemeProvider, CssBaseline} from '@mui/material';
 import arxivTheme from "./arxivTheme.ts";
 import AccountInfoPage from "./pages/AccountInfoPage.tsx";
+import ChangeUsername from "./pages/ChangeUsername.tsx";
 
 
 const App: React.FC = () => {
@@ -73,6 +74,7 @@ const App: React.FC = () => {
                                         <Route path="/user-account/update-profile" element={<UpdateProfile/>}/>
                                         <Route path="/user-account/change-password" element={<ChangePassword/>}/>
                                         <Route path="/user-account/change-email" element={<ChangeEmail/>}/>
+                                        <Route path="/user-account/change-username" element={<ChangeUsername/>}/>
                                         <Route path="/user-account/endorse" element={<EndorsementStepper/>}/>
                                         <Route path="/user-account/article-information" element={<YourDocuments/>}/>
                                         <Route path="/user-account/owned-documents" element={<ArticlesYouOwn/>}/>

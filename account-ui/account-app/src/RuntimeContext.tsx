@@ -48,6 +48,7 @@ export interface ArxivSiteURLs {
     userPasswordRecovery: string;
     userChangePassword: string;
     userChangeEmail: string;
+    userChangeUsername: string;
     userSendEmailVerification: string;
     userClaimDocumentOwnership: string;
     userRequestDocumentOwnership: string;
@@ -130,6 +131,7 @@ const defaultRuntimeProps : RuntimeProps = {
         userSendEmailVerification: "/send-email-verification",
         userClaimDocumentOwnership: "/user-account/claim-document-ownership",
         userRequestDocumentOwnership:  "/user-account/request-document-ownership",
+        userChangeUsername: "/user-account/change-username",
 
         /* Future home of arXiv Check URL */
         moderatorHome: "https://arxiv.org/mod",

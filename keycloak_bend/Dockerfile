@@ -27,7 +27,8 @@ COPY ./pubsub-listener/keycloak-to-pubsub-jar-with-dependencies.jar /opt/keycloa
 COPY ./kcfy-arxiv/dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar /opt/keycloak/providers/kc-arXiv-react-theme.jar
 
 # Username with "#" validator SPI
-COPY ./arxiv-username-validator/target/arxiv-username-validator-1.0.0.jar /opt/keycloak/providers/arxiv-username-validator-1.0.0.jar
+# No longer needed. You can use regex
+# COPY ./arxiv-username-validator/target/arxiv-username-validator-1.0.0.jar /opt/keycloak/providers/arxiv-username-validator-1.0.0.jar
 
 RUN chown -R keycloak /home/keycloak /opt/keycloak/providers /opt/keycloak/themes/
 

@@ -17,6 +17,7 @@ const breadcrumbNameMap: Record<string, string> = {
     'update-profile': 'Update Profile',
     'change-password': 'Change Password',
     'change-email': 'Change Email',
+    'change-username': 'Change Username',
     'endorse': 'Enter Endorsement Code',
     'article-information': 'Article Summary',
     'owned-documents': 'Manage Articles',
