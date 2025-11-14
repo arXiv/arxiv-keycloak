@@ -200,6 +200,16 @@ resource "google_cloud_run_service" "keycloak" {
           }
         }
 
+        env {
+          name = "GCP_CREDENTIALS"
+          value_from {
+            secret_key_ref {
+              name = "keycloak-pubsub-event-sa"
+              key  = "latest"
+            }
+          }
+        }
+
         dynamic "env" {
           for_each = var.additional_env_vars
           content {
