@@ -1,5 +1,5 @@
 
-DOCKER_DIRS := keycloak_bend oauth2-authenticator keycloak_tapir_bridge legacy_auth_provider test-mta user-portal account-ui
+DOCKER_DIRS := keycloak_bend oauth2-authenticator keycloak_tapir_bridge legacy_auth_provider test-mta user-portal account-ui deploy-db deploy-pubsub deploy-keycloak
 ALL_DIRS := $(DOCKER_DIRS) tools tests
 
 include .env
@@ -163,4 +163,24 @@ restart:
 
 tests/data/sanitized-test-db.sql:
 	gsutil cp gs://arxiv-dev-sql-data/test-data/sanitized-test-db.sql $@
+#-#
+#-# deploy-db:
+#-#   delpoy the kc's auth db
+deploy-db:
+	gh workflow run deploy-keycloak-db.yml --ref ntai/wombat-81-testing -f env=wombat-81-testing
+
+
+#-#
+#-# deploy-pubsub:
+#-#   delpoy the kc's pubsub for audit events
+deploy-pubsub:
+	gh workflow run deploy-keycloak-audit-pubsub.yml --ref ntai/wombat-81-testing -f env=wombat-81-testing
+
+#-#
+#-# deploy-keycloak:
+#-#   delpoy the keycloak
+deploy-keycloak:
+	gh workflow run deploy-keycloak-svc.yml --ref ntai/wombat-81-testing -f env=wombat-81-testing  -f image_tag=ntai-wombat-81-testing
+
+
 #-#

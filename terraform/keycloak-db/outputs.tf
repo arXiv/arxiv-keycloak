@@ -21,16 +21,17 @@ output "database_name" {
 output "keycloak_user_name" {
   value       = google_sql_user.keycloak_user.name
   description = "Name of the keycloak database user"
+  sensitive = true
 }
 
-output "db_password_secret_name" {
-  value       = google_secret_manager_secret.db_password.secret_id
-  description = "Name of the Secret Manager secret containing the database admin user password"
+output "keycloak_password_secret_name" {
+  value       = google_secret_manager_secret.keycloak_password.secret_id
+  description = "Name of the Secret Manager secret containing the keycloak user password"
 }
 
-output "db_password_secret_id" {
-  value       = google_secret_manager_secret.db_password.id
-  description = "Full resource ID of the database admin password secret"
+output "keycloak_password_secret_id" {
+  value       = google_secret_manager_secret.keycloak_password.id
+  description = "Keycloak database access secret ID"
 }
 
 output "server_ca_cert" {
@@ -39,12 +40,42 @@ output "server_ca_cert" {
   sensitive   = true
 }
 
-output "authdb_certs_secret_name" {
-  value       = google_secret_manager_secret.authdb_certs.secret_id
-  description = "Name of the Secret Manager secret containing the database SSL certificate script (used by keycloak-service)"
+output "authdb_server_ca_secret_name" {
+  value       = google_secret_manager_secret.authdb_server_ca.secret_id
+  description = "Name of the Secret Manager secret containing the server CA certificate"
 }
 
-output "authdb_certs_secret_id" {
-  value       = google_secret_manager_secret.authdb_certs.id
-  description = "Full resource ID of the authdb-certs secret"
+output "authdb_client_cert_secret_name" {
+  value       = google_secret_manager_secret.authdb_client_cert.secret_id
+  description = "Name of the Secret Manager secret containing the client certificate"
+}
+
+output "authdb_client_key_pem_secret_name" {
+  value       = google_secret_manager_secret.authdb_client_key_pem.secret_id
+  description = "Name of the Secret Manager secret containing the client private key (PEM format)"
+}
+
+output "authdb_client_key_der_secret_name" {
+  value       = google_secret_manager_secret.authdb_client_key_der.secret_id
+  description = "Name of the Secret Manager secret containing the client private key (DER format, base64-encoded)"
+}
+
+output "postgres_password_secret_name" {
+  value       = google_secret_manager_secret.postgres_password.secret_id
+  description = "Name of the Secret Manager secret containing the postgres superuser password"
+}
+
+output "postgres_password_secret_id" {
+  value       = google_secret_manager_secret.postgres_password.id
+  description = "Full resource ID of the postgres password secret"
+}
+
+output "client_cert_common_name" {
+  value       = google_sql_ssl_cert.client_cert.common_name
+  description = "Common name of the client SSL certificate"
+}
+
+output "client_cert_sha1_fingerprint" {
+  value       = google_sql_ssl_cert.client_cert.sha1_fingerprint
+  description = "SHA1 fingerprint of the client SSL certificate"
 }

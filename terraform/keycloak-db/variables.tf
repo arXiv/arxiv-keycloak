@@ -42,14 +42,16 @@ variable "database_name" {
   description = "Name of the database to create"
 }
 
-variable "db_username" {
+variable "keycloak_user" {
   type        = string
-  description = "Database user name"
+  description = "Keycloak connection usernahe."
+  default     = "keycloak"
+  sensitive   = true
 }
 
-variable "db_password" {
+variable "keycloak_password" {
   type        = string
-  description = "Database user password. Leave empty to auto-generate a secure random password. Password is stored in Secret Manager."
+  description = "Keycloak connection password. Leave empty to auto-generate a secure random password. Password is stored in Secret Manager."
   default     = ""
   sensitive   = true
 }
@@ -70,4 +72,10 @@ variable "environment" {
   type        = string
   description = "The deployment environment (e.g., dev, staging, prod)"
   default     = "dev"
+}
+
+variable "use_cloud_sql_proxy" {
+  type        = bool
+  description = "Whether to use Cloud SQL Proxy for database connections. Set to true in CI/CD environments (GitHub Actions, Cloud Build, etc.). When true, the PostgreSQL provider connects to localhost:5432 instead of the database IP."
+  default     = false
 }

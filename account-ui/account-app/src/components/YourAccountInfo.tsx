@@ -6,8 +6,9 @@ import Box from "@mui/material/Box";
 import FormGroup from "@mui/material/FormGroup";
 import Tooltip from "@mui/material/Tooltip";
 
-import Edit from "@mui/icons-material/Edit";
-import Email from "@mui/icons-material/Email";
+import EditIcon from "@mui/icons-material/Edit";
+import EmailIcon from "@mui/icons-material/Email";
+import UsernameIcon from "@mui/icons-material/Badge";
 import PasswordIcon from "@mui/icons-material/Password";
 import NofificationIcon from "@mui/icons-material/Notifications";
 import AdminIcon from "@mui/icons-material/Check";
@@ -158,14 +159,17 @@ const YourAccountInfo: React.FC<YourAccountInfoProps> = ({ runtimeProps, VerifyE
             {orcidText}
             <Box sx={{mt: 2, display: 'flex', gap: 2}}>
                 <Button component="a" disabled={user === null}
-                        variant="outlined" startIcon={<Edit/>}
+                        variant="outlined" startIcon={<EditIcon/>}
                         onClick={() => navigate(runtimeProps.URLS.userChangeProfile)}>Change User
                     Information</Button>
+                <Button component="a" disabled={user === null}
+                        variant="outlined" startIcon={<UsernameIcon/>}
+                        onClick={() => navigate(runtimeProps.URLS.userChangeUsername)}>Change User name</Button>
                 <Button disabled={user === null}
                         variant="outlined" startIcon={<PasswordIcon/>}
                         onClick={() => navigate(runtimeProps.URLS.userChangePassword)}>Change Password</Button>
                 <Button disabled={user === null}
-                        variant="outlined" startIcon={<Email/>}
+                        variant="outlined" startIcon={<EmailIcon/>}
                         onClick={() => navigate(runtimeProps.URLS.userChangeEmail)}>Change Email</Button>
                 <VerifyEmailButton runtimeProps={runtimeProps}/>
             </Box>

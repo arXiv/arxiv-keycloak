@@ -32,16 +32,16 @@ data "google_vpc_access_connector" "vpc_connector" {
   project = var.gcp_project_id
 }
 
-# Generate random password for keycloak database user if not provided
-resource "random_password" "keycloak_db_password" {
-  count   = var.keycloak_db_password == "" ? 1 : 0
+# Generate random password for Keycloak admin user if not provided
+resource "random_password" "keycloak_admin_password" {
+  count   = var.keycloak_admin_password == "" ? 1 : 0
   length  = 32
   special = true
 }
 
-# Secret Manager secret for keycloak database user password (owned by service)
-resource "google_secret_manager_secret" "keycloak_db_password" {
-  secret_id = "keycloak-db-password"
+# Secret Manager secret for Keycloak admin password
+resource "google_secret_manager_secret" "keycloak_admin_password" {
+  secret_id = "keycloak-admin-password"
   project   = var.gcp_project_id
 
   replication {
@@ -50,19 +50,14 @@ resource "google_secret_manager_secret" "keycloak_db_password" {
 
   labels = {
     service = "keycloak"
-    purpose = "database-credentials"
+    purpose = "admin-credentials"
   }
 }
 
-resource "google_secret_manager_secret_version" "keycloak_db_password" {
-  secret      = google_secret_manager_secret.keycloak_db_password.id
-  secret_data = var.keycloak_db_password != "" ? var.keycloak_db_password : random_password.keycloak_db_password[0].result
-}
-
-# Read the keycloak database password for use in the Cloud Run service
-data "google_secret_manager_secret_version" "auth_db_keycloak_password" {
-  secret     = google_secret_manager_secret.keycloak_db_password.id
-  depends_on = [google_secret_manager_secret_version.keycloak_db_password]
+# Create the secret version with the password (either provided or generated)
+resource "google_secret_manager_secret_version" "keycloak_admin_password" {
+  secret      = google_secret_manager_secret.keycloak_admin_password.id
+  secret_data = var.keycloak_admin_password != "" ? var.keycloak_admin_password : random_password.keycloak_admin_password[0].result
 }
 
 # Dynamic data sources for additional secrets
@@ -99,14 +94,19 @@ resource "google_cloud_run_service" "keycloak" {
 
   template {
     metadata {
-      annotations = {
-        "autoscaling.knative.dev/minScale"        = var.min_instances
-        "autoscaling.knative.dev/maxScale"        = var.max_instances
-        "run.googleapis.com/vpc-access-connector" = data.google_vpc_access_connector.vpc_connector.name
-        "run.googleapis.com/vpc-access-egress"    = var.vpc_egress
-        "run.googleapis.com/cpu-boost"            = var.cpu_boost
-        "run.googleapis.com/session-affinity"     = var.session_affinity
-      }
+      annotations = merge(
+        {
+          "autoscaling.knative.dev/minScale"        = var.min_instances
+          "autoscaling.knative.dev/maxScale"        = var.max_instances
+          "run.googleapis.com/vpc-access-connector" = data.google_vpc_access_connector.vpc_connector.name
+          "run.googleapis.com/vpc-access-egress"    = var.vpc_egress
+          "run.googleapis.com/cpu-boost"            = var.cpu_boost
+          "run.googleapis.com/session-affinity"     = var.session_affinity
+        },
+        var.use_cloud_sql_proxy && var.auth_db_connection_name != "" ? {
+          "run.googleapis.com/cloudsql-instances" = var.auth_db_connection_name
+        } : {}
+      )
     }
 
     spec {
@@ -144,7 +144,7 @@ resource "google_cloud_run_service" "keycloak" {
 
         env {
           name  = "DB_ADDR"
-          value = var.auth_db_private_ip
+          value = var.use_cloud_sql_proxy ? "localhost" : var.auth_db_private_ip
         }
 
         env {
@@ -153,18 +153,16 @@ resource "google_cloud_run_service" "keycloak" {
         }
 
         env {
-          name  = "DB_USER"
+          name  = "KC_DB_USER"
           value = var.db_user
         }
 
-        env {
-          name  = "DB_PASSWORD"
-          value = data.google_secret_manager_secret_version.auth_db_keycloak_password.secret_data
-        }
-
-        env {
-          name  = "JDBC_PARAMS"
-          value = var.jdbc_params
+        dynamic "env" {
+          for_each = var.use_cloud_sql_proxy ? [1] : []
+          content {
+            name  = "KC_JDBC_CONNECTION"
+            value = var.kc_jdbc_connection
+          }
         }
 
         env {
@@ -186,8 +184,8 @@ resource "google_cloud_run_service" "keycloak" {
           name = "KC_DB_PASS"
           value_from {
             secret_key_ref {
-              name    = "authdb-db-password"
-              key     = "latest"
+              name = var.keycloak_db_password_secret_name
+              key  = "latest"
             }
           }
         }
@@ -196,8 +194,18 @@ resource "google_cloud_run_service" "keycloak" {
           name = "KC_BOOTSTRAP_ADMIN_PASSWORD"
           value_from {
             secret_key_ref {
-              name    = "keycloak-admin-password"
-              key     = "latest"
+              name = google_secret_manager_secret.keycloak_admin_password.secret_id
+              key  = "latest"
+            }
+          }
+        }
+
+        env {
+          name = "GCP_CREDENTIALS"
+          value_from {
+            secret_key_ref {
+              name = "keycloak-pubsub-event-sa"
+              key  = "latest"
             }
           }
         }
@@ -236,7 +244,7 @@ resource "google_cloud_run_service" "keycloak" {
 
       # Volumes for secrets
       dynamic "volumes" {
-        for_each = { for k, v in var.secrets : k => v if v.mount_path != null }
+        for_each = { for k, v in var.secrets : k => v if v.volume_path != null }
         content {
           name = volumes.key
           secret {
@@ -244,7 +252,7 @@ resource "google_cloud_run_service" "keycloak" {
             default_mode = 0444
             items {
               key  = data.google_secret_manager_secret_version.secrets[volumes.key].version
-              path = basename(volumes.value.mount_path)
+              path = basename(volumes.value.volume_path)
             }
           }
         }

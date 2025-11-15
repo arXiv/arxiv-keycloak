@@ -20,9 +20,15 @@ variable "db_user" {
   default     = "keycloak"
 }
 
-variable "keycloak_db_password" {
+variable "keycloak_db_password_secret_name" {
   type        = string
-  description = "Password for keycloak database user. Leave empty to auto-generate. This will be passed to keycloak-db module and stored in Secret Manager."
+  description = "Name of the Secret Manager secret containing the keycloak database password (created by keycloak-db module)"
+  default     = "keycloak_password"
+}
+
+variable "keycloak_admin_password" {
+  type        = string
+  description = "Password for Keycloak admin user. Leave empty to auto-generate a secure random password. Password is stored in Secret Manager."
   default     = ""
   sensitive   = true
 }
@@ -34,7 +40,20 @@ variable "keycloak_image" {
 
 variable "auth_db_private_ip" {
   type        = string
-  description = "Private IP of the auth database"
+  description = "Private IP of the auth database (not used when use_cloud_sql_proxy is true)"
+  default     = ""
+}
+
+variable "auth_db_connection_name" {
+  type        = string
+  description = "Cloud SQL connection name (format: PROJECT:REGION:INSTANCE) - required when use_cloud_sql_proxy is true"
+  default     = ""
+}
+
+variable "use_cloud_sql_proxy" {
+  type        = bool
+  description = "Use Cloud SQL Proxy for database connection instead of VPC networking"
+  default     = false
 }
 
 variable "auth_db_name" {
@@ -42,10 +61,11 @@ variable "auth_db_name" {
   description = "Name of the auth database"
 }
 
-variable "jdbc_params" {
+
+variable "kc_jdbc_connection" {
   type        = string
   description = "JDBC connection parameters"
-  default     = "sslmode=require"
+  default     = "?sslmode=disable"
 }
 
 variable "min_instances" {
@@ -153,6 +173,7 @@ variable "secrets" {
     secret_name = string
     version     = string
     mount_path  = optional(string)
+    volume_path  = optional(string)
   }))
   description = "Secrets to mount or expose as environment variables"
   default     = {}

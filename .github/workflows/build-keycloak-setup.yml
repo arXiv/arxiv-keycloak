@@ -1,18 +1,22 @@
-name: Build and push keycloak-svc
+name: Build and push keycloak-setup
 
-run-name: "Build keycloak-svc ${{ github.ref_name }} ${{ inputs.custom_sha || github.sha }}"
+run-name: "Build keycloak-setup ${{ github.ref_name }} ${{ inputs.custom_sha || github.sha }}"
 
 on:
   push:
     branches:
       - master
     paths:
-      - "keycloak_bend/**"
+      - "keycloak_bend/setup-job/**"
+      - "keycloak_bend/tools/setup_arxiv_realm.py"
+      - "keycloak_bend/realms/**"
   pull_request:
     branches:
       - master
     paths:
-      - "keycloak_bend/**"
+      - "keycloak_bend/setup-job/**"
+      - "keycloak_bend/tools/setup_arxiv_realm.py"
+      - "keycloak_bend/realms/**"
   workflow_dispatch:
     inputs:
       custom_sha:
@@ -25,10 +29,11 @@ permissions:
   actions: write
 
 env:
-  DEPLOY_WORKFLOW: "deploy-keycloak-svc.yml"
-  DOCKERFILE: "keycloak_bend/Dockerfile"
+  IMAGE_NAME: "keycloak-setup"
+  DOCKERFILE: "keycloak_bend/setup-job/Dockerfile"
   GCP_PROJECT_ID: "arxiv-development"
-  IMAGE_NAME: "keycloak"
+  ARTIFACT_REGISTRY_REPO: "arxiv-keycloak"
+  REGION: "us-central1"
 
 jobs:
   format-check:
@@ -70,7 +75,7 @@ jobs:
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v3
 
-      - name: Configure Docker
+      - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker
 
       - name: Build image, caching from latest
@@ -78,23 +83,26 @@ jobs:
           pwd
           ls
           ls ${DOCKERFILE}
-          docker pull gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.IMAGE_NAME }}:latest
+
+          # Pull latest image for caching (ignore errors if it doesn't exist yet)
+          docker pull gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.IMAGE_NAME }}:latest || true
 
           BRANCH_TAG="$(printf "%.128s" "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" | sed 's/\//-/g')"
 
+          # Build the setup job image
           docker build -f ${DOCKERFILE} \
-          --cache-from gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.IMAGE_NAME }}:latest \
-          -t gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.IMAGE_NAME }}:${{ inputs.custom_sha || github.sha }} \
-          -t gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG} \
-          ${{ github.ref_name == 'master' && format('-t gcr.io/{0}/{1}:latest', env.GCP_PROJECT_ID, env.IMAGE_NAME) || '' }} keycloak_bend
+          --cache-from gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.IMAGE_NAME }}:latest \
+          -t gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.IMAGE_NAME }}:${{ inputs.custom_sha || github.sha }} \
+          -t gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG} \
+          ${{ github.ref_name == 'master' && format('-t gcr.io/{0}/{1}/{2}:latest', env.GCP_PROJECT_ID, env.ARTIFACT_REGISTRY_REPO, env.IMAGE_NAME) || '' }} keycloak_bend
 
       - name: Push image
-        run: docker push --all-tags gcr.io/${GCP_PROJECT_ID}/${IMAGE_NAME}
+        run: docker push --all-tags gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.IMAGE_NAME }}
 
       # CI Deployment Routing ... manual builds of a commit are not CD candidates
       - name: Deployment Routing
         if: ${{ !inputs.custom_sha }}
-        uses: arXiv/iac-public/.github/actions/service-deployment-routing@main  
+        uses: arXiv/iac-public/.github/actions/service-deployment-routing@main
         with:
           image_tag: ${{ github.sha }}
           deploy_workflow: ${{ env.DEPLOY_WORKFLOW }}

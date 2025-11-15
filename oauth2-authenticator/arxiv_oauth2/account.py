@@ -24,7 +24,7 @@ from fastapi import APIRouter, Depends, status, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from keycloak import KeycloakAdmin
-from keycloak.exceptions import (KeycloakGetError, KeycloakError)
+from keycloak.exceptions import (KeycloakGetError, KeycloakError, KeycloakPutError)
 
 
 from arxiv.base import logging
@@ -243,9 +243,31 @@ async def update_user_name(
 
     changed = False
     name_changed = False
+    username_changed = False
+    previous_username = "<null>"
 
     if data.username is not None and existing_user.username != data.username:
         changed = True
+
+        if kc_user is not None:
+            try:
+                kc_admin.update_user(user_id=user_id, payload={"username": data.username})
+            except KeycloakPutError as kc_exc:
+                # it turns out, KC checks the legacy auth provider for name collision! Brilliant!
+                if kc_exc.response_code == 409:
+                    raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Username {data.username} is already taken") from kc_exc
+                error_message = None
+                try:
+                    body = json.loads(kc_exc.response_body.decode('utf-8'))
+                    error_message = body.get('errorMessage')
+                except:
+                    pass
+
+                if error_message == 'error-username-invalid-character':
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Username {data.username} contains invalid characters")
+
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Failed to update username: {kc_exc}") from kc_exc
+
         nick: TapirNickname | None = session.query(TapirNickname).filter(TapirNickname.user_id == user_id).one_or_none()
         if nick is None:
             nick =  TapirNickname(nickname=data.username, user_id=user_id, user_seq=0,
@@ -257,9 +279,9 @@ async def update_user_name(
             session.flush()
             session.refresh(nick)
         else:
+            previous_username = nick.nickname
             nick.nickname = data.username
-
-        kc_admin.update_user(user_id=user_id, payload={"username": data.username})
+        username_changed = True
 
     if (data.first_name is not None and existing_user.first_name != data.first_name) or \
             (data.last_name is not None and existing_user.last_name != data.last_name):
@@ -305,6 +327,7 @@ async def update_user_name(
                 remote_ip=remote_ip,
                 remote_hostname=remote_hostname,
                 tracking_cookie=tracking_cookie,
+                comment=data.comment,
                 data={
                     "before": {
                         "first_name": existing_user.first_name,
@@ -315,6 +338,29 @@ async def update_user_name(
                         "first_name": data.first_name,
                         "last_name": data.last_name,
                         "suffix_name": data.suffix_name,
+                    }
+                }
+            )
+        )
+
+    if username_changed:
+        # Log the name change
+        admin_audit(
+            session,
+            AdminAudit_ChangeDemographic(
+                admin_id=str(current_user.user_id),
+                affected_user=str(user_id),
+                session_id=str(current_user.tapir_session_id),
+                remote_ip=remote_ip,
+                remote_hostname=remote_hostname,
+                tracking_cookie=tracking_cookie,
+                comment=data.comment,
+                data={
+                    "before": {
+                        "username": previous_username,
+                    },
+                    "after": {
+                        "username": data.username,
                     }
                 }
             )

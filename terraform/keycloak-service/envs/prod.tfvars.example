@@ -50,17 +50,14 @@ secrets = {
   authdb_certs = {
     secret_name = "authdb-certs"
     version     = "latest"
-    mount_path  = "/secrets/authdb-certs/db-certs-expand.sh"
-  }
-  keycloak_admin_password = {
-    secret_name = "keycloak-admin-password"
-    version     = "latest"
-    mount_path  = null
+    mount_path  = "/secrets/authdb-certs"
+    volume_path = "db-certs-expand.sh"
   }
   gcp_credentials = {
     secret_name = "keycloak-pubsub-event-sa"
     version     = "latest"
     mount_path  = null
+    volume_path = null
   }
 }
 

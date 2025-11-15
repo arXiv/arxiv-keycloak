@@ -9,13 +9,15 @@ environment    = "development"
 # These MUST come from the keycloak-db module outputs
 # Do NOT hardcode these values - pass via CLI:
 #   terraform apply \
-#     -var="auth_db_private_ip=$(cd ../keycloak-db && terraform output -raw private_ip_address)" \
+#     -var="auth_db_connection_name=$(cd ../keycloak-db && terraform output -raw connection_name)" \
+#     -var="use_cloud_sql_proxy=true" \
 #     -var="auth_db_name=$(cd ../keycloak-db && terraform output -raw database_name)" \
 #     -var="db_user=$(cd ../keycloak-db && terraform output -raw keycloak_user_name)"
 # Example values:
-#   auth_db_private_ip = "172.26.51.12"
-#   auth_db_name       = "keycloak"
-#   db_user            = "keycloak"
+#   auth_db_connection_name = "wombat-81-testing:us-central1:authdb"
+#   use_cloud_sql_proxy     = true
+#   auth_db_name            = "keycloak"
+#   db_user                 = "keycloak"
 
 # Keycloak database user password - auto-generated and stored in Secret Manager
 # Leave empty to auto-generate a secure random password
@@ -47,19 +49,29 @@ health_check_path = "/health/ready"
 
 # Secrets (to be mounted)
 secrets = {
-  # Database SSL certificates
-  # NOTE: This secret contains a shell script that outputs certificate files.
-  # At startup, Keycloak runs: cd /home/keycloak/certs && sh /secrets/authdb-certs/db-certs-expand.sh
-  # This is a workaround since Cloud Run doesn't support mounting multiple files from one secret.
-  authdb_certs = {
-    secret_name = "authdb-certs"
+  # Database SSL certificates - each certificate mounted to separate location
+  # Cloud Run doesn't allow duplicate mount paths
+  # start-keycloak.sh will copy them to /home/keycloak/certs/
+
+  authdb_server_ca = {
+    secret_name = "authdb-server-ca"
     version     = "latest"
-    mount_path  = "/secrets/authdb-certs/db-certs-expand.sh"
+    mount_path  = "/secrets/authdb-server-ca"
+    volume_path = "server-ca.pem"
   }
-  keycloak_admin_password = {
-    secret_name = "keycloak-admin-password"
+
+  authdb_client_cert = {
+    secret_name = "authdb-client-cert"
     version     = "latest"
-    mount_path  = null
+    mount_path  = "/secrets/authdb-client-cert"
+    volume_path = "client-cert.pem"
+  }
+
+  authdb_client_key_der = {
+    secret_name = "authdb-client-key-der"
+    version     = "latest"
+    mount_path  = "/secrets/authdb-client-key-der"
+    volume_path = "client-key.key.b64"
   }
 }
 

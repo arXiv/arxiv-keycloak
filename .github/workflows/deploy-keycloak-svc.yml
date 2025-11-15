@@ -4,12 +4,13 @@ name: Deploy keycloak-service
 run-name: "Deploy keycloak-service ${{ inputs.env }} ${{ inputs.image_tag }}"
 
 on:
-#   push:
-#     branches:
-#       - master
-#       - ARXIVCE-4079
-#     paths:
-#       - "**"
+  push:
+    branches:
+    #   - master
+    #   - ARXIVCE-4079
+      - wombat-81-testing
+    paths:
+      - "**"
 #   pull_request:
 #     branches:
 #       - master
@@ -142,12 +143,14 @@ jobs:
         run: terraform --version
 
       - name: Initialize keycloak-db remote backend (for db output variables)
-        run: | 
+        run: |
           terraform init -backend-config="bucket=${{ env.TERRAFORM_BUCKET }}"
           TERRAFORM_ARGS="$TERRAFORM_ARGS \
               -var=\"auth_db_private_ip=$(terraform output -raw private_ip_address)\" \
+              -var=\"use_cloud_sql_proxy=false\" \
               -var=\"auth_db_name=$(terraform output -raw database_name)\" \
-              -var=\"db_user=$(terraform output -raw keycloak_user_name)\""
+              -var=\"db_user=$(terraform output -raw keycloak_user_name)\" \
+              -var=\"keycloak_db_password_secret_name=$(terraform output -raw keycloak_password_secret_name)\""
           echo "TERRAFORM_ARGS=$TERRAFORM_ARGS" >> $GITHUB_ENV
         working-directory: terraform/keycloak-db
 

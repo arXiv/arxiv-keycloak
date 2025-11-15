@@ -20,12 +20,10 @@ require_ssl = true
 
 # Database and users
 database_name = "keycloak"
-db_username   = "postgres"  # Main admin user
 
 # Passwords
-# db_password: Leave empty to auto-generate. Stored in {instance_name}-db-password secret.
-# keycloak_password: Provided by keycloak-service module. Pass via CLI:
-#   -var="keycloak_password=$(cd ../keycloak-service && terraform output -raw keycloak_db_password)"
+# keycloak_password: Leave empty to auto-generate. Pass via CLI if needed:
+#   -var="keycloak_password=YOUR_PASSWORD"
 
 # Protection
 deletion_protection = true  # Set to true for production
