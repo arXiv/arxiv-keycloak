@@ -100,11 +100,6 @@ resource "google_cloud_run_service" "legacy_auth_provider" {
         }
 
         env {
-          name  = "PORT"
-          value = tostring(var.container_port)
-        }
-
-        env {
           name  = "SQLALCHEMY_RECORD_QUERIES"
           value = var.sqlalchemy_record_queries
         }
