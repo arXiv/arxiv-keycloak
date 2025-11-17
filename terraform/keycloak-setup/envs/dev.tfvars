@@ -8,7 +8,8 @@ environment    = "development"
 # Keycloak service URL - UPDATE THIS with actual Cloud Run service URL
 # Get from: cd ../keycloak-service && terraform output keycloak_url
 # Example: "https://keycloak-xxxxx-uc.a.run.app"
-keycloak_url = "https://keycloak-XXXXX-uc.a.run.app"  # TODO: Update with actual URL
+# The actual URL is given as an input.
+keycloak_url = "https://keycloak-should-come-in-deploy-step-uc.a.run.app"
 
 # Path to realm configuration file (relative to module root)
 realm_config_file_path = "../../keycloak_bend/realms/arxiv-realm-gcp-dev.json"
