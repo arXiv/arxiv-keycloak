@@ -1,0 +1,226 @@
+name: Deploy keycloak-setup
+
+# Set custom run name to show project name in workflow runs list
+run-name: "Deploy keycloak-setup ${{ inputs.env }} ${{ inputs.image_tag }}"
+
+on:
+  push:
+    branches:
+    #   - master
+      - wombat-81-testing
+    paths:
+      - "terraform/keycloak-setup/**"
+      - "keycloak_bend/realms/*.json"
+      - ".github/workflows/deploy-keycloak-setup.yml"
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Environment"
+        required: true
+        type: string
+        default: ""
+      image_tag:
+        description: "Docker image tag (latest or the commit SHA)"
+        required: false
+        type: string
+        default: "latest"
+      auto_trigger:
+        description: "Automatically execute the setup job after creation"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+env:
+  IMAGE_NAME: "arxiv-keycloak/keycloak-setup"
+
+jobs:
+  format-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Check version
+        run: terraform --version
+
+      - name: Format check
+        run: terraform fmt -check -recursive terraform/keycloak-setup
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: format-check
+    environment: ${{ inputs.env }}
+    if: >
+      (github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch') &&
+      ((inputs.env != 'production' && inputs.env != 'prod' && inputs.env != 'staging' && inputs.env != 'stage') || inputs.image_tag != 'latest')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set environment variables
+        run: |
+          # Determine environment from inputs or GitHub environment
+          if [ -n "${{ inputs.env }}" ]; then
+            ENV_NAME="${{ inputs.env }}"
+          else
+            echo "Error: No environment specified"
+            exit 1
+          fi
+
+          REGION="${{ vars.GCP_REGION || 'us-central1' }}"
+          echo "ENVIRONMENT=$ENV_NAME" >> $GITHUB_ENV
+          echo "REGION=$REGION" >> $GITHUB_ENV
+
+          # Set auto_trigger_setup based on input (default: false for safety)
+          AUTO_TRIGGER="${{ inputs.auto_trigger || 'false' }}"
+          echo "AUTO_TRIGGER_SETUP=$AUTO_TRIGGER" >> $GITHUB_ENV
+
+          # Set project name and terraform bucket based on environment
+          if [ "$ENV_NAME" = "production" ] || [ "$ENV_NAME" = "prod" ]; then
+            echo "PROJECT_NAME=arxiv-production" >> $GITHUB_ENV
+            echo "TERRAFORM_BUCKET=prod-arxiv-terraform-state" >> $GITHUB_ENV
+            TERRAFORM_ARGS="-var-file=envs/prod.tfvars"
+            REALM_CONFIG_FILE="../../keycloak_bend/realms/arxiv-realm-gcp-prod.json"
+          elif [ "$ENV_NAME" = "staging" ] || [ "$ENV_NAME" = "stage" ]; then
+            echo "PROJECT_NAME=arxiv-stage" >> $GITHUB_ENV
+            echo "TERRAFORM_BUCKET=stage-arxiv-terraform-state" >> $GITHUB_ENV
+            TERRAFORM_ARGS="-var-file=envs/staging.tfvars"
+            REALM_CONFIG_FILE="../../keycloak_bend/realms/arxiv-realm-gcp-staging.json"
+          elif [ "$ENV_NAME" = "development" ] || [ "$ENV_NAME" = "develop" ] || [ "$ENV_NAME" = "dev" ]; then
+            echo "PROJECT_NAME=arxiv-development" >> $GITHUB_ENV
+            echo "TERRAFORM_BUCKET=dev-arxiv-terraform-state" >> $GITHUB_ENV
+            TERRAFORM_ARGS="-var-file=envs/dev.tfvars"
+            REALM_CONFIG_FILE="../../keycloak_bend/realms/arxiv-realm-gcp-dev.json"
+          else
+            # For custom environments, use the environment name as project name
+            echo "PROJECT_NAME=$ENV_NAME" >> $GITHUB_ENV
+            echo "TERRAFORM_BUCKET=$ENV_NAME-arxiv-terraform-state" >> $GITHUB_ENV
+            REALM_CONFIG_FILE="../../keycloak_bend/realms/arxiv-realm-gcp-dev.json"
+            TERRAFORM_ARGS="-var-file=envs/dev.tfvars \
+              -var=\"environment=$ENV_NAME\" \
+              -var=\"gcp_project_id=$ENV_NAME\" \
+              -var=\"gcp_region=$REGION\" \
+              -var=\"realm_config_file_path=$REALM_CONFIG_FILE\""
+          fi
+
+          # Add setup_job_image and auto_trigger_setup to TERRAFORM_ARGS for all environments
+          TERRAFORM_ARGS="$TERRAFORM_ARGS \
+            -var=\"setup_job_image=gcr.io/arxiv-development/${{env.IMAGE_NAME}}:${{inputs.image_tag}}\" \
+            -var=\"auto_trigger_setup=$AUTO_TRIGGER\""
+
+          echo "TERRAFORM_ARGS=$TERRAFORM_ARGS" >> $GITHUB_ENV
+
+      - name: Authenticate with arxiv-development
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.ARXIV_DEVELOPMENT_PROVIDER_NAME }}
+          service_account: ${{ vars.ARXIV_DEVELOPMENT_SERVICE_ACCOUNT }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Get project number
+        run: |
+          echo "Getting project number for project: ${{ env.PROJECT_NAME }}"
+          PROJECT_NUMBER=$(gcloud projects describe ${{ env.PROJECT_NAME }} --format="value(projectNumber)")
+          echo "PROJECT_NUMBER=$PROJECT_NUMBER" >> $GITHUB_ENV
+          echo "Project number: $PROJECT_NUMBER"
+
+      - name: Authenticate with target project workload identity
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/${{ env.PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github/providers/github-actions-provider
+          service_account: github-actions-sa@${{ env.PROJECT_NAME }}.iam.gserviceaccount.com
+          project_id: ${{ env.PROJECT_NAME }}
+
+      - name: Set up terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Check version
+        run: terraform --version
+
+      - name: Initialize keycloak-service remote backend (for outputs)
+        run: terraform init -backend-config="bucket=${{ env.TERRAFORM_BUCKET }}"
+        working-directory: terraform/keycloak-service
+
+      - name: Get keycloak-service outputs
+        run: |
+          KEYCLOAK_URL=$(terraform output -raw keycloak_url)
+          KEYCLOAK_ADMIN_SECRET=$(terraform output -raw keycloak_admin_password_secret_name)
+
+          TERRAFORM_ARGS="$TERRAFORM_ARGS \
+            -var=\"keycloak_url=$KEYCLOAK_URL\" \
+            -var=\"keycloak_admin_password_secret_name=$KEYCLOAK_ADMIN_SECRET\""
+
+          echo "TERRAFORM_ARGS=$TERRAFORM_ARGS" >> $GITHUB_ENV
+          echo "Keycloak URL: $KEYCLOAK_URL"
+        working-directory: terraform/keycloak-service
+
+      - name: Initialize legacy-auth-provider remote backend (for outputs)
+        run: terraform init -backend-config="bucket=${{ env.TERRAFORM_BUCKET }}"
+        working-directory: terraform/legacy-auth-provider
+
+      - name: Get legacy-auth-provider outputs
+        run: |
+          LEGACY_AUTH_URI=$(terraform output -raw service_url)
+          LEGACY_AUTH_API_SECRET_NAME=$(terraform output -raw api_secret_key_secret_name)
+
+          TERRAFORM_ARGS="$TERRAFORM_ARGS \
+            -var=\"legacy_auth_uri=$LEGACY_AUTH_URI\" \
+            -var=\"legacy_auth_api_token_secret_name=$LEGACY_AUTH_API_SECRET_NAME\""
+
+          echo "TERRAFORM_ARGS=$TERRAFORM_ARGS" >> $GITHUB_ENV
+          echo "Legacy Auth URI: $LEGACY_AUTH_URI"
+          echo "Legacy Auth API Secret Name: $LEGACY_AUTH_API_SECRET_NAME"
+        working-directory: terraform/legacy-auth-provider
+
+      - name: Add arxiv_user_secret from GitHub environment
+        run: |
+          # Get arxiv_user_secret from GitHub environment secrets
+          ARXIV_USER_SECRET="${{ secrets.ARXIV_USER_SECRET }}"
+
+          if [ -z "$ARXIV_USER_SECRET" ]; then
+            echo "Error: ARXIV_USER_SECRET not found in GitHub environment secrets"
+            echo "Please add ARXIV_USER_SECRET to the ${{ inputs.env }} environment secrets"
+            exit 1
+          fi
+
+          TERRAFORM_ARGS="$TERRAFORM_ARGS \
+            -var=\"arxiv_user_secret=$ARXIV_USER_SECRET\""
+
+          echo "TERRAFORM_ARGS=$TERRAFORM_ARGS" >> $GITHUB_ENV
+
+      - name: Initialize keycloak-setup remote backend
+        run: terraform init -backend-config="bucket=${{ env.TERRAFORM_BUCKET }}"
+        working-directory: terraform/keycloak-setup
+
+      - name: Apply
+        run: terraform apply ${{ env.TERRAFORM_ARGS }} -auto-approve
+        working-directory: terraform/keycloak-setup
+
+      - name: Show setup job execution instructions
+        if: env.AUTO_TRIGGER_SETUP == 'false'
+        run: |
+          echo "=========================================="
+          echo "Keycloak setup job created successfully!"
+          echo "=========================================="
+          echo ""
+          echo "The Cloud Run job has been created but NOT executed."
+          echo "To manually execute the setup job, run:"
+          echo ""
+          echo "  gcloud run jobs execute keycloak-realm-setup-${{ env.ENVIRONMENT }} \\"
+          echo "    --region ${{ env.REGION }} \\"
+          echo "    --project ${{ env.PROJECT_NAME }}"
+          echo ""
+          echo "=========================================="
