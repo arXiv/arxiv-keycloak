@@ -62,10 +62,10 @@ def wait_for_keycloak(keycloak_url: str, timeout: int = 600, interval: int = 5) 
                 logger.info(f"Keycloak is ready! (HTTP {response.status_code} after {elapsed:.1f}s, {attempt} attempts)")
                 return True
             else:
-                logger.debug(f"Attempt {attempt}: HTTP {response.status_code}, retrying in {interval}s...")
+                logger.info(f"Attempt {attempt}: HTTP {response.status_code}, retrying in {interval}s...")
 
         except requests.exceptions.RequestException as e:
-            logger.debug(f"Attempt {attempt}: Connection failed ({type(e).__name__}), retrying in {interval}s...")
+            logger.info(f"Attempt {attempt}: Connection failed ({type(e).__name__}), retrying in {interval}s...")
 
         # Wait before next attempt
         time.sleep(interval)

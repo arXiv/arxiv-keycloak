@@ -28,7 +28,7 @@ on:
         description: "Automatically execute the setup job after creation"
         required: false
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: read
@@ -81,8 +81,8 @@ jobs:
           echo "ENVIRONMENT=$ENVIRONMENT" >> $GITHUB_ENV
           echo "REGION=$REGION" >> $GITHUB_ENV
 
-          # Set auto_trigger_setup based on input (default: false for safety)
-          AUTO_TRIGGER="${{ inputs.auto_trigger || 'false' }}"
+          # Set auto_trigger_setup based on input (default: true to run setup automatically)
+          AUTO_TRIGGER="${{ inputs.auto_trigger || 'true' }}"
           echo "AUTO_TRIGGER_SETUP=$AUTO_TRIGGER" >> $GITHUB_ENV
 
           # Determine GitHub branch for realm config
@@ -214,6 +214,20 @@ jobs:
         run: terraform apply ${{ env.TERRAFORM_ARGS }} -auto-approve
         working-directory: terraform/keycloak-setup
 
+      - name: Execute setup job
+        if: env.AUTO_TRIGGER_SETUP == 'true'
+        run: |
+          echo "=========================================="
+          echo "Executing Keycloak setup job..."
+          echo "=========================================="
+          gcloud run jobs execute keycloak-realm-setup-${{ env.ENVIRONMENT }} \
+            --region ${{ env.REGION }} \
+            --project ${{ env.PROJECT_NAME }} \
+            --wait
+          echo ""
+          echo "Setup job execution completed!"
+          echo "=========================================="
+
       - name: Show setup job execution instructions
         if: env.AUTO_TRIGGER_SETUP == 'false'
         run: |
@@ -228,4 +242,5 @@ jobs:
           echo "    --region ${{ env.REGION }} \\"
           echo "    --project ${{ env.PROJECT_NAME }}"
           echo ""
+          echo "Or re-run this workflow with 'auto_trigger=true'"
           echo "=========================================="
