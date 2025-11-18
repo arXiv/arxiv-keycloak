@@ -38,7 +38,7 @@ resource "google_secret_manager_secret" "api_secret_key" {
 
   labels = {
     service     = "legacy-auth-provider"
-    purpose     = "Legacy auth provider API access key"
+    purpose     = "legacy-auth-provider-api-access-key"
     environment = var.environment
   }
 }

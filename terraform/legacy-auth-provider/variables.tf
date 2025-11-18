@@ -74,11 +74,6 @@ variable "session_affinity" {
   default     = "true"
 }
 
-variable "cloudsql_instance" {
-  description = "Cloud SQL instance connection name (format: project:region:instance)"
-  type        = string
-}
-
 variable "classic_db_uri_secret_name" {
   description = "Secret Manager secret name for CLASSIC_DB_URI"
   type        = string
