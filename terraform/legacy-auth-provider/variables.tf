@@ -104,3 +104,8 @@ variable "additional_env_vars" {
   type        = map(string)
   default     = {}
 }
+
+variable "cloudsql_instance" {
+  description = "Cloud SQL instance connection name (format: project:region:instance)"
+  type        = string
+}

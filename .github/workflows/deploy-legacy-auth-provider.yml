@@ -97,6 +97,11 @@ jobs:
               -var=\"gcp_region=$REGION\""
           fi
 
+          # Set Cloud SQL instance - format: {project-name}:{region}:master-db
+          # Use REGION for Cloud SQL
+          CLOUDSQL_INSTANCE="${PROJECT_NAME}:{REGION}:master-db"
+          TERRAFORM_ARGS="$TERRAFORM_ARGS -var=\"cloudsql_instance=$CLOUDSQL_INSTANCE\""
+
           # Add legacy_auth_image to TERRAFORM_ARGS for all environments
           TERRAFORM_ARGS="$TERRAFORM_ARGS \
             -var=\"legacy_auth_image=gcr.io/arxiv-development/${{env.IMAGE_NAME}}:${{inputs.image_tag}}\""

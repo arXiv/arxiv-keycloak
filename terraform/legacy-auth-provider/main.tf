@@ -73,6 +73,7 @@ resource "google_cloud_run_service" "legacy_auth_provider" {
       annotations = {
         "autoscaling.knative.dev/minScale"         = var.min_instances
         "autoscaling.knative.dev/maxScale"         = var.max_instances
+        "run.googleapis.com/cloudsql-instances"    = var.cloudsql_instance
         "run.googleapis.com/cpu-boost"             = var.cpu_boost
         "run.googleapis.com/session-affinity"      = var.session_affinity
         "run.googleapis.com/execution-environment" = "gen2"

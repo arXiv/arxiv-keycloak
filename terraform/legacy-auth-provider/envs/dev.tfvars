@@ -25,6 +25,9 @@ session_affinity = "true"
 # CLASSIC_DB_URI secret name (must exist before deployment)
 classic_db_uri_secret_name = "browse-sqlalchemy-db-uri"
 
+# Cloud SQL instance
+cloudsql_instance = "arxiv-development:us-east4:arxiv-db-dev"
+
 # API_SECRET_KEY (JWT) - Auto-generated if not provided
 # Leave empty to auto-generate a secure random secret
 # Or set via CLI: -var="api_secret_key=YOUR_SECRET"
