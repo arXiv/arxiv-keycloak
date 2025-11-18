@@ -188,22 +188,6 @@ jobs:
           echo "Legacy Auth API Secret Name: $LEGACY_AUTH_API_SECRET_NAME"
         working-directory: terraform/legacy-auth-provider
 
-      - name: Add arxiv_user_secret from GitHub environment
-        run: |
-          # Get arxiv_user_secret from GitHub environment secrets
-          ARXIV_USER_SECRET="${{ secrets.ARXIV_USER_SECRET }}"
-
-          if [ -z "$ARXIV_USER_SECRET" ]; then
-            echo "Error: ARXIV_USER_SECRET not found in GitHub environment secrets"
-            echo "Please add ARXIV_USER_SECRET to the ${{ inputs.env }} environment secrets"
-            exit 1
-          fi
-
-          TERRAFORM_ARGS="$TERRAFORM_ARGS \
-            -var=\"arxiv_user_secret=$ARXIV_USER_SECRET\""
-
-          echo "TERRAFORM_ARGS=$TERRAFORM_ARGS" >> $GITHUB_ENV
-
       - name: Initialize keycloak-setup remote backend
         run: terraform init -backend-config="bucket=${{ env.TERRAFORM_BUCKET }}"
         working-directory: terraform/keycloak-setup

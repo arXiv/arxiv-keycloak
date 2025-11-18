@@ -37,6 +37,12 @@ resource "google_secret_manager_secret_version" "realm_config" {
   secret_data = file(var.realm_config_file_path)
 }
 
+# Generate arXiv user OAuth2 client secret
+resource "random_password" "arxiv_user_secret" {
+  length  = 32
+  special = true
+}
+
 # Secret for arXiv user OAuth2 client secret
 resource "google_secret_manager_secret" "arxiv_user_secret" {
   secret_id = "keycloak-arxiv-user-secret-${var.environment}"
@@ -55,7 +61,7 @@ resource "google_secret_manager_secret" "arxiv_user_secret" {
 
 resource "google_secret_manager_secret_version" "arxiv_user_secret" {
   secret      = google_secret_manager_secret.arxiv_user_secret.id
-  secret_data = var.arxiv_user_secret
+  secret_data = random_password.arxiv_user_secret.result
 }
 
 # Service Account for the setup job

@@ -37,12 +37,6 @@ variable "keycloak_admin_password_secret_name" {
   default     = "keycloak-admin-password"
 }
 
-variable "arxiv_user_secret" {
-  description = "OAuth2 client secret for the arxiv-user client"
-  type        = string
-  sensitive   = true
-}
-
 variable "legacy_auth_api_token_secret_name" {
   description = "Secret Manager secret name for legacy auth API token (from legacy-auth-provider module output: api_secret_key_secret_name)"
   type        = string
