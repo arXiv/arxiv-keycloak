@@ -100,7 +100,7 @@ resource "google_cloud_run_v2_job" "keycloak_setup" {
 
         env {
           name = "KC_ADMIN_PASSWORD"
-          value_from {
+          value_source {
             secret_key_ref {
               secret  = var.keycloak_admin_password_secret_name
               version = "latest"
@@ -110,7 +110,7 @@ resource "google_cloud_run_v2_job" "keycloak_setup" {
 
         env {
           name = "ARXIV_USER_SECRET"
-          value_from {
+          value_source {
             secret_key_ref {
               secret  = google_secret_manager_secret.arxiv_user_secret.secret_id
               version = "latest"
@@ -120,7 +120,7 @@ resource "google_cloud_run_v2_job" "keycloak_setup" {
 
         env {
           name = "LEGACY_AUTH_API_TOKEN"
-          value_from {
+          value_source {
             secret_key_ref {
               secret  = var.legacy_auth_api_token_secret_name
               version = "latest"
