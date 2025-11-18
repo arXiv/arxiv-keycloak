@@ -29,7 +29,7 @@ resource "random_password" "api_secret_key" {
 
 # Secret for API Secret Key (JWT)
 resource "google_secret_manager_secret" "api_secret_key" {
-  secret_id = "jwt_secret"
+  secret_id = "legacy_auth_api_key"
   project   = var.gcp_project_id
 
   replication {
@@ -38,7 +38,7 @@ resource "google_secret_manager_secret" "api_secret_key" {
 
   labels = {
     service     = "legacy-auth-provider"
-    purpose     = "jwt-signing-key"
+    purpose     = "Legacy auth provider API access key"
     environment = var.environment
   }
 }
@@ -73,7 +73,6 @@ resource "google_cloud_run_service" "legacy_auth_provider" {
       annotations = {
         "autoscaling.knative.dev/minScale"         = var.min_instances
         "autoscaling.knative.dev/maxScale"         = var.max_instances
-        "run.googleapis.com/cloudsql-instances"    = var.cloudsql_instance
         "run.googleapis.com/cpu-boost"             = var.cpu_boost
         "run.googleapis.com/session-affinity"      = var.session_affinity
         "run.googleapis.com/execution-environment" = "gen2"

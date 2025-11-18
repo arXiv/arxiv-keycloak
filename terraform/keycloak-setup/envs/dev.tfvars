@@ -38,7 +38,7 @@ keycloak_admin_password_secret_name = "keycloak-admin-password"
 #     -var="legacy_auth_uri=$(cd ../legacy-auth-provider && terraform output -raw service_url)" \
 #     -var="arxiv_user_secret=YOUR_SECRET"
 # Example values:
-#   legacy_auth_api_token_secret_name = "jwt_secret"
+#   legacy_auth_api_token_secret_name = "legacy_auth_api_token"
 #   legacy_auth_uri = "https://legacy-auth-provider-xxxxx-uc.a.run.app"
 
 # Realm name to configure
