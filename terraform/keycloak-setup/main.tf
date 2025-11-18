@@ -16,27 +16,6 @@ provider "google" {
   region  = var.gcp_region
 }
 
-# Store realm configuration JSON in Secret Manager
-resource "google_secret_manager_secret" "realm_config" {
-  secret_id = "keycloak-realm-config-${var.environment}"
-  project   = var.gcp_project_id
-
-  replication {
-    auto {}
-  }
-
-  labels = {
-    service     = "keycloak"
-    purpose     = "realm-configuration"
-    environment = var.environment
-  }
-}
-
-resource "google_secret_manager_secret_version" "realm_config" {
-  secret      = google_secret_manager_secret.realm_config.id
-  secret_data = file(var.realm_config_file_path)
-}
-
 # Generate arXiv user OAuth2 client secret
 resource "random_password" "arxiv_user_secret" {
   length  = 32
@@ -142,8 +121,10 @@ resource "google_cloud_run_v2_job" "keycloak_setup" {
         }
 
         env {
-          name  = "REALM_CONFIG_SOURCE"
-          value = "secret://projects/${var.gcp_project_id}/secrets/${google_secret_manager_secret.realm_config.secret_id}/versions/latest"
+          name = "REALM_CONFIG_SOURCE"
+          # Fetch realm config from GitHub raw URL
+          # Format: https://raw.githubusercontent.com/arXiv/arxiv-keycloak/{branch}/keycloak_bend/realms/{filename}
+          value = "https://raw.githubusercontent.com/arXiv/arxiv-keycloak/${var.realm_config_github_branch}/keycloak_bend/realms/${var.realm_config_filename != "" ? var.realm_config_filename : "arxiv-realm-gcp-${var.environment}.json"}"
         }
 
         resources {

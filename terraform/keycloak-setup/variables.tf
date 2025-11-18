@@ -14,10 +14,16 @@ variable "environment" {
   type        = string
 }
 
-variable "realm_config_file_path" {
-  description = "Path to the realm configuration JSON file (relative to module root)"
+variable "realm_config_github_branch" {
+  description = "GitHub branch/ref to fetch realm configuration from"
   type        = string
-  default     = "../../keycloak_bend/realms/arxiv-realm-gcp-dev.json"
+  default     = "master"
+}
+
+variable "realm_config_filename" {
+  description = "Realm configuration filename (without path)"
+  type        = string
+  default     = "" # Will be constructed based on environment if empty
 }
 
 variable "setup_job_image" {
