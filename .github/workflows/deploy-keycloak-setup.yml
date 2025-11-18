@@ -176,7 +176,7 @@ jobs:
 
       - name: Get legacy-auth-provider outputs
         run: |
-          LEGACY_AUTH_URI=$(terraform output -raw service_url)
+          LEGACY_AUTH_URI=$(terraform output -raw legacy_auth_provider_url)
           LEGACY_AUTH_API_SECRET_NAME=$(terraform output -raw api_secret_key_secret_name)
 
           TERRAFORM_ARGS="$TERRAFORM_ARGS \
