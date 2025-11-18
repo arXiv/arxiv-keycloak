@@ -1,18 +1,3 @@
-output "keycloak_url" {
-  value       = var.enable_https && length(var.domain_names) > 0 ? "https://${var.domain_names[0]}" : "http://${google_compute_global_address.keycloak_ip.address}"
-  description = "The public URL of the Keycloak service"
-}
-
-output "keycloak_https_url" {
-  value       = var.enable_https && length(var.domain_names) > 0 ? "https://${var.domain_names[0]}" : null
-  description = "The HTTPS URL of the Keycloak service (when HTTPS is enabled)"
-}
-
-output "keycloak_http_url" {
-  value       = "http://${google_compute_global_address.keycloak_ip.address}"
-  description = "The HTTP URL of the Keycloak service"
-}
-
 output "keycloak_ip" {
   value       = google_compute_global_address.keycloak_ip.address
   description = "The public IP address of the Keycloak service"

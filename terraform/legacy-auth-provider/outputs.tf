@@ -3,9 +3,9 @@ output "service_name" {
   description = "The name of the Cloud Run service"
 }
 
-output "service_url" {
+output "legacy_auth_provider_url" {
   value       = google_cloud_run_service.legacy_auth_provider.status[0].url
-  description = "The URL of the Cloud Run service"
+  description = "The URL of the Legacy Auth Provider Cloud Run service"
 }
 
 output "service_account_email" {

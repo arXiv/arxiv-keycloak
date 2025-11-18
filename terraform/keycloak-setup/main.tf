@@ -16,25 +16,10 @@ provider "google" {
   region  = var.gcp_region
 }
 
-# Store realm configuration JSON in Secret Manager
-resource "google_secret_manager_secret" "realm_config" {
-  secret_id = "keycloak-realm-config-${var.environment}"
-  project   = var.gcp_project_id
-
-  replication {
-    auto {}
-  }
-
-  labels = {
-    service     = "keycloak"
-    purpose     = "realm-configuration"
-    environment = var.environment
-  }
-}
-
-resource "google_secret_manager_secret_version" "realm_config" {
-  secret      = google_secret_manager_secret.realm_config.id
-  secret_data = file(var.realm_config_file_path)
+# Generate arXiv user OAuth2 client secret
+resource "random_password" "arxiv_user_secret" {
+  length  = 32
+  special = true
 }
 
 # Secret for arXiv user OAuth2 client secret
@@ -55,12 +40,12 @@ resource "google_secret_manager_secret" "arxiv_user_secret" {
 
 resource "google_secret_manager_secret_version" "arxiv_user_secret" {
   secret      = google_secret_manager_secret.arxiv_user_secret.id
-  secret_data = var.arxiv_user_secret
+  secret_data = random_password.arxiv_user_secret.result
 }
 
 # Service Account for the setup job
 resource "google_service_account" "keycloak_setup_sa" {
-  account_id   = "keycloak-setup-${var.environment}"
+  account_id   = "kcup-${var.environment}"
   display_name = "${var.environment} Keycloak Setup Job Service Account"
   project      = var.gcp_project_id
 }
@@ -74,9 +59,13 @@ resource "google_project_iam_member" "setup_sa_secret_accessor" {
 
 # Cloud Run Job for Keycloak realm setup
 resource "google_cloud_run_v2_job" "keycloak_setup" {
-  name     = "keycloak-realm-setup-${var.environment}"
-  location = var.gcp_region
-  project  = var.gcp_project_id
+  name                = "keycloak-realm-setup-${var.environment}"
+  location            = var.gcp_region
+  project             = var.gcp_project_id
+  deletion_protection = false
+
+  # Ensure IAM permissions are granted before creating the job
+  depends_on = [google_project_iam_member.setup_sa_secret_accessor]
 
   template {
     template {
@@ -94,7 +83,7 @@ resource "google_cloud_run_v2_job" "keycloak_setup" {
 
         env {
           name = "KC_ADMIN_PASSWORD"
-          value_from {
+          value_source {
             secret_key_ref {
               secret  = var.keycloak_admin_password_secret_name
               version = "latest"
@@ -104,7 +93,7 @@ resource "google_cloud_run_v2_job" "keycloak_setup" {
 
         env {
           name = "ARXIV_USER_SECRET"
-          value_from {
+          value_source {
             secret_key_ref {
               secret  = google_secret_manager_secret.arxiv_user_secret.secret_id
               version = "latest"
@@ -114,7 +103,7 @@ resource "google_cloud_run_v2_job" "keycloak_setup" {
 
         env {
           name = "LEGACY_AUTH_API_TOKEN"
-          value_from {
+          value_source {
             secret_key_ref {
               secret  = var.legacy_auth_api_token_secret_name
               version = "latest"
@@ -133,8 +122,10 @@ resource "google_cloud_run_v2_job" "keycloak_setup" {
         }
 
         env {
-          name  = "REALM_CONFIG_SOURCE"
-          value = "secret://projects/${var.gcp_project_id}/secrets/${google_secret_manager_secret.realm_config.secret_id}/versions/latest"
+          name = "REALM_CONFIG_SOURCE"
+          # Fetch realm config from GitHub raw URL
+          # Format: https://raw.githubusercontent.com/arXiv/arxiv-keycloak/{branch}/keycloak_bend/realms/{filename}
+          value = "https://raw.githubusercontent.com/arXiv/arxiv-keycloak/${var.realm_config_github_branch}/keycloak_bend/realms/${var.realm_config_filename != "" ? var.realm_config_filename : "arxiv-realm-gcp-${var.environment}.json"}"
         }
 
         resources {
@@ -159,9 +150,9 @@ resource "null_resource" "trigger_setup_job" {
   count = var.auto_trigger_setup ? 1 : 0
 
   triggers = {
-    job_id            = google_cloud_run_v2_job.keycloak_setup.id
-    realm_config_hash = filesha256(var.realm_config_file_path)
-    keycloak_url      = var.keycloak_url
+    job_id                     = google_cloud_run_v2_job.keycloak_setup.id
+    realm_config_github_branch = var.realm_config_github_branch
+    keycloak_url               = var.keycloak_url
   }
 
   provisioner "local-exec" {
@@ -175,7 +166,6 @@ resource "null_resource" "trigger_setup_job" {
 
   depends_on = [
     google_cloud_run_v2_job.keycloak_setup,
-    google_secret_manager_secret_version.realm_config,
     google_secret_manager_secret_version.arxiv_user_secret,
   ]
 }

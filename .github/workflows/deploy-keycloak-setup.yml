@@ -28,7 +28,7 @@ on:
         description: "Automatically execute the setup job after creation"
         required: false
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: read
@@ -77,40 +77,49 @@ jobs:
           fi
 
           REGION="${{ vars.GCP_REGION || 'us-central1' }}"
-          echo "ENVIRONMENT=$ENV_NAME" >> $GITHUB_ENV
+          ENVIRONMENT=$ENV_NAME
+          echo "ENVIRONMENT=$ENVIRONMENT" >> $GITHUB_ENV
           echo "REGION=$REGION" >> $GITHUB_ENV
 
-          # Set auto_trigger_setup based on input (default: false for safety)
-          AUTO_TRIGGER="${{ inputs.auto_trigger || 'false' }}"
+          # Set auto_trigger_setup based on input (default: true to run setup automatically)
+          AUTO_TRIGGER="${{ inputs.auto_trigger || 'true' }}"
           echo "AUTO_TRIGGER_SETUP=$AUTO_TRIGGER" >> $GITHUB_ENV
+
+          # Determine GitHub branch for realm config
+          # Use current branch or fall back to master for production
+          if [ "${{ github.event_name }}" = "push" ]; then
+            GITHUB_BRANCH="${{ github.ref_name }}"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            GITHUB_BRANCH="${{ github.ref_name }}"
+          else
+            GITHUB_BRANCH="master"
+          fi
 
           # Set project name and terraform bucket based on environment
           if [ "$ENV_NAME" = "production" ] || [ "$ENV_NAME" = "prod" ]; then
-            echo "PROJECT_NAME=arxiv-production" >> $GITHUB_ENV
-            echo "TERRAFORM_BUCKET=prod-arxiv-terraform-state" >> $GITHUB_ENV
+            PROJECT_NAME=arxiv-production
+            TERRAFORM_BUCKET=prod-arxiv-terraform-state
             TERRAFORM_ARGS="-var-file=envs/prod.tfvars"
-            REALM_CONFIG_FILE="../../keycloak_bend/realms/arxiv-realm-gcp-prod.json"
           elif [ "$ENV_NAME" = "staging" ] || [ "$ENV_NAME" = "stage" ]; then
-            echo "PROJECT_NAME=arxiv-stage" >> $GITHUB_ENV
-            echo "TERRAFORM_BUCKET=stage-arxiv-terraform-state" >> $GITHUB_ENV
+            PROJECT_NAME=arxiv-stage
+            TERRAFORM_BUCKET=stage-arxiv-terraform-state
             TERRAFORM_ARGS="-var-file=envs/staging.tfvars"
-            REALM_CONFIG_FILE="../../keycloak_bend/realms/arxiv-realm-gcp-staging.json"
           elif [ "$ENV_NAME" = "development" ] || [ "$ENV_NAME" = "develop" ] || [ "$ENV_NAME" = "dev" ]; then
-            echo "PROJECT_NAME=arxiv-development" >> $GITHUB_ENV
-            echo "TERRAFORM_BUCKET=dev-arxiv-terraform-state" >> $GITHUB_ENV
+            PROJECT_NAME=arxiv-development
+            TERRAFORM_BUCKET=dev-arxiv-terraform-state
             TERRAFORM_ARGS="-var-file=envs/dev.tfvars"
-            REALM_CONFIG_FILE="../../keycloak_bend/realms/arxiv-realm-gcp-dev.json"
           else
             # For custom environments, use the environment name as project name
-            echo "PROJECT_NAME=$ENV_NAME" >> $GITHUB_ENV
-            echo "TERRAFORM_BUCKET=$ENV_NAME-arxiv-terraform-state" >> $GITHUB_ENV
-            REALM_CONFIG_FILE="../../keycloak_bend/realms/arxiv-realm-gcp-dev.json"
+            PROJECT_NAME=$ENV_NAME
+            TERRAFORM_BUCKET=$ENV_NAME-arxiv-terraform-state
             TERRAFORM_ARGS="-var-file=envs/dev.tfvars \
               -var=\"environment=$ENV_NAME\" \
               -var=\"gcp_project_id=$ENV_NAME\" \
               -var=\"gcp_region=$REGION\" \
-              -var=\"realm_config_file_path=$REALM_CONFIG_FILE\""
+              -var=\"realm_config_github_branch=$GITHUB_BRANCH\""
           fi
+          echo "PROJECT_NAME=$PROJECT_NAME" >> $GITHUB_ENV
+          echo "TERRAFORM_BUCKET=$TERRAFORM_BUCKET" >> $GITHUB_ENV
 
           # Add setup_job_image and auto_trigger_setup to TERRAFORM_ARGS for all environments
           TERRAFORM_ARGS="$TERRAFORM_ARGS \
@@ -156,7 +165,7 @@ jobs:
 
       - name: Get keycloak-service outputs
         run: |
-          KEYCLOAK_URL=$(terraform output -raw keycloak_url)
+          KEYCLOAK_URL=$(terraform output -raw keycloak_service_url)
           KEYCLOAK_ADMIN_SECRET=$(terraform output -raw keycloak_admin_password_secret_name)
 
           TERRAFORM_ARGS="$TERRAFORM_ARGS \
@@ -173,10 +182,13 @@ jobs:
 
       - name: Get legacy-auth-provider outputs
         run: |
-          LEGACY_AUTH_URI=$(terraform output -raw service_url)
+          LEGACY_AUTH_URI=$(terraform output -raw legacy_auth_provider_url)
           LEGACY_AUTH_API_SECRET_NAME=$(terraform output -raw api_secret_key_secret_name)
-
+          #
+          # NOTE:  realm_config_filename is hard coded here arxiv-realm.json
+          #
           TERRAFORM_ARGS="$TERRAFORM_ARGS \
+            -var=\"realm_config_filename=arxiv-realm.json\" \
             -var=\"legacy_auth_uri=$LEGACY_AUTH_URI\" \
             -var=\"legacy_auth_api_token_secret_name=$LEGACY_AUTH_API_SECRET_NAME\""
 
@@ -185,29 +197,39 @@ jobs:
           echo "Legacy Auth API Secret Name: $LEGACY_AUTH_API_SECRET_NAME"
         working-directory: terraform/legacy-auth-provider
 
-      - name: Add arxiv_user_secret from GitHub environment
-        run: |
-          # Get arxiv_user_secret from GitHub environment secrets
-          ARXIV_USER_SECRET="${{ secrets.ARXIV_USER_SECRET }}"
-
-          if [ -z "$ARXIV_USER_SECRET" ]; then
-            echo "Error: ARXIV_USER_SECRET not found in GitHub environment secrets"
-            echo "Please add ARXIV_USER_SECRET to the ${{ inputs.env }} environment secrets"
-            exit 1
-          fi
-
-          TERRAFORM_ARGS="$TERRAFORM_ARGS \
-            -var=\"arxiv_user_secret=$ARXIV_USER_SECRET\""
-
-          echo "TERRAFORM_ARGS=$TERRAFORM_ARGS" >> $GITHUB_ENV
-
       - name: Initialize keycloak-setup remote backend
         run: terraform init -backend-config="bucket=${{ env.TERRAFORM_BUCKET }}"
         working-directory: terraform/keycloak-setup
 
+      - name: Untaint job resource if tainted
+        run: |
+          # Check if the job resource is tainted
+          if terraform show -json | grep -q '"google_cloud_run_v2_job.keycloak_setup".*"tainted":true'; then
+            echo "Job resource is tainted, removing taint to allow in-place update..."
+            terraform untaint google_cloud_run_v2_job.keycloak_setup || echo "Resource not found or already untainted"
+          else
+            echo "Job resource is not tainted, continuing..."
+          fi
+        working-directory: terraform/keycloak-setup
+        continue-on-error: true
+
       - name: Apply
         run: terraform apply ${{ env.TERRAFORM_ARGS }} -auto-approve
         working-directory: terraform/keycloak-setup
+
+      - name: Execute setup job
+        if: env.AUTO_TRIGGER_SETUP == 'true'
+        run: |
+          echo "=========================================="
+          echo "Executing Keycloak setup job..."
+          echo "=========================================="
+          gcloud run jobs execute keycloak-realm-setup-${{ env.ENVIRONMENT }} \
+            --region ${{ env.REGION }} \
+            --project ${{ env.PROJECT_NAME }} \
+            --wait
+          echo ""
+          echo "Setup job execution completed!"
+          echo "=========================================="
 
       - name: Show setup job execution instructions
         if: env.AUTO_TRIGGER_SETUP == 'false'
@@ -223,4 +245,5 @@ jobs:
           echo "    --region ${{ env.REGION }} \\"
           echo "    --project ${{ env.PROJECT_NAME }}"
           echo ""
+          echo "Or re-run this workflow with 'auto_trigger=true'"
           echo "=========================================="

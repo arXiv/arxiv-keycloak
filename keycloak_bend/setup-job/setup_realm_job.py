@@ -62,10 +62,10 @@ def wait_for_keycloak(keycloak_url: str, timeout: int = 600, interval: int = 5) 
                 logger.info(f"Keycloak is ready! (HTTP {response.status_code} after {elapsed:.1f}s, {attempt} attempts)")
                 return True
             else:
-                logger.debug(f"Attempt {attempt}: HTTP {response.status_code}, retrying in {interval}s...")
+                logger.info(f"Attempt {attempt}: HTTP {response.status_code}, retrying in {interval}s...")
 
         except requests.exceptions.RequestException as e:
-            logger.debug(f"Attempt {attempt}: Connection failed ({type(e).__name__}), retrying in {interval}s...")
+            logger.info(f"Attempt {attempt}: Connection failed ({type(e).__name__}), retrying in {interval}s...")
 
         # Wait before next attempt
         time.sleep(interval)
@@ -97,6 +97,7 @@ def get_realm_config() -> dict:
     Get realm configuration from environment-specified source.
 
     Supports:
+    - HTTP/HTTPS URL: https://github.com/.../realm.json
     - Secret Manager: secret://projects/PROJECT/secrets/NAME/versions/VERSION
     - Local file (for testing): file:///path/to/realm.json
 
@@ -109,7 +110,21 @@ def get_realm_config() -> dict:
         logger.error("REALM_CONFIG_SOURCE environment variable not set")
         sys.exit(1)
 
-    if source.startswith('secret://'):
+    if source.startswith('https://') or source.startswith('http://'):
+        # Fetch from HTTP/HTTPS URL (e.g., GitHub raw)
+        logger.info(f"Fetching realm configuration from URL: {source}")
+        try:
+            response = requests.get(source, timeout=30)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            logger.error(f"Failed to fetch realm config from URL: {e}")
+            sys.exit(1)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse realm config JSON from URL: {e}")
+            sys.exit(1)
+
+    elif source.startswith('secret://'):
         # Remove secret:// prefix and fetch from Secret Manager
         secret_path = source.replace('secret://', '')
         return fetch_realm_config_from_secret_manager(secret_path)
@@ -123,7 +138,7 @@ def get_realm_config() -> dict:
 
     else:
         logger.error(f"Unsupported REALM_CONFIG_SOURCE format: {source}")
-        logger.error("Supported formats: secret://projects/..., file://...")
+        logger.error("Supported formats: https://..., secret://projects/..., file://...")
         sys.exit(1)
 
 

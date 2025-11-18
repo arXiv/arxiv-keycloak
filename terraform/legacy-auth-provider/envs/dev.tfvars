@@ -21,12 +21,12 @@ container_concurrency = 2
 cpu_boost        = "true"
 session_affinity = "true"
 
-# Cloud SQL instance (arxiv-db-dev)
-cloudsql_instance = "arxiv-development:us-east4:arxiv-db-dev"
-
 # Secrets
 # CLASSIC_DB_URI secret name (must exist before deployment)
 classic_db_uri_secret_name = "browse-sqlalchemy-db-uri"
+
+# Cloud SQL instance
+cloudsql_instance = "arxiv-development:us-east4:arxiv-db-dev"
 
 # API_SECRET_KEY (JWT) - Auto-generated if not provided
 # Leave empty to auto-generate a secure random secret
