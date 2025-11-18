@@ -66,7 +66,7 @@ resource "google_secret_manager_secret_version" "arxiv_user_secret" {
 
 # Service Account for the setup job
 resource "google_service_account" "keycloak_setup_sa" {
-  account_id   = "keycloak-setup-${var.environment}"
+  account_id   = "kcup-${var.environment}"
   display_name = "${var.environment} Keycloak Setup Job Service Account"
   project      = var.gcp_project_id
 }
