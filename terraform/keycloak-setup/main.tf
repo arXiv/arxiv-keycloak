@@ -59,9 +59,10 @@ resource "google_project_iam_member" "setup_sa_secret_accessor" {
 
 # Cloud Run Job for Keycloak realm setup
 resource "google_cloud_run_v2_job" "keycloak_setup" {
-  name     = "keycloak-realm-setup-${var.environment}"
-  location = var.gcp_region
-  project  = var.gcp_project_id
+  name                = "keycloak-realm-setup-${var.environment}"
+  location            = var.gcp_region
+  project             = var.gcp_project_id
+  deletion_protection = false
 
   # Ensure IAM permissions are granted before creating the job
   depends_on = [google_project_iam_member.setup_sa_secret_accessor]
