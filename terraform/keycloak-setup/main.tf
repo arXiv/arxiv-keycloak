@@ -84,6 +84,9 @@ resource "google_cloud_run_v2_job" "keycloak_setup" {
   location = var.gcp_region
   project  = var.gcp_project_id
 
+  # Ensure IAM permissions are granted before creating the job
+  depends_on = [google_project_iam_member.setup_sa_secret_accessor]
+
   template {
     template {
       service_account = google_service_account.keycloak_setup_sa.email
