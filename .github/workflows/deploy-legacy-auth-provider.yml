@@ -99,7 +99,7 @@ jobs:
 
           # Set Cloud SQL instance - format: {project-name}:{region}:master-db
           # Use REGION for Cloud SQL
-          CLOUDSQL_INSTANCE="${PROJECT_NAME}:{REGION}:master-db"
+          CLOUDSQL_INSTANCE="${PROJECT_NAME}:${REGION}:master-db"
           TERRAFORM_ARGS="$TERRAFORM_ARGS -var=\"cloudsql_instance=$CLOUDSQL_INSTANCE\""
 
           # Add legacy_auth_image to TERRAFORM_ARGS for all environments
