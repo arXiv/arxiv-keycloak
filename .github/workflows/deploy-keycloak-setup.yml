@@ -198,21 +198,16 @@ jobs:
         run: terraform init -backend-config="bucket=${{ env.TERRAFORM_BUCKET }}"
         working-directory: terraform/keycloak-setup
 
-      - name: Disable deletion protection on existing job (if exists)
+      - name: Untaint job resource if tainted
         run: |
-          JOB_NAME="keycloak-realm-setup-${{ env.ENVIRONMENT }}"
-
-          # Check if job exists
-          if gcloud run jobs describe $JOB_NAME --region ${{ env.REGION }} --project ${{ env.PROJECT_NAME }} &>/dev/null; then
-            echo "Job $JOB_NAME exists, disabling deletion protection..."
-            gcloud run jobs update $JOB_NAME \
-              --region ${{ env.REGION }} \
-              --project ${{ env.PROJECT_NAME }} \
-              --no-deletion-protection \
-              --quiet || echo "Failed to disable deletion protection, continuing anyway..."
+          # Check if the job resource is tainted
+          if terraform show -json | grep -q '"google_cloud_run_v2_job.keycloak_setup".*"tainted":true'; then
+            echo "Job resource is tainted, removing taint to allow in-place update..."
+            terraform untaint google_cloud_run_v2_job.keycloak_setup || echo "Resource not found or already untainted"
           else
-            echo "Job $JOB_NAME does not exist, skipping..."
+            echo "Job resource is not tainted, continuing..."
           fi
+        working-directory: terraform/keycloak-setup
         continue-on-error: true
 
       - name: Apply
