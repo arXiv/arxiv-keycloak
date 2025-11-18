@@ -79,27 +79,22 @@ jobs:
             echo "PROJECT_NAME=arxiv-production" >> $GITHUB_ENV
             echo "TERRAFORM_BUCKET=prod-arxiv-terraform-state" >> $GITHUB_ENV
             TERRAFORM_ARGS="-var-file=envs/prod.tfvars"
-            CLOUDSQL_INSTANCE="arxiv-production:us-east4:arxiv-db-prod"
           elif [ "$ENV_NAME" = "staging" ] || [ "$ENV_NAME" = "stage" ]; then
             echo "PROJECT_NAME=arxiv-stage" >> $GITHUB_ENV
             echo "TERRAFORM_BUCKET=stage-arxiv-terraform-state" >> $GITHUB_ENV
             TERRAFORM_ARGS="-var-file=envs/staging.tfvars"
-            CLOUDSQL_INSTANCE="arxiv-stage:us-east4:arxiv-db-stage"
           elif [ "$ENV_NAME" = "development" ] || [ "$ENV_NAME" = "develop" ] || [ "$ENV_NAME" = "dev" ]; then
             echo "PROJECT_NAME=arxiv-development" >> $GITHUB_ENV
             echo "TERRAFORM_BUCKET=dev-arxiv-terraform-state" >> $GITHUB_ENV
             TERRAFORM_ARGS="-var-file=envs/dev.tfvars"
-            CLOUDSQL_INSTANCE="arxiv-development:us-east4:arxiv-db-dev"
           else
             # For custom environments, use the environment name as project name
             echo "PROJECT_NAME=$ENV_NAME" >> $GITHUB_ENV
             echo "TERRAFORM_BUCKET=$ENV_NAME-arxiv-terraform-state" >> $GITHUB_ENV
-            CLOUDSQL_INSTANCE="$ENV_NAME:us-east4:arxiv-db-dev"
             TERRAFORM_ARGS="-var-file=envs/dev.tfvars \
               -var=\"environment=$ENV_NAME\" \
               -var=\"gcp_project_id=$ENV_NAME\" \
-              -var=\"gcp_region=$REGION\" \
-              -var=\"cloudsql_instance=$CLOUDSQL_INSTANCE\""
+              -var=\"gcp_region=$REGION\""
           fi
 
           # Add legacy_auth_image to TERRAFORM_ARGS for all environments
