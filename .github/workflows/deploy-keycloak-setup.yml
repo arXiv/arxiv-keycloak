@@ -184,8 +184,11 @@ jobs:
         run: |
           LEGACY_AUTH_URI=$(terraform output -raw legacy_auth_provider_url)
           LEGACY_AUTH_API_SECRET_NAME=$(terraform output -raw api_secret_key_secret_name)
-
+          #
+          # NOTE:  realm_config_filename is hard coded here arxiv-realm.json
+          #
           TERRAFORM_ARGS="$TERRAFORM_ARGS \
+            -var=\"realm_config_filename=arxiv-realm.json\" \
             -var=\"legacy_auth_uri=$LEGACY_AUTH_URI\" \
             -var=\"legacy_auth_api_token_secret_name=$LEGACY_AUTH_API_SECRET_NAME\""
 
