@@ -165,7 +165,7 @@ jobs:
 
       - name: Get keycloak-service outputs
         run: |
-          KEYCLOAK_URL=$(terraform output -raw keycloak_url)
+          KEYCLOAK_URL=$(terraform output -raw keycloak_service_url)
           KEYCLOAK_ADMIN_SECRET=$(terraform output -raw keycloak_admin_password_secret_name)
 
           TERRAFORM_ARGS="$TERRAFORM_ARGS \
