@@ -149,9 +149,9 @@ resource "null_resource" "trigger_setup_job" {
   count = var.auto_trigger_setup ? 1 : 0
 
   triggers = {
-    job_id            = google_cloud_run_v2_job.keycloak_setup.id
-    realm_config_hash = filesha256(var.realm_config_file_path)
-    keycloak_url      = var.keycloak_url
+    job_id                     = google_cloud_run_v2_job.keycloak_setup.id
+    realm_config_github_branch = var.realm_config_github_branch
+    keycloak_url               = var.keycloak_url
   }
 
   provisioner "local-exec" {
@@ -165,7 +165,6 @@ resource "null_resource" "trigger_setup_job" {
 
   depends_on = [
     google_cloud_run_v2_job.keycloak_setup,
-    google_secret_manager_secret_version.realm_config,
     google_secret_manager_secret_version.arxiv_user_secret,
   ]
 }
