@@ -198,6 +198,23 @@ jobs:
         run: terraform init -backend-config="bucket=${{ env.TERRAFORM_BUCKET }}"
         working-directory: terraform/keycloak-setup
 
+      - name: Disable deletion protection on existing job (if exists)
+        run: |
+          JOB_NAME="keycloak-realm-setup-${{ env.ENVIRONMENT }}"
+
+          # Check if job exists
+          if gcloud run jobs describe $JOB_NAME --region ${{ env.REGION }} --project ${{ env.PROJECT_NAME }} &>/dev/null; then
+            echo "Job $JOB_NAME exists, disabling deletion protection..."
+            gcloud run jobs update $JOB_NAME \
+              --region ${{ env.REGION }} \
+              --project ${{ env.PROJECT_NAME }} \
+              --no-deletion-protection \
+              --quiet || echo "Failed to disable deletion protection, continuing anyway..."
+          else
+            echo "Job $JOB_NAME does not exist, skipping..."
+          fi
+        continue-on-error: true
+
       - name: Apply
         run: terraform apply ${{ env.TERRAFORM_ARGS }} -auto-approve
         working-directory: terraform/keycloak-setup
