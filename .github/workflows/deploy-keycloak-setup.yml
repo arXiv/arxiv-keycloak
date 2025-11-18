@@ -77,7 +77,8 @@ jobs:
           fi
 
           REGION="${{ vars.GCP_REGION || 'us-central1' }}"
-          echo "ENVIRONMENT=$ENV_NAME" >> $GITHUB_ENV
+          ENVIRONMENT=$ENV_NAME
+          echo "ENVIRONMENT=$ENVIRONMENT" >> $GITHUB_ENV
           echo "REGION=$REGION" >> $GITHUB_ENV
 
           # Set auto_trigger_setup based on input (default: false for safety)
@@ -86,24 +87,24 @@ jobs:
 
           # Set project name and terraform bucket based on environment
           if [ "$ENV_NAME" = "production" ] || [ "$ENV_NAME" = "prod" ]; then
-            echo "PROJECT_NAME=arxiv-production" >> $GITHUB_ENV
-            echo "TERRAFORM_BUCKET=prod-arxiv-terraform-state" >> $GITHUB_ENV
+            PROJECT_NAME=arxiv-production
+            TERRAFORM_BUCKET=prod-arxiv-terraform-state
             TERRAFORM_ARGS="-var-file=envs/prod.tfvars"
             REALM_CONFIG_FILE="../../keycloak_bend/realms/arxiv-realm-gcp-prod.json"
           elif [ "$ENV_NAME" = "staging" ] || [ "$ENV_NAME" = "stage" ]; then
-            echo "PROJECT_NAME=arxiv-stage" >> $GITHUB_ENV
-            echo "TERRAFORM_BUCKET=stage-arxiv-terraform-state" >> $GITHUB_ENV
+            PROJECT_NAME=arxiv-stage
+            TERRAFORM_BUCKET=stage-arxiv-terraform-state
             TERRAFORM_ARGS="-var-file=envs/staging.tfvars"
             REALM_CONFIG_FILE="../../keycloak_bend/realms/arxiv-realm-gcp-staging.json"
           elif [ "$ENV_NAME" = "development" ] || [ "$ENV_NAME" = "develop" ] || [ "$ENV_NAME" = "dev" ]; then
-            echo "PROJECT_NAME=arxiv-development" >> $GITHUB_ENV
-            echo "TERRAFORM_BUCKET=dev-arxiv-terraform-state" >> $GITHUB_ENV
+            PROJECT_NAME=arxiv-development
+            TERRAFORM_BUCKET=dev-arxiv-terraform-state
             TERRAFORM_ARGS="-var-file=envs/dev.tfvars"
             REALM_CONFIG_FILE="../../keycloak_bend/realms/arxiv-realm-gcp-dev.json"
           else
             # For custom environments, use the environment name as project name
-            echo "PROJECT_NAME=$ENV_NAME" >> $GITHUB_ENV
-            echo "TERRAFORM_BUCKET=$ENV_NAME-arxiv-terraform-state" >> $GITHUB_ENV
+            PROJECT_NAME=$ENV_NAME
+            TERRAFORM_BUCKET=$ENV_NAME-arxiv-terraform-state
             REALM_CONFIG_FILE="../../keycloak_bend/realms/arxiv-realm-gcp-dev.json"
             TERRAFORM_ARGS="-var-file=envs/dev.tfvars \
               -var=\"environment=$ENV_NAME\" \
@@ -111,6 +112,8 @@ jobs:
               -var=\"gcp_region=$REGION\" \
               -var=\"realm_config_file_path=$REALM_CONFIG_FILE\""
           fi
+          echo "PROJECT_NAME=$PROJECT_NAME" >> $GITHUB_ENV
+          echo "TERRAFORM_BUCKET=$TERRAFORM_BUCKET" >> $GITHUB_ENV
 
           # Add setup_job_image and auto_trigger_setup to TERRAFORM_ARGS for all environments
           TERRAFORM_ARGS="$TERRAFORM_ARGS \
