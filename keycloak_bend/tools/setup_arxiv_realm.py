@@ -6,14 +6,14 @@ import logging
 import os
 import string
 from typing import Optional
+import urllib3
+urllib3.disable_warnings()
 
 from keycloak import KeycloakAdmin, KeycloakError, KeycloakPostError
 import argparse
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
 
 def to_alnums(num: int) -> str:
     chars = string.ascii_letters + string.digits
@@ -36,6 +36,7 @@ class KeycloakSetup:
         self.client_secret = kwargs.pop('client_secret')
         self.legacy_auth_token = kwargs.pop('legacy_auth_token', None)
         self.legacy_auth_uri = kwargs.pop('legacy_auth_uri', None)
+        self.smtp_password = kwargs.pop('smtp_password', '')
         self.admin = KeycloakAdmin(*args, **kwargs)
 
     @property
@@ -195,12 +196,22 @@ class KeycloakSetup:
         for key in self.realm.keys():
             if key not in transfers:
                 del realm[key]
-        self.admin.update_realm(self.realm_name, realm)
+        for key, value in realm.items():
+            realmling = {key: value}
+            try:
+                self.admin.update_realm(self.realm_name, realmling)
+            except KeycloakError as e:
+                logger.error(f"Error updating realm setting {key}: {e}")
+                pass
+        # self.admin.update_realm(self.realm_name, realm)
 
 
     def restore_smtp_server(self):
         # self.admin
-        self._update_toplevel_setting('smtpServer')
+        name = 'smtpServer'
+        smtp_server = {name: self.realm[name]}
+        smtp_server['password'] = self.smtp_password
+        self.admin.update_realm(self.realm_name, {name, smtp_server})
         pass
 
     def restore_client(self, client_id: str, client_secret: str):
@@ -296,11 +307,14 @@ class KeycloakSetup:
 
     def run(self):
         self.restore_realm()
+
+        self.restore_legacy_auth_provider()
+        # realm settings contain the user federation setting and thus, setting up the legacy auth provider
+        # needs to go first
         self.restore_realm_settings()
         self.restore_roles()
         self.restore_scopes()
         self.restore_smtp_server()
-        self.restore_legacy_auth_provider()
         self.restore_pubsub()
         self.restore_client("arxiv-user", self.client_secret)
         self.restore_client("arxiv-user-migration", self.client_secret)
@@ -312,12 +326,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--realm', type=str, default='arxiv')
-    parser.add_argument('--source', type=str, default=os.path.expanduser(os.path.join(keycloak_bend, "realms", "arxiv-realm-localhost.json")))
+    parser.add_argument('--source', type=str, default=os.path.expanduser(os.path.join(keycloak_bend, "realms", "arxiv-realm.json")))
     parser.add_argument('--server', type=str, default=os.environ.get("KEYCLOAK_SERVER_URL", 'http://localhost:3033'))
     parser.add_argument('--admin-secret', type=str, default='')
     parser.add_argument('--arxiv-user-secret', type=str, default='')
     parser.add_argument('--legacy-auth-token', type=str, default='', help="bearer token for legacy auth api")
     parser.add_argument('--legacy-auth-uri', type=str, default='', help="legacy auth provider URI")
+    parser.add_argument('--smtp-password', type=str, default='', help="SMTP sending auth")
 
     args = parser.parse_args()
 
@@ -346,5 +361,6 @@ if __name__ == '__main__':
         client_secret=client_secret,
         legacy_auth_token=args.legacy_auth_token,
         legacy_auth_uri=args.legacy_auth_uri,
+        smtp_password=args.smtp_password,
     )
     admin.run()

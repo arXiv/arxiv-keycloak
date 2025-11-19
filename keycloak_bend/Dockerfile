@@ -1,4 +1,4 @@
-FROM quay.io/keycloak/keycloak:26.1.2
+FROM quay.io/keycloak/keycloak:26.4.5
 
 # ARG CERT_DIR
 
