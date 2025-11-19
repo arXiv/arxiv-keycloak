@@ -46,7 +46,7 @@ class KeycloakSetup:
         realm_name = self.realm_name
         payload = {
             "realm": realm_name,
-            "displayName": realm['displayName'],
+            "displayName": self.realm['displayName'],
             "enabled": True  # Enable the realm
         }
         try:
@@ -290,7 +290,7 @@ class KeycloakSetup:
             try:
                 self.admin.update_realm(realm_name, payload=realm_config)
                 logger.info(f"Event listeners updated successfully: {changed!r}")
-            except KeycloakError as e:
+            except KeycloakError as _e:
                 logger.error(f"Event listeners update failed: {changed!r}")
 
 
