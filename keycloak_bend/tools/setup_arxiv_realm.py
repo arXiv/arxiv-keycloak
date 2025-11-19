@@ -209,9 +209,9 @@ class KeycloakSetup:
     def restore_smtp_server(self):
         # self.admin
         name = 'smtpServer'
-        smtp_server = {name: self.realm[name]}
-        smtp_server['password'] = self.smtp_password
-        self.admin.update_realm(self.realm_name, {name, smtp_server})
+        payload = self.realm[name]
+        payload['password'] = self.smtp_password
+        self.admin.update_realm(self.realm_name, {name: payload})
         pass
 
     def restore_client(self, client_id: str, client_secret: str):

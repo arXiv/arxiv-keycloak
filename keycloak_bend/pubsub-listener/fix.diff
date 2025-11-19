@@ -1,25 +1,32 @@
-*** keycloak-pubsub-listener/pom.xml	2025-03-28 15:28:08.360064513 -0400
---- keycloak-pubsub-listener.fixed/pom.xml	2025-03-28 15:27:05.663503385 -0400
-***************
-*** 10,19 ****
-  
-    <name>Keycloak: Event Publisher to Google Cloud Pub Sub</name>
-    <properties>
-!     <keycloak.version>22.0.1</keycloak.version>
-      <version.compiler.maven.plugin>3.8.1</version.compiler.maven.plugin>
-! 
-!     <jaxb-api.version>2.3.1</jaxb-api.version>
-      <apache-commons-text.version>1.10.0</apache-commons-text.version>
-      <slack-api-client.version>1.30.0</slack-api-client.version>
-      <git-code-format-maven-plugin.version>4.2</git-code-format-maven-plugin.version>
---- 10,18 ----
-  
-    <name>Keycloak: Event Publisher to Google Cloud Pub Sub</name>
-    <properties>
-!     <keycloak.version>26.1.2</keycloak.version>
-      <version.compiler.maven.plugin>3.8.1</version.compiler.maven.plugin>
-!     <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
-      <apache-commons-text.version>1.10.0</apache-commons-text.version>
-      <slack-api-client.version>1.30.0</slack-api-client.version>
-      <git-code-format-maven-plugin.version>4.2</git-code-format-maven-plugin.version>
-
+diff --git a/pom.xml b/pom.xml
+index be07ac0..f64abdf 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -10,10 +10,9 @@
+ 
+   <name>Keycloak: Event Publisher to Google Cloud Pub Sub</name>
+   <properties>
+-    <keycloak.version>22.0.1</keycloak.version>
++    <keycloak.version>26.4.5</keycloak.version>
+     <version.compiler.maven.plugin>3.8.1</version.compiler.maven.plugin>
+-
+-    <jaxb-api.version>2.3.1</jaxb-api.version>
++    <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
+     <apache-commons-text.version>1.10.0</apache-commons-text.version>
+     <slack-api-client.version>1.30.0</slack-api-client.version>
+     <git-code-format-maven-plugin.version>4.2</git-code-format-maven-plugin.version>
+@@ -68,6 +67,14 @@
+       <version>${jaxb-api.version}</version>
+     </dependency>
+ 
++    <!-- Exclude from fat JAR - Keycloak provides this via Liquibase -->
++    <dependency>
++      <groupId>org.apache.commons</groupId>
++      <artifactId>commons-lang3</artifactId>
++      <version>3.14.0</version>
++      <scope>provided</scope>
++    </dependency>
++
+   </dependencies>
+ 
+   <dependencyManagement>
