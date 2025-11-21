@@ -199,3 +199,4 @@ foo.py
 foo.sql
 keycloak_bend/arxiv-theme/
 \.\#.*
+\.#.*
