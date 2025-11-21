@@ -75,6 +75,17 @@ async def health_check() -> dict:
     result = {"/cloudsql": os.listdir("/cloudsql")}
     result.update({"env": repr(os.environ)})
 
+    csql_readme = "/cloudsql/README"
+    if os.path.exists(csql_readme):
+        try:
+            with open(csql_readme, "r") as f:
+                result.update({"csql_readme": f.read()})
+                pass
+        except Exception as exc:
+            logger.info(csql_readme + ": " + str(exc), exc_info=True)
+            pass
+        pass
+
     try:
         with DatabaseSession() as session:
             states: State = session.query(State).all()
