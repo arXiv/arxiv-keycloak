@@ -62,6 +62,20 @@ resource "google_project_iam_member" "legacy_auth_sa_secret_accessor" {
   member  = "serviceAccount:${google_service_account.legacy_auth_sa.email}"
 }
 
+# Grant Cloud SQL Client access
+resource "google_project_iam_member" "legacy_auth_sa_cloudsql_client" {
+  project = var.gcp_project_id
+  role    = "roles/cloudsql.client"
+  member  = "serviceAccount:${google_service_account.legacy_auth_sa.email}"
+}
+
+# Grant Cloud SQL Viewer access
+resource "google_project_iam_member" "legacy_auth_sa_cloudsql_viewer" {
+  project = var.gcp_project_id
+  role    = "roles/cloudsql.viewer"
+  member  = "serviceAccount:${google_service_account.legacy_auth_sa.email}"
+}
+
 # Cloud Run service
 resource "google_cloud_run_service" "legacy_auth_provider" {
   name     = "legacy-auth-provider"
