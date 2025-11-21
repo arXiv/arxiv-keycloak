@@ -72,7 +72,7 @@ async def validate_user(name: str, pwd: PasswordData, _token: str=Depends(verify
 @app.get("/states", response_model=dict)
 async def health_check() -> dict:
 
-    result = {"/cloudsql": os.listdir("/cloudsql")}
+    result: dict = {"/cloudsql": os.listdir("/cloudsql")}
     result.update({"env": repr(os.environ)})
 
     csql_readme = "/cloudsql/README"
@@ -89,13 +89,19 @@ async def health_check() -> dict:
     try:
         with DatabaseSession() as session:
             states: State = session.query(State).all()
-            result = result.update({state.name: state.value for state in states})
-            logger.info(json.dumps(result, indent=2))
-            return result
 
-    except Exception as e:
+    except Exception as exc1:
         logger.info(json.dumps(result, indent=2))
-        raise HTTPException(status_code=500, detail=str(e) + repr(os.environ))
+        raise HTTPException(status_code=500, detail=str(exc1) + repr(os.environ))
+
+    try:
+        result.update({state.name: state.value for state in states})
+    except Exception as _:
+        logger.info("bogus", exc_info=True)
+        pass
+
+    logger.info(repr(result))
+    return result
 
 
 @asynccontextmanager
