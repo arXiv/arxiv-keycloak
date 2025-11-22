@@ -109,3 +109,9 @@ variable "cloudsql_instance" {
   description = "Cloud SQL instance connection name (format: project:region:instance)"
   type        = string
 }
+
+variable "image_digest" {
+  description = "Docker image digest to force new revision on image changes"
+  type        = string
+  default     = ""
+}

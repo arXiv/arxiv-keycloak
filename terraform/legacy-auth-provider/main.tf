@@ -91,6 +91,7 @@ resource "google_cloud_run_service" "legacy_auth_provider" {
         "run.googleapis.com/cpu-boost"             = var.cpu_boost
         "run.googleapis.com/session-affinity"      = var.session_affinity
         "run.googleapis.com/execution-environment" = "gen2"
+        "client.knative.dev/user-image"            = var.image_digest
       }
     }
 
