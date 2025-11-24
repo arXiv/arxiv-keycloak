@@ -117,7 +117,7 @@ jobs:
   #         cat ./.github/workflows/deploy-keycloak-bend.yml
 
   call-deploy:
-    name: Deploy development ${{ github.ref_name }} ${{ github.sha }}
+    name: Deploy development development ${{ github.sha }}
     uses: ./.github/workflows/deploy-keycloak-bend.yml
     with:
       environment: development
