@@ -39,6 +39,7 @@ env:
 
 jobs:
   format-check:
+    if: github.event_name != 'workflow_call'
     runs-on: ubuntu-latest
 
     steps:
@@ -57,10 +58,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: format-check
+    if: >
+      (needs.format-check.result == 'success' || needs.format-check.result == 'skipped') &&
+      (github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch') &&
+      ((inputs.env != 'production' && inputs.env != 'prod' && inputs.env != 'staging' && inputs.env != 'stage') || inputs.image_tag != 'latest')
     environment: ${{ inputs.env }}
-    # if: >
-    #   (github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch') &&
-    #   ((inputs.env != 'production' && inputs.env != 'prod' && inputs.env != 'staging' && inputs.env != 'stage') || inputs.image_tag != 'latest')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
