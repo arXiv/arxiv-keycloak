@@ -60,3 +60,60 @@ resource "google_secret_manager_secret_version" "keycloak_pubsub_credentials" {
   secret_data = google_service_account_key.keycloak_pubsub_key.private_key
   # Note: private_key is already base64-encoded by Google
 }
+
+# Subscription to the Keycloak events topic
+resource "google_pubsub_subscription" "keycloak_arxiv_events_sub" {
+  name  = "keycloak-arxiv-events-sub"
+  topic = google_pubsub_topic.keycloak-arxiv-events.name
+}
+
+# Service account for consuming Keycloak events
+resource "google_service_account" "keycloak_event_subscriber_sa" {
+  account_id   = "keycloak-event-subscriber-sa"
+  display_name = "Keycloak Event Subscriber"
+  description  = "Service account for consuming Keycloak audit events from Pub/Sub"
+}
+
+# Create service account key for subscriber
+resource "google_service_account_key" "keycloak_subscriber_key" {
+  service_account_id = google_service_account.keycloak_event_subscriber_sa.name
+}
+
+# Store subscriber key in Secret Manager
+resource "google_secret_manager_secret" "keycloak_subscriber_credentials" {
+  secret_id = "keycloak-event-subscriber-sa"
+
+  replication {
+    auto {}
+  }
+
+  labels = {
+    purpose = "keycloak-subscriber-credentials"
+  }
+}
+
+resource "google_secret_manager_secret_version" "keycloak_subscriber_credentials" {
+  secret      = google_secret_manager_secret.keycloak_subscriber_credentials.id
+  secret_data = google_service_account_key.keycloak_subscriber_key.private_key
+}
+
+# Grant Cloud Function Invoker role
+resource "google_project_iam_member" "subscriber_cloudfunctions_invoker" {
+  project = var.gcp_project_id
+  role    = "roles/cloudfunctions.invoker"
+  member  = "serviceAccount:${google_service_account.keycloak_event_subscriber_sa.email}"
+}
+
+# Grant Pub/Sub Subscriber role
+resource "google_project_iam_member" "subscriber_pubsub_subscriber" {
+  project = var.gcp_project_id
+  role    = "roles/pubsub.subscriber"
+  member  = "serviceAccount:${google_service_account.keycloak_event_subscriber_sa.email}"
+}
+
+# Grant Service Account Token Creator role
+resource "google_project_iam_member" "subscriber_token_creator" {
+  project = var.gcp_project_id
+  role    = "roles/iam.serviceAccountTokenCreator"
+  member  = "serviceAccount:${google_service_account.keycloak_event_subscriber_sa.email}"
+}

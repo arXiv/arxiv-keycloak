@@ -144,6 +144,11 @@ jobs:
         run: terraform init -backend-config="bucket=${{ env.TERRAFORM_BUCKET }}"
         working-directory: terraform/legacy-auth-provider
 
+      - name: Get image digest
+        run: |
+          DIGEST=$(gcloud container images describe gcr.io/arxiv-development/${{env.IMAGE_NAME}}:${{inputs.image_tag}} --format='value(image_summary.digest)')
+          echo "IMAGE_DIGEST=$DIGEST" >> $GITHUB_ENV
+
       - name: Apply
-        run: terraform apply ${{ env.TERRAFORM_ARGS }} -auto-approve
+        run: terraform apply ${{ env.TERRAFORM_ARGS }} -var="image_digest=${{ env.IMAGE_DIGEST }}" -auto-approve
         working-directory: terraform/legacy-auth-provider

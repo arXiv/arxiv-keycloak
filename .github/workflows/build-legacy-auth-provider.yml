@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - master
+      - 'ntai/**'
     paths:
       - "legacy_auth_provider/**"
   pull_request:
