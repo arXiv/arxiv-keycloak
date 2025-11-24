@@ -100,27 +100,29 @@ jobs:
       - name: Push image
         run: docker push --all-tags gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.IMAGE_NAME }}
 
-  deploy:
-    needs: format-check
-    runs-on: ubuntu-latest
+  # deploy:
+  #   needs: format-check
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.sha }}
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #       with:
+  #         ref: ${{ github.sha }}
 
-      - name: dir listing
-        run: |
-          pwd
-          ls -aslR .github
-          cat ./.github/workflows/deploy-keycloak-bend.yml
+  #     - name: dir listing
+  #       run: |
+  #         pwd
+  #         ls -aslR .github
+  #         cat ./.github/workflows/deploy-keycloak-bend.yml
 
-      - name: Deploy development
-        uses: deploy-keycloak-bend.yml
-        with:
-          environment: development
-          image_tag: ${{ github.sha }}
+  call-deploy:
+    name: Deploy development ${{ github.ref_name }} ${{ github.sha }}
+    if: ${{ github.event_name != 'workflow_dispatch' && (github.base_ref == 'master' || github.ref_name == 'master') }}
+    uses: ./.github/workflows/deploy-keycloak-bend.yml
+    with:
+      environment: development
+      image_tag: ${{ github.sha }}
 
   # deploy-development:
   #   needs: build-push
