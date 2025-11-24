@@ -79,7 +79,7 @@ jobs:
         run: gcloud auth configure-docker
 
       - name: Build image, caching from latest
-        working-directory: keycloak_bend/setup-job
+        working-directory: keycloak_bend
         run: |
           pwd
           ls
