@@ -118,15 +118,3 @@ jobs:
       environment: staging
       image_tag: ${{ github.sha }}
     secrets: inherit
-
-
-      #    if: ${{ !inputs.custom_sha && github.event_name != 'workflow_dispatch' && (github.event_name == 'pull_request' || github.ref_name == 'master') }}
-      # # CI Deployment Routing ... manual builds of a commit are not CD candidates
-      # - name: Deployment Routing
-      #   if: ${{ !inputs.custom_sha }}
-      #   uses: arXiv/iac-public/.github/actions/service-deployment-routing@main  
-      #   with:
-      #     image_tag: ${{ github.sha }}
-      #     deploy_workflow: ${{ env.DEPLOY_WORKFLOW }}
-      #     workload_identity_provider: ${{ vars.ARXIV_DEVELOPMENT_PROVIDER_NAME }}
-      #     service_account: ${{ vars.ARXIV_DEVELOPMENT_SERVICE_ACCOUNT }}
