@@ -60,8 +60,7 @@ jobs:
     needs: format-check
     if: >
       (needs.format-check.result == 'success' || needs.format-check.result == 'skipped') &&
-      (github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch') &&
-      ((inputs.env != 'production' && inputs.env != 'prod' && inputs.env != 'staging' && inputs.env != 'stage') || inputs.image_tag != 'latest')
+      (inputs.env != 'production' && inputs.image_tag != 'latest')
     environment: ${{ inputs.env }}
     steps:
       - name: Checkout code
