@@ -103,18 +103,10 @@ jobs:
 
   deploy-development:
     needs: build-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.sha }}
-
-      - name: Deploy development
-        uses: ./.github/workflows/deploy-keycloak-bend.yml
-        with:
-          env: development
-          image_tag: ${{ github.sha }}
+    uses: ./.github/workflows/deploy-keycloak-bend.yml
+    with:
+      env: development
+      image_tag: ${{ github.sha }}
 
 
   # deploy-staging:
