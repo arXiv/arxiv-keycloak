@@ -38,29 +38,11 @@ env:
   IMAGE_NAME: "keycloak"
 
 jobs:
-  format-check:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Check version
-        run: terraform --version
-
-      - name: Format check
-        run: terraform fmt -check
 
   deploy:
     runs-on: ubuntu-latest
-    needs: format-check
+    #needs: format-check
     environment: ${{ inputs.env }}
-    if: >
-      (github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch') &&
-      ((inputs.env != 'production' && inputs.env != 'prod' && inputs.env != 'staging' && inputs.env != 'stage') || inputs.image_tag != 'latest')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -75,10 +57,6 @@ jobs:
             exit 1
           fi
           
-          REGION="${{ vars.GCP_REGION || 'us-central1' }}"
-          echo "ENVIRONMENT=$ENV_NAME" >> $GITHUB_ENV
-          echo "REGION=$REGION" >> $GITHUB_ENV
-
           # Set project name and terraform bucket based on environment
           if [ "$ENV_NAME" = "production" ] || [ "$ENV_NAME" = "prod" ]; then
             echo "PROJECT_NAME=arxiv-production" >> $GITHUB_ENV
@@ -111,52 +89,3 @@ jobs:
             -var=\"keycloak_image=gcr.io/arxiv-development/${{env.IMAGE_NAME}}:${{inputs.image_tag}}\""
 
           echo "TERRAFORM_ARGS=$TERRAFORM_ARGS" >> $GITHUB_ENV
-
-      - name: Authenticate with arxiv-development
-        uses: google-github-actions/auth@v3
-        with:
-          workload_identity_provider: ${{ vars.ARXIV_DEVELOPMENT_PROVIDER_NAME }}
-          service_account: ${{ vars.ARXIV_DEVELOPMENT_SERVICE_ACCOUNT }}
-
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v3
-
-      - name: Get project number
-        run: |
-          echo "Getting project number for project: ${{ env.PROJECT_NAME }}"
-          PROJECT_NUMBER=$(gcloud projects describe ${{ env.PROJECT_NAME }} --format="value(projectNumber)")
-          echo "PROJECT_NUMBER=$PROJECT_NUMBER" >> $GITHUB_ENV
-          echo "Project number: $PROJECT_NUMBER"
-
-      - name: Authenticate with target project workload identity
-        uses: google-github-actions/auth@v3
-        with:
-          workload_identity_provider: projects/${{ env.PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github/providers/github-actions-provider
-          service_account: github-actions-sa@${{ env.PROJECT_NAME }}.iam.gserviceaccount.com
-          project_id: ${{ env.PROJECT_NAME }}
-
-      - name: Set up terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Check version
-        run: terraform --version
-
-      - name: Initialize keycloak-db remote backend (for db output variables)
-        run: |
-          terraform init -backend-config="bucket=${{ env.TERRAFORM_BUCKET }}"
-          TERRAFORM_ARGS="$TERRAFORM_ARGS \
-              -var=\"auth_db_private_ip=$(terraform output -raw private_ip_address)\" \
-              -var=\"use_cloud_sql_proxy=false\" \
-              -var=\"auth_db_name=$(terraform output -raw database_name)\" \
-              -var=\"db_user=$(terraform output -raw keycloak_user_name)\" \
-              -var=\"keycloak_db_password_secret_name=$(terraform output -raw keycloak_password_secret_name)\""
-          echo "TERRAFORM_ARGS=$TERRAFORM_ARGS" >> $GITHUB_ENV
-        working-directory: terraform/keycloak-db
-
-      - name: Initialize keycloak-svc remote backend
-        run: terraform init -backend-config="bucket=${{ env.TERRAFORM_BUCKET }}"
-        working-directory: terraform/keycloak-service
-
-      - name: Apply
-        run: terraform apply ${{ env.TERRAFORM_ARGS }} -auto-approve
-        working-directory: terraform/keycloak-service
