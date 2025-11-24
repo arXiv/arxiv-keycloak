@@ -26,7 +26,7 @@ permissions:
 
 env:
   DEPLOY_WORKFLOW: "deploy-keycloak-bend.yml"
-  DOCKERFILE: "keycloak_bend/Dockerfile"
+  DOCKERFILE: "Dockerfile"
   GCP_PROJECT_ID: "arxiv-development"
   ARTIFACT_REGISTRY_REPO: "arxiv-keycloak"
   IMAGE_NAME: "arxiv-keycloak"
