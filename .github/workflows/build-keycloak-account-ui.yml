@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - master
+      - ARXIVCE-4079
     paths:
       - "account-ui/**"
   pull_request:
