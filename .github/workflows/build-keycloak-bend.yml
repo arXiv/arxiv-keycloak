@@ -102,7 +102,7 @@ jobs:
 
 
   deploy-development:
-    uses: ./.github/workflows/deploy-keycloak-svc.yml
+    uses: ./.github/workflows/deploy-keycloak-bend.yml
     with:
       env: development
       image_tag: ${{ github.sha }}
