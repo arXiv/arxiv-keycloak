@@ -108,21 +108,30 @@ jobs:
       env: development
       image_tag: ${{ github.sha }}
 
-  deploy2:
+  deploy3:
     needs: build-push
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/deploy-keycloak-bend.yml
+    if: ${{ startsWith(github.ref, 'refs/tags/RELEASE-') }}
+    with:
+      env: staging
+      image_tag: ${{ github.sha }}      
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.sha }}
 
-      - name: Deploy 2 - targeting development
-        uses: ./.github/workflows/deploy-keycloak-bend.yml
-        with:
-          env: development
-          image_tag: ${{ github.sha }}
+  # deploy2:
+  #   needs: build-push
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #       with:
+  #         ref: ${{ github.sha }}
+
+  #     - name: Deploy 2 - targeting development
+  #       uses: ./.github/workflows/deploy-keycloak-bend.yml
+  #       with:
+  #         env: development
+  #         image_tag: ${{ github.sha }}
 
 
   # deploy-staging:
