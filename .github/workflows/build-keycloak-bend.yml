@@ -100,7 +100,7 @@ jobs:
       - name: Push image
         run: docker push --all-tags gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.IMAGE_NAME }}
 
-  deply:
+  deploy:
     needs: format-check
     runs-on: ubuntu-latest
 
