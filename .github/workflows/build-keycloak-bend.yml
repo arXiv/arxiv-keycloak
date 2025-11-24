@@ -110,6 +110,11 @@ jobs:
         with:
           ref: ${{ github.sha }}
 
+      - name: dir listing
+        run: |
+          pwd
+          ls -aslR .github
+
       - name: Deploy development
         uses: ./.github/workflows/deploy-keycloak-bend.yml
         with:
