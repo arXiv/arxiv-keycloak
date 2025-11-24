@@ -100,9 +100,13 @@ jobs:
       - name: Push image
         run: docker push --all-tags gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.IMAGE_NAME }}
 
+  deploy-development:
+    uses: ./.github/workflows/deploy-keycloak-bend.yml
+    with:
+      env: development
+      image_tag: ${{ github.sha }}
 
   deploy:
-    needs: build-push
     runs-on: ubuntu-latest
 
     steps:
