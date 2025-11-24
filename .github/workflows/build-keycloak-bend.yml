@@ -117,7 +117,7 @@ jobs:
           cat ./.github/workflows/deploy-keycloak-bend.yml
 
       - name: Deploy development
-        uses: ./.github/workflows/deploy-keycloak-bend.yml
+        uses: ./.github/workflows/deploy-keycloak-bend
         with:
           environment: development
           image_tag: ${{ github.sha }}
