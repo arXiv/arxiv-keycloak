@@ -6,6 +6,8 @@ on:
   push:
     branches:
       - master
+    tags:
+      - "RELEASE-*"
     paths:
       - "keycloak_bend/**"
   pull_request:
@@ -96,6 +98,24 @@ jobs:
       - name: Push image
         run: docker push --all-tags gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.IMAGE_NAME }}
 
+  call-deploy-development:
+    if: ${{ github.event_name != 'workflow_dispatch' && (github.base_ref == 'master' || github.ref_name == 'master') }}
+    name: Deploy keycloak-bend development ${{ github.sha }}
+    uses: ./.github/workflows/deploy-keycloak-bend.yml
+    with:
+      environment: development
+      image_tag: ${{ github.sha }}
+
+  call-deploy-staging:
+    if: ${{ startsWith(github.ref, 'refs/tags/RELEASE-') }}
+    name: Deploy keycloak-bend staging ${{ github.ref_name }}
+    uses: ./.github/workflows/deploy-keycloak-bend.yml
+    with:
+      environment: staging
+      image_tag: ${{ github.sha }}
+    
+
+      #    if: ${{ !inputs.custom_sha && github.event_name != 'workflow_dispatch' && (github.event_name == 'pull_request' || github.ref_name == 'master') }}
       # # CI Deployment Routing ... manual builds of a commit are not CD candidates
       # - name: Deployment Routing
       #   if: ${{ !inputs.custom_sha }}
