@@ -100,21 +100,36 @@ jobs:
       - name: Push image
         run: docker push --all-tags gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.IMAGE_NAME }}
 
+  deply:
+    needs: format-check
+    runs-on: ubuntu-latest
 
-  deploy-development:
-    needs: build-push
-    if: ${{ github.event_name != 'workflow_dispatch' && (github.base_ref == 'master' || github.ref_name == 'master') }}
-    uses: ./.github/workflows/deploy-keycloak-bend.yml
-    with:
-      environment: development
-      image_tag: ${{ github.sha }}
-    secrets: inherit
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
 
-  deploy-staging:
-    needs: build-push
-    if: ${{ startsWith(github.ref, 'refs/tags/RELEASE-') }}
-    uses: ./.github/workflows/deploy-keycloak-bend.yml
-    with:
-      environment: staging
-      image_tag: ${{ github.sha }}
-    secrets: inherit
+      - name: Deploy development
+        uses: ./.github/workflows/deploy-keycloak-bend.yml
+        with:
+          environment: development
+          image_tag: ${{ github.sha }}
+
+  # deploy-development:
+  #   needs: build-push
+  #   if: ${{ github.event_name != 'workflow_dispatch' && (github.base_ref == 'master' || github.ref_name == 'master') }}
+  #   uses: ./.github/workflows/deploy-keycloak-bend.yml
+  #   with:
+  #     environment: development
+  #     image_tag: ${{ github.sha }}
+  #   secrets: inherit
+
+  # deploy-staging:
+  #   needs: build-push
+  #   if: ${{ startsWith(github.ref, 'refs/tags/RELEASE-') }}
+  #   uses: ./.github/workflows/deploy-keycloak-bend.yml
+  #   with:
+  #     environment: staging
+  #     image_tag: ${{ github.sha }}
+  #   secrets: inherit
