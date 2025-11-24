@@ -38,21 +38,21 @@ env:
   IMAGE_NAME: "keycloak"
 
 jobs:
-  # format-check:
-  #   runs-on: ubuntu-latest
+  format-check:
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  #     - name: Set up terraform
-  #       uses: hashicorp/setup-terraform@v3
+      - name: Set up terraform
+        uses: hashicorp/setup-terraform@v3
 
-  #     - name: Check version
-  #       run: terraform --version
+      - name: Check version
+        run: terraform --version
 
-  #     - name: Format check
-  #       run: terraform fmt -check
+      - name: Format check
+        run: terraform fmt -check
 
   deploy:
     runs-on: ubuntu-latest
