@@ -114,6 +114,7 @@ jobs:
         run: |
           pwd
           ls -aslR .github
+          cat ./.github/workflows/deploy-keycloak-bend.yml
 
       - name: Deploy development
         uses: ./.github/workflows/deploy-keycloak-bend.yml
