@@ -3,8 +3,10 @@ import dataclasses
 import json
 import urllib.parse
 from dataclasses import asdict
-from typing import Optional, Literal, Any
+from typing import Optional, Literal, Any, Tuple
 
+from arxiv.db.models import TapirSession
+from arxiv_bizlogic.bizmodels.tapir_to_user_claims import create_user_claims_from_tapir_cookie
 from arxiv_bizlogic.bizmodels.user_model import UserModel
 from arxiv_bizlogic.fastapi_helpers import get_client_host, get_authn_user, get_client_host_name, \
     get_tapir_tracking_cookie
@@ -30,6 +32,7 @@ from starlette.datastructures import URL
 from . import get_current_user_or_none, get_db, COOKIE_ENV_NAMES
 from .biz.account_biz import is_user_account_valid
 from .biz.cold_migration import cold_migrate
+from .legacy import get_tapir_cookie_or_none, LegacySessionCookie
 # from .account import AccountRegistrationModel
 
 from .sessions import create_tapir_session
@@ -457,6 +460,26 @@ async def logout_callback(request: Request) -> Response:
     return Response(status_code=status.HTTP_200_OK)
 
 
+@router.get('/exchange-tapir-session-to-user-claims')
+async def exchange_tapir_session(
+        request: Request,
+        tapir_cookie: Optional[str] = Depends(get_tapir_cookie_or_none),
+        session = Depends(get_db)
+        ) -> Response:
+
+    if not tapir_cookie:
+        return Response(status_code=status.HTTP_401_UNAUTHORIZED)
+    cred =  LegacySessionCookie.from_tapir_cookie(tapir_cookie)
+    tapir_session: TapirSession | None = session.query(TapirSession).filter(
+        TapirSession.session_id == cred.session_id).one_or_none()
+    if tapir_session is None:
+        return Response(status_code=status.HTTP_401_UNAUTHORIZED)
+    if tapir_session.end_time:
+        return Response(status_code=status.HTTP_401_UNAUTHORIZED)
+    user_claims = create_user_claims_from_tapir_cookie(session, tapir_cookie)
+    return make_cookie_response(request, user_claims, tapir_cookie, None)
+
+
 @router.get('/token-names')
 async def get_token_names(request: Request) -> JSONResponse:
     cparam = cookie_params(request)
@@ -570,3 +593,4 @@ def make_cookie_response(request: Request,
                             domain=domain, path="/", secure=secure, samesite=samesite,
                             expires=1)
     return response
+
