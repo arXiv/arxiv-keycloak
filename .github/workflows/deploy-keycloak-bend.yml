@@ -4,19 +4,18 @@ name: Deploy keycloak-service
 run-name: "Deploy keycloak-service ${{ inputs.env }} ${{ inputs.image_tag }}"
 
 on:
-  push:
-    branches:
-    #   - master
-    #   - ARXIVCE-4079
-      - wombat-81-testing
-    paths:
-      - "**"
-#   pull_request:
-#     branches:
-#       - master
-#       - ARXIVCE-4079
-#     paths:
-#       - "**"
+  workflow_call:
+    inputs:
+      env:
+        description: "Environment"
+        required: true
+        type: string
+        default: ""
+      image_tag:
+        description: "Docker image tag (latest or the commit SHA)"
+        required: false
+        type: string
+        default: "latest"
   workflow_dispatch:
     inputs:
       env:
