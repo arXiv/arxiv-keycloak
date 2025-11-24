@@ -4,18 +4,6 @@ name: Deploy keycloak-bend
 run-name: "Deploy keycloak-bend ${{ inputs.environment }} ${{ inputs.image_tag }}"
 
 on:
-  push:
-    branches:
-      - master
-    tags:
-      - "RELEASE-*"
-    paths:
-      - "keycloak_bend/**"
-  pull_request:
-    branches:
-      - master
-    paths:
-      - "keycloak_bend/**"
   workflow_call:
     inputs:
       environment:
