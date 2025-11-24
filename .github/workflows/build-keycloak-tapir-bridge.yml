@@ -1,4 +1,4 @@
-name: Build and push keycloak-tapir-bridge
+name: Build keycloak-tapir-bridge
 
 run-name: "Build keycloak-tapir-bridge ${{ github.ref_name }} ${{ inputs.custom_sha || github.sha }}"
 

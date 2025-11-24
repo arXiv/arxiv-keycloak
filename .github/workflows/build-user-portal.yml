@@ -1,4 +1,4 @@
-name: Build and push user-portal
+name: Build user-portal
 
 run-name: "Build user-portal ${{ github.ref_name }} ${{ inputs.custom_sha || github.sha }}"
 

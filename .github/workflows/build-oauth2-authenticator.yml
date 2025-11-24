@@ -1,4 +1,4 @@
-name: Build and push oauth2-authenticator
+name: Build oauth2-authenticator
 
 run-name: "Build oauth2-authenticator ${{ github.ref_name }} ${{ inputs.custom_sha || github.sha }}"
 

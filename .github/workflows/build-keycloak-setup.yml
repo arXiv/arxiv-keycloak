@@ -1,4 +1,4 @@
-name: Build and push keycloak-setup
+name: Build keycloak-setup
 
 run-name: "Build keycloak-setup ${{ github.ref_name }} ${{ inputs.custom_sha || github.sha }}"
 

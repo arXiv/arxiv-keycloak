@@ -1,4 +1,4 @@
-name: Build and push legacy-auth-provider
+name: Build legacy-auth-provider
 
 run-name: "Build legacy-auth-provider ${{ github.ref_name }} ${{ inputs.custom_sha || github.sha }}"
 

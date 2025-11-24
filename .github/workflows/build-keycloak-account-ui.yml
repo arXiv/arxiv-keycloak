@@ -1,4 +1,4 @@
-name: Build and push account-ui
+name: Build account-ui
 
 run-name: "Build account-ui ${{ github.ref_name }} ${{ inputs.custom_sha || github.sha }}"
 
