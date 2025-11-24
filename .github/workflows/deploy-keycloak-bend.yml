@@ -88,13 +88,13 @@ jobs:
       - name: Initialize keycloak-db remote backend (for db output variables)
         run: |
           terraform init -backend-config="bucket=${{ vars.TERRAFORM_BUCKET }}"
-          TERRAFORM_ARGS="$TERRAFORM_ARGS \
-              -var=\"auth_db_private_ip=$(terraform output -raw private_ip_address)\" \
-              -var=\"use_cloud_sql_proxy=false\" \
-              -var=\"auth_db_name=$(terraform output -raw database_name)\" \
-              -var=\"db_user=$(terraform output -raw keycloak_user_name)\" \
-              -var=\"keycloak_db_password_secret_name=$(terraform output -raw keycloak_password_secret_name)\""
-          echo "TERRAFORM_ARGS=$TERRAFORM_ARGS" >> $GITHUB_ENV
+          # TERRAFORM_ARGS="$TERRAFORM_ARGS \
+          #     -var=\"auth_db_private_ip=$(terraform output -raw private_ip_address)\" \
+          #     -var=\"use_cloud_sql_proxy=false\" \
+          #     -var=\"auth_db_name=$(terraform output -raw database_name)\" \
+          #     -var=\"db_user=$(terraform output -raw keycloak_user_name)\" \
+          #     -var=\"keycloak_db_password_secret_name=$(terraform output -raw keycloak_password_secret_name)\""
+          # echo "TERRAFORM_ARGS=$TERRAFORM_ARGS" >> $GITHUB_ENV
         working-directory: terraform/keycloak-db
 
       - name: Initialize keycloak-svc remote backend
