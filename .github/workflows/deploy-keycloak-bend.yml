@@ -87,7 +87,7 @@ jobs:
 
       - name: Initialize keycloak-db remote backend (for db output variables)
         run: |
-          terraform init -backend-config="bucket=${{ env.TERRAFORM_BUCKET }}"
+          terraform init -backend-config="bucket=${{ vars.TERRAFORM_BUCKET }}"
           TERRAFORM_ARGS="$TERRAFORM_ARGS \
               -var=\"auth_db_private_ip=$(terraform output -raw private_ip_address)\" \
               -var=\"use_cloud_sql_proxy=false\" \
@@ -98,7 +98,7 @@ jobs:
         working-directory: terraform/keycloak-db
 
       - name: Initialize keycloak-svc remote backend
-        run: terraform init -backend-config="bucket=${{ env.TERRAFORM_BUCKET }}"
+        run: terraform init -backend-config="bucket=${{ vars.TERRAFORM_BUCKET }}"
         working-directory: terraform/keycloak-service
 
       - name: Apply
