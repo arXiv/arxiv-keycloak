@@ -26,7 +26,7 @@ permissions:
 
 env:
   DEPLOY_WORKFLOW: "deploy-account-ui.yml"
-  DOCKERFILE: "account-ui/account-app/Dockerfile"
+  DOCKERFILE: "account-app/Dockerfile"
   GCP_PROJECT_ID: "arxiv-development"
   ARTIFACT_REGISTRY_REPO: "arxiv-keycloak"
   IMAGE_NAME: "account-ui"
@@ -75,6 +75,7 @@ jobs:
         run: gcloud auth configure-docker
 
       - name: Build image, caching from latest
+        working-directory: account-app
         run: |
           pwd
           ls
