@@ -102,6 +102,7 @@ jobs:
 
 
   deploy-development:
+    needs: build-push
     uses: ./.github/workflows/deploy-keycloak-bend.yml
     with:
       env: development
