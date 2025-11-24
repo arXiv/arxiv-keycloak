@@ -1,6 +1,6 @@
-name: Build and push keycloak-svc
+name: Build and push keycloak-svc THIS GOES AWAY
 
-run-name: "Build keycloak-svc ${{ github.ref_name }} ${{ inputs.custom_sha || github.sha }}"
+run-name: "Build keycloak-svc THIS GOES AWAY${{ github.ref_name }} ${{ inputs.custom_sha || github.sha }}"
 
 on:
   push:

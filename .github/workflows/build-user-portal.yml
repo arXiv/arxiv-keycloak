@@ -1,18 +1,18 @@
-name: Build and push keycloak-bend
+name: Build and push user-portal
 
-run-name: "Build keycloak-bend ${{ github.ref_name }} ${{ inputs.custom_sha || github.sha }}"
+run-name: "Build user-portal ${{ github.ref_name }} ${{ inputs.custom_sha || github.sha }}"
 
 on:
   push:
     branches:
       - master
     paths:
-      - "keycloak_bend/**"
+      - "user-portal/**"
   pull_request:
     branches:
       - master
     paths:
-      - "keycloak_bend/**"
+      - "user-portal/**"
   workflow_dispatch:
     inputs:
       custom_sha:
@@ -25,11 +25,11 @@ permissions:
   actions: write
 
 env:
-  DEPLOY_WORKFLOW: "deploy-keycloak-bend.yml"
-  DOCKERFILE: "keycloak_bend/Dockerfile"
+  DEPLOY_WORKFLOW: "deploy-user-portal.yml"
+  DOCKERFILE: "user-portal/Dockerfile"
   GCP_PROJECT_ID: "arxiv-development"
   ARTIFACT_REGISTRY_REPO: "arxiv-keycloak"
-  IMAGE_NAME: "arxiv-keycloak"
+  IMAGE_NAME: "user-portal"
 
 jobs:
   format-check:
@@ -94,7 +94,7 @@ jobs:
 
       - name: Push image
         run: docker push --all-tags gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.IMAGE_NAME }}
-
+  
       # # CI Deployment Routing ... manual builds of a commit are not CD candidates
       # - name: Deployment Routing
       #   if: ${{ !inputs.custom_sha }}

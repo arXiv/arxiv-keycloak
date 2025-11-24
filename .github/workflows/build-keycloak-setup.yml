@@ -29,11 +29,11 @@ permissions:
   actions: write
 
 env:
-  IMAGE_NAME: "keycloak-setup"
+  DEPLOY_WORKFLOW: "deploy-keycloak-setup.yml"
   DOCKERFILE: "keycloak_bend/setup-job/Dockerfile"
   GCP_PROJECT_ID: "arxiv-development"
   ARTIFACT_REGISTRY_REPO: "arxiv-keycloak"
-  REGION: "us-central1"
+  IMAGE_NAME: "keycloak-setup"
 
 jobs:
   format-check:

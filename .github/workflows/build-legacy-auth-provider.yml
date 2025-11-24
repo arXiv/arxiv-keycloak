@@ -25,11 +25,11 @@ permissions:
   actions: write
 
 env:
-  IMAGE_NAME: "legacy-auth-provider"
+  DEPLOY_WORKFLOW: "deploy-legacy-auth-provider.yml"
   DOCKERFILE: "legacy_auth_provider/Dockerfile"
   GCP_PROJECT_ID: "arxiv-development"
   ARTIFACT_REGISTRY_REPO: "arxiv-keycloak"
-  REGION: "us-central1"
+  IMAGE_NAME: "legacy-auth-provider"
 
 jobs:
   format-check:

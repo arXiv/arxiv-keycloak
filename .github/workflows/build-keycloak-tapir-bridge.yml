@@ -7,12 +7,12 @@ on:
     branches:
       - master
     paths:
-      - "keycloak_bend/**"
+      - "keycloak_tapir_bridge/**"
   pull_request:
     branches:
       - master
     paths:
-      - "keycloak_bend/**"
+      - "keycloak_tapir_bridge/**"
   workflow_dispatch:
     inputs:
       custom_sha:
