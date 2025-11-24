@@ -106,6 +106,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
       - name: Deploy development ${{ github.sha }}
         if: ${{ github.event_name != 'workflow_dispatch' && (github.base_ref == 'master' || github.ref_name == 'master') }}
         uses: ./.github/workflows/deploy-keycloak-bend.yml
