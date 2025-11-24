@@ -102,8 +102,7 @@ jobs:
 
 
   deploy-development:
-    needs: build-push
-    uses: ./.github/workflows/deploy-keycloak-bend.yml
+    uses: ./.github/workflows/deploy-keycloak-svc.yml
     with:
       env: development
       image_tag: ${{ github.sha }}
