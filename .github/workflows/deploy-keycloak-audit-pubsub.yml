@@ -123,6 +123,10 @@ jobs:
         run: terraform init -backend-config="bucket=${{ vars.TERRAFORM_BUCKET }}"
         working-directory: terraform/keycloak-audit-pubsub
 
+      - name: Import browse-sqlalchemy-db-uri_secret
+        run: terraform import -var-file="envs/${{ vars.ENV_VAR }}.tfvars" 'google_secret_manager_secret.keycloak_pubsub_credentials' "projects/${{ vars.PROJECT_NUMBER }}/secrets/keycloak-pubsub-event-sa"
+        working-directory: terraform/keycloak-audit-pubsub
+
       - name: Apply
         run: |
           terraform apply -var-file="envs/${{ vars.ENV_VAR }}.tfvars" -auto-approve
