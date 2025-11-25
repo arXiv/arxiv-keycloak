@@ -39,10 +39,12 @@ def create_user_claims_from_tapir_cookie(session: DBSession,
             last_name=auth_response.lastName,
             username=auth_response.username,
             ts_id=int(session_id),
+            sid="keycloak-session-id-is-not-available"
         )
         return ArxivUserClaims(data)
 
-    except ValueError:
+    except ValueError as exc:
+        logger.error("create_user_claims_from_tapir_cookie - ValueError: " + str(exc), exc_info=exc)
         return None
 
     except Exception as exc:
