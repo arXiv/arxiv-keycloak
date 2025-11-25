@@ -100,7 +100,7 @@ jobs:
       - name: Push image
         run: docker push --all-tags gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.IMAGE_NAME }}
 
-  deploy1:
+  development:
     needs: build-push
     uses: ./.github/workflows/deploy-keycloak-bend.yml
     if: ${{ github.event_name != 'workflow_dispatch' && (github.base_ref == 'master' || github.ref_name == 'master') }}
@@ -108,7 +108,7 @@ jobs:
       env: development
       image_tag: ${{ github.sha }}
 
-  deploy3:
+  staging:
     needs: build-push
     uses: ./.github/workflows/deploy-keycloak-bend.yml
     if: ${{ startsWith(github.ref, 'refs/tags/RELEASE-') }}
