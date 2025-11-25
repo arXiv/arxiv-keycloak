@@ -115,8 +115,8 @@ jobs:
       #     workload_identity_provider: ${{ vars.ARXIV_DEVELOPMENT_PROVIDER_NAME }}
       #     service_account: ${{ vars.ARXIV_DEVELOPMENT_SERVICE_ACCOUNT }}
 
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v3
+      # - name: Set up Google Cloud SDK
+      #   uses: google-github-actions/setup-gcloud@v3
 
       # - name: Get project number
       #   run: |
@@ -131,6 +131,9 @@ jobs:
           workload_identity_provider: projects/${{ vars.PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github/providers/github-actions-provider
           service_account: github-actions-sa@${{ vars.PROJECT_NAME }}.iam.gserviceaccount.com
           project_id: ${{ vars.PROJECT_NAME }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
 
       - name: Set up terraform
         uses: hashicorp/setup-terraform@v3
