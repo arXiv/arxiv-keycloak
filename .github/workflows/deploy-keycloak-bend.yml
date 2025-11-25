@@ -35,7 +35,7 @@ permissions:
   id-token: write
 
 env:
-  IMAGE_NAME: "keycloak"
+  IMAGE_NAME: "arxiv-keycloak"
 
 jobs:
   format-check:
@@ -62,8 +62,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set environment variables
-        run: |
+      # - name: Set environment variables
+      #   run: |
           # # Determine environment from inputs or GitHub environment
           # if [ -n "${{ inputs.env }}" ]; then
           #   ENV_NAME="${{ inputs.env }}"
@@ -103,11 +103,11 @@ jobs:
           #     -var=\"vpc_connector_name=cloudrunconnector\""
           # fi
 
-          # Add keycloak_image to TERRAFORM_ARGS for all environments
-          TERRAFORM_ARGS="$TERRAFORM_ARGS \
-            -var=\"keycloak_image=gcr.io/arxiv-development/arxiv-keycloak/${{env.IMAGE_NAME}}:${{inputs.image_tag}}\""
+          # # Add keycloak_image to TERRAFORM_ARGS for all environments
+          # TERRAFORM_ARGS="$TERRAFORM_ARGS \
+          #   -var=\"keycloak_image=gcr.io/arxiv-development/arxiv-keycloak/${{env.IMAGE_NAME}}:${{inputs.image_tag}}\""
 
-          echo "TERRAFORM_ARGS=$TERRAFORM_ARGS" >> $GITHUB_ENV
+          # echo "TERRAFORM_ARGS=$TERRAFORM_ARGS" >> $GITHUB_ENV
 
       # - name: Authenticate with arxiv-development
       #   uses: google-github-actions/auth@v3
@@ -141,7 +141,8 @@ jobs:
       - name: Initialize keycloak-db remote backend (for db output variables)
         run: |
           terraform init -backend-config="bucket=${{ vars.TERRAFORM_BUCKET }}"
-          TERRAFORM_ARGS="$TERRAFORM_ARGS \
+
+          TERRAFORM_ARGS="-var=\"keycloak_image=gcr.io/arxiv-development/arxiv-keycloak/${{env.IMAGE_NAME}}:${{inputs.image_tag}}\" \
               -var=\"auth_db_private_ip=$(terraform output -raw private_ip_address)\" \
               -var=\"use_cloud_sql_proxy=false\" \
               -var=\"auth_db_name=$(terraform output -raw database_name)\" \
