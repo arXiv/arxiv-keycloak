@@ -3,7 +3,7 @@ from typing import Optional
 from arxiv.auth.legacy.cookies import unpack as unpack_legacy_cookie
 from fastapi import Request
 
-from arxiv_oauth2.authentication import cookie_params
+from . import cookie_params
 
 from pydantic import BaseModel, Field
 from datetime import datetime, timezone
