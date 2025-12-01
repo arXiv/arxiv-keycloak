@@ -173,7 +173,7 @@ variable "secrets" {
     secret_name = string
     version     = string
     mount_path  = optional(string)
-    volume_path  = optional(string)
+    volume_path = optional(string)
   }))
   description = "Secrets to mount or expose as environment variables"
   default     = {}
