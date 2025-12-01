@@ -1,10 +1,11 @@
 """Provides integration for the external user interface."""
-import dataclasses
 import json
 import urllib.parse
 from dataclasses import asdict
-from typing import Optional, Literal, Any
+from typing import Optional, Literal, Any, Tuple
 
+from arxiv.db.models import TapirSession
+from arxiv_bizlogic.bizmodels.tapir_to_user_claims import create_user_claims_from_tapir_cookie
 from arxiv_bizlogic.bizmodels.user_model import UserModel
 from arxiv_bizlogic.fastapi_helpers import get_client_host, get_authn_user, get_client_host_name, \
     get_tapir_tracking_cookie
@@ -27,51 +28,14 @@ from starlette.datastructures import URL
 # from arxiv.auth.legacy import accounts, exceptions
 # from arxiv.auth import domain
 
-from . import get_current_user_or_none, get_db, COOKIE_ENV_NAMES
+from . import get_current_user_or_none, get_db, COOKIE_ENV_NAMES, cookie_params
 from .biz.account_biz import is_user_account_valid
 from .biz.cold_migration import cold_migrate
+from .legacy import get_tapir_cookie_or_none, LegacySessionCookie
 # from .account import AccountRegistrationModel
 
 from .sessions import create_tapir_session
 from arxiv_bizlogic.audit_event import admin_audit, AdminAudit_BecomeUser
-
-@dataclasses.dataclass
-class CookieParams:
-    auth_session_cookie_name: str    # ArxivUserClaims (deprecated)
-    classic_cookie_name: str         # classic cookie name
-    keycloak_access_token_name: str  # Keycloak access token
-    keycloak_refresh_token_name: str # Keycloak access token
-    ng_cookie_name: str              # arxivng cookie name
-    domain: Optional[str]            # domain
-    secure: bool                     # secure
-    samesite: Literal["lax", "none"] # same site
-    jwt_secret: str                  # JWT secret
-    max_age: int
-
-
-def cookie_params(request: Request) -> CookieParams:
-    """
-        AUTH_SESSION_COOKIE_NAME=AUTH_SESSION_COOKIE_NAME,
-        KEYCLOAK_ACCESS_COOKIE_NAME=KEYCLOAK_ACCESS_TOKEN_NAME,
-        KEYCLOAK_REFRESH_TOKEN_NAME=KEYCLOAK_ACCESS_TOKEN_NAME,
-        CLASSIC_COOKIE_NAME=CLASSIC_COOKIE_NAME,
-        ARXIVNG_COOKIE_NAME=ARXIVNG_COOKIE_NAME,
-
-    """
-
-    return CookieParams(
-        auth_session_cookie_name=request.app.extra[COOKIE_ENV_NAMES.auth_session_cookie_env],
-        classic_cookie_name=request.app.extra[COOKIE_ENV_NAMES.classic_cookie_env],
-        keycloak_access_token_name=request.app.extra[COOKIE_ENV_NAMES.keycloak_access_token_env],
-        keycloak_refresh_token_name=request.app.extra[COOKIE_ENV_NAMES.keycloak_refresh_token_env],
-        ng_cookie_name=request.app.extra[COOKIE_ENV_NAMES.ng_cookie_env],
-        domain=request.app.extra.get('DOMAIN'),
-        secure=request.app.extra.get('SECURE', True),
-        samesite=request.app.extra.get('SAMESITE', "Lax"),
-        jwt_secret=request.app.extra.get('JWT_SECRET', "jwt secret is not set"),
-        max_age=int(request.app.extra['COOKIE_MAX_AGE']),
-    )
-
 
 logger = logging.getLogger(__name__)
 
@@ -457,6 +421,26 @@ async def logout_callback(request: Request) -> Response:
     return Response(status_code=status.HTTP_200_OK)
 
 
+@router.get('/exchange-tapir-session-to-user-claims')
+async def exchange_tapir_session(
+        request: Request,
+        tapir_cookie: Optional[str] = Depends(get_tapir_cookie_or_none),
+        session = Depends(get_db)
+        ) -> Response:
+
+    if not tapir_cookie:
+        return Response(status_code=status.HTTP_401_UNAUTHORIZED)
+    cred =  LegacySessionCookie.from_tapir_cookie(tapir_cookie)
+    tapir_session: TapirSession | None = session.query(TapirSession).filter(
+        TapirSession.session_id == cred.session_id).one_or_none()
+    if tapir_session is None:
+        return Response(status_code=status.HTTP_401_UNAUTHORIZED)
+    if tapir_session.end_time:
+        return Response(status_code=status.HTTP_401_UNAUTHORIZED)
+    user_claims = create_user_claims_from_tapir_cookie(session, tapir_cookie)
+    return make_cookie_response(request, user_claims, tapir_cookie, None)
+
+
 @router.get('/token-names')
 async def get_token_names(request: Request) -> JSONResponse:
     cparam = cookie_params(request)
@@ -570,3 +554,4 @@ def make_cookie_response(request: Request,
                             domain=domain, path="/", secure=secure, samesite=samesite,
                             expires=1)
     return response
+

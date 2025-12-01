@@ -202,6 +202,7 @@ def main():
             client_secret=arxiv_user_secret,
             legacy_auth_token=legacy_auth_token if legacy_auth_token else None,
             legacy_auth_uri=legacy_auth_uri if legacy_auth_uri else None,
+            smtp_password=smtp_password
         )
 
         logger.info("Running Keycloak setup...")

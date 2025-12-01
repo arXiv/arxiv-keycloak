@@ -2496,7 +2496,7 @@
     "host": "smtp-relay.gmail.com",
     "replyTo": "",
     "from": "noreply@arxiv.org",
-    "fromDisplayName": "keycloak (develop)",
+    "fromDisplayName": "arXiv (no reply)",
     "envelopeFrom": "",
     "ssl": "true",
     "user": "smtp-relay@arxiv.org"
@@ -3748,7 +3748,7 @@
   "resetCredentialsFlow": "reset credentials",
   "clientAuthenticationFlow": "clients",
   "dockerAuthenticationFlow": "docker auth",
-  "firstBrokerLoginFlow": "user migration",
+  "firstBrokerLoginFlow": "first broker login",
   "attributes": {
     "cibaBackchannelTokenDeliveryMode": "poll",
     "cibaAuthRequestedUserHint": "login_hint",

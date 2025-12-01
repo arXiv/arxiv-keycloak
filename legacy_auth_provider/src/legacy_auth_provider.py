@@ -1,3 +1,4 @@
+import json
 import os
 from contextlib import asynccontextmanager
 from arxiv.config import settings
@@ -70,13 +71,37 @@ async def validate_user(name: str, pwd: PasswordData, _token: str=Depends(verify
 
 @app.get("/states", response_model=dict)
 async def health_check() -> dict:
+
+    result: dict = {"/cloudsql": os.listdir("/cloudsql")}
+    result.update({"env": repr(os.environ)})
+
+    csql_readme = "/cloudsql/README"
+    if os.path.exists(csql_readme):
+        try:
+            with open(csql_readme, "r") as f:
+                result.update({"csql_readme": f.read()})
+                pass
+        except Exception as exc:
+            logger.info(csql_readme + ": " + str(exc), exc_info=True)
+            pass
+        pass
+
     try:
         with DatabaseSession() as session:
             states: State = session.query(State).all()
-            result = {state.name: state.value for state in states}
-            return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e) + repr(os.environ))
+
+    except Exception as exc1:
+        logger.info(json.dumps(result, indent=2))
+        raise HTTPException(status_code=500, detail=str(exc1) + repr(os.environ))
+
+    try:
+        result.update({state.name: state.value for state in states})
+    except Exception as _:
+        logger.info("bogus", exc_info=True)
+        pass
+
+    logger.info(repr(result))
+    return result
 
 
 @asynccontextmanager
