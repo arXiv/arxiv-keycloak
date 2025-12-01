@@ -99,9 +99,10 @@ extract_ui() {
         log "$CONTAINER_NAME: Successfully extracted to $DEST_PATH"
         echo "$CURRENT_DIGEST" > "$STATE_FILE"
 
-        # Set world-readable permissions so nginx can read them
-        chmod -R 755 "$DEST_PATH" 2>/dev/null
-        log "$CONTAINER_NAME: Permissions set to 755"
+        # Set proper permissions: directories 755, files 644
+        find "$DEST_PATH" -type d -exec chmod 755 {} \; 2>/dev/null
+        find "$DEST_PATH" -type f -exec chmod 644 {} \; 2>/dev/null
+        log "$CONTAINER_NAME: Permissions set (dirs=755, files=644)"
     else
         log "ERROR: Failed to extract files from $SOURCE_PATH"
     fi
