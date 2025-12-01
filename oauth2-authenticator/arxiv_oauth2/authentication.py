@@ -1,5 +1,4 @@
 """Provides integration for the external user interface."""
-import dataclasses
 import json
 import urllib.parse
 from dataclasses import asdict
@@ -29,7 +28,7 @@ from starlette.datastructures import URL
 # from arxiv.auth.legacy import accounts, exceptions
 # from arxiv.auth import domain
 
-from . import get_current_user_or_none, get_db, COOKIE_ENV_NAMES
+from . import get_current_user_or_none, get_db, COOKIE_ENV_NAMES, cookie_params
 from .biz.account_biz import is_user_account_valid
 from .biz.cold_migration import cold_migrate
 from .legacy import get_tapir_cookie_or_none, LegacySessionCookie
@@ -37,44 +36,6 @@ from .legacy import get_tapir_cookie_or_none, LegacySessionCookie
 
 from .sessions import create_tapir_session
 from arxiv_bizlogic.audit_event import admin_audit, AdminAudit_BecomeUser
-
-@dataclasses.dataclass
-class CookieParams:
-    auth_session_cookie_name: str    # ArxivUserClaims (deprecated)
-    classic_cookie_name: str         # classic cookie name
-    keycloak_access_token_name: str  # Keycloak access token
-    keycloak_refresh_token_name: str # Keycloak access token
-    ng_cookie_name: str              # arxivng cookie name
-    domain: Optional[str]            # domain
-    secure: bool                     # secure
-    samesite: Literal["lax", "none"] # same site
-    jwt_secret: str                  # JWT secret
-    max_age: int
-
-
-def cookie_params(request: Request) -> CookieParams:
-    """
-        AUTH_SESSION_COOKIE_NAME=AUTH_SESSION_COOKIE_NAME,
-        KEYCLOAK_ACCESS_COOKIE_NAME=KEYCLOAK_ACCESS_TOKEN_NAME,
-        KEYCLOAK_REFRESH_TOKEN_NAME=KEYCLOAK_ACCESS_TOKEN_NAME,
-        CLASSIC_COOKIE_NAME=CLASSIC_COOKIE_NAME,
-        ARXIVNG_COOKIE_NAME=ARXIVNG_COOKIE_NAME,
-
-    """
-
-    return CookieParams(
-        auth_session_cookie_name=request.app.extra[COOKIE_ENV_NAMES.auth_session_cookie_env],
-        classic_cookie_name=request.app.extra[COOKIE_ENV_NAMES.classic_cookie_env],
-        keycloak_access_token_name=request.app.extra[COOKIE_ENV_NAMES.keycloak_access_token_env],
-        keycloak_refresh_token_name=request.app.extra[COOKIE_ENV_NAMES.keycloak_refresh_token_env],
-        ng_cookie_name=request.app.extra[COOKIE_ENV_NAMES.ng_cookie_env],
-        domain=request.app.extra.get('DOMAIN'),
-        secure=request.app.extra.get('SECURE', True),
-        samesite=request.app.extra.get('SAMESITE', "Lax"),
-        jwt_secret=request.app.extra.get('JWT_SECRET', "jwt secret is not set"),
-        max_age=int(request.app.extra['COOKIE_MAX_AGE']),
-    )
-
 
 logger = logging.getLogger(__name__)
 
