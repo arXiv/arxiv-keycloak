@@ -39,7 +39,7 @@ services:
     volumes:
       - ${GCP_PUBSUB_SUBRCRIBER_CREDENTIALS}:/pubsub-subscriber-key.json:ro
     network_mode: host
-    command: python main.py --project "${PUBSUB_PROJECT}" --subscription "${KC_TAPIR_BRIDGE_SUBSCRIPTION}" --debug 
+    command: python main.py --project "${PUBSUB_PROJECT}" --subscription "${KC_TAPIR_BRIDGE_SUBSCRIPTION}" --debug
 
   # Landing page
   arxiv-portal:
@@ -93,6 +93,12 @@ services:
       PORT: ${ADMIN_API_PORT}
       ENDORSER_POOL_OBJECT_URL: ${ADMIN_API_ENDORSER_POOL_OBJECT_URL}
       API_SHARED_SECRET: ${ADMIN_API_SHARED_SECRET}
+      GCP_SERVICE_REQUEST_SA: ${ADMIN_API_GCP_SERVICE_REQUEST_SA}
+      GCP_SERVICE_REQUEST_ENDPOINT: ${ADMIN_API_GCP_SERVICE_REQUEST_ENDPOINT}
+      AAA_TOKEN_REFRESH_URL: ${AAA_TOKEN_REFRESH_URL}
+      AAA_LOGIN_REDIRECT_URL: ${AAA_LOGIN_REDIRECT_URL}
+      GOOGLE_APPLICATION_CREDENTIALS: /bomb-range/cred/arxiv-development-admin-api-sa.json
+      ARXIV_DOCUMENT_BUCKET_NAME:  ${ARXIV_DOCUMENT_BUCKET_NAME}
     network_mode: host
     volumes:
       - /opt_arxiv/bomb-range:/bomb-range
@@ -108,54 +114,30 @@ services:
     network_mode: host
 
   # email-to-pubsub
-  email-to-pubsub:
-    image: ${EMAIL_TO_PUBSUB_TAG}:latest
-    container_name: email-to-pubsub
-    environment:
-      GOOGLE_APPLICATION_CREDENTIALS: /pubsub-publisher-key.json
-      MAIL_API_PORT:
-      SMTP_PORT: 
-    network_mode: host
-    volumes:
-      - ${GCP_PUBSUB_PUBLISHER_CREDENTIALS}:/pubsub-publisher-key.json:ro
+  # email-to-pubsub:
+  #   image: ${EMAIL_TO_PUBSUB_TAG}:latest
+  #   container_name: email-to-pubsub
+  #   environment:
+  #     GOOGLE_APPLICATION_CREDENTIALS: /pubsub-publisher-key.json
+  #     MAIL_API_PORT:
+  #     SMTP_PORT:
+  #   network_mode: host
+  #   volumes:
+  #     - ${GCP_PUBSUB_PUBLISHER_CREDENTIALS}:/pubsub-publisher-key.json:ro
 
-  # Elasticsearch
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.2
-    container_name: elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ports:
-      - "9200:9200"
-      - "9300:9300"
-    volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
-    network_mode: host
 
-  # Logstash for MySQL ingestion
-  logstash:
-    image: docker.elastic.co/logstash/logstash:8.8.2
-    container_name: logstash
-    environment:
-      - "LS_JAVA_OPTS=-Xmx256m -Xms256m"
-      - "MONITORING_ELASTICSEARCH_HOSTS=http://localhost:9200"
-      - "XPACK_MONITORING_ENABLED=false"
-    volumes:
-      - ./logstash/pipeline:/usr/share/logstash/pipeline
-      - ./logstash/config:/usr/share/logstash/config
-      - ./logstash/drivers:/usr/share/logstash/drivers
-    network_mode: host
-    depends_on:
-      - elasticsearch
-    command: >
-      bash -c "
-        curl -L -o /usr/share/logstash/mysql-connector-java-8.0.33.jar https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.33/mysql-connector-java-8.0.33.jar &&
-        /usr/local/bin/docker-entrypoint
-      "
   #
-
-volumes:
-  elasticsearch_data:
-    driver: local
+  ui-extractor:
+    image: docker:latest
+    container_name: ui-extractor
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/www/arxiv:/output
+      - ./extract-react-app.sh:/extract-react-app.sh:ro
+      - ./cred/cit-image-repo-reader.json:/gcp-key.json:ro
+    environment:
+      - ACCOUNT_PORTAL_IMAGE=${ACCOUNT_PORTAL_APP_TAG}:latest
+      - ADMIN_CONSOLE_IMAGE=${ADMIN_CONSOLE_TAG}:latest
+      - CHECK_INTERVAL=120
+    command: sh -c "while true; do sh /extract-react-app.sh; sleep 3; done"
+    restart: unless-stopped
