@@ -1,4 +1,3 @@
-
 services:
   # Cookie maker
   oauth2-authenticator:
@@ -26,7 +25,10 @@ services:
       #
       KEYCLOAK_ADMIN_SECRET: ${KC_ADMIN_PASSWORD}
       #
-    network_mode: host
+    ports:
+      - "${ARXIV_OAUTH2_APP_PORT}:${ARXIV_OAUTH2_APP_PORT}"
+    networks:
+      - wombat-network
 
   # KC -> Tapir tables
   keycloak-tapir-bridge:
@@ -38,8 +40,10 @@ services:
       CLASSIC_DB_URI: ${CLASSIC_DB_URI}
     volumes:
       - ${GCP_PUBSUB_SUBRCRIBER_CREDENTIALS}:/pubsub-subscriber-key.json:ro
-    network_mode: host
+    networks:
+      - wombat-network
     command: python main.py --project "${PUBSUB_PROJECT}" --subscription "${KC_TAPIR_BRIDGE_SUBSCRIPTION}" --debug
+
 
   # Landing page
   arxiv-portal:
@@ -67,18 +71,11 @@ services:
       LEGACY_AUTH_PROVIDER: "https://legacy-auth-provider-874717964009.us-central1.run.app"
       ADMIN_API_URL: "https://dev9.arxiv.org/admin-api"
 
-    network_mode: host
+    ports:
+      - "${ARXIV_PORTAL_PORT}:${ARXIV_PORTAL_PORT}"
+    networks:
+      - wombat-network
 
-  # User account portal
-  account-portal:
-    image: ${ACCOUNT_PORTAL_APP_TAG}:latest
-    container_name: account-portal
-    environment:
-      PORT: ${ACCOUNT_PORTAL_APP_PORT}
-      AAA_URL: https://dev9.arxiv.org/aaa
-      ADMIN_API_BACKEND_URL: https://dev9.arxiv.org/admin-api
-      ACCOUNT_UI_APP_ROOT: https://dev9.arxiv.orguser-account/
-    network_mode: host
 
   # Admin console backend
   admin-api:
@@ -99,31 +96,12 @@ services:
       AAA_LOGIN_REDIRECT_URL: ${AAA_LOGIN_REDIRECT_URL}
       GOOGLE_APPLICATION_CREDENTIALS: /bomb-range/cred/arxiv-development-admin-api-sa.json
       ARXIV_DOCUMENT_BUCKET_NAME:  ${ARXIV_DOCUMENT_BUCKET_NAME}
-    network_mode: host
+    ports:
+      - "${ADMIN_API_PORT}:${ADMIN_API_PORT}"
+    networks:
+      - wombat-network
     volumes:
       - /opt_arxiv/bomb-range:/bomb-range
-
-
-  # Admin console UI
-  admin-console:
-    image: ${ADMIN_CONSOLE_TAG}:latest
-    container_name: admin-console
-    environment:
-      PORT: ${ADMIN_CONSOLE_PORT}
-      JWT_SECRET: ${JWT_SECRET}
-    network_mode: host
-
-  # email-to-pubsub
-  # email-to-pubsub:
-  #   image: ${EMAIL_TO_PUBSUB_TAG}:latest
-  #   container_name: email-to-pubsub
-  #   environment:
-  #     GOOGLE_APPLICATION_CREDENTIALS: /pubsub-publisher-key.json
-  #     MAIL_API_PORT:
-  #     SMTP_PORT:
-  #   network_mode: host
-  #   volumes:
-  #     - ${GCP_PUBSUB_PUBLISHER_CREDENTIALS}:/pubsub-publisher-key.json:ro
 
 
   #
@@ -133,11 +111,17 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/www/arxiv:/output
-      - ./extract-react-app.sh:/extract-react-app.sh:ro
-      - ./cred/cit-image-repo-reader.json:/gcp-key.json:ro
+      - /opt_arxiv/arxiv-ce-production/extract-react-app.sh:/extract-react-app.sh:ro
+      - ${WATCHTOWER_CONFIG}:/root/.docker/config.json:ro
     environment:
-      - ACCOUNT_PORTAL_IMAGE=${ACCOUNT_PORTAL_APP_TAG}:latest
-      - ADMIN_CONSOLE_IMAGE=${ADMIN_CONSOLE_TAG}:latest
+      - ACCOUNT_PORTAL_IMAGE=${ACCOUNT_PORTAL_APP_TAG}
+      - ADMIN_CONSOLE_IMAGE=${ADMIN_CONSOLE_TAG}
       - CHECK_INTERVAL=120
-    command: sh -c "while true; do sh /extract-react-app.sh; sleep 3; done"
+    command: sh /extract-react-app.sh
     restart: unless-stopped
+    networks:
+      - wombat-network
+
+networks:
+  wombat-network:
+    driver: bridge
