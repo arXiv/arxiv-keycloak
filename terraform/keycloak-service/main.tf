@@ -69,7 +69,7 @@ data "google_secret_manager_secret_version" "secrets" {
 }
 
 resource "google_service_account" "keycloak_sa" {
-  account_id = "keycloak-sa"
+  account_id   = "keycloak-sa"
   display_name = "${var.environment} Keycloak Service Account"
   project      = var.gcp_project_id
 }
@@ -172,7 +172,7 @@ resource "google_cloud_run_service" "keycloak" {
 
         env {
           name  = "GCP_PROJECT_ID"
-          value = var.gcp_project_id 
+          value = var.gcp_project_id
         }
 
         env {

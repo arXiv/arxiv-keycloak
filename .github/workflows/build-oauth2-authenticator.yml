@@ -1,19 +1,18 @@
-name: Build legacy-auth-provider
+name: Build oauth2-authenticator
 
-run-name: "Build legacy-auth-provider ${{ github.ref_name }} ${{ inputs.custom_sha || github.sha }}"
+run-name: "Build oauth2-authenticator ${{ github.ref_name }} ${{ inputs.custom_sha || github.sha }}"
 
 on:
   push:
     branches:
       - master
-      - 'ntai/**'
     paths:
-      - "legacy_auth_provider/**"
+      - "oauth2-authenticator/**"
   pull_request:
     branches:
       - master
     paths:
-      - "legacy_auth_provider/**"
+      - "oauth2-authenticator/**"
   workflow_dispatch:
     inputs:
       custom_sha:
@@ -26,11 +25,11 @@ permissions:
   actions: write
 
 env:
-  DEPLOY_WORKFLOW: "deploy-legacy-auth-provider.yml"
+  DEPLOY_WORKFLOW: "deploy-oauth2-authenticator.yml"
   DOCKERFILE: "Dockerfile"
   GCP_PROJECT_ID: "arxiv-development"
   ARTIFACT_REGISTRY_REPO: "arxiv-keycloak"
-  IMAGE_NAME: "legacy-auth-provider"
+  IMAGE_NAME: "oauth2-authenticator"
 
 jobs:
   format-check:
@@ -72,11 +71,11 @@ jobs:
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v3
 
-      - name: Configure Docker for GCR
+      - name: Configure Docker
         run: gcloud auth configure-docker
 
       - name: Build image, caching from latest
-        working-directory: legacy_auth_provider
+        working-directory: oauth2-authenticator
         run: |
           pwd
           ls
@@ -87,7 +86,7 @@ jobs:
 
           BRANCH_TAG="$(printf "%.128s" "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" | sed 's/\//-/g')"
 
-          # Build the legacy auth provider image
+          # Build the setup job image
           docker build -f ${DOCKERFILE} --build-arg GIT_COMMIT=${{ inputs.custom_sha || github.sha }} \
           --cache-from gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.IMAGE_NAME }}:latest \
           -t gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.IMAGE_NAME }}:${{ inputs.custom_sha || github.sha }} \
@@ -100,7 +99,7 @@ jobs:
       # # CI Deployment Routing ... manual builds of a commit are not CD candidates
       # - name: Deployment Routing
       #   if: ${{ !inputs.custom_sha }}
-      #   uses: arXiv/iac-public/.github/actions/service-deployment-routing@main
+      #   uses: arXiv/iac-public/.github/actions/service-deployment-routing@main  
       #   with:
       #     image_tag: ${{ github.sha }}
       #     deploy_workflow: ${{ env.DEPLOY_WORKFLOW }}

@@ -1,6 +1,6 @@
-name: Deploy legacy-auth-provider
+name: Deploy keycloak-bend
 
-run-name: "Deploy legacy-auth-provider ${{ inputs.env }} ${{ inputs.image_tag }}"
+run-name: "Deploy keycloak-benv ${{ inputs.env }} ${{ inputs.image_tag }}"
 
 on:
   workflow_call:
@@ -34,7 +34,7 @@ permissions:
   id-token: write
 
 env:
-  IMAGE_NAME: "arxiv-keycloak/legacy-auth-provider"
+  IMAGE_NAME: "arxiv-keycloak/arxiv-keycloak"
 
 jobs:
   format-check:
@@ -51,7 +51,7 @@ jobs:
         run: terraform --version
 
       - name: Format check
-        run: terraform fmt -check -recursive terraform/legacy-auth-provider
+        run: terraform fmt -check -recursive terraform/keycloak-service
 
   deploy:
     runs-on: ubuntu-latest
@@ -77,27 +77,25 @@ jobs:
       - name: Check version
         run: terraform --version
 
-      - name: Set environment variables
+      - name: Set environment variables (dependencies on db output variables)
         run: |
-          # Set Cloud SQL instance - format: {project-name}:{region}:master-db
-          CLOUDSQL_INSTANCE="$PROJECT_NAME:$REGION:arxiv-db"
+          terraform init -backend-config="bucket=${{ vars.TERRAFORM_BUCKET }}"
 
-          # Add legacy_auth_image to TERRAFORM_ARGS for all environments
           TERRAFORM_ARGS="-var-file=\"envs/${{ vars.ENV_VAR }}.tfvars\" \
-            -var=\"cloudsql_instance=${{vars.PROJECT_NAME}}:${{vars.REGION}}:${{vars.CLOUDSQL_INSTANCE}}\" \
-            -var=\"legacy_auth_image=gcr.io/arxiv-development/${{env.IMAGE_NAME}}:${{inputs.image_tag}}\""
+            -var=\"keycloak_image=gcr.io/arxiv-development/${{env.IMAGE_NAME}}:${{inputs.image_tag}}\" \
+            -var=\"auth_db_private_ip=$(terraform output -raw private_ip_address)\" \
+            -var=\"use_cloud_sql_proxy=false\" \
+            -var=\"auth_db_name=$(terraform output -raw database_name)\" \
+            -var=\"db_user=$(terraform output -raw keycloak_user_name)\" \
+            -var=\"keycloak_db_password_secret_name=$(terraform output -raw keycloak_password_secret_name)\""
 
           echo "TERRAFORM_ARGS=$TERRAFORM_ARGS" >> $GITHUB_ENV
+        working-directory: terraform/keycloak-db
 
-      - name: Initialize legacy-auth-provider remote backend
+      - name: Initialize keycloak-svc remote backend
         run: terraform init -backend-config="bucket=${{ vars.TERRAFORM_BUCKET }}"
-        working-directory: terraform/legacy-auth-provider
-
-      - name: Get image digest
-        run: |
-          DIGEST=$(gcloud container images describe gcr.io/arxiv-development/${{env.IMAGE_NAME}}:${{inputs.image_tag}} --format='value(image_summary.digest)')
-          echo "IMAGE_DIGEST=$DIGEST" >> $GITHUB_ENV
+        working-directory: terraform/keycloak-service
 
       - name: Apply
-        run: terraform apply ${{ env.TERRAFORM_ARGS }} -var="image_digest=${{ env.IMAGE_DIGEST }}" -auto-approve
-        working-directory: terraform/legacy-auth-provider
+        run: terraform apply ${{ env.TERRAFORM_ARGS }} -auto-approve
+        working-directory: terraform/keycloak-service
