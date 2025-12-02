@@ -27,13 +27,13 @@ environment    = "development"
 keycloak_image = "us-central1-docker.pkg.dev/arxiv-development/arxiv-docker/keycloak-service:latest"
 
 # Cloud Run service configuration
-min_instances = "1"
-max_instances = "1"
-cpu_limit     = "1"
-memory_limit  = "2Gi"
-timeout_seconds = 300
+min_instances         = "1"
+max_instances         = "1"
+cpu_limit             = "1"
+memory_limit          = "2Gi"
+timeout_seconds       = 300
 container_concurrency = 80
-container_port = 8080
+container_port        = 8080
 
 # Performance settings
 cpu_boost        = true
@@ -41,11 +41,11 @@ session_affinity = true
 vpc_egress       = "private-ranges-only"
 
 # Backend and health check configuration
-backend_timeout_sec = 300
-enable_health_check = true
-health_check_timeout = 5
+backend_timeout_sec   = 300
+enable_health_check   = true
+health_check_timeout  = 5
 health_check_interval = 30
-health_check_path = "/health/ready"
+health_check_path     = "/health/ready"
 
 # Secrets (to be mounted)
 secrets = {
@@ -76,21 +76,21 @@ secrets = {
 }
 
 # Keycloak startup mode: "start-dev" (development) or "start" (production)
-keycloak_start                = "start-dev"
-arxiv_user_registration_url   = "https://dev9.arxiv.org/user-account/register"
+keycloak_start              = "start-dev"
+arxiv_user_registration_url = "https://dev9.arxiv.org/user-account/register"
 
 # Environment variables
 additional_env_vars = {
-  PROXY_MODE                    = "--proxy-headers=forwarded"
-  KC_BOOTSTRAP_ADMIN_USERNAME   = "admin"
-  BOOTSTRAP                     = "no"
-  LOG_OUTPUT_FORMAT             = "--log-console-output=json"
-  KC_PORT                       = "8080"
-  GRPC_LOG_LEVEL                = "DEBUG"
-  GRPC_TRACE                    = "tcp,http,api"
+  PROXY_MODE                  = "--proxy-headers=forwarded"
+  KC_BOOTSTRAP_ADMIN_USERNAME = "admin"
+  BOOTSTRAP                   = "no"
+  LOG_OUTPUT_FORMAT           = "--log-console-output=json"
+  KC_PORT                     = "8080"
+  GRPC_LOG_LEVEL              = "DEBUG"
+  GRPC_TRACE                  = "tcp,http,api"
   # Keycloak audit event publishing to GCP Pub/Sub (via SPI plugin)
-  GCP_EVENT_TOPIC_ID            = "keycloak-arxiv-events"
-  GCP_ADMIN_EVENT_TOPIC_ID      = "keycloak-arxiv-events"
+  GCP_EVENT_TOPIC_ID       = "keycloak-arxiv-events"
+  GCP_ADMIN_EVENT_TOPIC_ID = "keycloak-arxiv-events"
 }
 
 # HTTPS and SSL certificate configuration

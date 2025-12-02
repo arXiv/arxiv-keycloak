@@ -114,16 +114,17 @@ services:
     network_mode: host
 
   # email-to-pubsub
-  email-to-pubsub:
-    image: ${EMAIL_TO_PUBSUB_TAG}:latest
-    container_name: email-to-pubsub
-    environment:
-      GOOGLE_APPLICATION_CREDENTIALS: /pubsub-publisher-key.json
-      MAIL_API_PORT:
-      SMTP_PORT:
-    network_mode: host
-    volumes:
-      - ${GCP_PUBSUB_PUBLISHER_CREDENTIALS}:/pubsub-publisher-key.json:ro
+  # email-to-pubsub:
+  #   image: ${EMAIL_TO_PUBSUB_TAG}:latest
+  #   container_name: email-to-pubsub
+  #   environment:
+  #     GOOGLE_APPLICATION_CREDENTIALS: /pubsub-publisher-key.json
+  #     MAIL_API_PORT:
+  #     SMTP_PORT:
+  #   network_mode: host
+  #   volumes:
+  #     - ${GCP_PUBSUB_PUBLISHER_CREDENTIALS}:/pubsub-publisher-key.json:ro
+
 
   #
   ui-extractor:

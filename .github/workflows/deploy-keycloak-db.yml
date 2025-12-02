@@ -1,6 +1,5 @@
 name: Deploy keycloak-db
 
-# Set custom run name to show project name in workflow runs list
 run-name: "Deploy keycloak-db ${{ inputs.env }} ${{ inputs.image_tag }}"
 
 on:

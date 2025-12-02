@@ -1,19 +1,20 @@
-name: Build legacy-auth-provider
+name: Build keycloak-bend
 
-run-name: "Build legacy-auth-provider ${{ github.ref_name }} ${{ inputs.custom_sha || github.sha }}"
+run-name: "Build keycloak-bend ${{ github.ref_name }} ${{ inputs.custom_sha || github.sha }}"
 
 on:
   push:
     branches:
       - master
-      - 'ntai/**'
+    tags:
+      - "RELEASE-*"
     paths:
-      - "legacy_auth_provider/**"
+      - "keycloak_bend/**"
   pull_request:
     branches:
       - master
     paths:
-      - "legacy_auth_provider/**"
+      - "keycloak_bend/**"
   workflow_dispatch:
     inputs:
       custom_sha:
@@ -24,13 +25,15 @@ on:
 permissions:
   id-token: write
   actions: write
+  contents: read
+  pull-requests: write
 
 env:
-  DEPLOY_WORKFLOW: "deploy-legacy-auth-provider.yml"
+  DEPLOY_WORKFLOW: "deploy-keycloak-bend.yml"
   DOCKERFILE: "Dockerfile"
   GCP_PROJECT_ID: "arxiv-development"
   ARTIFACT_REGISTRY_REPO: "arxiv-keycloak"
-  IMAGE_NAME: "legacy-auth-provider"
+  IMAGE_NAME: "arxiv-keycloak"
 
 jobs:
   format-check:
@@ -72,11 +75,11 @@ jobs:
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v3
 
-      - name: Configure Docker for GCR
+      - name: Configure Docker
         run: gcloud auth configure-docker
 
       - name: Build image, caching from latest
-        working-directory: legacy_auth_provider
+        working-directory: keycloak_bend
         run: |
           pwd
           ls
@@ -87,7 +90,7 @@ jobs:
 
           BRANCH_TAG="$(printf "%.128s" "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" | sed 's/\//-/g')"
 
-          # Build the legacy auth provider image
+          # Build the setup job image
           docker build -f ${DOCKERFILE} --build-arg GIT_COMMIT=${{ inputs.custom_sha || github.sha }} \
           --cache-from gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.IMAGE_NAME }}:latest \
           -t gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.IMAGE_NAME }}:${{ inputs.custom_sha || github.sha }} \
@@ -97,12 +100,46 @@ jobs:
       - name: Push image
         run: docker push --all-tags gcr.io/${{ env.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.IMAGE_NAME }}
 
-      # # CI Deployment Routing ... manual builds of a commit are not CD candidates
-      # - name: Deployment Routing
-      #   if: ${{ !inputs.custom_sha }}
-      #   uses: arXiv/iac-public/.github/actions/service-deployment-routing@main
-      #   with:
-      #     image_tag: ${{ github.sha }}
-      #     deploy_workflow: ${{ env.DEPLOY_WORKFLOW }}
-      #     workload_identity_provider: ${{ vars.ARXIV_DEVELOPMENT_PROVIDER_NAME }}
-      #     service_account: ${{ vars.ARXIV_DEVELOPMENT_SERVICE_ACCOUNT }}
+  development:
+    needs: build-push
+    uses: ./.github/workflows/deploy-keycloak-bend.yml
+    if: ${{ github.event_name != 'workflow_dispatch' && (github.base_ref == 'master' || github.ref_name == 'master') }}
+    with:
+      env: development
+      image_tag: ${{ github.sha }}
+
+  staging:
+    needs: build-push
+    uses: ./.github/workflows/deploy-keycloak-bend.yml
+    if: ${{ startsWith(github.ref, 'refs/tags/RELEASE-') }}
+    with:
+      env: staging
+      image_tag: ${{ github.sha }}      
+
+
+  # deploy2:
+  #   needs: build-push
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #       with:
+  #         ref: ${{ github.sha }}
+
+  #     - name: Deploy 2 - targeting development
+  #       uses: ./.github/workflows/deploy-keycloak-bend.yml
+  #       with:
+  #         env: development
+  #         image_tag: ${{ github.sha }}
+
+
+  # deploy-staging:
+  # if: ${{ github.event_name != 'workflow_dispatch' && (github.base_ref == 'master' || github.ref_name == 'master') }}
+  #   needs: build-push
+  #   if: ${{ startsWith(github.ref, 'refs/tags/RELEASE-') }}
+  #   uses: ./.github/workflows/deploy-keycloak-bend.yml
+  #   with:
+  #     environment: staging
+  #     image_tag: ${{ github.sha }}
+  #   secrets: inherit

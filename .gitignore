@@ -200,3 +200,5 @@ foo.sql
 keycloak_bend/arxiv-theme/
 \.\#.*
 \.#.*
+
+**/.DS_Store
