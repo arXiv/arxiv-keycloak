@@ -29,6 +29,7 @@ import os
 
 def check_any_rows_in_table(schema: str, table_name: str, db_user: str, db_password: str, db_port: str = "3306", ssl: bool = True) -> bool:
     try:
+        logging.info(f"Checking table {table_name} in schema {schema} on port {db_port}")
         result = subprocess.run(
             [
                 "mysql",
@@ -36,7 +37,8 @@ def check_any_rows_in_table(schema: str, table_name: str, db_user: str, db_passw
                 f"-p{db_password}",
                 "-h", "127.0.0.1",
                 "-P", db_port,
-                "--ssl-mode=ENABLED" if ssl else "--ssl-mode=DISABLED",
+                "--ssl-mode=DISABLED",
+                "--default-auth=mysql_native_password",
                 "-N",
                 "-B",
                 "-e", f"SELECT COUNT(*) FROM {table_name};",
@@ -44,9 +46,15 @@ def check_any_rows_in_table(schema: str, table_name: str, db_user: str, db_passw
             ],
             capture_output=True,
             text=True,
-            check=True
+            check=False # Do not raise exception for non-zero exit codes
         )
+        if result.returncode != 0:
+            logging.error(f"MySQL command failed with exit code {result.returncode}")
+            logging.error(f"Stdout: {result.stdout}")
+            logging.error(f"Stderr: {result.stderr}")
+            return False
         count = int(result.stdout.strip())
+        logging.info(f"Table {table_name} has {count} rows.")
         return count > 0
     except subprocess.CalledProcessError as e:
         return False
@@ -71,17 +79,16 @@ def docker_compose(test_env):
     working_dir = AAA_TEST_DIR.as_posix()
 
     try:
-        if os.environ.get("RECREATE_DOCKERS", "true") == "true":
-            logging.info("Stopping docker-compose...")
-            subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "down", "--remove-orphans"], check=False, cwd=working_dir)
-            logging.info("Starting docker-compose...")
-            subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "up", "-d"], check=True, cwd=working_dir)
-            pass
-
+        logging.info("Stopping docker-compose...")
+        subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "down", "--remove-orphans"], check=False, cwd=working_dir)
+        logging.info("Starting docker-compose...")
+        subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "up", "-d"], check=True, cwd=working_dir)
+        
         # Loop until at least one row is present
         for _ in range(100):
             sleep(1)
             if check_any_rows_in_table("arXiv", "tapir_users", "arxiv", "arxiv_password", db_port=test_env["ARXIV_DB_PORT"], ssl=False):
+                logging.info("Database is ready.")
                 break
         else:
             assert False, "Failed to load "
