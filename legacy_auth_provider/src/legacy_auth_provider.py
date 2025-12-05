@@ -71,8 +71,12 @@ async def validate_user(name: str, pwd: PasswordData, _token: str=Depends(verify
 
 @app.get("/states", response_model=dict)
 async def health_check() -> dict:
+    result: dict = {}
+    try:
+        result.update({"/cloudsql": os.listdir("/cloudsql")})
+    except Exception as exc:
+        logger.info("/cloudsql: " + str(exc), exc_info=False)
 
-    result: dict = {"/cloudsql": os.listdir("/cloudsql")}
     result.update({"env": repr(os.environ)})
 
     csql_readme = "/cloudsql/README"
