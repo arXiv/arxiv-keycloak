@@ -1,50 +1,14 @@
 #!/bin/sh
-# extract-ui.sh - Monitor and extract React UIs from Docker images
+# extract-react-app.sh - Monitor and extract React UIs from Docker images
 
 DEST_DIR="/output"
 STATE_DIR="/tmp/ui-extractor-state"
 CHECK_INTERVAL=${CHECK_INTERVAL:-3600}
-GCP_KEY_FILE="/gcp-key.json"
 
 mkdir -p "$STATE_DIR"
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
-}
-
-# Initialize GCP authentication and Docker CLI
-initialize() {
-    log "=== Initializing UI Extractor Service ==="
-
-
-    # Install gcloud CLI if not present
-    if ! command -v gcloud >/dev/null 2>&1; then
-        log "Installing gcloud CLI..."
-        apk add --no-cache python3 py3-pip curl bash
-
-        # Install gcloud SDK
-        curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-458.0.0-linux-x86_64.tar.gz
-        tar -xzf google-cloud-sdk-458.0.0-linux-x86_64.tar.gz
-        ./google-cloud-sdk/install.sh --quiet --usage-reporting=false --path-update=true
-        rm google-cloud-sdk-458.0.0-linux-x86_64.tar.gz
-
-        # Add to PATH
-        export PATH=$PATH:/google-cloud-sdk/bin
-        log "gcloud CLI installed"
-    fi
-
-    # Authenticate with GCP
-    if [ -f "$GCP_KEY_FILE" ]; then
-        log "Authenticating with GCP..."
-        /google-cloud-sdk/bin/gcloud auth activate-service-account --key-file="$GCP_KEY_FILE" --quiet
-        /google-cloud-sdk/bin/gcloud auth configure-docker gcr.io --quiet
-        log "GCP authentication complete"
-    else
-        log "WARNING: GCP key file not found at $GCP_KEY_FILE"
-    fi
-
-
-    log "Initialization complete"
 }
 
 get_image_digest() {
@@ -63,8 +27,9 @@ extract_ui() {
 
     # Pull latest image
     log "Pulling $IMAGE..."
-    if ! docker pull "$IMAGE" >/dev/null 2>&1; then
+    if ! docker pull "$IMAGE" 2>&1 | tee -a /tmp/docker-pull.log; then
         log "ERROR: Failed to pull $IMAGE"
+        cat /tmp/docker-pull.log
         return 1
     fi
 
@@ -113,10 +78,8 @@ extract_ui() {
     log "$CONTAINER_NAME: Extraction complete"
 }
 
-# Initialize on first run
-initialize
-
 # Main loop
+log "=== UI Extractor Service Started ==="
 log "Monitoring images for updates every ${CHECK_INTERVAL}s"
 
 while true; do
@@ -133,7 +96,7 @@ while true; do
     extract_ui \
         "$ACCOUNT_PORTAL_IMAGE" \
         "account-portal" \
-        "/usr/share/nginx/html/user-account" \
+        "/usr/share/nginx/html" \
         "user-account"
 
     log "--- Extraction cycle complete, sleeping ${CHECK_INTERVAL}s ---"
