@@ -1,6 +1,6 @@
 {
   "name": "account-app",
-  "homepage": "http://localhost.arxiv.org:5100",
+  "homepage": "/user-account",
   "private": true,
   "version": "0.0.0",
   "type": "module",
