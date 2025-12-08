@@ -16,6 +16,7 @@ from fastapi import Request, HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from starlette.types import ASGIApp, Receive, Scope, Send
+from arxiv.auth.legacy.exceptions import SessionExpired
 
 from .database import Database
 
@@ -321,12 +322,13 @@ class TapirCookieToUserClaimsMiddleware:
         jwt_secret = request.app.extra.get('JWT_SECRET')
         
         # Check if ArxivUserClaims cookie already exists
-        arxiv_claims_cookie = request.cookies.get(auth_session_cookie_name)
-        
+        arxiv_claims_cookie = None
+        # arxiv_claims_cookie = request.cookies.get(auth_session_cookie_name)
+
         # Check if Authorization header already exists
         headers = dict(scope.get("headers", []))
         existing_auth = headers.get(b"authorization")
-        
+
         # If no ArxivUserClaims cookie, no existing auth header, but tapir cookie exists, create JWT token
         if not arxiv_claims_cookie and not existing_auth and jwt_secret:
             tapir_cookie = request.cookies.get(classic_cookie_name)
@@ -356,6 +358,11 @@ class TapirCookieToUserClaimsMiddleware:
                     finally:
                         session.close()
                         
+                except SessionExpired:
+                    logger = getLogger(__name__)
+                    logger.debug("Tapir cookie expired. (normal)")
+                    pass
+
                 except Exception as exc:
                     # Log error but don't break the request
                     logger = getLogger(__name__)
