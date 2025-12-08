@@ -1,12 +1,14 @@
 from typing import  Optional
 from logging import getLogger
 from arxiv.auth.legacy.cookies import unpack
+from arxiv.auth.legacy.exceptions import SessionExpired
 from arxiv.auth.user_claims import ArxivUserClaims, ArxivUserClaimsModel
 from sqlalchemy.orm import Session as DBSession
 from arxiv.db.models import TapirUser, TapirSession
 from .user_model import UserModel
 from .tapir_to_kc_mapping import user_model_to_auth_response, AuthResponse
 from ..fastapi_helpers import datetime_to_epoch
+from datetime import datetime, UTC
 
 
 def create_user_claims_from_tapir_cookie(session: DBSession,
@@ -21,6 +23,18 @@ def create_user_claims_from_tapir_cookie(session: DBSession,
 
     try:
         session_id, user_id, ip, issued_at, expires_at, capabilities = unpack(tapir_cookie)
+    except ValueError as exc:
+        logger.error("create_user_claims_from_tapir_cookie[1] - ValueError: " + str(exc), exc_info=exc)
+        return None
+
+    except Exception as exc:
+        logger.error("create_user_claims_from_tapir_cookie[1]", exc_info=exc)
+        return None
+
+    if expires_at <= datetime.now(tz=UTC):
+        raise SessionExpired(f'Session {session_id} has expired in cookie')
+
+    try:
         tapir_user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
         tapir_session: TapirSession | None = session.query(TapirSession).filter(TapirSession.session_id == session_id).one_or_none()
         if not tapir_user or not tapir_session:
@@ -28,6 +42,12 @@ def create_user_claims_from_tapir_cookie(session: DBSession,
 
         user = UserModel.one_user(session, str(user_id))
         auth_response: AuthResponse = user_model_to_auth_response(user, tapir_user)
+
+    except Exception as exc:
+        logger.error("create_user_claims_from_tapir_cookie[2]", exc_info=exc)
+        return None
+
+    try:
         data = ArxivUserClaimsModel(
             sub=str(user_id),
             exp=datetime_to_epoch(None, expires_at),
@@ -43,10 +63,6 @@ def create_user_claims_from_tapir_cookie(session: DBSession,
         )
         return ArxivUserClaims(data)
 
-    except ValueError as exc:
-        logger.error("create_user_claims_from_tapir_cookie - ValueError: " + str(exc), exc_info=exc)
-        return None
-
     except Exception as exc:
-        logger.error("create_user_claims_from_tapir_cookie", exc_info=exc)
+        logger.error("create_user_claims_from_tapir_cookie[3]", exc_info=exc)
         return None

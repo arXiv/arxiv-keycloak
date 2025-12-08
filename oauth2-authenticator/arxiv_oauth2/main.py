@@ -29,6 +29,8 @@ from . import get_db, COOKIE_ENV_NAMES, get_keycloak_admin
 from .biz.keycloak_audit import get_keycloak_dispatch_functions
 from arxiv_bizlogic.fastapi_helpers import TapirCookieToUserClaimsMiddleware, COOKIE_ENV_NAMES_TYPE
 
+from .transitional.mock_keycloak_admin import MockKeycloakAdmin
+
 #
 # Since this is not a flask app, the config needs to be in the os.environ
 # Fill in these if it's missing. This is required for setting up Tapir session.
@@ -172,15 +174,17 @@ def create_app(*args, **kwargs) -> FastAPI:
     keycloak_admin_secret = os.environ.get('KEYCLOAK_ADMIN_SECRET', "<NOT-SET>")
     if keycloak_admin_secret == "<NOT-SET>":
         logger.warning("KEYCLOAK_ADMIN_SECRET is not set correctly. kc_admin operations will fail.")
-    keycloak_admin = KeycloakAdmin(
-        server_url=KEYCLOAK_SERVER_URL,
-        user_realm_name="master",
-        client_id="admin-cli",
-        username="admin",
-        password=keycloak_admin_secret,
-        realm_name=realm_name,
-        verify=False,
-    )
+        keycloak_admin = MockKeycloakAdmin()
+    else:
+        keycloak_admin = KeycloakAdmin(
+            server_url=KEYCLOAK_SERVER_URL,
+            user_realm_name="master",
+            client_id="admin-cli",
+            username="admin",
+            password=keycloak_admin_secret,
+            realm_name=realm_name,
+            verify=False,
+        )
 
     URLs: dict = {f"ARXIV_URL_{name.upper()}": value for name, value, site in settings.URLS}
 
