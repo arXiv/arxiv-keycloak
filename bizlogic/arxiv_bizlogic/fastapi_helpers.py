@@ -21,6 +21,9 @@ from arxiv.auth.legacy.exceptions import SessionExpired
 from .database import Database
 
 
+DECODED_USER_CLAIMS_NAME = "DECODED_USER_CLAIMS"
+
+
 class ApiToken(BaseModel):
     token: str
 
@@ -93,6 +96,11 @@ def decode_user_claims(token: str, jwt_secret: str) -> ArxivUserClaims | None:
 def get_current_user_or_none(request: Request) -> ArxivUserClaims | None:
     """gets the user claims from the cookie. This is a foundational function, and do not change the functionality."""
     logger = getLogger(__name__)
+
+    user_claims = getattr(request.state, DECODED_USER_CLAIMS_NAME, None)
+    if user_claims:
+        return user_claims
+
     session_cookie_key = request.app.extra[COOKIE_ENV_NAMES.auth_session_cookie_env]
     token = request.cookies.get(session_cookie_key)
     if not token:
@@ -346,15 +354,18 @@ class TapirCookieToUserClaimsMiddleware:
                     try:
                         # Create ArxivUserClaims from tapir cookie
                         user_claims: ArxivUserClaims = create_user_claims_from_tapir_cookie(session, tapir_cookie)
-                        
+
                         if user_claims:
                             # Create JWT token from user claims
                             token = user_claims.encode_jwt_token(jwt_secret)
-                            
+
                             # Add Authorization header to the request
                             headers[b"authorization"] = f"Bearer {token}".encode()
                             scope["headers"] = list(headers.items())
-                            
+
+                            # Attach it to the state
+                            scope["state"][DECODED_USER_CLAIMS_NAME] = user_claims
+
                     finally:
                         session.close()
                         
