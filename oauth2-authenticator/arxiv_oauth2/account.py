@@ -75,7 +75,7 @@ async def get_current_user_info(
     if not current_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
     info = reply_account_info(session, str(current_user.user_id))
-    if scope and scope not in info.scopes:
+    if scope and (not info.scopes or scope not in info.scopes):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient scope")
     return info
 
