@@ -64,6 +64,65 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/system/navigation_urls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Navigation Urls
+         * @description prod:      modapi.arxiv.org/admin/shared_nav_header
+         *     dev: services.dev.arxiv.org/admin/shared_nav_header
+         */
+        get: operations["get_navigation_urls_system_navigation_urls_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/system/navigations_url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Navigations Url
+         * @description prod:      modapi.arxiv.org/admin/shared_nav_header
+         *     dev: services.dev.arxiv.org/admin/shared_nav_header
+         */
+        get: operations["get_navigations_url_system_navigations_url_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/system/service-info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Service Info */
+        get: operations["get_service_info_system_service_info_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/frontend/{full_path}": {
         parameters: {
             query?: never;
@@ -554,7 +613,46 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Send Template Message */
+        /**
+         * Send Template Message
+         * @description Handles sending email based on a specified template. The endpoint retrieves the email
+         *     template by its ID, optionally injects dynamic content into the template, and sends the
+         *     email. This can operate in two modes: test mode (sends email
+         *     only to the current authenticated user) or production mode (sends to a specified
+         *     recipient email address). Relies on a centralized notification system for sending
+         *     emails. Returns metadata about the dispatched email.
+         *
+         *     @param request: The FastAPI request object.
+         *     @type request: Request
+         *
+         *     @param id: The unique integer identifier for the email template to be used.
+         *     @type id: int
+         *
+         *     @param body: Optional dictionary containing template parameters to dynamically render
+         *     the email body. Defaults to None.
+         *     @type body: Optional[dict]
+         *
+         *     @param subject: Subject of the email. Defaults to "Test email template".
+         *     @type subject: str
+         *
+         *     @param test_mode: A boolean indicating whether the email is being sent in test mode.
+         *     Defaults to True.
+         *     @type test_mode: bool
+         *
+         *     @param recipient: recipient email. Defaults to None.
+         *     @type test_mode: Optional[str]
+         *
+         *     @param authn: The API token or current authenticated user claims, automatically provided via
+         *     dependency injection.
+         *     @type authn: ArxivUserClaims | APIToken
+         *
+         *     @param session: Database session for querying the email template.
+         *     @type session: Session
+         *
+         *     @return: A JSON response containing metadata of the email sent, including message ID,
+         *     subject, recipient, template ID, and rendered body (only in test mode).
+         *     @rtype: JSONResponse
+         */
         post: operations["send_template_message_v1_email_templates__id__messages_post"];
         delete?: never;
         options?: never;
@@ -1609,6 +1707,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/documents/{id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Document Files
+         * @description Regenerate document artifacts.
+         */
+        get: operations["list_document_files_v1_documents__id__files_get"];
+        put?: never;
+        /**
+         * Upload Document File
+         * @description Upload a document file.
+         */
+        post: operations["upload_document_file_v1_documents__id__files_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/documents/{id}/files/{blob_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Document File
+         * @description Regenerate document artifacts.
+         */
+        get: operations["download_document_file_v1_documents__id__files__blob_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/metadata/": {
         parameters: {
             query?: never;
@@ -1821,43 +1963,6 @@ export interface paths {
         };
         /** Get Submission Summary Of User */
         get: operations["get_submission_summary_of_user_v1_submissions_user__user_id__summary_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/submissions/id:str}/files": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Submission Files */
-        get: operations["list_submission_files_v1_submissions_id_str__files_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/submissions/id:str}/files/{file_type}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Submission File
-         * @description Download the abstract file of a submission
-         */
-        get: operations["get_submission_file_v1_submissions_id_str__files__file_type__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2491,7 +2596,7 @@ export interface components {
          *     administrative operation that affects users, papers, or system state.
          * @enum {string}
          */
-        AdminAuditActionEnum: "add-comment" | "add-paper-owner" | "add-paper-owner-2" | "arXiv-change-paper-pw" | "arXiv-change-status" | "arXiv-make-author" | "arXiv-make-nonauthor" | "arXiv-revoke-paper-owner" | "arXiv-unrevoke-paper-owner" | "become-user" | "change-email" | "change-demographic" | "change-paper-pw" | "change-password" | "endorsed-by-suspect" | "flip-flag" | "got-negative-endorsement" | "make-moderator" | "revoke-paper-owner" | "suspend-user" | "unmake-moderator" | "unsuspend-user";
+        AdminAuditActionEnum: "add-comment" | "add-paper-owner" | "add-paper-owner-2" | "arxiv-category" | "arXiv-change-paper-pw" | "arXiv-change-status" | "arxiv-email-patterns" | "arxiv-endorsement-domains" | "arXiv-make-author" | "arXiv-make-nonauthor" | "arXiv-revoke-paper-owner" | "arXiv-unrevoke-paper-owner" | "become-user" | "change-email" | "change-demographic" | "change-paper-pw" | "change-password" | "endorsed-by-suspect" | "flip-flag" | "got-negative-endorsement" | "make-moderator" | "revoke-paper-owner" | "suspend-user" | "unmake-moderator" | "unsuspend-user";
         /** AdminLogModel */
         AdminLogModel: {
             /** Id */
@@ -2579,6 +2684,18 @@ export interface components {
              * @default csv
              */
             file_format: string;
+        };
+        /** Body_upload_document_file_v1_documents__id__files_post */
+        Body_upload_document_file_v1_documents__id__files_post: {
+            /**
+             * Uploading
+             * Format: binary
+             */
+            uploading: string;
+            /** File Type */
+            file_type: string;
+            /** Storage Id */
+            storage_id: string;
         };
         /** Body_upload_email_patterns_v1_email_patterns_import_post */
         Body_upload_email_patterns_v1_email_patterns_import_post: {
@@ -2737,6 +2854,25 @@ export interface components {
             /** Author Id */
             author_id?: string | null;
         };
+        /** DocumentFile */
+        DocumentFile: {
+            /** Id */
+            id: string;
+            /** Blob Id */
+            blob_id: string;
+            /** Storage Id */
+            storage_id: string;
+            /** Document Id */
+            document_id: number;
+            /** Exists */
+            exists: boolean;
+            /** File Name */
+            file_name: string;
+            /** File Size */
+            file_size?: number | null;
+            /** Content Type */
+            content_type?: string | null;
+        };
         /** DocumentModel */
         DocumentModel: {
             /** Id */
@@ -2887,6 +3023,21 @@ export interface components {
             flag_knows_personally: boolean;
             /** Comment */
             comment?: string | null;
+        };
+        /** EndorsementDomainDAO */
+        EndorsementDomainDAO: {
+            /** Id */
+            id: string;
+            /** Endorse All */
+            endorse_all: boolean;
+            /** Mods Endorse All */
+            mods_endorse_all: boolean;
+            /** Endorse Email */
+            endorse_email: boolean;
+            /** Papers To Endorse */
+            papers_to_endorse: number;
+            /** Comment */
+            comment: string;
         };
         /** EndorsementDomainModel */
         EndorsementDomainModel: {
@@ -3059,6 +3210,39 @@ export interface components {
          * @enum {integer}
          */
         IsAuthorEnum: 0 | 1 | 2;
+        /** KnownServices */
+        KnownServices: {
+            /** Base Server */
+            base_server: string;
+            /** Login Redirect Url */
+            login_redirect_url: string;
+            /** Logout Redirect Url */
+            logout_redirect_url: string;
+            /** Token Refresh Url */
+            token_refresh_url: string;
+            /** Navigations Url */
+            navigations_url: string;
+            /** Modapi */
+            modapi: string;
+            /** Gcp Project Id */
+            gcp_project_id: string;
+            /** User Action Site */
+            user_action_site: string;
+            /** Arxiv Urls */
+            arxiv_urls: [
+                string,
+                string,
+                string
+            ][];
+            /** Search Server */
+            search_server: string;
+            /** Submit Server */
+            submit_server: string;
+            /** Canonical Server */
+            canonical_server: string;
+            /** Help Server */
+            help_server: string;
+        };
         /** LicenseModel */
         LicenseModel: {
             /** Id */
@@ -3454,6 +3638,56 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /**
+         * SharedNavLink
+         * @description SharedNavLink
+         */
+        SharedNavLink: {
+            /** Title */
+            title: string;
+            /** Url */
+            url: string;
+            /** App */
+            app: string;
+        };
+        /**
+         * SharedNavSection
+         * @description SharedNavSection
+         */
+        SharedNavSection: {
+            /** Title */
+            title: string;
+            /** Items */
+            items: components["schemas"]["SharedNavSectionItemsInner"][];
+        };
+        /**
+         * SharedNavSectionItemsInner
+         * @description SharedNavSectionItemsInner
+         */
+        SharedNavSectionItemsInner: {
+            anyof_schema_1_validator?: components["schemas"]["SharedNavSubsection"] | null;
+            anyof_schema_2_validator?: components["schemas"]["SharedNavLink"] | null;
+            /** Actual Instance */
+            actual_instance?: unknown;
+            /**
+             * Any Of Schemas
+             * @default [
+             *       "SharedNavSubsection",
+             *       "SharedNavLink"
+             *     ]
+             */
+            any_of_schemas: string[];
+        };
+        /**
+         * SharedNavSubsection
+         * @description SharedNavSubsection
+         */
+        SharedNavSubsection: {
+            /** Title */
+            title: string;
+            /** Links */
+            links: components["schemas"]["SharedNavLink"][];
+        };
         /** ShowEmailRequestsModel */
         ShowEmailRequestsModel: {
             /** Id */
@@ -3639,6 +3873,12 @@ export interface components {
             submitted: number;
             /** Rejected */
             rejected: number;
+            /** Unknown */
+            unknown: number;
+            /** Max Active Submissions */
+            max_active_submissions: number;
+            /** Submission Permitted */
+            submission_permitted: boolean;
         };
         /**
          * SubmissionType
@@ -4089,6 +4329,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_navigation_urls_system_navigation_urls_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedNavSection"][];
+                };
+            };
+        };
+    };
+    get_navigations_url_system_navigations_url_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    get_service_info_system_service_info_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnownServices"];
                 };
             };
         };
@@ -5276,7 +5576,11 @@ export interface operations {
                 /** @description Subject of the email */
                 subject?: string;
                 /** @description Send in test mode to current user */
-                test_mode?: boolean;
+                test_mode?: boolean | null;
+                /** @description Sender email address. */
+                sender?: string | null;
+                /** @description Destination email address. */
+                recipient?: string | null;
             };
             header?: never;
             path: {
@@ -7533,6 +7837,104 @@ export interface operations {
             };
         };
     };
+    list_document_files_v1_documents__id__files_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentFile"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_document_file_v1_documents__id__files_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_document_file_v1_documents__id__files_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_document_file_v1_documents__id__files__blob_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                blob_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_metadatas_v1_metadata__get: {
         parameters: {
             query?: {
@@ -8013,70 +8415,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SubmissionSummaryModel"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_submission_files_v1_submissions_id_str__files_get: {
-        parameters: {
-            query: {
-                id: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_submission_file_v1_submissions_id_str__files__file_type__get: {
-        parameters: {
-            query: {
-                id: string;
-            };
-            header?: never;
-            path: {
-                file_type: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -9388,7 +9726,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EndorsementDomainModel"];
+                "application/json": components["schemas"]["EndorsementDomainDAO"];
             };
         };
         responses: {
@@ -9454,7 +9792,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EndorsementDomainModel"];
+                "application/json": components["schemas"]["EndorsementDomainDAO"];
             };
         };
         responses: {
@@ -9480,7 +9818,10 @@ export interface operations {
     };
     delete_endorsement_domain_v1_endorsement_domains__id__delete: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Optional audit comment */
+                comment?: string;
+            };
             header?: never;
             path: {
                 id: string;
