@@ -1,7 +1,7 @@
 from typing import  Optional
 from logging import getLogger
 from arxiv.auth.legacy.cookies import unpack
-from arxiv.auth.legacy.exceptions import SessionExpired
+from arxiv.auth.legacy.exceptions import SessionExpired, InvalidCookie
 from arxiv.auth.user_claims import ArxivUserClaims, ArxivUserClaimsModel
 from sqlalchemy.orm import Session as DBSession
 from arxiv.db.models import TapirUser, TapirSession
@@ -23,6 +23,11 @@ def create_user_claims_from_tapir_cookie(session: DBSession,
 
     try:
         session_id, user_id, ip, issued_at, expires_at, capabilities = unpack(tapir_cookie)
+
+    except InvalidCookie:
+        logger.warning("create_user_claims_from_tapir_cookie[1] - InvalidCookie: %s", tapir_cookie)
+        return None
+
     except ValueError as exc:
         logger.error("create_user_claims_from_tapir_cookie[1] - ValueError: " + str(exc), exc_info=exc)
         return None
