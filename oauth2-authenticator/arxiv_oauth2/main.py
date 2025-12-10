@@ -138,10 +138,12 @@ def create_app(*args, **kwargs) -> FastAPI:
 
     # DOMAIN is okay to be None
     DOMAIN = os.environ.get("DOMAIN")
-    if DOMAIN:
-        if DOMAIN[0] != ".":
-            DOMAIN = "." + DOMAIN
-            logger.warning("DOMAIN does not have the leading dot. %s", DOMAIN)
+    # Note: Leading dot makes cookies available to all subdomains
+    # For single hostname (localhost.arxiv.org), don't use leading dot
+    # if DOMAIN:
+    #     if DOMAIN[0] != ".":
+    #         DOMAIN = "." + DOMAIN
+    #         logger.warning("DOMAIN does not have the leading dot. %s", DOMAIN)
     secure = True
     SECURE = os.environ.get("SECURE", "").lower()
     if SECURE in ["false", "no"]:

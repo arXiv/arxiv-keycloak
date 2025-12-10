@@ -63,8 +63,9 @@ def reply_account_info(session: Session, id: str) -> AccountInfoModel:
     return account
 
 
-@router.get('/current', description="")
+@router.get('/current', description="Get the current user")
 async def get_current_user_info(
+        scope: Optional[str] = Query(None, description="Authorization scope - root, admin, mod"),
         current_user: Optional[ArxivUserClaims] = Depends(get_current_user_or_none),
         session: Session = Depends(get_db)
         ) -> AccountInfoModel:
@@ -73,7 +74,10 @@ async def get_current_user_info(
     """
     if not current_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not logged in")
-    return reply_account_info(session, str(current_user.user_id))
+    info = reply_account_info(session, str(current_user.user_id))
+    if scope and scope not in info.scopes:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient scope")
+    return info
 
 
 @router.get('/{user_id:str}/profile')

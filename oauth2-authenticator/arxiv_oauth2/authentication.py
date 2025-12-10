@@ -524,17 +524,28 @@ def make_cookie_response(request: Request,
         secret = cparam.jwt_secret
         token = user_claims.encode_jwt_token(secret)
         logger.debug('%s=%s',session_cookie_key, token)
+        logger.debug('Cookie sizes: %s=%d bytes, %s=%d bytes, %s=%d bytes',
+                     session_cookie_key, len(token),
+                     keycloak_access_key, len(user_claims.access_token),
+                     keycloak_refresh_key, len(user_claims.refresh_token))
+        logger.debug('Cookie params: domain=%s, secure=%s, samesite=%s, max_age=%d, httponly=True',
+                     domain, secure, samesite, cookie_max_age)
+        logger.debug('Setting cookie #1: %s (len=%d)', session_cookie_key, len(token))
+        logger.debug('Setting cookie #2: %s (len=%d)', keycloak_access_key, len(user_claims.access_token))
+        logger.debug('Setting cookie #3: %s (len=%d)', keycloak_refresh_key, len(user_claims.refresh_token))
+        if len(token) > 4096:
+            logger.warning('Cookie %s exceeds Chrome limit of 4096 bytes: %d bytes', session_cookie_key, len(token))
         response.set_cookie(session_cookie_key, token, max_age=cookie_max_age,
-                            domain=domain, path="/", secure=secure, samesite=samesite)
+                            domain=domain, path="/", secure=secure, samesite=samesite, httponly=True)
         response.set_cookie(keycloak_access_key, user_claims.access_token,  max_age=cookie_max_age,
-                            domain=domain, path="/", secure=secure, samesite=samesite)
+                            domain=domain, path="/", secure=secure, samesite=samesite, httponly=True)
         response.set_cookie(keycloak_refresh_key, user_claims.refresh_token,  max_age=cookie_max_age,
-                            domain=domain, path="/", secure=secure, samesite=samesite)
+                            domain=domain, path="/", secure=secure, samesite=samesite, httponly=True)
 
         if session_cookie_key != ng_cookie_key:
             try:
                 response.set_cookie(ng_cookie_key, ng_cookie_encode(create_ng_claims(user_claims), secret),
-                    max_age=cookie_max_age, domain=domain, path="/", secure=secure, samesite=samesite)
+                    max_age=cookie_max_age, domain=domain, path="/", secure=secure, samesite=samesite, httponly=True)
             except Exception as exc:
                 logger.warning("Setting NG cookie failed", exc_info=exc)
                 pass
@@ -547,7 +558,7 @@ def make_cookie_response(request: Request,
     if tapir_cookie:
         logger.debug('%s=%s',classic_cookie_key, tapir_cookie)
         response.set_cookie(classic_cookie_key, tapir_cookie, max_age=cookie_max_age,
-                            domain=domain, path="/", secure=secure, samesite=samesite)
+                            domain=domain, path="/", secure=secure, samesite=samesite, httponly=True)
     else:
         logger.debug('%s=<EMPTY>',classic_cookie_key)
         response.set_cookie(classic_cookie_key, '', max_age=0,

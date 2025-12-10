@@ -13,3 +13,5 @@ def setup_logger():
     logger.addHandler(logHandler)
     logger.setLevel(logging.DEBUG)
     logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+
+    # logging.getLogger('arxiv_oauth2.authentication').setLevel(logging.DEBUG)
