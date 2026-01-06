@@ -1,3 +1,10 @@
+# MySQL connection settings
+MYSQL_HOST ?= 127.0.0.1
+SQL_FILE ?= tests/data/test-arxiv-db-data.sql.gz
+
+# Dump settings
+MYDUMPER_THREADS ?= 10
+DUMP_DIR = ./tests/data/arxiv
 
 DOCKER_DIRS := keycloak_bend oauth2-authenticator keycloak_tapir_bridge legacy_auth_provider test-mta user-portal account-ui 
 ALL_DIRS := $(DOCKER_DIRS) tools tests
@@ -195,5 +202,28 @@ deploy-lap:
 setup-keycloak:
 	gh workflow run deploy-keycloak-setup.yml --ref ntai/wombat-81-testing -f env=wombat-81-testing  -f image_tag=ntai-wombat-81-testing
 
+#-#
+#-# db-dump-binary:
+#-#   
+.PHONY: db-dump-binary db-load-sql
+db-dump-binary:
+	@mkdir -p $(DUMP_DIR)
+	@if [ -d "$(DUMP_DIR)" ] && [ -n "$$(ls -A $(DUMP_DIR))" ]; then \
+		echo "Removing existing dump files..."; \
+		rm -rf $(DUMP_DIR)/*; \
+	fi
+	mydumper \
+		-h $(MYSQL_HOST) \
+		-u $(MYSQL_USER) \
+		$(if $(MYSQL_PASSWORD),-p $(MYSQL_PASSWORD),) \
+		-B $(MYSQL_DATABASE) \
+		-o $(DUMP_DIR) \
+		--threads $(MYDUMPER_THREADS) \
+		--compress \
+		--no-locks \
+		--verbose 3
+	@echo "Done! Dump created in $(DUMP_DIR)"
 
+db-load-sql:
+	zcat ${SQL_FILE} | mysql --host ${MYSQL_HOST} -P ${ARXIV_DB_PORT} -u arxiv -parxiv_password arXiv
 #-#
