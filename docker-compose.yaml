@@ -1,1 +1,1 @@
-./docker-compose-devdb.yaml
+tests/docker-compose/docker-compose.yaml

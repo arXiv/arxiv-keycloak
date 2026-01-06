@@ -23,6 +23,9 @@ from .database import Database
 
 DECODED_USER_CLAIMS_NAME = "DECODED_USER_CLAIMS"
 
+# set this to not true if you want to prohib non-admin access
+ENABLE_USER_ACCESS_KEY = "ENABLE_USER_ACCESS"
+
 
 class ApiToken(BaseModel):
     token: str
@@ -305,6 +308,7 @@ async def is_any_user(request: Request,
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
 
+
 class TapirCookieToUserClaimsMiddleware:
     """
     Middleware that checks for tapir cookie and creates ArxivUserClaims JWT token.
@@ -323,12 +327,15 @@ class TapirCookieToUserClaimsMiddleware:
             return
             
         request = Request(scope, receive)
-        
+
+        # enable non-admin access
+        enable_user_access = request.app.extra.get(ENABLE_USER_ACCESS_KEY, "true") == "true"
+
         # Get cookie names from app config
         auth_session_cookie_name = request.app.extra.get(COOKIE_ENV_NAMES.auth_session_cookie_env, "ARXIVNG_SESSION_ID")
         classic_cookie_name = request.app.extra.get(COOKIE_ENV_NAMES.classic_cookie_env, "tapir_session")
         jwt_secret = request.app.extra.get('JWT_SECRET')
-        
+
         # Check if ArxivUserClaims cookie already exists
         arxiv_claims_cookie = None
         # arxiv_claims_cookie = request.cookies.get(auth_session_cookie_name)
@@ -378,7 +385,10 @@ class TapirCookieToUserClaimsMiddleware:
                     # Log error but don't break the request
                     logger = getLogger(__name__)
                     logger.warning("Failed to create JWT from tapir cookie", exc_info=exc)
-        
+
+                if not user_claims.is_admin or not enable_user_access:
+                    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
         await self.app(scope, receive, send)
 
 
