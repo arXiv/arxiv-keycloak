@@ -97,7 +97,7 @@ def decode_user_claims(token: str, jwt_secret: str) -> ArxivUserClaims | None:
 
 
 def get_current_user_or_none(request: Request) -> ArxivUserClaims | None:
-    """gets the user claims from the cookie. This is a foundational function, and do not change the functionality."""
+    """gets the user claims from the cookie. This is a foundational function. Do not change the functionality."""
     logger = getLogger(__name__)
 
     user_claims = getattr(request.state, DECODED_USER_CLAIMS_NAME, None)
@@ -328,9 +328,6 @@ class TapirCookieToUserClaimsMiddleware:
             
         request = Request(scope, receive)
 
-        # enable non-admin access
-        enable_user_access = request.app.extra.get(ENABLE_USER_ACCESS_KEY, "true") == "true"
-
         # Get cookie names from app config
         auth_session_cookie_name = request.app.extra.get(COOKIE_ENV_NAMES.auth_session_cookie_env, "ARXIVNG_SESSION_ID")
         classic_cookie_name = request.app.extra.get(COOKIE_ENV_NAMES.classic_cookie_env, "tapir_session")
@@ -386,9 +383,6 @@ class TapirCookieToUserClaimsMiddleware:
                     logger = getLogger(__name__)
                     logger.warning("Failed to create JWT from tapir cookie", exc_info=exc)
 
-                if not user_claims.is_admin or not enable_user_access:
-                    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-
         await self.app(scope, receive, send)
 
 
@@ -396,3 +390,29 @@ def get_tapir_tracking_cookie(request: Request) -> str | None:
     """Return the tapir tracking cookie value if it exists, otherwise None."""
     tracking_cookie_key = request.app.extra.get('TRACKING_COOKIE_NAME', "tapir_tracking")
     return request.cookies.get(tracking_cookie_key)
+
+
+def gatekeep_users(request: Request) -> None:
+    """Gatekeep users based on their claims and app configuration."""
+
+    # enable non-admin access
+    enable_user_access = request.app.extra.get(ENABLE_USER_ACCESS_KEY, "true") == "true"
+    if enable_user_access:
+        return
+
+    user_claims = getattr(request.state, DECODED_USER_CLAIMS_NAME, None)
+    if not user_claims:
+        session_cookie_key = request.app.extra[COOKIE_ENV_NAMES.auth_session_cookie_env]
+        token = request.cookies.get(session_cookie_key)
+        if not token:
+            return None
+        secret = request.app.extra['JWT_SECRET']
+        if not secret:
+            return None
+        user_claims = decode_user_claims(token, secret)
+        if not user_claims:
+            return None
+
+    if user_claims.is_admin:
+        return None
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")

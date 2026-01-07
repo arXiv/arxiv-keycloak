@@ -14,6 +14,9 @@ pydantic = {extras = ["email"], version = "^2.11.7"}
 pydantic-settings = "^2.5.2"
 sqlalchemy = "~=2.0.27"
 fastapi = "^0.115"
+jwcrypto = "^1.5.6"
+jwt = "^1.4.0"
+arxiv-base = {git = "https://github.com/arXiv/arxiv-base.git", rev = "343ec7afd3e86df7665ebf3d693fa522b0b521e3"}
 
 [tool.poetry.dev-dependencies]
 mypy = "*"
