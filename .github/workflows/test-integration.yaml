@@ -1,0 +1,165 @@
+name: Integration Tests
+
+on:
+  pull_request:
+    paths:
+      - 'tests/**'
+      - 'oauth2-authenticator/**'
+      - 'legacy_auth_provider/**'
+      - 'keycloak_bend/**'
+      - 'keycloak_tapir_bridge/**'
+      - 'user-portal/**'
+      - 'bizlogic/**'
+      - 'docker-compose.yaml'
+      - '.env'
+      - '.github/workflows/test-integration.yaml'
+  push:
+    branches:
+      - master
+      - main
+    paths:
+      - 'tests/**'
+      - 'oauth2-authenticator/**'
+      - 'legacy_auth_provider/**'
+      - 'keycloak_bend/**'
+      - 'keycloak_tapir_bridge/**'
+      - 'user-portal/**'
+      - 'bizlogic/**'
+      - 'docker-compose.yaml'
+      - '.env'
+      - '.github/workflows/test-integration.yaml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y mysql-client postgresql-client
+
+      - name: Install poetry
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install poetry
+          poetry --version
+
+      - name: Check for .env file
+        run: |
+          if [ ! -f .env ]; then
+            echo "Error: .env file not found"
+            echo "Integration tests require a .env file with configuration"
+            echo "You may need to create .env from a template or use .env.example"
+            exit 1
+          fi
+
+      - name: Check for required Docker images
+        run: |
+          echo "Note: This workflow requires pre-built Docker images:"
+          echo "  - oauth2-authenticator"
+          echo "  - legacy-auth-provider"
+          echo "  - keycloak"
+          echo "  - keycloak-tapir-bridge"
+          echo "  - user-portal"
+          echo "  - test-mta"
+          echo "  - python-keycloak-admin"
+          echo ""
+          echo "If tests fail due to missing images, these need to be built first."
+          echo "Consider running: make images"
+
+      - name: Start Docker Compose stack
+        run: |
+          docker compose --env-file=.env down --remove-orphans || true
+          docker compose --env-file=.env up -d
+        continue-on-error: true
+
+      - name: Wait for services to be healthy
+        run: |
+          echo "Waiting for services to be ready..."
+
+          # Wait for PostgreSQL (Keycloak auth DB)
+          echo "Checking PostgreSQL..."
+          for i in {1..30}; do
+            if pg_isready -h 127.0.0.1 -p 15432 2>/dev/null; then
+              echo "✓ PostgreSQL is ready"
+              break
+            fi
+            echo "  Waiting for PostgreSQL... ($i/30)"
+            sleep 2
+          done
+
+          # Wait for MySQL (arXiv DB)
+          echo "Checking MySQL..."
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 -P 21504 --silent 2>/dev/null; then
+              echo "✓ MySQL is ready"
+              break
+            fi
+            echo "  Waiting for MySQL... ($i/30)"
+            sleep 2
+          done
+
+          echo "Waiting additional time for all services to initialize..."
+          sleep 30
+        continue-on-error: true
+
+      - name: Check Docker Compose services status
+        run: |
+          echo "Docker Compose services status:"
+          docker compose --env-file=.env ps
+
+      - name: Install test dependencies
+        working-directory: tests
+        run: |
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          elif [ -f pyproject.toml ]; then
+            poetry install
+          else
+            # Install pytest and common dependencies
+            pip install pytest pytest-asyncio requests
+          fi
+
+      - name: Run integration tests
+        run: |
+          echo "Running integration tests..."
+          cd tests
+          if [ -f pyproject.toml ]; then
+            poetry run pytest . -v --tb=short
+          else
+            pytest . -v --tb=short
+          fi
+        continue-on-error: false
+
+      - name: Collect Docker logs on failure
+        if: failure()
+        run: |
+          echo "========================================"
+          echo "Collecting Docker Compose logs..."
+          echo "========================================"
+          docker compose --env-file=.env logs --tail=200
+
+      - name: Show container status on failure
+        if: failure()
+        run: |
+          echo "========================================"
+          echo "Container status:"
+          echo "========================================"
+          docker compose --env-file=.env ps
+
+      - name: Tear down Docker Compose
+        if: always()
+        run: |
+          docker compose --env-file=.env down --remove-orphans || true
+          docker system prune -f || true

@@ -1,0 +1,114 @@
+name: Test oauth2-authenticator
+
+on:
+  pull_request:
+    paths:
+      - 'oauth2-authenticator/**'
+      - 'bizlogic/**'
+      - '.github/workflows/test-oauth2-authenticator.yaml'
+  push:
+    branches:
+      - master
+      - main
+    paths:
+      - 'oauth2-authenticator/**'
+      - 'bizlogic/**'
+      - '.github/workflows/test-oauth2-authenticator.yaml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y mysql-client
+
+      - name: Install poetry
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install poetry
+          poetry --version
+
+      - name: Cache poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-oauth2-auth-${{ hashFiles('oauth2-authenticator/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-oauth2-auth-
+
+      - name: Install dependencies
+        working-directory: oauth2-authenticator
+        run: poetry install
+
+      - name: Check for required Docker images
+        run: |
+          echo "Note: This workflow requires pre-built Docker images:"
+          echo "  - legacy-auth-provider"
+          echo "  - keycloak"
+          echo "  - keycloak-tapir-bridge"
+          echo "  - test-mta"
+          echo "  - python-keycloak-admin"
+          echo ""
+          echo "If tests fail due to missing images, these need to be built first."
+          echo "Consider running: make images"
+
+      - name: Start Docker Compose services
+        working-directory: oauth2-authenticator/tests
+        run: |
+          # Check if test-env file exists
+          if [ ! -f test-env ]; then
+            echo "Error: test-env file not found"
+            echo "Creating minimal test-env from .env.example or defaults..."
+            # You may need to create a template or copy from somewhere
+            exit 1
+          fi
+
+          docker compose --env-file=test-env -f docker-compose.yaml down --remove-orphans || true
+          docker compose --env-file=test-env -f docker-compose.yaml up -d
+        continue-on-error: true
+
+      - name: Wait for services to be ready
+        working-directory: oauth2-authenticator/tests
+        run: |
+          echo "Waiting for MySQL database to be ready..."
+          for i in {1..60}; do
+            if mysql -h 127.0.0.1 -P 21504 -u arxiv -parxiv_password -e "SELECT COUNT(*) FROM tapir_users" arXiv 2>/dev/null; then
+              echo "Database is ready!"
+              break
+            fi
+            echo "Waiting for database... ($i/60)"
+            sleep 2
+          done
+        continue-on-error: true
+
+      - name: Run tests
+        working-directory: oauth2-authenticator
+        run: |
+          echo "Running oauth2-authenticator tests..."
+          poetry run pytest tests/ -v --tb=short
+        continue-on-error: false
+
+      - name: Collect Docker logs on failure
+        if: failure()
+        working-directory: oauth2-authenticator/tests
+        run: |
+          echo "Collecting Docker Compose logs..."
+          docker compose --env-file=test-env -f docker-compose.yaml logs --tail=100
+
+      - name: Tear down Docker Compose
+        if: always()
+        working-directory: oauth2-authenticator/tests
+        run: |
+          docker compose --env-file=test-env -f docker-compose.yaml down --remove-orphans || true

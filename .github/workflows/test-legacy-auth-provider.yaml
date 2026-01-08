@@ -1,0 +1,59 @@
+name: Test legacy_auth_provider
+
+on:
+  pull_request:
+    paths:
+      - 'legacy_auth_provider/**'
+      - 'bizlogic/**'
+      - '.github/workflows/test-legacy-auth-provider.yaml'
+  push:
+    branches:
+      - master
+      - main
+    paths:
+      - 'legacy_auth_provider/**'
+      - 'bizlogic/**'
+      - '.github/workflows/test-legacy-auth-provider.yaml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install poetry
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install poetry
+          poetry --version
+
+      - name: Cache poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-legacy-auth-provider-${{ hashFiles('legacy_auth_provider/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-legacy-auth-provider-
+
+      - name: Install dependencies
+        working-directory: legacy_auth_provider
+        run: poetry install
+
+      - name: Run tests
+        working-directory: legacy_auth_provider
+        run: |
+          if [ -d "tests" ] && [ -n "$(ls -A tests/*.py 2>/dev/null)" ]; then
+            poetry run pytest tests/ -v
+          else
+            echo "⚠️  No tests found in tests/ directory"
+            echo "Running basic import check instead..."
+            poetry run python -c "import legacy_auth_provider; print('✓ Package imports successfully')"
+          fi

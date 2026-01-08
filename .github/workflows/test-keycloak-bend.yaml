@@ -1,0 +1,50 @@
+name: Test keycloak_bend
+
+on:
+  pull_request:
+    paths:
+      - 'keycloak_bend/**'
+      - '.github/workflows/test-keycloak-bend.yaml'
+  push:
+    branches:
+      - master
+      - main
+    paths:
+      - 'keycloak_bend/**'
+      - '.github/workflows/test-keycloak-bend.yaml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install poetry
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install poetry
+          poetry --version
+
+      - name: Cache poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-keycloak-bend-${{ hashFiles('keycloak_bend/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-keycloak-bend-
+
+      - name: Install dependencies
+        working-directory: keycloak_bend
+        run: poetry install
+
+      - name: Run tests
+        working-directory: keycloak_bend
+        run: poetry run pytest tests/ -v
