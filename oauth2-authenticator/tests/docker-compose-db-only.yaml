@@ -30,3 +30,9 @@ services:
     depends_on:
       setup_task:
         condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-P", "${ARXIV_DB_PORT}", "--silent"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+      start_period: 30s

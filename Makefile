@@ -226,4 +226,34 @@ db-dump-binary:
 
 db-load-sql:
 	zcat ${SQL_FILE} | mysql --host ${MYSQL_HOST} -P ${ARXIV_DB_PORT} -u arxiv -parxiv_password arXiv
+
+#-#
+#-# test-db-dump-binary:
+#-#   
+TEST_DB_DUMP_DIR = ./tests/data/test-db-dump
+
+.PHONY: test-db-dump-binary 
+test-db-dump-binary:
+	@mkdir -p $(TEST_DB_DUMP_DIR)
+	@if [ -d "$(TEST_DB_DUMP_DIR)" ] && [ -n "$$(ls -A $(TEST_DB_DUMP_DIR))" ]; then \
+		echo "Removing existing dump files..."; \
+		rm -rf $(TEST_DB_DUMP_DIR)/*; \
+	fi
+	docker run --rm \
+		--network host \
+		-v $(PWD)/$(TEST_DB_DUMP_DIR):/backup \
+		mydumper/mydumper \
+		mydumper \
+		-h 127.0.0.1 \
+		-P 21504 \
+		-u root \
+		-p root_password \
+		-B arXiv \
+		-o /backup \
+		--threads 4 \
+		--compress \
+		--sync-thread-lock-mode NO_LOCK \
+		--verbose 3
+	@echo "Done! Dump created in $(TEST_DB_DUMP_DIR)"
+
 #-#
