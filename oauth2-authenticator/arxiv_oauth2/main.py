@@ -27,7 +27,8 @@ from .app_logging import setup_logger
 from .mysql_retry import MySQLRetryMiddleware
 from . import get_db, COOKIE_ENV_NAMES, get_keycloak_admin
 from .biz.keycloak_audit import get_keycloak_dispatch_functions
-from arxiv_bizlogic.fastapi_helpers import TapirCookieToUserClaimsMiddleware, COOKIE_ENV_NAMES_TYPE
+from arxiv_bizlogic.fastapi_helpers import TapirCookieToUserClaimsMiddleware, COOKIE_ENV_NAMES_TYPE, gatekeep_users, \
+    ENABLE_USER_ACCESS_KEY
 
 from .transitional.mock_keycloak_admin import MockKeycloakAdmin
 
@@ -145,12 +146,17 @@ def create_app(*args, **kwargs) -> FastAPI:
     #         DOMAIN = "." + DOMAIN
     #         logger.warning("DOMAIN does not have the leading dot. %s", DOMAIN)
     secure = True
-    SECURE = os.environ.get("SECURE", "").lower()
-    if SECURE in ["false", "no"]:
+    SECURE = os.environ.get("SECURE", "true").lower()
+    if SECURE in ["false", "no", "0"]:
         secure = False
+
+    samesite = os.environ.get("SAMESITE", "lax").lower()
+    if samesite not in ["lax", "strict", "none"]:
+        samesite = "lax"
 
     logger.info(f"DOMAIN: {DOMAIN!r}")
     logger.info(f"SECURE: {secure!r}")
+    logger.info(f"SAMESITE: {samesite!r}")
     logger.info(f"SERVER_ROOT_PATH: {SERVER_ROOT_PATH}")
     logger.info(f"KEYCLOAK_SERVER_URL {KEYCLOAK_SERVER_URL}")
     logger.info(f"CALLBACK_URL: {CALLBACK_URL}")
@@ -211,12 +217,17 @@ def create_app(*args, **kwargs) -> FastAPI:
         COOKIE_ENV_NAMES.keycloak_refresh_token_env: KEYCLOAK_REFRESH_TOKEN_NAME,
     }
 
+    extra_options = {}
+    if os.environ.get(ENABLE_USER_ACCESS_KEY):
+        extra_options[ENABLE_USER_ACCESS_KEY] = os.environ.get(ENABLE_USER_ACCESS_KEY)
+
     app = FastAPI(
         root_path=SERVER_ROOT_PATH,
         idp=_idp_,
         arxiv_db_engine=_classic_engine,
         arxiv_settings=settings,
         SECURE=secure,
+        SAMESITE=samesite,
         DOMAIN=DOMAIN,
         JWT_SECRET=jwt_secret,
         KEYCLOAK_SERVER_URL=KEYCLOAK_SERVER_URL,
@@ -229,7 +240,8 @@ def create_app(*args, **kwargs) -> FastAPI:
         AAA_API_SECRET_KEY=os.environ.get("AAA_API_SECRET_KEY", ""),
         KEYCLOAK_DISPATCH_FUNCTIONS=get_keycloak_dispatch_functions(),
         **URLs,
-        **cookie_names
+        **cookie_names,
+        **extra_options
     )
 
     if CORS_ORIGINS:
@@ -256,7 +268,7 @@ def create_app(*args, **kwargs) -> FastAPI:
         transformer=lambda a: a,
         )
 
-    app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
+    app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY, https_only=secure)
 
     app.add_middleware(MySQLRetryMiddleware, engine=_classic_engine,  retry_attempts=3)
 
@@ -264,7 +276,7 @@ def create_app(*args, **kwargs) -> FastAPI:
 
     app.include_router(authn_router)
     # app.include_router(authz_router)
-    app.include_router(account_router)
+    app.include_router(account_router, dependencies=[Depends(gatekeep_users)])
     app.include_router(captcha_router)
     app.include_router(keycloak_router)
 

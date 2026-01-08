@@ -126,7 +126,7 @@ def cookie_params(request: Request) -> CookieParams:
         ng_cookie_name=request.app.extra[COOKIE_ENV_NAMES.ng_cookie_env],
         domain=request.app.extra.get('DOMAIN'),
         secure=request.app.extra.get('SECURE', True),
-        samesite=request.app.extra.get('SAMESITE', "Lax"),
+        samesite=request.app.extra.get('SAMESITE', "lax"),
         jwt_secret=request.app.extra.get('JWT_SECRET', "jwt secret is not set"),
         max_age=int(request.app.extra['COOKIE_MAX_AGE']),
     )
