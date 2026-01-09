@@ -3,7 +3,7 @@ include ../.env
 export $(shell sed 's/=.*//' ../.env)
 
 
-.PHONY: HELLO
+.PHONY: HELLO bootstrap update help docker-image
 
 default: HELLO venv/lib/python3.12/site-packages/sqlalchemy
 
@@ -47,4 +47,8 @@ venv/bin/poetry: venv
 
 venv/lib/python3.12/site-packages/sqlalchemy: venv/bin/poetry
 	. venv/bin/activate && poetry install
+
+
+update: venv/lib/python3.12/site-packages/sqlalchemy
+	. venv/bin/activate && poetry update
 

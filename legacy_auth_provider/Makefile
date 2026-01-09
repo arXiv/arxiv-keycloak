@@ -6,7 +6,7 @@ tag := ${LEGACY_AUTH_DOCKER_TAG}
 port := ${LEGACY_AUTH_PORT}
 mysql_port := ${ARXIV_DB_PORT}
 
-.PHONY: help login docker-image push deploy run sh bootstrap kill
+.PHONY: help login docker-image push deploy run sh bootstrap kill update
 
 all: help venv/lib/python3.12/site-packages/fastapi
 
@@ -99,5 +99,9 @@ lock: venv/bin/poetry
 	. venv/bin/activate && poetry lock
 	. venv/bin/activate && poetry install
 
-
 #-#
+#-# Command: update
+#-#   run poetry update
+update: venv/bin/poetry
+	. venv/bin/activate && poetry update
+

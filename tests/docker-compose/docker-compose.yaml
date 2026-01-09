@@ -132,6 +132,8 @@ services:
       #
       # API bearer token
       AAA_API_SECRET_KEY: ${AAA_API_TOKEN}
+      #
+      ENABLE_USER_ACCESS: ${ENABLE_USER_ACCESS}
     ports:
       - "${ARXIV_OAUTH2_APP_PORT}:${ARXIV_OAUTH2_APP_PORT}"  # Host port:Container port
 

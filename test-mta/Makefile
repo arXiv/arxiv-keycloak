@@ -7,7 +7,7 @@ app_name := "test-mta"
 email_to_pubsub_app_tag := "${EMAIL_TO_PUBSUB_APP_TAG}"
 email_to_pubsub_app_name := "email-to-pubsub-relay"
 
-.PHONY: HELLO all bootstrap run docker-image sh relay relay.push
+.PHONY: HELLO all bootstrap run docker-image sh relay relay.push update
 
 all: ../venv/bin/poetry HELLO 
 
@@ -76,6 +76,12 @@ relay.push:
 #-# Command: lock
 #-#   run poetry lock
 lock:
-	echo "does not use poetry"
+	@echo "does not use poetry"
 
+
+#-#
+#-# Command: update
+#-#   noop
+lock:
+	@echo "does not use poetry"
 

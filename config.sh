@@ -12,8 +12,15 @@ else
 fi
 
 ACCOUNT=arxiv.1password.com
+#
+# ENABLE_USER_ACCESS=true
+# to enable normie access
+ENABLE_USER_ACCESS=false
+
 
 if [ "$TARGET" = "localdb" ] && [ ! -r .env.localdb ] ; then
+    echo ENABLE_USER_ACCESS=${ENABLE_USER_ACCESS}  >> .env.localdb
+
     SERVER_HOST=localhost.arxiv.org
     HTTP_PORT=5100
     SERVER_URL=http://$SERVER_HOST:$HTTP_PORT
@@ -201,6 +208,8 @@ fi
 
 
 if  [ "$TARGET" != "localdb" ] ; then
+    echo ENABLE_USER_ACCESS=${ENABLE_USER_ACCESS}  >> .env
+
     OS=$(jq -r .os $SETTINGS_FILE)
     SERVER_HOST=$(jq -r .server_host $SETTINGS_FILE)
     SERVER_URL=https://$SERVER_HOST
@@ -240,8 +249,8 @@ if  [ "$TARGET" != "localdb" ] ; then
     echo GCP_EVENT_TOPIC_ID=keycloak-arxiv-events >> .env.$TARGET
     echo GCP_ADMIN_EVENT_TOPIC_ID=keycloak-arxiv-events >> .env.$TARGET
     #
-    echo KEYCLOAK_TEST_CLIENT_SECRET=$(jq -r .keycloak_arxiv_client_secret $SETTINGS_FILE) >> .env.$TARGET
-    #
+    echo KEYCLOAK_TEST_CLIENT_SECRET=$(jq -r .keycloak_arxiv_client_secret $SETTINGS_FILE) >> .env.$TARGET 
+   #
     # oauth2 client - aka cookie maker
     #
     AAA_PORT=21503

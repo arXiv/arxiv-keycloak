@@ -14,7 +14,7 @@ export $(shell sed 's/=.*//' .env)
 
 ARXIV_BASE_DIR ?= $(HOME)/arxiv/arxiv-base
 
-.PHONY: HELLO all bootstrap docker-image arxiv-db nginx test up down restart images lock deploy-db deploy-pubsub deploy-keycloak deploy-lap setup-keycloak
+.PHONY: HELLO all bootstrap docker-image arxiv-db nginx test up down restart images lock deploy-db deploy-pubsub deploy-keycloak deploy-lap setup-keycloak update
 
 default: HELLO
 
@@ -256,4 +256,12 @@ test-db-dump-binary:
 		--verbose 3
 	@echo "Done! Dump created in $(TEST_DB_DUMP_DIR)"
 
+
 #-#
+#-# update:
+#-#   
+update:
+	$(call run_in_all_subdirs,update)
+
+#-#
+
