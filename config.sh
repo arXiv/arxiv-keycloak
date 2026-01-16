@@ -151,10 +151,6 @@ if [ "$TARGET" = "localdb" ] && [ ! -r .env.localdb ] ; then
     echo MAILSTORE_PORT=21512 >> .env.localdb
     echo TEST_MTA_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/test-mta >> .env.localdb
     #
-    #
-    echo TESTSITE_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/testsite >> .env.localdb
-    echo TESTSITE_PORT=21509 >> .env.localdb
-    #
     # This is not strictry necessary but here
     #
     echo ADMIN_API_TAG=gcr.io/$GCP_PROJECT/admin-console/admin-api >> .env.localdb
@@ -293,9 +289,6 @@ if  [ "$TARGET" != "localdb" ] ; then
     echo SMTP_HOST=0.0.0.0:$SMTP_PORT >> .env.$TARGET
     echo MAILSTORE_PORT=21512 >> .env.$TARGET
     echo TEST_MTA_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/test-mta >> .env.$TARGET
-    #
-    echo TESTSITE_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/testsite >> .env.$TARGET
-    echo TESTSITE_PORT=21509 >> .env.$TARGET
     #
     # This is not strictry necessary but here
     #

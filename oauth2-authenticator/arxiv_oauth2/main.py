@@ -314,4 +314,17 @@ def create_app(*args, **kwargs) -> FastAPI:
         except Exception as exc:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="mysql: " + str(exc))
 
+    @app.get("/status/database", response_model=dict)
+    async def health_check(session: Session = Depends(get_db),
+                           kc_admin: KeycloakAdmin = Depends(get_keycloak_admin)) -> dict | HTTPException:
+        result = {}
+
+        try:
+            states: List[State] = session.query(State).all()
+            result.update({state.name: str(state.value) for state in states if state.name})
+            return result
+
+        except Exception as exc:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="mysql: " + str(exc))
+
     return app

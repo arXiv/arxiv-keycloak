@@ -133,3 +133,5 @@ show-env:
 	sed -e 's/^/export /g' ../.env
 
 
+test:
+	. venv/bin/activate && poetry run pytest

@@ -3,6 +3,7 @@ services:
   setup_task:
     image: python:3.12-bookworm
     container_name: aaat-db-setup
+    user: "${UID}:${GID}"
     volumes:
       - ./mysql:/var/lib/mysql
       - ./initdb.d:/initdb.d
@@ -92,6 +93,7 @@ services:
   arxiv-test-db:
     image: mysql:8.4.5
     container_name: aaat-arxiv-test-db
+    user: "${UID}:${GID}"
     ports:
       - "${ARXIV_DB_PORT}:${ARXIV_DB_PORT}"  # Host port:Container port
     environment:

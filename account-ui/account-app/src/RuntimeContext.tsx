@@ -159,7 +159,7 @@ async function fetchCurrentUser(props: RuntimeProps, setProps: (props: RuntimePr
         if (reply.status === 200) {
             const data: CurrentUser = await reply.json();
             const isMod = data.scopes?.includes("mod") || false;
-            const isAdmin = data.scopes?.includes("admin") || false;
+            const isAdmin = data.scopes?.includes("ping) || false;
             const isCanLock = data.scopes?.includes("can-lock") || false;
             const isSystem = data.scopes?.includes("root") || false;
 
