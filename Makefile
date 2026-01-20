@@ -2,6 +2,9 @@
 MYSQL_HOST ?= 127.0.0.1
 SQL_FILE ?= tests/data/test-arxiv-db-data.sql.gz
 
+# OS for setup target (debian, arch, redhat)
+OS ?= debian
+
 # Dump settings
 MYDUMPER_THREADS ?= 10
 DUMP_DIR = ./tests/data/arxiv
