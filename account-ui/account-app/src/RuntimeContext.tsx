@@ -142,6 +142,7 @@ const defaultRuntimeProps : RuntimeProps = {
     isCanLock: false,
     isSystem: false,
     updateCurrentUser: async () => {},
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     setCurrentUser: (_user: User) => {},
     aaaFetcher: Fetcher.for<paths>(),
     adminFetcher: Fetcher.for<adminPaths>()
@@ -159,7 +160,7 @@ async function fetchCurrentUser(props: RuntimeProps, setProps: (props: RuntimePr
         if (reply.status === 200) {
             const data: CurrentUser = await reply.json();
             const isMod = data.scopes?.includes("mod") || false;
-            const isAdmin = data.scopes?.includes("ping) || false;
+            const isAdmin = data.scopes?.includes("ping") || false;
             const isCanLock = data.scopes?.includes("can-lock") || false;
             const isSystem = data.scopes?.includes("root") || false;
 
