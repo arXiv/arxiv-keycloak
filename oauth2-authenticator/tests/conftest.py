@@ -1,6 +1,6 @@
-#import sys, os
-# rooddir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-# sys.path.append(os.path.join(rooddir, "arxiv_oauth2"))
+import sys, os
+rooddir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(rooddir)
 
 import subprocess
 from pathlib import Path
@@ -25,6 +25,81 @@ from time import sleep
 from fastapi.testclient import TestClient
 from arxiv_oauth2.main import create_app
 import os
+
+
+MYSQL_DATA_DIR = AAA_TEST_DIR / "mysql-data"
+MYSQL_SNAPSHOT_DIR = AAA_TEST_DIR / "mysql-data-snapshot"
+
+
+def ignore_socket_files(directory, files):
+    """Ignore socket files when copying directory trees."""
+    import stat
+    ignored = []
+    for f in files:
+        path = Path(directory) / f
+        try:
+            if path.exists() and stat.S_ISSOCK(path.stat().st_mode):
+                ignored.append(f)
+        except (OSError, IOError):
+            # If we can't stat the file, ignore it to be safe
+            ignored.append(f)
+    return ignored
+
+
+def reset_database_from_snapshot(db_port: str, container_name: str = "aaa-db-arxiv-test-db") -> bool:
+    """
+    Reset the database to its initial state by restoring from snapshot.
+    If snapshot doesn't exist, creates one from current data.
+    If snapshot exists, restores the database from it.
+    Snapshot is stored in mysql-data-snapshot directory on the local disk.
+    """
+    import shutil
+
+    try:
+        # Stop the container
+        logging.info("Stopping container...")
+        subprocess.run(
+            ["docker", "stop", container_name],
+            check=True,
+            timeout=30
+        )
+
+        if not MYSQL_SNAPSHOT_DIR.exists():
+            # Snapshot doesn't exist - create it from current data
+            logging.info(f"Creating snapshot: copying {MYSQL_DATA_DIR} to {MYSQL_SNAPSHOT_DIR}...")
+            shutil.copytree(MYSQL_DATA_DIR, MYSQL_SNAPSHOT_DIR, ignore=ignore_socket_files)
+            logging.info("Snapshot created successfully")
+        else:
+            # Snapshot exists - restore from it
+            logging.info("Restoring database from snapshot...")
+            if MYSQL_DATA_DIR.exists():
+                shutil.rmtree(MYSQL_DATA_DIR)
+            shutil.copytree(MYSQL_SNAPSHOT_DIR, MYSQL_DATA_DIR, ignore=ignore_socket_files)
+            logging.info("Database restored from snapshot")
+
+        # Start the container (which will start MySQL)
+        logging.info("Starting container...")
+        subprocess.run(["docker", "start", container_name], check=True, timeout=30)
+
+        # Wait for MySQL to be ready
+        for _ in range(30):
+            sleep(1)
+            result = subprocess.run(
+                ["docker", "exec", container_name, "mysqladmin",
+                 "ping", "-h", "127.0.0.1", "-P", db_port, "--silent"],
+                capture_output=True,
+                check=False
+            )
+            if result.returncode == 0:
+                logging.info("Database reset successfully")
+                return True
+
+        logging.error("Database failed to start after reset")
+        return False
+
+    except Exception as e:
+        logging.error(f"Failed to reset database: {str(e)}")
+        return False
 
 
 def check_any_rows_in_table(schema: str, table_name: str, db_user: str, db_password: str, db_port: str = "3306", ssl: bool = True) -> bool:
@@ -78,11 +153,16 @@ def docker_compose(test_env):
     env_arg = "--env-file=" + dotenv_filename
     working_dir = AAA_TEST_DIR.as_posix()
 
+    # Set UID/GID for docker-compose to run containers as current user
+    docker_env = os.environ.copy()
+    docker_env["UID"] = str(os.getuid())
+    docker_env["GID"] = str(os.getgid())
+
     try:
         logging.info("Stopping docker-compose...")
-        subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "down", "--remove-orphans"], check=False, cwd=working_dir)
+        subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "down", "--remove-orphans"], check=False, cwd=working_dir, env=docker_env)
         logging.info("Starting docker-compose...")
-        subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "up", "-d"], check=True, cwd=working_dir)
+        subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "up", "-d"], check=True, cwd=working_dir, env=docker_env)
         
         # Loop until at least one row is present
         for _ in range(100):
@@ -132,10 +212,60 @@ def aaa_client(test_env, docker_compose):
 
 
 @pytest.fixture(scope="module")
+def aaa_client_db_only(test_env: Dict, docker_compose_db_only):
+    """Start AAA App with database-only setup (faster for isolated tests)"""
+    # Make sure there is no keycloak secret
+    test_env["KEYCLOAK_ADMIN_SECRET"] = "<NOT-SET>"
+
+    os.environ.update(test_env)
+    app = create_app()
+    aaa_url = test_env['AAA_URL']
+    client = TestClient(app, base_url=aaa_url)
+
+    for _ in range(100):
+        response = client.get("/status/database")
+        if response.status_code == 200:
+            logging.info("AAA status - OK")
+            sleep(2)
+            break
+        sleep(2)
+        logging.info("AAA status - WAITING")
+        pass
+    else:
+        assert False, "The database did not start?"
+    yield client
+    client.close()
+
+
+@pytest.fixture(scope="module")
 def aaa_api_headers(test_env):
     aaa_api_token = test_env['AAA_API_TOKEN']
     headers = {
         "Authorization": f"Bearer {aaa_api_token}",
+        "Content-Type": "application/json"
+    }
+    return headers
+
+
+@pytest.fixture(scope="module")
+def aaa_admin_user(test_env):
+    user_info = ArxivUserClaimsModel(
+        sub = "1129053",
+        exp = 253402300799,
+        iat = 0,
+        sid = "23276925",
+        ts_id = 23276925,
+        roles = ["Administrator", "CanLock", "Approved", "Public user"],
+        email_verified = True,
+        email = "<EMAIL>",
+        first_name = "Cookie",
+        last_name = "Monster",
+        username = "cmonster",
+    )
+    claims = ArxivUserClaims(user_info)
+    token = claims.encode_jwt_token(secret=test_env['JWT_SECRET'])
+    headers = {
+        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
     return headers
@@ -179,33 +309,164 @@ def docker_compose_db_only(test_env):
     env_arg = "--env-file=" + dotenv_filename
     working_dir = AAA_TEST_DIR.as_posix()
 
-    try:
-        if os.environ.get("RECREATE_DOCKERS", "true") == "true":
-            logging.info("Stopping docker-compose...")
-            subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "down", "--remove-orphans"], check=False, cwd=working_dir)
-            logging.info("Starting docker-compose...")
-            subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "up", "-d"], check=True, cwd=working_dir)
-            pass
+    # Set UID/GID for docker-compose to run containers as current user
+    docker_env = os.environ.copy()
+    docker_env["UID"] = str(os.getuid())
+    docker_env["GID"] = str(os.getgid())
 
-        # Loop until at least one row is present
-        for _ in range(100):
-            sleep(1)
-            if check_any_rows_in_table("arXiv", "tapir_users", "arxiv", "arxiv_password", db_port=test_env["ARXIV_DB_PORT"], ssl=False):
-                break
+    try:
+        container_name = "aaa-db-arxiv-test-db"
+        needs_data_load = False
+
+        # Check if container exists and is running
+        result = subprocess.run(
+            ["docker", "inspect", "-f", "{{.State.Running}}", container_name],
+            capture_output=True,
+            text=True,
+            check=False
+        )
+
+        # Ensure mysql-data directory exists with proper ownership for bind mount
+        if not MYSQL_DATA_DIR.exists():
+            logging.info("Creating mysql-data directory...")
+            MYSQL_DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+        if result.returncode != 0:
+            # Container doesn't exist, start docker-compose
+            logging.info("Container doesn't exist, starting docker-compose...")
+            subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "up", "-d"], check=True, cwd=working_dir, env=docker_env)
+            needs_data_load = True
+        elif "false" in result.stdout:
+            # Container exists but is stopped, start it
+            logging.info("Container exists but is stopped, starting it...")
+            subprocess.run(["docker", "start", container_name], check=True)
         else:
-            assert False, "Failed to load "
+            logging.info("Container already running")
+
+        # Wait for myloader container to complete (only if we just started docker-compose)
+        if needs_data_load:
+            logging.info("Waiting for myloader to complete...")
+            for _ in range(100):
+                result = subprocess.run(
+                    ["docker", "inspect", "-f", "{{.State.Status}}", "aaa-db-myloader"],
+                    capture_output=True,
+                    text=True,
+                    check=False
+                )
+                if result.returncode == 0 and "exited" in result.stdout:
+                    # Check if it exited successfully (exit code 0)
+                    exit_code_result = subprocess.run(
+                        ["docker", "inspect", "-f", "{{.State.ExitCode}}", "aaa-db-myloader"],
+                        capture_output=True,
+                        text=True,
+                        check=False
+                    )
+                    if exit_code_result.returncode == 0 and "0" in exit_code_result.stdout:
+                        logging.info("Myloader completed successfully")
+                        break
+                    else:
+                        logging.error(f"Myloader failed with exit code: {exit_code_result.stdout.strip()}")
+                        assert False, "Myloader failed to load data"
+                sleep(1)
+            else:
+                assert False, "Myloader timed out"
+        else:
+            logging.info("Skipping myloader wait (container already existed)")
+
+        # Wait for MySQL to be ready
+        logging.info("Waiting for MySQL to be ready...")
+        for _ in range(30):
+            result = subprocess.run(
+                ["docker", "exec", container_name, "mysqladmin",
+                 "ping", "-h", "127.0.0.1", "-P", test_env["ARXIV_DB_PORT"], "--silent"],
+                capture_output=True,
+                check=False
+            )
+            if result.returncode == 0:
+                logging.info("MySQL is ready")
+                break
+            sleep(1)
+        else:
+            assert False, "MySQL failed to become ready"
+
+        # Check if snapshot exists on local disk
+        snapshot_exists = MYSQL_SNAPSHOT_DIR.exists()
+        logging.info(f"Snapshot exists: {snapshot_exists}")
+
+        # Create snapshot if it doesn't exist
+        if not snapshot_exists:
+            import shutil
+            logging.info("Creating database snapshot on local disk...")
+            try:
+                # Flush tables to ensure data consistency
+                logging.info("Flushing tables for snapshot...")
+                subprocess.run(
+                    ["docker", "exec", container_name, "mysql",
+                     "-uroot", "-proot_password", "-h", "127.0.0.1",
+                     "-P", test_env["ARXIV_DB_PORT"],
+                     "-e", "FLUSH TABLES;"],
+                    check=True,
+                    timeout=30
+                )
+
+                # Stop the container to ensure clean snapshot
+                logging.info("Stopping container for snapshot...")
+                subprocess.run(
+                    ["docker", "stop", container_name],
+                    check=True,
+                    timeout=30
+                )
+                sleep(1)
+
+                # Copy mysql-data to snapshot directory on local disk
+                logging.info(f"Copying {MYSQL_DATA_DIR} to {MYSQL_SNAPSHOT_DIR}...")
+                shutil.copytree(MYSQL_DATA_DIR, MYSQL_SNAPSHOT_DIR, ignore=ignore_socket_files)
+
+                # Start the container again
+                logging.info("Starting container after snapshot...")
+                subprocess.run(
+                    ["docker", "start", container_name],
+                    check=True,
+                    timeout=30
+                )
+
+                # Wait for MySQL to be ready again
+                for _ in range(30):
+                    result = subprocess.run(
+                        ["docker", "exec", container_name, "mysqladmin",
+                         "ping", "-h", "127.0.0.1", "-P", test_env["ARXIV_DB_PORT"], "--silent"],
+                        capture_output=True,
+                        check=False
+                    )
+                    if result.returncode == 0:
+                        break
+                    sleep(1)
+
+                logging.info("Database snapshot created successfully")
+
+            except Exception as e:
+                logging.error(f"Failed to create snapshot: {str(e)}")
+                raise
 
         yield None
     except Exception as e:
         logging.error(f"bad... {str(e)}")
+        raise
 
     finally:
-        logging.info("Leaving the docker-compose as is...")
+        logging.info("Keeping docker-compose running for subsequent tests...")
 
-    try:
-        logging.info("Stopping docker-compose...")
-        if os.environ.get("RECREATE_DOCKERS", "true") == "true":
-            subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "down", "--remove-orphans"], check=False, cwd=working_dir)
-    except Exception:
-        pass
+
+@pytest.fixture(scope="function")
+def reset_test_database(test_env, docker_compose_db_only):
+    """
+    Reset the database to its initial snapshot state before each test.
+    Use this fixture when you need a clean database state for each test.
+    """
+    logging.info("Resetting database from snapshot...")
+    success = reset_database_from_snapshot(db_port=test_env["ARXIV_DB_PORT"])
+    if not success:
+        pytest.fail("Failed to reset database from snapshot")
+    yield None
+
 

@@ -7,7 +7,7 @@ export $(shell sed 's/=.*//' ../.env)
 
 ARXIV_BASE_DIR ?= $(HOME)/arxiv/arxiv-base
 
-.PHONY: HELLO all bootstrap docker-image help lock
+.PHONY: HELLO all bootstrap docker-image help lock update
 
 default: HELLO
 
@@ -56,3 +56,5 @@ docker-image:
 lock:
 	echo not a python project
 
+update:
+	$(call run_in_all_subdirs,update)

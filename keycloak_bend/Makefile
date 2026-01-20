@@ -7,7 +7,7 @@ ALL_DIRS := $(DOCKER_DIRS)
 
 tag := ${KC_DOCKER_TAG}
 
-.PHONY: bootstrap run proxy sql docker-image push deploy local arxiv-realm sh-arxiv-realm test dev9-arxiv-realm local-arxiv-realm deploy2 kc-service lock theme
+.PHONY: bootstrap run proxy sql docker-image push deploy local arxiv-realm sh-arxiv-realm test dev9-arxiv-realm local-arxiv-realm deploy2 kc-service lock theme update
 
 all: .env.localdb
 	@echo KC_DB_HOST_PUBLIC: ${KC_DB_HOST_PUBLIC}  KC_DB_HOST_PRIVATE:  ${KC_DB_HOST_PRIVATE}  KC_DB_USER: ${KC_DB_USER} KC_DB_PASS: ${KC_DB_PASS}
@@ -211,3 +211,9 @@ dev9-arxiv-realm:
 #-#
 theme:
 	cd kcfy-arxiv && make
+
+#-#
+#-# update:
+#-#  updates subdirs
+update:
+	$(call run_in_docker_dirs,update)

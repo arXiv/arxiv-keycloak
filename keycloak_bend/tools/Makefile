@@ -4,7 +4,7 @@ export $(shell sed 's/=.*//' ../../.env)
 app_tag := gcr.io/arxiv-development/arxiv-keycloak/python-keycloak-admin
 app_name := python-keycloak-admin
 
-.PHONY: HELLO docker-image run stop
+.PHONY: HELLO docker-image run stop update
 
 default: HELLO 
 
@@ -49,3 +49,5 @@ sh:
 .bootstrap:
 	touch .bootstrap
 
+update:
+	@echo ""

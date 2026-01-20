@@ -3,7 +3,7 @@ include ../.env
 export $(shell sed 's/=.*//' ../.env)
 
 
-.PHONY: all bootstrap test HELLO help lock
+.PHONY: all bootstrap test HELLO help lock update 
 
 all: HELLO bootstrap
 
@@ -40,6 +40,12 @@ dump-arxiv-db:
 
 #-#
 #-# Command: lock
-#-#   run poetry lock
+#-#   noop
 lock:
-	echo Nothing to be done
+	@echo Nothing to be done
+
+#-#
+#-# Command: update
+#-#   noop
+update:
+	@echo Nothing to be done

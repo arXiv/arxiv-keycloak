@@ -28,7 +28,7 @@ APP_DOCKER_RUN := docker run --cpus ${ARXIV_PORTAL_APP_CPUS} --rm -p ${app_port}
 # -e DOMAIN=${DOMAIN} \
 
 
-.PHONY: HELLO docker-image run stop lock show-env
+.PHONY: HELLO docker-image run stop lock show-env update 
 
 default: HELLO venv/lib/python3.12/site-packages/fastapi
 
@@ -108,3 +108,9 @@ show-env:
 lock: . venv/bin/poetry
 	. venv/bin/activate && poetry lock
 	. venv/bin/activate && poetry install
+
+#-#
+#-# Command: update
+#-#   run poetry update
+lock: venv/bin/poetry
+	. venv/bin/activate && poetry update

@@ -3,7 +3,7 @@ export $(shell sed 's/=.*//' ../.env)
 
 tag := ${KC_TAPIR_BRIDGE_DOCKER_TAG}
 
-.PHONY: bootstrap docker-image lock
+.PHONY: bootstrap docker-image lock update
 
 bootstrap: .bootstrap
 
@@ -35,6 +35,13 @@ docker-image:
 #-#
 #-# lock:
 #-#   runs tests
-lock: . venv/bin/poetry
+lock: venv/bin/poetry
 	. venv/bin/activate && poetry lock
 	. venv/bin/activate && poetry install
+
+#-#
+#-# update:
+#-#   runs poetry update
+update: venv/bin/poetry
+	. venv/bin/activate && poetry update
+

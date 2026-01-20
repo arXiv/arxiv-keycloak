@@ -26,7 +26,7 @@ APP_DOCKER_RUN := docker run --cpus ${WEBAPP_CPUS} --rm -p ${app_port}:${dockerp
 -e ACOOUNT_UI_APP_ROOT=${RUN_HOST}/user-account/ \
 --name ${app_name} --security-opt="no-new-privileges=true" 
 
-.PHONY: HELLO docker run stop build bootstrap aaa-api
+.PHONY: HELLO docker run stop build bootstrap aaa-api update
 
 default: HELLO
 
@@ -115,3 +115,7 @@ api:
 	# cd account-app && npm install --save-dev openapi-typescript
 	npx openapi-typescript http://localhost:5100/aaa/openapi.json -o src/types/aaa-api.ts
 	npx openapi-typescript http://localhost:5100/admin-api/openapi.json -o src/types/admin-api.ts
+
+
+update:
+	@echo ""

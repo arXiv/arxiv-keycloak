@@ -3,7 +3,7 @@ export $(shell sed 's/=.*//' ../.env)
 
 ARXIV_BASE_DIR ?= $(HOME)/arxiv/arxiv-base
 
-.PHONY: HELLO all load-test-data bootstrap test upload-test-data dump-test-data lock
+.PHONY: HELLO all load-test-data bootstrap test upload-test-data dump-test-data lock update
 
 all: ../venv/bin/poetry HELLO 
 
@@ -82,3 +82,9 @@ upload-test-data:
 dump-test-data:
 	mysqldump -h 127.0.0.1 -P 21504 -u arxiv -parxiv_password --ssl-mode=DISABLED --result-file="/home/ntai/arxiv/arxiv-keycloak/tests/data/sanitized-test-db.sql" --complete-insert --skip-add-drop-table arXiv
 
+
+#-#
+#-# Command: update
+#-#   run poetry update
+update: venv/bin/poetry
+	. venv/bin/activate && poetry update

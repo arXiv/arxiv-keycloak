@@ -34,7 +34,7 @@ APP_DOCKER_RUN := docker run --cpus ${AAA_CPUS} --rm -p ${app_port}:${dockerport
 # -e DOMAIN=${DOMAIN} \
 
 
-.PHONY: HELLO docker-image run stop
+.PHONY: HELLO docker-image run stop update
 
 default: HELLO venv/lib/python3.12/site-packages/fastapi
 
@@ -94,6 +94,12 @@ lock: venv/bin/poetry
 	. venv/bin/activate && poetry lock
 	. venv/bin/activate && poetry install
 
+#-#
+#-# Command: update
+#-#   run poetry update
+update: venv/bin/poetry
+	. venv/bin/activate && poetry update
+
 
 #-#
 #-# Command: daemon
@@ -127,3 +133,5 @@ show-env:
 	sed -e 's/^/export /g' ../.env
 
 
+test:
+	. venv/bin/activate && poetry run pytest

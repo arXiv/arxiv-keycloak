@@ -12,8 +12,15 @@ else
 fi
 
 ACCOUNT=arxiv.1password.com
+#
+# ENABLE_USER_ACCESS=true
+# to enable normie access
+ENABLE_USER_ACCESS=false
+
 
 if [ "$TARGET" = "localdb" ] && [ ! -r .env.localdb ] ; then
+    echo ENABLE_USER_ACCESS=${ENABLE_USER_ACCESS}  >> .env.localdb
+
     SERVER_HOST=localhost.arxiv.org
     HTTP_PORT=5100
     SERVER_URL=http://$SERVER_HOST:$HTTP_PORT
@@ -144,10 +151,6 @@ if [ "$TARGET" = "localdb" ] && [ ! -r .env.localdb ] ; then
     echo MAILSTORE_PORT=21512 >> .env.localdb
     echo TEST_MTA_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/test-mta >> .env.localdb
     #
-    #
-    echo TESTSITE_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/testsite >> .env.localdb
-    echo TESTSITE_PORT=21509 >> .env.localdb
-    #
     # This is not strictry necessary but here
     #
     echo ADMIN_API_TAG=gcr.io/$GCP_PROJECT/admin-console/admin-api >> .env.localdb
@@ -201,6 +204,8 @@ fi
 
 
 if  [ "$TARGET" != "localdb" ] ; then
+    echo ENABLE_USER_ACCESS=${ENABLE_USER_ACCESS}  >> .env
+
     OS=$(jq -r .os $SETTINGS_FILE)
     SERVER_HOST=$(jq -r .server_host $SETTINGS_FILE)
     SERVER_URL=https://$SERVER_HOST
@@ -240,8 +245,8 @@ if  [ "$TARGET" != "localdb" ] ; then
     echo GCP_EVENT_TOPIC_ID=keycloak-arxiv-events >> .env.$TARGET
     echo GCP_ADMIN_EVENT_TOPIC_ID=keycloak-arxiv-events >> .env.$TARGET
     #
-    echo KEYCLOAK_TEST_CLIENT_SECRET=$(jq -r .keycloak_arxiv_client_secret $SETTINGS_FILE) >> .env.$TARGET
-    #
+    echo KEYCLOAK_TEST_CLIENT_SECRET=$(jq -r .keycloak_arxiv_client_secret $SETTINGS_FILE) >> .env.$TARGET 
+   #
     # oauth2 client - aka cookie maker
     #
     AAA_PORT=21503
@@ -284,9 +289,6 @@ if  [ "$TARGET" != "localdb" ] ; then
     echo SMTP_HOST=0.0.0.0:$SMTP_PORT >> .env.$TARGET
     echo MAILSTORE_PORT=21512 >> .env.$TARGET
     echo TEST_MTA_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/test-mta >> .env.$TARGET
-    #
-    echo TESTSITE_TAG=gcr.io/$GCP_PROJECT/arxiv-keycloak/testsite >> .env.$TARGET
-    echo TESTSITE_PORT=21509 >> .env.$TARGET
     #
     # This is not strictry necessary but here
     #

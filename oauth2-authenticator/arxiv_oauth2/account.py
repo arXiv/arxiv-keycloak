@@ -175,7 +175,12 @@ async def update_account_profile(
     if update_name:
         changes = {"firstName": new_data["first_name"],
                    "lastName": new_data["last_name"]}
-        kc_admin.update_user(user_id=str(tapir_user.user_id), payload=changes)
+        try:
+            kc_admin.update_user(user_id=str(tapir_user.user_id), payload=changes)
+        except KeycloakPutError as kc_exc:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                detail=f"Failed to update user profile on Keycloak: {kc_exc}") from kc_exc
+
         changes['suffix_name'] = new_data['suffix_name']
         if isinstance(authn, ArxivUserClaims):
             current_user:ArxivUserClaims = authn
