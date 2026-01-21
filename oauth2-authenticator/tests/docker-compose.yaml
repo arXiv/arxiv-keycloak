@@ -18,6 +18,7 @@ services:
   auth-db:
     image: postgres:16
     container_name: aaat-auth-db
+    user: "${UID}:${GID}"
     environment:
       POSTGRES_USER: ${KC_DB_USER}
       POSTGRES_PASSWORD: ${KC_DB_PASS}

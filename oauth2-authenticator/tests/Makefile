@@ -7,9 +7,12 @@ export $(shell sed 's/=.*//' test-env)
 
 ARXIV_BASE_DIR ?= $(HOME)/arxiv/arxiv-base
 
-.PHONY: HELLO all bootstrap docker-image arxiv-db nginx test up down restart images clean sh
+.PHONY: HELLO all bootstrap docker-image arxiv-db nginx test up down restart images clean sh mta-models dbo-up dbo-down
 
 default: HELLO
+
+GID := $(shell id -g)
+UID := $(shell id -u)
 
 
 define run_in_docker_dirs
@@ -48,7 +51,7 @@ help:
 #-#   bootstraps the environment
 bootstrap: .bootstrap
 
-.bootstrap: tests/data/sanitized-test-db.sql setup-$(OS)
+.bootstrap: tests/data/sanitized-test-db.sql setup-$(OS) tests/test_mta_client/
 	$(call run_in_all_subdirs,bootstrap)
 	touch .bootstrap
 
@@ -59,20 +62,42 @@ setup-redhat:
 #-#
 #-# up:
 #-#   runs docker compose up with test-env.
-up: 
-	docker compose --env-file=test-env up -d
+up:
+	cp test-env temp-test-env
+	echo "UID=${UID}" >> temp-test-env
+	echo "GID=${GID}" >> temp-test-env
+	docker compose --ansi=none --env-file=temp-test-env up -d
 
 #-#
 #-# down:
 #-#   runs docker compose down
 down:
-	docker compose --env-file=test-env down --remove-orphans
+	docker compose --ansi=none --env-file=temp-test-env down --remove-orphans
 
+
+#-#
+#-# dbo-up:
+#-#   runs docker compose up with test-env.
+dbo-up:
+	cp test-env temp-test-env
+	echo "UID=${UID}" >> temp-dbo-test-env
+	echo "GID=${GID}" >> temp-dbo-test-env
+	docker compose -f docker-compose-db-only.yaml --ansi=none --env-file=temp-dbo-test-env up -d
+
+#-#
+#-# dbo-down:
+#-#   runs docker compose down
+dbo-down:
+	docker compose -f docker-compose-db-only.yaml --ansi=none --env-file=temp-dbo-test-env down --remove-orphans
+
+
+tests/test_mta_client/: mta-models
 
 #-#
 #-# mta-models:
 #-#   gets
 mta-models:
+	$(MAKE) up
 	datamodel-codegen --url http://localhost:${MAIL_API_PORT}/openapi.json --input-file-type openapi --output mta_models.py
 	-rm -fr fast-api-client/ test_mta_client/
 	openapi-python-client generate --url http://localhost:${MAIL_API_PORT}/openapi.json && mv fast-api-client/fast_api_client ./test_mta_client

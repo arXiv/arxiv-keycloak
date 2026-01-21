@@ -1,3 +1,4 @@
+import shlex
 import sys, os
 rooddir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(rooddir)
@@ -8,6 +9,8 @@ from typing import Dict, Optional
 
 from arxiv.auth.user_claims import ArxivUserClaims, ArxivUserClaimsModel
 from dotenv import dotenv_values, load_dotenv
+from arxiv.config import Settings
+from arxiv_bizlogic.database import Database, DatabaseSession
 
 from arxiv_oauth2.biz.account_biz import AccountIdentifierModel
 
@@ -29,6 +32,9 @@ import os
 
 MYSQL_DATA_DIR = AAA_TEST_DIR / "mysql-data"
 MYSQL_SNAPSHOT_DIR = AAA_TEST_DIR / "mysql-data-snapshot"
+
+DC_YAML = AAA_TEST_DIR.joinpath('docker-compose.yaml')
+DC_DBO_YAML = AAA_TEST_DIR.joinpath('docker-compose-db-only.yaml')
 
 
 def ignore_socket_files(directory, files):
@@ -147,9 +153,8 @@ def test_env() -> Dict[str, Optional[str]]:
 @pytest.fixture(scope="module")
 def docker_compose(test_env):
     logging.info("Setting up docker-compose")
-    docker_compose_file = AAA_TEST_DIR.joinpath('docker-compose.yaml')
-    if not docker_compose_file.exists():
-        raise FileNotFoundError(docker_compose_file.as_posix())
+    if not DC_YAML.exists():
+        raise FileNotFoundError(DC_YAML.as_posix())
     env_arg = "--env-file=" + dotenv_filename
     working_dir = AAA_TEST_DIR.as_posix()
 
@@ -159,10 +164,16 @@ def docker_compose(test_env):
     docker_env["GID"] = str(os.getgid())
 
     try:
+        subprocess.run(["docker", "compose", "--ansi=none", env_arg, "-f", DC_DBO_YAML.as_posix(), "down", "--remove-orphans"],
+                       check=False, cwd=working_dir, env=docker_env)
+    except Exception as e:
+        pass
+
+    try:
         logging.info("Stopping docker-compose...")
-        subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "down", "--remove-orphans"], check=False, cwd=working_dir, env=docker_env)
+        subprocess.run(["docker", "compose", "--ansi=none", env_arg, "-f", DC_YAML.as_posix(), "down", "--remove-orphans"], check=False, cwd=working_dir, env=docker_env)
         logging.info("Starting docker-compose...")
-        subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "up", "-d"], check=True, cwd=working_dir, env=docker_env)
+        subprocess.run(["docker", "compose", "--ansi=none", env_arg, "-f", DC_YAML.as_posix(), "up", "-d"], check=True, cwd=working_dir, env=docker_env)
         
         # Loop until at least one row is present
         for _ in range(100):
@@ -303,11 +314,21 @@ def aaa_user0001_headers(test_env, aaa_client, aaa_api_headers):
 @pytest.fixture(scope="module")
 def docker_compose_db_only(test_env):
     logging.info("Setting up database only")
-    docker_compose_file = AAA_TEST_DIR.joinpath('docker-compose-db-only.yaml')
-    if not docker_compose_file.exists():
-        raise FileNotFoundError(docker_compose_file.as_posix())
+    if not DC_DBO_YAML.exists():
+        raise FileNotFoundError(DC_DBO_YAML.as_posix())
     env_arg = "--env-file=" + dotenv_filename
     working_dir = AAA_TEST_DIR.as_posix()
+
+    # kill off the other docker-compose instance
+    try:
+        result = subprocess.run(
+            ["docker", "compose", "-f", DC_YAML, "down"],
+            capture_output=True,
+            text=True,
+            check=False
+        )
+    except Exception as e:
+        pass
 
     # Set UID/GID for docker-compose to run containers as current user
     docker_env = os.environ.copy()
@@ -323,7 +344,8 @@ def docker_compose_db_only(test_env):
             ["docker", "inspect", "-f", "{{.State.Running}}", container_name],
             capture_output=True,
             text=True,
-            check=False
+            check=False,
+            env = docker_env
         )
 
         # Ensure mysql-data directory exists with proper ownership for bind mount
@@ -334,14 +356,27 @@ def docker_compose_db_only(test_env):
         if result.returncode != 0:
             # Container doesn't exist, start docker-compose
             logging.info("Container doesn't exist, starting docker-compose...")
-            subprocess.run(["docker", "compose", env_arg, "-f", docker_compose_file, "up", "-d"], check=True, cwd=working_dir, env=docker_env)
+            args = ["docker", "compose", "--ansi=none", env_arg, "-f", DC_DBO_YAML.as_posix(), "up", "-d"]
+            logging.info(shlex.join(args))
+            result = subprocess.run(args, cwd=working_dir, env=docker_env, capture_output=True, text=True)
+            if result.returncode != 0:
+                logging.error(f"docker-compose failed: {result.stderr}")
+                raise RuntimeError(f"docker-compose failed: {result.stderr}")
             needs_data_load = True
-        elif "false" in result.stdout:
-            # Container exists but is stopped, start it
-            logging.info("Container exists but is stopped, starting it...")
-            subprocess.run(["docker", "start", container_name], check=True)
-        else:
+        elif result.stdout.strip() == "true":
+            # Container is running
             logging.info("Container already running")
+        else:
+            # Container exists but is not running (stopped, created, etc.)
+            logging.info("Container exists but is not running, recreating...")
+            subprocess.run(["docker", "compose", "--ansi=none", env_arg, "-f", DC_DBO_YAML.as_posix(), "down"],
+                           cwd=working_dir, env=docker_env)
+            result = subprocess.run(["docker", "compose", "--ansi=none", env_arg, "-f", DC_DBO_YAML.as_posix(), "up", "-d"],
+                           cwd=working_dir, env=docker_env, capture_output=True, text=True)
+            if result.returncode != 0:
+                logging.error(f"docker-compose failed: {result.stderr}")
+                raise RuntimeError(f"docker-compose failed: {result.stderr}")
+            needs_data_load = True
 
         # Wait for myloader container to complete (only if we just started docker-compose)
         if needs_data_load:
@@ -470,3 +505,26 @@ def reset_test_database(test_env, docker_compose_db_only):
     yield None
 
 
+@pytest.fixture(scope="module")
+def database_session(test_env, docker_compose_db_only):
+    """
+    Set up the database connection for tests that need direct database access.
+    This fixture configures the global Database instance and provides DatabaseSession.
+    """
+
+    db_uri = "mysql+mysqldb://{}:{}@{}:{}/{}".format(
+        "arxiv",
+        "arxiv_password",
+        "127.0.0.1",
+        test_env["ARXIV_DB_PORT"],
+        "arXiv"
+    )
+
+    settings = Settings(
+        CLASSIC_DB_URI=db_uri,
+        LATEXML_DB_URI=None
+    )
+    database = Database(settings)
+    database.set_to_global()
+
+    yield DatabaseSession
