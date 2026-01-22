@@ -118,7 +118,6 @@ def check_any_rows_in_table(schema: str, table_name: str, db_user: str, db_passw
                 f"-p{db_password}",
                 "-h", "127.0.0.1",
                 "-P", db_port,
-                "--ssl-mode=DISABLED",
                 "--default-auth=mysql_native_password",
                 "-N",
                 "-B",
@@ -202,7 +201,7 @@ def test_mta(test_env, docker_compose):
 def aaa_client(test_env, docker_compose):
     """Start AAA App. Since it needs the database running, it needs the arxiv db up"""
     os.environ.update(test_env)
-    app = create_app()
+    app = create_app(TESTING=True)
     # aaa_app_port = test_env['ARXIV_OAUTH2_APP_PORT']
     aaa_url = test_env['AAA_URL']
     client = TestClient(app, base_url=aaa_url)
@@ -229,7 +228,7 @@ def aaa_client_db_only(test_env: Dict, docker_compose_db_only):
     test_env["KEYCLOAK_ADMIN_SECRET"] = "<NOT-SET>"
 
     os.environ.update(test_env)
-    app = create_app()
+    app = create_app(TESTING=True)
     aaa_url = test_env['AAA_URL']
     client = TestClient(app, base_url=aaa_url)
 

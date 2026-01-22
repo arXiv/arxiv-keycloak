@@ -30,7 +30,7 @@ def test_register_account_success_with_token(docker_compose, test_env, aaa_clien
     email_list: List[EmailRecord] = get_emails_emails_get.sync(client=mta_client)
     assert len(email_list) == 0
 
-    aaa_url = test_env['AAA_URL']
+    # aaa_url = test_env['AAA_URL']
 
     registration_data = {
         "username": "jdoe",

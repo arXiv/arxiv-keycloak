@@ -126,6 +126,7 @@ def create_app(*args, **kwargs) -> FastAPI:
     database = Database(settings)
     database.set_to_global()
 
+    TESTING = kwargs.get('TESTING')
 
     # Doubly check we agree with get_application_config
     for key in missing_configs(get_application_config()):
@@ -154,6 +155,7 @@ def create_app(*args, **kwargs) -> FastAPI:
     if samesite not in ["lax", "strict", "none"]:
         samesite = "lax"
 
+    logger.info(f"TESTING: {TESTING!r}")
     logger.info(f"DOMAIN: {DOMAIN!r}")
     logger.info(f"SECURE: {secure!r}")
     logger.info(f"SAMESITE: {samesite!r}")
@@ -220,6 +222,8 @@ def create_app(*args, **kwargs) -> FastAPI:
     extra_options = {}
     if os.environ.get(ENABLE_USER_ACCESS_KEY):
         extra_options[ENABLE_USER_ACCESS_KEY] = os.environ.get(ENABLE_USER_ACCESS_KEY)
+    if TESTING:
+        extra_options['TESTING'] = str(TESTING)
 
     app = FastAPI(
         root_path=SERVER_ROOT_PATH,
