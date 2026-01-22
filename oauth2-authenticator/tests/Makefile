@@ -66,6 +66,7 @@ up:
 	cp test-env temp-test-env
 	echo "UID=${UID}" >> temp-test-env
 	echo "GID=${GID}" >> temp-test-env
+	cp temp-test-env .env
 	docker compose --ansi=none --env-file=temp-test-env up -d
 
 #-#
@@ -79,9 +80,10 @@ down:
 #-# dbo-up:
 #-#   runs docker compose up with test-env.
 dbo-up:
-	cp test-env temp-test-env
+	cp test-env temp-dbo-test-env
 	echo "UID=${UID}" >> temp-dbo-test-env
 	echo "GID=${GID}" >> temp-dbo-test-env
+	cp temp-dbo-test-env .env
 	docker compose -f docker-compose-db-only.yaml --ansi=none --env-file=temp-dbo-test-env up -d
 
 #-#

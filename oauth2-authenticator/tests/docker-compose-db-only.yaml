@@ -20,6 +20,7 @@ services:
       MYSQL_USER: arxiv
       MYSQL_PASSWORD: arxiv_password
       MYSQL_TCP_PORT: ${ARXIV_DB_PORT}
+      PORT: ${ARXIV_DB_PORT}
     network_mode: host
     depends_on:
       cleanup-db:
