@@ -7,6 +7,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional, List
 
+from arxiv_bizlogic.database import is_column_latin1
 from arxiv_bizlogic.fastapi_helpers import datetime_to_epoch
 from sqlalchemy import select, case, exists, cast, LargeBinary, func, inspect, update
 from sqlalchemy.orm import Session
@@ -367,7 +368,8 @@ class UserModel(BaseModel):
             old_value = getattr(db_object, field)
             new_value = data[field]
 
-            if isinstance(column_type, str) or isinstance(column_type, String):
+            need_binary_op = is_column_latin1(session, model_class.__table__.name, field.name)
+            if need_binary_op and (isinstance(column_type, str) or isinstance(column_type, String)):
                 old_value = bytes(old_value, "utf-8") if old_value is not None else None
                 if isinstance(new_value, str):
                     new_value = new_value.encode("utf-8")
@@ -395,6 +397,8 @@ class UserModel(BaseModel):
                 setattr(db_object, field, new_value)
             else:
                 setattr(db_object, field, new_value)
+                pass
+
 
     @staticmethod
     def _upsert_user(session: Session, user: dict) -> TapirUser | None:

@@ -7,6 +7,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import update
 from pydantic import BaseModel
+from .database import is_column_latin1
 
 Base = declarative_base()
 
@@ -113,6 +114,10 @@ def update_model_fields(session: Session, model: Base,
                             direct_update = True
                         else:
                             raise ValueError(f"Invalid value type for {key}: {type(value)}")
+
+                direct_update = direct_update and is_column_latin1(session,
+                                                                   model.__table__.name,
+                                                                   column.name)
 
                 # Only update if the value has changed
                 if direct_update:
