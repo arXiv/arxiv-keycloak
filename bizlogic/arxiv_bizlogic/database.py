@@ -2,8 +2,9 @@ from logging import getLogger
 
 from arxiv.config import Settings
 from fastapi import HTTPException
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, inspect
+from sqlalchemy.orm import sessionmaker, Session
+from typing import Optional, Dict, Tuple
 
 
 class Database:
@@ -80,3 +81,50 @@ class DatabaseSession:
             next(self.session_generator, None)  # Finalize the session (commit/rollback)
         except StopIteration:
             pass  # Generator is exhausted, nothing to do
+
+
+
+# Cache for column charset lookups: (engine_url, table_name, column_name) -> charset
+_column_charset_cache: Dict[Tuple[str, str, str], Optional[str]] = {}
+
+
+def is_column_latin1(session: Session, table_name: str, column_name: str) -> bool:
+    """Check if a column uses latin1 charset via SQLAlchemy reflection.
+
+    For non-MySQL databases, always returns False.
+    Results are cached per (engine_url, table_name, column_name).
+
+    Args:
+        session: SQLAlchemy session
+        table_name: Name of the table to check
+        column_name: Name of the column to check
+
+    Returns:
+        True if the column uses latin1 charset, False otherwise
+    """
+    if session.bind.dialect.name != 'mysql':
+        return False
+
+    # Use engine URL as cache key
+    cache_key = (str(session.bind.url), table_name, column_name)
+
+    # Check if we have a cached result
+    if cache_key in _column_charset_cache:
+        return _column_charset_cache[cache_key] == 'latin1'
+
+    # Perform reflection
+    inspector = inspect(session.bind)
+    try:
+        columns = inspector.get_columns(table_name)
+        for col in columns:
+            if col['name'] == column_name:
+                col_type = col.get('type')
+                charset = getattr(col_type, 'charset', None)
+                _column_charset_cache[cache_key] = charset
+                return charset == 'latin1'
+    except Exception:
+        pass
+
+    _column_charset_cache[cache_key] = None
+    return False
+
