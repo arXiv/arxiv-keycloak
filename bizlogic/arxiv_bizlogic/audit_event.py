@@ -2045,12 +2045,18 @@ def admin_audit(session: Session, event: AdminAuditEvent) -> TapirAdminAudit:
     session.flush()  # Get the entry_id
     
     # Update data and comment with binary data using direct SQL
-    comment_utf8 = (event.comment if event.comment else '').encode('utf-8')
-    data_utf8 = (event.data if event.data else '').encode('utf-8')
-    session.execute(
-        update(TapirAdminAudit.__table__)
-        .where(TapirAdminAudit.entry_id == entry.entry_id)
-        .values(data=func.binary(data_utf8), comment=func.binary(comment_utf8)))
+    if session.bind.dialect.name != 'mysql':
+        session.execute(
+            update(TapirAdminAudit.__table__)
+            .where(TapirAdminAudit.entry_id == entry.entry_id)
+            .values(data=event.data, comment=event.comment))
+    else:
+        comment_utf8 = (event.comment if event.comment else '').encode('utf-8')
+        data_utf8 = (event.data if event.data else '').encode('utf-8')
+        session.execute(
+            update(TapirAdminAudit.__table__)
+            .where(TapirAdminAudit.entry_id == entry.entry_id)
+            .values(data=func.binary(data_utf8), comment=func.binary(comment_utf8)))
 
     return entry
 
