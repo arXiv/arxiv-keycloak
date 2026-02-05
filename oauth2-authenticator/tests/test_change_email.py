@@ -45,8 +45,7 @@ def test_change_email(docker_compose, test_env, aaa_client, test_mta, aaa_api_he
     assert response3.status_code == 401, "API token does not work for changing email"
 
     response3_1 = aaa_client.put(f"/account/{ident.user_id}/email", json=email_data.model_dump(), headers=aaa_user0001_headers)
-    assert response3_1.status_code == 401, "email address validation failed."
-
+    assert response3_1.status_code == 400, "email address validation failed."
 
     email_data = EmailUpdateModel(
         email = profile2.email,

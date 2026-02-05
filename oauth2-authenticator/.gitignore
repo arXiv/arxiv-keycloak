@@ -1,2 +1,11 @@
 venv/
 /.bootstrap
+/tests/data/arxiv-sqlite.db
+/tests/mysql/
+/tests/mysql-data/
+/tests/mysql-data-snapshot/
+**/.claude/
+/tests/temp-dbo-test-env
+/tests/temp-test-env
+/tests/test_mta_client/
+

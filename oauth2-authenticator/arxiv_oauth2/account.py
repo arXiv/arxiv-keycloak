@@ -267,7 +267,7 @@ async def update_user_name(
                     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Username {data.username} is already taken") from kc_exc
                 error_message = None
                 try:
-                    body = json.loads(kc_exc.response_body.decode('utf-8'))
+                    body = json.loads(kc_exc.response_body.decode('utf-8')) # type: ignore
                     error_message = body.get('errorMessage')
                 except:
                     pass
@@ -477,13 +477,16 @@ async def register_account(
 
     client_secret = request.app.extra['ARXIV_USER_SECRET']
 
+    if registration.username is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username is required")
+
     if registration.keycloak_migration:
         data: Optional[TapirNickname] = session.query(TapirNickname).filter(
-            TapirNickname.nickname == registration.username.lower()).one_or_none()
+            TapirNickname.nickname == registration.username.lower()).one_or_none()  # type: ignore
         if not data:
             error_response = AccountRegistrationError(message="Username is not found", field_name="username")
             response.status_code = status.HTTP_404_NOT_FOUND
-            return error_response
+            return [error_response]
 
         account = get_account_info(session, str(data.user_id))
         if account is None:
@@ -492,7 +495,7 @@ async def register_account(
         migrate_to_keycloak(kc_admin, account, registration.password, client_secret)
         return account
 
-    maybe_tapir_user = register_arxiv_account(kc_admin, client_secret, session, registration)
+    maybe_tapir_user: AccountRegistrationError | TapirUser  = register_arxiv_account(kc_admin, client_secret, session, registration)
     if isinstance(maybe_tapir_user, TapirUser):
         logger.info("User account created successfully")
         result = get_account_info(session, str(maybe_tapir_user.user_id))
@@ -502,7 +505,7 @@ async def register_account(
     elif isinstance(maybe_tapir_user, AccountRegistrationError):
         response.status_code = status.HTTP_404_NOT_FOUND
         logger.error("Failed to create user account")
-        return maybe_tapir_user
+        return [maybe_tapir_user]
     # notreachd
     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="register_arxiv_account returned an unexpected result")
 
@@ -801,7 +804,7 @@ def change_email(
             AdminAudit_SetEmailVerified(
                 authn_user.user_id,
                 user_id,
-                tapir_session_id,
+                str(tapir_session_id) if tapir_session_id is not None else None,
                 email_verified,
                 remote_ip=remote_ip,
                 remote_hostname=remote_hostname,
@@ -814,7 +817,11 @@ def change_email(
             kc_send_verify_email(kc_admin, kc_user["id"], force_verify=True)
 
         session.commit()
-        return UserModel.one_user(session, user_id)
+        the_user = UserModel.one_user(session, user_id)
+        if the_user is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail=f"The user {user_id} is successfully created with the transaction commit but not found. There is a VERY slim chance of race condition but it could be a database issue.")
+        return the_user
 
 
     # Case 3 - Normal user change email
@@ -855,7 +862,11 @@ def change_email(
         # Sends the verify request email
         kc_send_verify_email(kc_admin, kc_user["id"], force_verify=True)
 
-    return UserModel.one_user(session, user_id)
+    the_user = UserModel.one_user(session, user_id)
+    if the_user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"The user {user_id} is successfully created with the transaction commit but not found. There is a VERY slim chance of race condition but it could be a database issue.")
+    return the_user
 
 
 @router.get("/{user_id:str}/email/history", description="Get the past email history")
@@ -979,8 +990,10 @@ async def change_user_password(
     if authn_user.is_admin and authn_user.user_id != user_id:
         if not authn_user.tapir_session_id:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tapir session is required.")
+        if not authn_user.user_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="authenticated user has no user id.")
 
-        tsid = str(authn_user.tapir_session_id)
+        tsid = str(authn_user.tapir_session_id) if authn_user.tapir_session_id else None
         admin_audit(
             session,
             AdminAudit_ChangePassword(
@@ -1101,7 +1114,11 @@ async def reset_user_password(
                             detail="Failed to migrate a user account")
 
     try:
-        kc_admin.send_update_account(user_id=str(user_id), payload={"requiredActions": ["UPDATE_PASSWORD"]})
+        # I changed this from dict to this.
+        # before: kc_admin.send_update_account(user_id=str(user_id), payload={"requiredActions": ["UPDATE_PASSWORD"]})
+        # and I think this worked
+        # https://python-keycloak.readthedocs.io/en/latest/modules/admin.html
+        kc_admin.send_update_account(user_id=str(user_id), payload=["UPDATE_PASSWORD"])
     except KeycloakGetError as kce:
         detail = "Password reset request did not succeed due to arXiv server problem. " + str(kce)
         ex_body: str = kce.response_body.decode('utf-8') if kce.response_body and isinstance(kce.response_body, bytes) else (
@@ -1543,7 +1560,9 @@ def update_user_authorization(
             tapir_user.flag_deleted = deleted
             # Add audit trail for user deletion/undeletion
             # Note: Using suspend audit events as there are no specific delete audit events
-            audit = AdminAudit_SuspendUser(
+            admin_audit(
+                session,
+                AdminAudit_SuspendUser(
                 admin_user.user_id,
                 user_id,
                 admin_user.tapir_session_id,
@@ -1559,8 +1578,7 @@ def update_user_authorization(
                 remote_hostname=remote_hostname,
                 tracking_cookie=tracking_cookie,
                 comment=f"Undeleted user. {body.comment if body.comment else ''}"
-            )
-            admin_audit(session, audit)
+            ))
 
 
     if body.suspend is not None:
@@ -1568,23 +1586,24 @@ def update_user_authorization(
         banned = 1 if body.suspend else 0
         if tapir_user.flag_banned != banned:
             tapir_user.flag_banned = banned
-            audit = AdminAudit_SuspendUser(
-                admin_user.user_id,
-                user_id,
-                admin_user.tapir_session_id,
-                remote_ip=remote_ip,
-                remote_hostname=remote_hostname,
-                tracking_cookie=tracking_cookie,
-                comment=body.comment if body.comment else ''
-            ) if not body.suspend else AdminAudit_UnuspendUser(
-                admin_user.user_id,
-                user_id,
-                admin_user.tapir_session_id,
-                remote_ip=remote_ip,
-                remote_hostname=remote_hostname,
-                tracking_cookie=tracking_cookie,
-                comment=body.comment if body.comment else '')
-            admin_audit(session, audit)
+            admin_audit(
+                session,
+                        AdminAudit_SuspendUser(
+                            admin_user.user_id,
+                            user_id,
+                            admin_user.tapir_session_id,
+                            remote_ip=remote_ip,
+                            remote_hostname=remote_hostname,
+                            tracking_cookie=tracking_cookie,
+                            comment=body.comment if body.comment else ''
+                        ) if not body.suspend else AdminAudit_UnuspendUser(
+                            admin_user.user_id,
+                            user_id,
+                            admin_user.tapir_session_id,
+                            remote_ip=remote_ip,
+                            remote_hostname=remote_hostname,
+                            tracking_cookie=tracking_cookie,
+                            comment=body.comment if body.comment else ''))
 
 
     if body.administrator is not None:
@@ -1593,17 +1612,18 @@ def update_user_authorization(
         if tapir_user.flag_edit_users != admin_flag:
             tapir_user.flag_edit_users = admin_flag
             # Create audit event for administrator role change
-            audit = AdminAudit_SetEditUsers(
-                str(admin_user.user_id),
-                str(user_id),
-                str(admin_user.tapir_session_id),
-                body.administrator,
-                remote_ip=remote_ip,
-                remote_hostname=remote_hostname,
-                tracking_cookie=tracking_cookie,
-                comment=f"{'Granted' if body.administrator else 'Revoked'} administrator role. {body.comment if body.comment else ''}"
-            )
-            admin_audit(session, audit)
+            admin_audit(
+                session,
+                AdminAudit_SetEditUsers(
+                    str(admin_user.user_id),
+                    str(user_id),
+                    str(admin_user.tapir_session_id) if admin_user.tapir_session_id is not None else None,
+                    body.administrator,
+                    remote_ip=remote_ip,
+                    remote_hostname=remote_hostname,
+                    tracking_cookie=tracking_cookie,
+                    comment=f"{'Granted' if body.administrator else 'Revoked'} administrator role. {body.comment if body.comment else ''}"
+                ))
 
 
     if body.owner is not None:
@@ -1612,17 +1632,18 @@ def update_user_authorization(
         if tapir_user.flag_edit_system != owner_flag:
             tapir_user.flag_edit_system = owner_flag
             # Create audit event for owner role change
-            audit = AdminAudit_SetEditSystem(
-                str(admin_user.user_id),
-                str(user_id),
-                str(admin_user.tapir_session_id),
-                body.owner,
-                remote_ip=remote_ip,
-                remote_hostname=remote_hostname,
-                tracking_cookie=tracking_cookie,
-                comment=f"{'Granted' if body.owner else 'Revoked'} owner role. {body.comment if body.comment else ''}"
-            )
-            admin_audit(session, audit)
+            admin_audit(
+                session,
+                AdminAudit_SetEditSystem(
+                    str(admin_user.user_id),
+                    str(user_id),
+                    str(admin_user.tapir_session_id),
+                    body.owner,
+                    remote_ip=remote_ip,
+                    remote_hostname=remote_hostname,
+                    tracking_cookie=tracking_cookie,
+                    comment=f"{'Granted' if body.owner else 'Revoked'} owner role. {body.comment if body.comment else ''}"
+                ))
 
 
     if body.can_lock is not None:
@@ -1631,7 +1652,9 @@ def update_user_authorization(
         if tapir_user.flag_can_lock != can_lock_flag:
             tapir_user.flag_can_lock = can_lock_flag
             # Create audit event for can_lock role change
-            audit = AdminAudit_SetCanLock(
+            admin_audit(
+                session,
+                AdminAudit_SetCanLock(
                 str(admin_user.user_id),
                 str(user_id),
                 str(admin_user.tapir_session_id),
@@ -1640,8 +1663,7 @@ def update_user_authorization(
                 remote_hostname=remote_hostname,
                 tracking_cookie=tracking_cookie,
                 comment=f"{'Granted' if body.can_lock else 'Revoked'} can_lock privilege. {body.comment if body.comment else ''}"
-            )
-            admin_audit(session, audit)
+            ))
 
 
     if body.approved is not None:
@@ -1660,26 +1682,27 @@ def update_user_authorization(
             if tapir_user.flag_moderator != moderator_flag:
                 tapir_user.flag_moderator = moderator_flag
                 # Create audit event for moderator role change
-                audit = AdminAudit_MakeModerator(
-                    str(admin_user.user_id),
-                    str(user_id), 
-                    str(admin_user.tapir_session_id),
-                    category="general",  # Default category for general moderator role
-                    remote_ip=remote_ip,
-                    remote_hostname=remote_hostname,
-                    tracking_cookie=tracking_cookie,
-                    comment=f"{'Granted' if body.moderator else 'Revoked'} moderator role. {body.comment if body.comment else ''}"
-                ) if body.moderator else AdminAudit_UnmakeModerator(
-                    str(admin_user.user_id),
-                    str(user_id),
-                    str(admin_user.tapir_session_id),
-                    category="general",  # Default category for general moderator role
-                    remote_ip=remote_ip,
-                    remote_hostname=remote_hostname,
-                    tracking_cookie=tracking_cookie,
-                    comment=f"Revoked moderator role. {body.comment if body.comment else ''}"
-                )
-                admin_audit(session, audit)
+                admin_audit(
+                    session,
+                    AdminAudit_MakeModerator(
+                        str(admin_user.user_id),
+                        str(user_id),
+                        str(admin_user.tapir_session_id),
+                        category="general",  # Default category for general moderator role
+                        remote_ip=remote_ip,
+                        remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie,
+                        comment=f"{'Granted' if body.moderator else 'Revoked'} moderator role. {body.comment if body.comment else ''}"
+                    ) if body.moderator else AdminAudit_UnmakeModerator(
+                        str(admin_user.user_id),
+                        str(user_id),
+                        str(admin_user.tapir_session_id),
+                        category="general",  # Default category for general moderator role
+                        remote_ip=remote_ip,
+                        remote_hostname=remote_hostname,
+                        tracking_cookie=tracking_cookie,
+                        comment=f"Revoked moderator role. {body.comment if body.comment else ''}"
+                    ))
 
 
     if session.is_modified(tapir_user):
@@ -1764,7 +1787,12 @@ def update_user_authorization(
     if not valid_request:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request")
 
-    return UserModel.one_user(session, user_id)
+    the_user = UserModel.one_user(session, user_id)
+    if the_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found")
+    return the_user
 
 
 class PasswordValidationResult(BaseModel):
