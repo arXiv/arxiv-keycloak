@@ -177,10 +177,20 @@ def dispatch_user_do_verify_email(data: dict, representation: Any, session: Sess
     biz = EmailHistoryBiz(session, user_id)
     last_session = get_last_tapir_session(session, user_id)
     details = data.get("details", {})
+    new_email = details.get("email")
+    if new_email is None:
+        logger.warning(f"email is not found in details: {details!r}")
+        return
     if last_session:
-        biz.email_verified(session_id=str(last_session.session_id),
-                           remote_ip=data.get("ipAddress"),
-                           new_email=details.get("email"),
-                           )
+        if biz.email_verified(session_id=str(last_session.session_id),
+            remote_ip=data.get("ipAddress"),
+            new_email=new_email,
+            ):
+            logger.info(f"email {new_email} is verified for user {user_id}")
+        else:
+            logger.info(f"email {new_email} is NOT verified for user {user_id}")
+            pass
+        pass
+
 
     session.commit()

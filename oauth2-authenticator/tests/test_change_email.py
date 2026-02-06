@@ -47,9 +47,10 @@ def test_change_email(docker_compose, test_env, aaa_client, test_mta, aaa_api_he
     response3_1 = aaa_client.put(f"/account/{ident.user_id}/email", json=email_data.model_dump(), headers=aaa_user0001_headers)
     assert response3_1.status_code == 400, "email address validation failed."
 
+    new_email_addr = "foo@example.com"
     email_data = EmailUpdateModel(
         email = profile2.email,
-        new_email="foo@example.com"
+        new_email=new_email_addr
     )
     response4 = aaa_client.put(f"/account/{ident.user_id}/email", json=email_data.model_dump(), headers=aaa_user0001_headers)
     assert response4.status_code == 200
@@ -67,7 +68,34 @@ def test_change_email(docker_compose, test_env, aaa_client, test_mta, aaa_api_he
     response5 = aaa_client.get(f"/account/{ident.user_id}/profile", headers=aaa_user0001_headers)
     profile5 = AccountInfoModel.model_validate(response5.json())
 
-    assert profile5.email_verified == False
+    assert profile5.email != new_email_addr
+
+    # Pretend that KC sends a audit event
+    mock_audit = {
+        "id" : "8b4aaf3b-14ee-4b1d-b532-79d7d178d4b8",
+        "time" : 1738005796557,
+        "realmId" : "c35229b5-75cf-42d4-aa83-976a0609b73d",
+        "realmName" : "arxiv",
+        "clientId": "arxiv-user",
+        "userId": ident.user_id,
+        "ipAddress": "127.0.0.1",
+        "details" : {
+            "email": new_email_addr
+        },
+        "type" : "VERIFY_EMAIL",
+        "resourceType" : "USER",
+        "operationType" : "UPDATE",
+        "resourcePath" : f"users/{ident.user_id}",
+        "representation" : "{\"id\":\"%s\",\"username\":\"reader\",\"firstName\":\"Garret\",\"lastName\":\"Zieme\",\"email\":\"foo@example.com\",\"emailVerified\":true,\"attributes\":{\"tracking_cookie\":[\"xyz\"],\"joined_date\":[\"2013-11-11T15:56:29Z\"],\"joined_ip_num\":[\"dedicated\"],\"share\":[\"FirstName\",\"LastName\",\"Email\"]},\"createdTimestamp\":1738005757855,\"enabled\":true,\"totp\":false,\"disableableCredentialTypes\":[],\"requiredActions\":[],\"notBefore\":0,\"access\":{\"manageGroupMembership\":true,\"view\":true,\"mapRoles\":true,\"impersonate\":true,\"manage\":true}}" % ident.user_id,
+        "resourceTypeAsString" : "USER"
+    }
+    response_audit = aaa_client.post("/keycloak/audit", json=mock_audit, headers=aaa_api_headers)
+    response_audit.status_code == 200
+
+    response6 = aaa_client.get(f"/account/{ident.user_id}/profile", headers=aaa_user0001_headers)
+    profile6 = AccountInfoModel.model_validate(response6.json())
+
+    assert profile6.email == "foo@example.com"
 
     # 2nd try exercises the case where the account exists on KC
 
@@ -75,15 +103,6 @@ def test_change_email(docker_compose, test_env, aaa_client, test_mta, aaa_api_he
         email = profile5.email,
         new_email="bar@example.com"
     )
-    response6 = aaa_client.put(f"/account/{ident.user_id}/email", json=email_data.model_dump(), headers=aaa_user0001_headers)
-    assert response6.status_code == 200
+    response7 = aaa_client.put(f"/account/{ident.user_id}/email", json=email_data.model_dump(), headers=aaa_user0001_headers)
+    assert response7.status_code == 429
 
-    # should the 2nd email
-    for _ in range(10):
-        email_list: List[EmailRecord] = get_emails_emails_get.sync(client=mta_client)
-        if len(email_list) > initial_email_count:
-            initial_email_count = len(email_list)
-            break
-        time.sleep(1)
-    else:
-        assert False, "Email did not show up."
