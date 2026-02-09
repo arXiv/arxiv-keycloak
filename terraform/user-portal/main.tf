@@ -56,9 +56,9 @@ resource "google_cloud_run_v2_service" "user_portal" {
   }
 }
 
-resource "google_cloud_run_service_iam_member" "legacy_auth_invoker" {
-  service  = google_cloud_run_service.legacy_auth_provider.name
-  location = google_cloud_run_service.legacy_auth_provider.location
+resource "google_cloud_run_v2_service_iam_member" "user_portal_invoker" {
+  name     = google_cloud_run_v2_service.user_portal.name
+  location = google_cloud_run_v2_service.user_portal.location
   role     = "roles/run.invoker"
-  member   = var.allow_unauthenticated ? "allUsers" : "serviceAccount:${google_service_account.legacy_auth_sa.email}"
+  member   = var.allow_unauthenticated ? "allUsers" : "serviceAccount:${google_service_account.account.email}"
 }
