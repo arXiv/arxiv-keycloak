@@ -16,8 +16,10 @@ from sqlalchemy import func, update, cast, LargeBinary
 from arxiv.db.models import TapirAdminAudit
 
 from .user_status import UserVetoStatus, UserFlags
+from .database import is_column_latin1
 from inspect import isfunction
 import time
+
 
 class AdminAuditActionEnum(str, Enum):
     """Enumeration of admin actions that can be audited in the system.
@@ -2044,13 +2046,19 @@ def admin_audit(session: Session, event: AdminAuditEvent) -> TapirAdminAudit:
     session.add(entry)
     session.flush()  # Get the entry_id
     
-    # Update data and comment with binary data using direct SQL
-    comment_utf8 = (event.comment if event.comment else '').encode('utf-8')
-    data_utf8 = (event.data if event.data else '').encode('utf-8')
-    session.execute(
-        update(TapirAdminAudit.__table__)
-        .where(TapirAdminAudit.entry_id == entry.entry_id)
-        .values(data=func.binary(data_utf8), comment=func.binary(comment_utf8)))
+    # Update data and comment - use binary encoding if column is latin1
+    if is_column_latin1(session, 'tapir_admin_audit', 'data'):
+        comment_utf8 = (event.comment if event.comment else '').encode('utf-8')
+        data_utf8 = (event.data if event.data else '').encode('utf-8')
+        session.execute(
+            update(TapirAdminAudit.__table__)
+            .where(TapirAdminAudit.entry_id == entry.entry_id)
+            .values(data=func.binary(data_utf8), comment=func.binary(comment_utf8)))
+    else:
+        session.execute(
+            update(TapirAdminAudit.__table__)
+            .where(TapirAdminAudit.entry_id == entry.entry_id)
+            .values(data=event.data, comment=event.comment))
 
     return entry
 
