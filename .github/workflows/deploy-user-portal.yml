@@ -3,9 +3,6 @@ name: Deploy user-portal
 run-name: "Deploy user-portal ${{ inputs.env }} ${{ inputs.image_tag }}"
 
 on:
-  push:
-    branches:
-      - WOMBAT-355-arxiv-portal-deployment
   workflow_call:
     inputs:
       env:
