@@ -81,6 +81,7 @@ jobs:
         run: |
           # cloudsql_instance comes from each env's tfvars (e.g. dev.tfvars) to avoid invalid project:region: when vars are unset
           TERRAFORM_ARGS="-var-file=\"envs/${{ vars.ENV_VAR }}.tfvars\" \
+            -var=\"cloudsql_instance=${{vars.PROJECT_NAME}}:${{vars.REGION}}:${{vars.CLOUDSQL_INSTANCE}}\" \
             -var=\"oauth2_auth_image=gcr.io/arxiv-development/${{env.IMAGE_NAME}}:${{inputs.image_tag}}\""
 
           echo "TERRAFORM_ARGS=$TERRAFORM_ARGS" >> $GITHUB_ENV
