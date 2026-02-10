@@ -70,6 +70,22 @@ resource "google_secret_manager_secret" "arxiv_user_client_secret" {
   }
 }
 
+# Secret for API Secret Key (JWT)
+resource "google_secret_manager_secret" "jwt_secret" {
+  secret_id = "jwt_secret"
+  project   = var.gcp_project_id
+
+  replication {
+    auto {}
+  }
+
+  labels = {
+    service     = "oauth2-authenticator"
+    purpose     = "oauth2-jwt-secret"
+    environment = var.environment
+  }
+}
+
 # Service account for OAuth2 authenticator
 resource "google_service_account" "oauth2_auth_sa" {
   account_id   = "oauth2-authenticator"
@@ -163,6 +179,16 @@ resource "google_cloud_run_service" "oauth2_auth_provider" {
           value_from {
             secret_key_ref {
               name = google_secret_manager_secret.arxiv_user_client_secret.secret_id
+              key  = "latest"
+            }
+          }
+        }
+
+        env {
+          name = "JWT_SECRET"
+          value_from {
+            secret_key_ref {
+              name = google_secret_manager_secret.jwt_secret.secret_id
               key  = "latest"
             }
           }
