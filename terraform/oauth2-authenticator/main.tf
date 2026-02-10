@@ -20,6 +20,17 @@ provider "google" {
   region  = var.gcp_region
 }
 
+# Merge additional_env_vars (from tfvars) with secret vars (from -var= / TF_VAR_*)
+locals {
+  secret_env = {
+    CLASSIC_SESSION_HASH  = var.classic_session_hash
+    KEYCLOAK_ADMIN_SECRET = var.kc_admin_password
+    SESSION_DURATION      = var.classic_session_duration
+    AAA_API_SECRET_KEY    = var.aaa_api_token
+  }
+  secret_env_filtered = { for k, v in local.secret_env : k => v if v != "" }
+  env_vars            = merge(var.additional_env_vars, local.secret_env_filtered)
+}
 
 # data "terraform_remote_state" "keycloak" {
 #   backend = "gcs"
@@ -157,9 +168,9 @@ resource "google_cloud_run_service" "oauth2_auth_provider" {
           }
         }
 
-        # Additional environment variables
+        # Additional environment variables (from tfvars + secret vars from -var=)
         dynamic "env" {
-          for_each = var.additional_env_vars
+          for_each = local.env_vars
           content {
             name  = env.key
             value = env.value

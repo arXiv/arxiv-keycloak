@@ -39,29 +39,14 @@ allow_unauthenticated = true
 
 tf_keycloak_bucket = "dev-arxiv-terraform-state"
 
-# Additional environment variables (if needed)
+# Additional environment variables (non-secret only).
+# Terraform .tfvars cannot use ${ENV_VAR}; use literal values here.
+# Secrets (CLASSIC_SESSION_HASH, KEYCLOAK_ADMIN_SECRET, SESSION_DURATION, AAA_API_SECRET_KEY)
+# are passed via -var= or TF_VAR_* and merged in main.tf.
+# ARXIV_USER_SECRET is set from Secret Manager in main.tf.
 additional_env_vars = {
-  KEYCLOAK_SERVER_URL = "https://keycloak-service-874717964009.us-central1.run.app"
-
-  ARXIV_USER_SECRET: ${KEYCLOAK_TEST_CLIENT_SECRET}
-  CLASSIC_SESSION_HASH: ${CLASSIC_SESSION_HASH}
-  KEYCLOAK_ADMIN_SECRET: ${KC_ADMIN_PASSWORD}
-
-  CLASSIC_COOKIE_NAME: tapir_session
-
-  SESSION_DURATION: ${CLASSIC_SESSION_DURATION}
-  # Keycloak SSL is running with self-signed cert
-  OIDC_SERVER_SSL_VERIFY = "false"
-  #
-  # This is the almighty admin client (admin-cli) secret
-  #
-  #
-  # Do not set DOMAIN - this is to designate the cookie domain and for
-  # local run, having this is harmful.
-  # In production, this is probably set to .arxiv.org
-  # DOMAIN: localhost
-  #
-  # API bearer token
-  AAA_API_SECRET_KEY: ${AAA_API_TOKEN}
-  AUTH_SESSION_COOKIE_NAME: "ARXIVNG_SESSION_ID"
+  KEYCLOAK_SERVER_URL       = "https://keycloak-service-874717964009.us-central1.run.app"
+  CLASSIC_COOKIE_NAME       = "tapir_session"
+  OIDC_SERVER_SSL_VERIFY    = "false"
+  AUTH_SESSION_COOKIE_NAME = "ARXIVNG_SESSION_ID"
 }

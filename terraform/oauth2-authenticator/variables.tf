@@ -123,3 +123,32 @@ variable "tf_keycloak_bucket" {
   default     = ""
 }
 
+# Secret env vars (pass via -var= or TF_VAR_* in CI; cannot use ${VAR} in .tfvars)
+variable "classic_session_hash" {
+  description = "CLASSIC_SESSION_HASH for the container"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "kc_admin_password" {
+  description = "KEYCLOAK_ADMIN_SECRET (admin client secret)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "classic_session_duration" {
+  description = "SESSION_DURATION for the container"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "aaa_api_token" {
+  description = "AAA_API_SECRET_KEY (API bearer token)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
