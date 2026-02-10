@@ -70,7 +70,9 @@ resource "google_secret_manager_secret" "arxiv_user_client_secret" {
   }
 }
 
-# Secret for API Secret Key (JWT)
+# JWT signing/verification secret (injected as JWT_SECRET). The secret value is managed in
+# GCP Secret Manager; add or edit versions in the console, e.g. for dev:
+# https://console.cloud.google.com/security/secret-manager/secret/jwt_secret/versions?project=arxiv-development
 resource "google_secret_manager_secret" "jwt_secret" {
   secret_id = "jwt_secret"
   project   = var.gcp_project_id
