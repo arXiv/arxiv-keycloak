@@ -21,19 +21,19 @@ provider "google" {
 }
 
 
-data "terraform_remote_state" "keycloak" {
-  backend = "gcs"
-  config = {
-    bucket = var.tf_keycloak_bucket  # The bucket where Keycloak's state is stored
-    prefix = "keycloak"                   # The prefix used in Keycloak's backend config
-  }
-}
+# data "terraform_remote_state" "keycloak" {
+#   backend = "gcs"
+#   config = {
+#     bucket = var.tf_keycloak_bucket  # The bucket where Keycloak's state is stored
+#     prefix = "keycloak"                   # The prefix used in Keycloak's backend config
+#   }
+# }
 
-# Now you can use the Keycloak URL output
-# Assuming the Keycloak module outputs it as "keycloak_url"
-locals {
-  keycloak_url = data.terraform_remote_state.keycloak.outputs.keycloak_url
-}
+# # Now you can use the Keycloak URL output
+# # Assuming the Keycloak module outputs it as "keycloak_url"
+# locals {
+#   keycloak_url = data.terraform_remote_state.keycloak.outputs.keycloak_url
+# }
 
 
 # Generate JWT secret if not provided

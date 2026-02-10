@@ -6,7 +6,7 @@ gcp_region     = "us-central1"
 environment    = "development"
 
 # Legacy Auth Provider image
-legacy_auth_image = "gcr.io/arxiv-development/arxiv-keycloak/oauth2-authenticator:latest"
+oauth2_auth_image = "gcr.io/arxiv-development/arxiv-keycloak/oauth2-authenticator:latest"
 
 # Cloud Run service configuration (from Makefile lines 55-73)
 container_port        = 8080
