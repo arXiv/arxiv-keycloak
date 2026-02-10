@@ -45,8 +45,8 @@ tf_keycloak_bucket = "dev-arxiv-terraform-state"
 # are passed via -var= or TF_VAR_* and merged in main.tf.
 # ARXIV_USER_SECRET is set from Secret Manager in main.tf.
 additional_env_vars = {
-  KEYCLOAK_SERVER_URL       = "https://keycloak-service-874717964009.us-central1.run.app"
-  CLASSIC_COOKIE_NAME       = "tapir_session"
-  OIDC_SERVER_SSL_VERIFY    = "false"
+  KEYCLOAK_SERVER_URL      = "https://keycloak-service-874717964009.us-central1.run.app"
+  CLASSIC_COOKIE_NAME      = "tapir_session"
+  OIDC_SERVER_SSL_VERIFY   = "false"
   AUTH_SESSION_COOKIE_NAME = "ARXIVNG_SESSION_ID"
 }
