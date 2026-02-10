@@ -70,22 +70,12 @@ resource "google_secret_manager_secret" "arxiv_user_client_secret" {
   }
 }
 
-# JWT signing/verification secret (injected as JWT_SECRET). The secret value is managed in
-# GCP Secret Manager; add or edit versions in the console, e.g. for dev:
+# Reference existing JWT secret (injected as JWT_SECRET). Secret is managed in GCP Secret Manager;
+# add or edit versions in the console, e.g. for dev:
 # https://console.cloud.google.com/security/secret-manager/secret/jwt_secret/versions?project=arxiv-development
-resource "google_secret_manager_secret" "jwt_secret" {
+data "google_secret_manager_secret" "jwt_secret" {
   secret_id = "jwt_secret"
   project   = var.gcp_project_id
-
-  replication {
-    auto {}
-  }
-
-  labels = {
-    service     = "oauth2-authenticator"
-    purpose     = "oauth2-jwt-secret"
-    environment = var.environment
-  }
 }
 
 # Service account for OAuth2 authenticator
@@ -190,7 +180,7 @@ resource "google_cloud_run_service" "oauth2_auth_provider" {
           name = "JWT_SECRET"
           value_from {
             secret_key_ref {
-              name = google_secret_manager_secret.jwt_secret.secret_id
+              name = data.google_secret_manager_secret.jwt_secret.secret_id
               key  = "latest"
             }
           }
