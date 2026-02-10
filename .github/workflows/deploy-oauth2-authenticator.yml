@@ -1,0 +1,15 @@
+name: Deploy OAuth2 Authenticator
+
+on:
+  workflow_dispatch: # This allows manual triggering
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy Step
+        run: echo "Deploying to arXiv environment..."
