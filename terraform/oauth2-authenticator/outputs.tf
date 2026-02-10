@@ -18,12 +18,7 @@ output "classic_db_uri_secret_name" {
   description = "Name of the secret containing CLASSIC_DB_URI"
 }
 
-output "api_secret_key_secret_name" {
-  value       = google_secret_manager_secret.api_secret_key.secret_id
-  description = "Name of the secret containing API_SECRET_KEY (JWT)"
-}
-
-output "api_secret_key_secret_id" {
-  value       = google_secret_manager_secret.api_secret_key.id
-  description = "Full ID of the secret containing API_SECRET_KEY (JWT)"
+output "arxiv_user_client_secret_name" {
+  value       = google_secret_manager_secret.arxiv_user_client_secret.secret_id
+  description = "Name of the Secret Manager secret for ARXIV_USER_SECRET (OIDC client secret)"
 }
