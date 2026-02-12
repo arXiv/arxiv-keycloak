@@ -101,26 +101,26 @@ images:
 #-# up:
 #-#   runs docker compose up with .env.
 up: .env
-	docker compose --env-file=.env up -d
+	docker compose --ansi=never --env-file=.env up -d
 
 #-#
 #-# down:
 #-#   runs docker compose down
 down:
-	docker compose --env-file=.env down --remove-orphans
+	docker compose --ansi=never --env-file=.env down --remove-orphans
 
 
 #-#
 #-# up:
 #-#   runs docker compose up with .env.
 devup: .env
-	docker compose -f ./docker-compose-devdb.yaml --env-file=.env.devdb up -d
+	docker compose --ansi=never -f ./docker-compose-devdb.yaml --env-file=.env.devdb up -d
 
 #-#
 #-# down:
 #-#   runs docker compose down
 devdown:
-	docker compose -f ./docker-compose-devdb.yaml --env-file=.env.devdb down
+	docker compose --ansi=never -f ./docker-compose-devdb.yaml --env-file=.env.devdb down
 
 
 #-#
@@ -205,27 +205,8 @@ deploy-lap:
 setup-keycloak:
 	gh workflow run deploy-keycloak-setup.yml --ref ntai/wombat-81-testing -f env=wombat-81-testing  -f image_tag=ntai-wombat-81-testing
 
-#-#
-#-# db-dump-binary:
-#-#   
-.PHONY: db-dump-binary db-load-sql
-db-dump-binary:
-	@mkdir -p $(DUMP_DIR)
-	@if [ -d "$(DUMP_DIR)" ] && [ -n "$$(ls -A $(DUMP_DIR))" ]; then \
-		echo "Removing existing dump files..."; \
-		rm -rf $(DUMP_DIR)/*; \
-	fi
-	mydumper \
-		-h $(MYSQL_HOST) \
-		-u $(MYSQL_USER) \
-		$(if $(MYSQL_PASSWORD),-p $(MYSQL_PASSWORD),) \
-		-B $(MYSQL_DATABASE) \
-		-o $(DUMP_DIR) \
-		--threads $(MYDUMPER_THREADS) \
-		--compress \
-		--no-locks \
-		--verbose 3
-	@echo "Done! Dump created in $(DUMP_DIR)"
+
+.PHONY:db-load-sql
 
 db-load-sql:
 	zcat ${SQL_FILE} | mysql --host ${MYSQL_HOST} -P ${ARXIV_DB_PORT} -u arxiv -parxiv_password arXiv
@@ -234,9 +215,11 @@ db-load-sql:
 #-# test-db-dump-binary:
 #-#   
 TEST_DB_DUMP_DIR = ./tests/data/test-db-dump
+GID := $(shell id -g)
+UID := $(shell id -u)
 
-.PHONY: test-db-dump-binary 
-test-db-dump-binary:
+.PHONY: dump-test-database
+dump-test-database:
 	@mkdir -p $(TEST_DB_DUMP_DIR)
 	@if [ -d "$(TEST_DB_DUMP_DIR)" ] && [ -n "$$(ls -A $(TEST_DB_DUMP_DIR))" ]; then \
 		echo "Removing existing dump files..."; \
@@ -245,6 +228,7 @@ test-db-dump-binary:
 	docker run --rm \
 		--network host \
 		-v $(PWD)/$(TEST_DB_DUMP_DIR):/backup \
+		-u $(UID):$(GID) \
 		mydumper/mydumper \
 		mydumper \
 		-h 127.0.0.1 \

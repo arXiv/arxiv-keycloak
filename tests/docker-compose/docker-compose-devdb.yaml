@@ -1,0 +1,328 @@
+
+services:
+  auth-db:
+    image: postgres:16
+    container_name: auth-db
+    environment:
+      POSTGRES_USER: ${KC_DB_USER}
+      POSTGRES_PASSWORD: ${KC_DB_PASS}
+      POSTGRES_DB: keycloak
+      # POSTGRES_PORT is NOT used, I think
+      POSTGRES_PORT: ${KC_DB_PORT}
+      
+    # volumes:
+    #   - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    network_mode: host
+    command: postgres -p ${KC_DB_PORT}
+
+
+  pubsub-emulator:
+    image: google/cloud-sdk:latest
+    container_name: pubsub-emulator
+    command: "/pubsub-setup.sh ${PUBSUB_EMULATOR_PORT} ${PUBSUB_PROJECT} ${GCP_EVENT_TOPIC_ID} ${KC_TAPIR_BRIDGE_SUBSCRIPTION}"
+    ports:
+      - "${PUBSUB_EMULATOR_PORT}:${PUBSUB_EMULATOR_PORT}"
+    environment:
+      PUBSUB_EMULATOR_HOST: "0.0.0.0:${PUBSUB_EMULATOR_PORT}"
+    network_mode: host
+    volumes:
+      - ./tests/config/pubsub-setup.sh:/pubsub-setup.sh:ro
+
+  keycloak:
+    image: ${KC_DOCKER_TAG}:latest
+    container_name: keycloak
+    environment:
+      KC_PORT: ${KC_PORT}
+      KC_SSL_PORT: ${KC_SSL_PORT}
+      DB_ADDR: 127.0.0.1:${KC_DB_PORT}
+      DB_DATABASE: keycloak
+      DB_VENDOR: postgres
+      KC_DB_PASS: ${KC_DB_PASS}
+      KC_DB_USER: ${KC_DB_USER}
+      GCP_CREDENTIALS: ${GCP_CRED}
+      GCP_PROJECT_ID: ${PUBSUB_PROJECT}
+      KC_JDBC_CONNECTION: ${KC_JDBC_CONNECTION}
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
+      LOG_LEVEL: "INFO,freemarker:DEBUG"
+      LOG_OUTPUT_FORMAT: "--log-console-output=default"
+      PUBSUB_EMULATOR_HOST: 127.0.0.1:${PUBSUB_EMULATOR_PORT}
+      KC_HTTP_PORT: ${KC_PORT}
+      # ssl cert
+      KC_HTTPS_KEY_STORE_FILE: /etc/keycloak/keycloak.jks
+      KC_HTTPS_KEY_STORE_PASSWORD: kcpassword
+      KC_HOSTNAME: localhost.arxiv.org
+      #
+      # These are used for troubleshooting of audit event not going into pubsub.
+      # (not sure this works with te pubsub emulator)
+      GRPC_LOG_LEVEL: DEBUG
+      GRPC_TRACE: tcp,http,api
+#
+      ARXIV_USER_REGISTRATION_URL: ${ARXIV_USER_REGISTRATION_URL}
+    volumes:
+      - ${PWD}/keycloak_bend/keycloak-cert/keycloak-self-signed.jks:/etc/keycloak/keycloak.jks:ro
+      - ${PWD}/keycloak_bend/keycloak-cert/keycloak-self-signed.p12:/etc/keycloak/keycloak.p12:ro
+      # This is needed when you connect to DB on GCP
+      # - ${PWD}/keycloak_bend/cert:/secrets/authdb-certs:ro
+
+    ports:
+      - "${KC_PORT}:${KC_PORT}"
+      - "${KC_SSL_PORT}:${KC_SSL_PORT}"
+      - 9000:9000
+    depends_on:
+      - auth-db
+      - pubsub-emulator
+      - legacy-auth-provider
+    network_mode: host
+
+
+  oauth2-authenticator:
+    image: ${ARXIV_OAUTH2_CLIENT_TAG}
+    container_name: oauth2-authenticator
+    environment:
+      # Cookie domain. This doesn't need to be set but also it is an excercise
+      DOMAIN: ${OAUTH2_DOMAIN}
+      # Secure domain. HTTPS -> secure, HTTP -> NOT secure - since this is running
+      # local test, needs to be set to false.
+      SECURE: "false"
+      PORT: ${ARXIV_OAUTH2_APP_PORT}
+      # hostname keycloak for non-host network
+      # KEYCLOAK_SERVER_URL: http://localhost:${KC_PORT}
+      KEYCLOAK_SERVER_URL: ${KC_URL_PUBLIC}
+      OAUTH2_CALLBACK_URL: ${AAA_CALLBACK_URL}
+      ARXIV_USER_SECRET: ${KEYCLOAK_TEST_CLIENT_SECRET}
+      CLASSIC_DB_URI: ${CLASSIC_DB_URI}
+      CLASSIC_COOKIE_NAME: tapir_session
+      CLASSIC_SESSION_HASH: ${CLASSIC_SESSION_HASH}
+      SESSION_DURATION: ${CLASSIC_SESSION_DURATION}
+      JWT_SECRET: ${JWT_SECRET}
+      # Keycloak SSL is running with self-signed cert
+      OIDC_SERVER_SSL_VERIFY: "false"
+      #
+      # This is the almighty admin client (admin-cli) secret
+      #
+      KEYCLOAK_ADMIN_SECRET: ${KC_ADMIN_PASSWORD}
+      #
+      # Do not set DOMAIN - this is to designate the cookie domain and for
+      # local run, having this is harmful.
+      # In production, this is probably set to .arxiv.org
+      # DOMAIN: localhost
+      #
+      # API bearer token
+      AAA_API_SECRET_KEY: ${AAA_API_TOKEN}
+      AUTH_SESSION_COOKIE_NAME: "ARXIVNG_SESSION_ID"
+      
+    ports:
+      - "${ARXIV_OAUTH2_APP_PORT}:${ARXIV_OAUTH2_APP_PORT}"  # Host port:Container port
+
+    network_mode: host
+    depends_on:
+      - keycloak
+      - keycloak-setup
+
+  legacy-auth-provider:
+    image: ${LEGACY_AUTH_DOCKER_TAG}
+    container_name: legacy-auth-provider
+    ports:
+      - "${LEGACY_AUTH_PORT}:${LEGACY_AUTH_PORT}"  # Host port:Container port
+    network_mode: host
+    environment:
+      API_SECRET_KEY: "${LEGACY_AUTH_API_TOKEN}"
+      PORT: ${LEGACY_AUTH_PORT}
+      CLASSIC_DB_URI: ${CLASSIC_DB_URI}
+      # legacy-auth-provider
+      URI: "http://localhost:${LEGACY_AUTH_PORT}/auth"
+
+  keycloak-tapir-bridge:
+    image: "${KC_TAPIR_BRIDGE_DOCKER_TAG}"
+    container_name: keycloak-tapir-bridge
+    environment:
+      PUBSUB_EMULATOR_HOST: 127.0.0.1:${PUBSUB_EMULATOR_PORT}
+      # IRL, you set this so the app can read the events from pubsub
+      # GOOGLE_APPLICATION_CREDENTIALS: sync-test.json
+      SUBSCRIPTION: ${KC_TAPIR_BRIDGE_SUBSCRIPTION}
+      CLASSIC_DB_URI: ${CLASSIC_DB_URI}
+      AAA_API_URL: ${AAA_URL}/keycloak/audit
+      AAA_API_TOKEN: ${AAA_API_TOKEN}
+    network_mode: host
+    depends_on:
+      - pubsub-emulator
+    command: python main.py --project "${PUBSUB_PROJECT}" --subscription "${KC_TAPIR_BRIDGE_SUBSCRIPTION}" --debug 
+
+
+  arxiv-portal:
+    image: ${ARXIV_PORTAL_APP_TAG}:latest
+    container_name: arxiv-portal
+    ports:
+      - "${ARXIV_PORTAL_PORT}:${ARXIV_PORTAL_PORT}"  # Host port:Container port
+    environment:
+      # docker
+      PORT: ${ARXIV_PORTAL_PORT}
+      #
+      # config.py
+      LOCALHOST_DEV: 1
+      BASE_SERVER: localhost.arxiv.org:5100
+      # SECRET_KEY:
+      ARXIV_AUTH_DEBUG: 1
+      CLASSIC_COOKIE_NAME: tapir_session
+      CLASSIC_SESSION_HASH: ${CLASSIC_SESSION_HASH}
+      SQLALCHEMY_DATABASE_URI: ${CLASSIC_DB_URI}
+      JWT_SECRET: ${JWT_SECRET}
+      CLASSIC_DB_URI: ${CLASSIC_DB_URI}
+      DEFAULT_LOGIN_REDIRECT_URL: "/user-account/"
+      DEFAULT_LOGOUT_REDIRECT_URL: "http://localhost.arxiv.org:5100"
+      AUTH_SESSION_COOKIE_DOMAIN: 'localhost.arxiv.org'
+      ARXIV_CE_SESSION_COOKIE_NAME: ARXIVNG_SESSION_ID
+
+    network_mode: host
+
+
+  account-portal:
+    image: ${ACCOUNT_PORTAL_APP_TAG}:latest
+    container_name: account-portal
+    ports:
+      - ${ACCOUNT_PORTAL_APP_PORT}:8888  # Host port:Container port. it is hard coded - 
+    environment:
+      # docker
+      PORT: ${ACCOUNT_PORTAL_APP_PORT}
+      AAA_URL: http://localhost.arxiv.org:5100/aaa
+      ADMIN_API_BACKEND_URL: http://localhost.arxiv.org:5100/admin-api
+      ACCOUNT_UI_APP_ROOT: http://localhost.arxiv.org:5100/user-account/
+    network_mode: host
+
+
+  nginx-proxy:
+    image: nginx:latest
+    container_name: nginx-proxy
+    volumes:
+      - ./tests/config/nginx-docker-dev.conf:/etc/nginx/nginx.conf:ro  # Mount custom NGINX config
+      # - ./tests/config/nginx-docker.conf:/etc/nginx/nginx.conf:ro  # If you want to use static web
+      - ./tests/nginx/:/nginx/:ro
+      - ./tests/log.d/:/log.d/
+      - ./account-ui/account-app/dist:/account-app:ro
+      - ../arxiv-admin-console/ui-arxiv-admin/dist:/arxiv-admin-console:ro
+      - ../arxiv-modui/build:/arxiv-modui:ro
+    ports:
+      - "${NGINX_PORT}:${NGINX_PORT}"
+    depends_on:
+      - oauth2-authenticator
+    network_mode: host
+    
+  test-mta:
+    image: "${TEST_MTA_TAG}"
+    container_name: test-mta
+    ports:
+      - "${SMTP_PORT}:${SMTP_PORT}"
+      - "${MAILSTORE_PORT}:${MAILSTORE_PORT}"
+    network_mode: host
+    environment:
+      SMTP_PORT: "${SMTP_PORT}"
+      MAILSTORE_PORT: "${MAILSTORE_PORT}"
+      
+    
+  keycloak-setup:
+    image: python:3.11
+    container_name: keycloak-setup
+    depends_on:
+      - keycloak
+    network_mode: host
+    volumes:
+      - ./keycloak_bend:/keycloak_bend:ro
+    environment:
+      # This is running in the docker network - so use private address
+      KC_URL: "${KC_URL_PRIVATE}"
+      KC_ADMIN_PASSWORD: "${KC_ADMIN_PASSWORD}"
+      ARXIV_USER_SECRET: "${KEYCLOAK_TEST_CLIENT_SECRET}"
+      LEGACY_AUTH_API_TOKEN: "${LEGACY_AUTH_API_TOKEN}"
+      SOURCE: /keycloak_bend/realms/arxiv-realm-localhost.json
+
+    entrypoint: sh /keycloak_bend/tools/setup-arxiv-realm.sh
+
+  # OpenSearch
+  # opensearch-node1:
+  #   image: opensearchproject/opensearch:latest # Specifying the latest available image - modify if you want a specific version
+  #   container_name: opensearch-node1
+  #   environment:
+  #     - cluster.name=opensearch-cluster # Name the cluster
+  #     - node.name=opensearch-node1 # Name the node that will run in this container
+  #     - discovery.seed_hosts=opensearch-node1,opensearch-node2 # Nodes to look for when discovering the cluster
+  #     - cluster.initial_cluster_manager_nodes=opensearch-node1,opensearch-node2 # Nodes eligible to serve as cluster manager
+  #     - bootstrap.memory_lock=true # Disable JVM heap memory swapping
+  #     - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # Set min and max JVM heap sizes to at least 50% of system RAM
+  #     - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}    # Sets the demo admin user password when using demo configuration, required for OpenSearch 2.12 and later
+  #   ulimits:
+  #     memlock:
+  #       soft: -1 # Set memlock to unlimited (no soft or hard limit)
+  #       hard: -1
+  #     nofile:
+  #       soft: 65536 # Maximum number of open files for the opensearch user - set to at least 65536
+  #       hard: 65536
+  #   volumes:
+  #     - opensearch-data1:/usr/share/opensearch/data # Creates volume called opensearch-data1 and mounts it to the container
+  #     - ./dev-opensearch.yml:/usr/share/opensearch/config/opensearch.yml
+  #   ports:
+  #     - 9200:9200 # REST API
+  #     - 9600:9600 # Performance Analyzer
+  #   networks:
+  #     - opensearch-net # All of the containers will join the same Docker bridge network
+
+  # opensearch-dashboards:
+  #   image: opensearchproject/opensearch-dashboards:latest # Make sure the version of opensearch-dashboards matches the version of opensearch installed on other nodes
+  #   container_name: opensearch-dashboards
+  #   ports:
+  #     - 5601:5601 # Map host port 5601 to container port 5601
+  #   expose:
+  #     - "5601" # Expose port 5601 for web access to OpenSearch Dashboards
+  #   environment:
+  #     - OPENSEARCH_HOSTS: '["https://opensearch-node1:9200"]' # Define the OpenSearch nodes that OpenSearch Dashboards will query
+  #     - "DISABLE_SECURITY_DASHBOARDS_PLUGIN=true"
+  #   networks:
+  #     - opensearch-net
+
+  # # Elasticsearch
+  # elasticsearch:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:8.8.2
+  #   container_name: elasticsearch
+  #   environment:
+  #     - discovery.type=single-node
+  #     - xpack.security.enabled=false
+  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  #   ports:
+  #     - "9200:9200"
+  #     - "9300:9300"
+  #   volumes:
+  #     - /home/ntai/arxiv/arxiv-keycloak/development/bomb-range/elasticsearch_data:/usr/share/elasticsearch/data
+  #   network_mode: host
+
+  # # Logstash for MySQL ingestion
+  # logstash:
+  #   image: docker.elastic.co/logstash/logstash:8.8.2
+  #   container_name: logstash
+  #   environment:
+  #     - "LS_JAVA_OPTS=-Xmx1024m -Xms1024m"
+  #   volumes:
+  #     - /home/ntai/arxiv/arxiv-keycloak/development/bomb-range/logstash/pipeline:/usr/share/logstash/pipeline
+  #     - /home/ntai/arxiv/arxiv-keycloak/development/bomb-range/logstash/config:/usr/share/logstash/config
+  #     - /home/ntai/arxiv/arxiv-keycloak/development/bomb-range/logstash/drivers:/usr/share/logstash/drivers
+  #   network_mode: host
+  #   depends_on:
+  #     - elasticsearch
+  #   command: >
+  #     /usr/local/bin/docker-entrypoint
+
+
+# volumes:
+#   elasticsearch_data:
+#     driver: local
+
+#   opensearch-data1:
+
+#
+#  postgres_data:
+
+networks:
+  arxiv-network:
+    driver: bridge
+  opensearch-net:
+    

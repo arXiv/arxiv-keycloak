@@ -16,7 +16,8 @@ while [ $COUNTER -lt $MAX_RETRIES ]; do
     -p "$MYSQL_ROOT_PASSWORD" \
     -B "$MYSQL_DATABASE" \
     -d "$DUMP_DIR" \
-    --threads 4 \
+    -o \
+    --threads 8 \
     --compress-protocol \
     --overwrite-tables && break
 
