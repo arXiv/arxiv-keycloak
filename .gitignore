@@ -205,6 +205,8 @@ keycloak_bend/arxiv-theme/
 **/.DS_Store
 
 test-db-dump-0/
+test-db-dump-1/
+test-db-dump-202*/
 oauth2-authenticator/tests/mysql/
 oauth2-authenticator/tests/mysql-data/
 oauth2-authenticator/tests/mysql-data-snapshot/
