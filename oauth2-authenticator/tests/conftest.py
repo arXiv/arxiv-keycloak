@@ -37,6 +37,16 @@ DC_YAML = AAA_TEST_DIR.joinpath('docker-compose.yaml')
 DC_DBO_YAML = AAA_TEST_DIR.joinpath('docker-compose-db-only.yaml')
 
 
+def pytest_sessionstart(session):
+    """Clean up leftovers from previous test runs to ensure a fresh start."""
+    if MYSQL_SNAPSHOT_DIR.exists():
+        logging.info(f"Removing stale snapshot: {MYSQL_SNAPSHOT_DIR}")
+        shutil.rmtree(MYSQL_SNAPSHOT_DIR)
+    if MYSQL_DATA_DIR.exists():
+        logging.info(f"Removing stale mysql data: {MYSQL_DATA_DIR}")
+        shutil.rmtree(MYSQL_DATA_DIR)
+
+
 def ignore_socket_files(directory, files):
     """Ignore socket files when copying directory trees."""
     import stat

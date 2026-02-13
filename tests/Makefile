@@ -2,6 +2,8 @@
 include ../.env
 export $(shell sed 's/=.*//' ../.env)
 
+TESTS_DIR ?= $(abspath $(CURDIR))
+
 
 .PHONY: all bootstrap test HELLO help lock update 
 
@@ -49,3 +51,21 @@ lock:
 #-#   noop
 update:
 	@echo Nothing to be done
+
+
+mysql2sqlite-image: /usr/bin/docker
+	docker buildx build -f ./Dockerfile.mysql2sqlite \
+		--security-opt seccomp=unconfined  \
+		--progress=plain \
+		--platform=linux/amd64 -t mysql2sqlite:latest .
+
+mysql2sqlite: GID := $(shell id -g)
+mysql2sqlite: UID := $(shell id -u)
+
+
+mysql2sqlite:
+	docker run --rm --network=host \
+		--user $(UID):$(GID) \
+		-v $(TESTS_DIR)/data:/data \
+		mysql2sqlite \
+		-f /data/arxiv-sqlite.db -d arXiv -u arxiv --mysql-password arxiv_password -h $(ARXIV_DB_HOST) -P $(ARXIV_DB_PORT)
