@@ -36,4 +36,4 @@ jobs:
           context: oauth2-authenticator
           file: oauth2-authenticator/Dockerfile.test
           push: true
-          tags: ghcr.io/${{ github.repository }}/oauth2-test:latest
+          tags: ghcr.io/arxiv/arxiv-keycloak/oauth2-test:latest
