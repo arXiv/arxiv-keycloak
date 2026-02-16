@@ -1,0 +1,45 @@
+FROM python:3.12-bookworm AS builder
+
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends build-essential gcc python3-dev default-libmysqlclient-dev pkg-config && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+RUN $VIRTUAL_ENV/bin/python -m pip install -U pip
+RUN $VIRTUAL_ENV/bin/pip install poetry==2.1.1
+RUN $VIRTUAL_ENV/bin/poetry config virtualenvs.create false ; exit 0
+
+WORKDIR /opt/arxiv/
+
+COPY poetry.lock pyproject.toml ./
+RUN $VIRTUAL_ENV/bin/poetry lock
+RUN $VIRTUAL_ENV/bin/poetry install --no-ansi
+
+# Final image
+FROM python:3.12-slim-bookworm
+
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends libmariadb3 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Docker CLI and compose plugin
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends ca-certificates curl gnupg && \
+    install -m 0755 -d /etc/apt/keyrings && \
+    curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc && \
+    chmod a+r /etc/apt/keyrings/docker.asc && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable" \
+      > /etc/apt/sources.list.d/docker.list && \
+    apt-get update -y && \
+    apt-get install -y --no-install-recommends docker-ce-cli docker-compose-plugin && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+COPY --from=builder $VIRTUAL_ENV $VIRTUAL_ENV
