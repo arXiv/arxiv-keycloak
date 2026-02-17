@@ -355,6 +355,7 @@ class UserModel(BaseModel):
         inspector = inspect(model_class)
         columns = {column.key: column for column in model_class.__mapper__.column_attrs}
 
+        field: str
         for field, column in columns.items():
             if field in skip_fields:
                 continue
@@ -368,7 +369,7 @@ class UserModel(BaseModel):
             old_value = getattr(db_object, field)
             new_value = data[field]
 
-            need_binary_op = is_column_latin1(session, model_class.__table__.name, field.name)
+            need_binary_op = is_column_latin1(session, model_class.__table__.name, field)
             if need_binary_op and (isinstance(column_type, str) or isinstance(column_type, String)):
                 old_value = bytes(old_value, "utf-8") if old_value is not None else None
                 if isinstance(new_value, str):

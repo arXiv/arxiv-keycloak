@@ -66,6 +66,7 @@ docker-image:
 		--security-opt seccomp=unconfined  \
 		--progress=plain \
 		--platform=linux/amd64 -t ${app_tag}:latest .
+	docker build -f Dockerfile.test --progress=plain  -t ghcr.io/arxiv/arxiv-keycloak/oauth2-test:latest .
 
 #-#
 #-# Command: run
