@@ -917,6 +917,12 @@ async def change_user_password(
 ):
     """
     Change user password
+
+    Changing password by the user:
+      Ues keycloak token to update the password on it.
+
+    Changing password by admin:
+      It needs to use kc_admin and smash it.
     """
     logger.debug("User password changed request. Current %s, data %s, Old password %s, new password %s",
                  authn_user.user_id if authn_user else "No User", user_id,
@@ -956,21 +962,8 @@ async def change_user_password(
     #     domain_user, domain_auth = authenticate.authenticate(user.email, data.old_password)
     # except AuthenticationFailed:
     #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password")
-
+    admin_override = str(user.user_id) != str(authn_user.user_id) and authn_user.is_admin
     idp = request.app.extra["idp"]
-
-    # if not kc_check_old_password(kc_admin, idp, nick.nickname, data.old_password, idp._ssl_cert_verify):
-    if kc_access_token is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail="Stale access. Please log out/login again.")
-
-    if not await kc_validate_access_token(kc_admin, idp, kc_access_token):
-        if authn_user.user_id == user_id:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                detail="Stale access. Please log out/login again.")
-        if not authn_user.is_admin:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail="Stale access. Please log out/login again.")
 
     kc_user = None
     try:
@@ -978,8 +971,37 @@ async def change_user_password(
     except KeycloakGetError:
         pass
 
+    if admin_override:
+        # use Admin access to change password
+        if kc_user:
+            try:
+                kc_admin.set_user_password(kc_user["id"], data.new_password, temporary=False)
+            except KeycloakError as kce:
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(kce)) from kce
+        pass
+    else:
+        # if not kc_check_old_password(kc_admin, idp, nick.nickname, data.old_password, idp._ssl_cert_verify):
+        if kc_access_token is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                detail="Stale access. Please log out/login again.")
+
+        if not await kc_validate_access_token(kc_admin, idp, kc_access_token):
+            if authn_user.user_id == user_id:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                    detail="Stale access. Please log out/login again.")
+            if not authn_user.is_admin:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                    detail="Stale access. Please log out/login again.")
+
+        kc_user = None
+        try:
+            kc_user = kc_admin.get_user(user_id)
+        except KeycloakGetError:
+            pass
+
     tapir_password: TapirUsersPassword | None = session.query(TapirUsersPassword).filter(
         TapirUsersPassword.user_id == user_id).one_or_none()
+
     if not tapir_password:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Password has never been set")
@@ -989,7 +1011,7 @@ async def change_user_password(
         # This should not happen. The tapir user exists and therefore, this must succeed.
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
 
-    if authn_user.is_admin and authn_user.user_id != user_id:
+    if admin_override:
         if not authn_user.tapir_session_id:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tapir session is required.")
 
@@ -1006,6 +1028,7 @@ async def change_user_password(
         )
 
     client_secret = request.app.extra['ARXIV_USER_SECRET']
+
     if not kc_user:
         if not authn_user.is_admin:
             try:
@@ -1029,15 +1052,19 @@ async def change_user_password(
         finally:
             pass
     else:
-        kc_cred = kc_login_with_client_credential(kc_admin, um.username, data.old_password, client_secret)
-        if kc_cred is None:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail="Incorrect password")
-
-        try:
-            kc_admin.set_user_password(kc_user["id"], data.new_password, temporary=False)
-        except Exception as _exc:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Changing password failed")
+        # I thought of migrating user to KC when the admin changes the password, but I think it is not
+        # necessary. Legacy auth provider fetches the password from the tapir table so if the KC user is None,
+        # update the passsword in tapir table and be done.
+        #
+        # kc_cred = kc_login_with_client_credential(kc_admin, um.username, data.old_password, client_secret)
+        # if kc_cred is None:
+        #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+        #                         detail="Incorrect password")
+        #
+        # try:
+        #     kc_admin.set_user_password(kc_user["id"], data.new_password, temporary=False)
+        # except Exception as _exc:
+        #     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Changing password failed")
 
         pwd.password_enc = passwords.hash_password(data.new_password)
         session.commit()
