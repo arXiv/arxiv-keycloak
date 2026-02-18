@@ -18,11 +18,12 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
+from arxiv.auth.legacy.sessions import invalidate as legacy_invalidate
 from arxiv.auth.auth.exceptions import UnknownSession
 from arxiv.base import logging
 from arxiv.auth.user_claims import ArxivUserClaims, ArxivUserClaimsModel
 from arxiv.auth.openid.oidc_idp import ArxivOidcIdpClient
-from arxiv.auth.legacy.sessions import invalidate as legacy_invalidate
+#
 from starlette.datastructures import URL
 
 # from arxiv.auth.legacy import accounts, exceptions
@@ -55,6 +56,17 @@ async def login(request: Request,
     if current_user:
         pass
     logger.info(f"Login URL: {url}")
+
+    cparam = cookie_params(request)
+    session_cookie_key = cparam.auth_session_cookie_name
+    classic_cookie_key = cparam.classic_cookie_name
+    secure = cparam.secure
+    samesite = cparam.samesite
+
+    response = RedirectResponse(url)
+    response.set_cookie(session_cookie_key, "", max_age=0, path="/", secure=secure, samesite=samesite)
+    response.set_cookie(classic_cookie_key, "", max_age=0, path="/", secure=secure, samesite=samesite)
+
     return RedirectResponse(url)
 
 
@@ -76,7 +88,7 @@ async def oauth2_callback(request: Request,
     user_claims: Optional[ArxivUserClaims] = idp.from_code_to_user_claims(code, client_ipv4=client_ip)
 
     # session_cookie_key, classic_cookie_key, keycloak_key, domain, secure, samesite = cookie_params(request)
-    if user_claims and (not is_user_account_valid(session, user_claims.user_id)):
+    if user_claims and user_claims.user_id and (not is_user_account_valid(session, user_claims.user_id)):
         user_claims = None
 
     if user_claims is None:
@@ -203,6 +215,9 @@ async def impersonate(request: Request,
     Session = session
     tapir_cookie, tapir_session = create_tapir_session(session, user_claims, remote_ip)
 
+    if tapir_session is None or tapir_session.session_id is None:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Tapir session is not given")
+
     # Legacy cookie
     if tapir_cookie and tapir_session:
         user_claims.set_tapir_session(tapir_cookie, tapir_session)
@@ -273,6 +288,9 @@ async def refresh_token(
 
     kc_refresh_key = request.app.extra[COOKIE_ENV_NAMES.keycloak_refresh_token_env]
     refresh_token = request.cookies.get(kc_refresh_key)
+    if refresh_token is None:
+        logger.warning("Refresh token is not in the tokens")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token is not in the tokens")
 
     # kc_tokens = {'refresh': refresh_token}
     # jwt_payload = token
@@ -430,7 +448,7 @@ async def exchange_tapir_session(
 
     if not tapir_cookie:
         return Response(status_code=status.HTTP_401_UNAUTHORIZED)
-    cred =  LegacySessionCookie.from_tapir_cookie(tapir_cookie)
+    cred = LegacySessionCookie.from_tapir_cookie(tapir_cookie)
     tapir_session: TapirSession | None = session.query(TapirSession).filter(
         TapirSession.session_id == cred.session_id).one_or_none()
     if tapir_session is None:
@@ -535,6 +553,7 @@ def make_cookie_response(request: Request,
         logger.debug('Setting cookie #3: %s (len=%d)', keycloak_refresh_key, len(user_claims.refresh_token))
         if len(token) > 4096:
             logger.warning('Cookie %s exceeds Chrome limit of 4096 bytes: %d bytes', session_cookie_key, len(token))
+
         response.set_cookie(session_cookie_key, token, max_age=cookie_max_age,
                             domain=domain, path="/", secure=secure, samesite=samesite, httponly=True)
         response.set_cookie(keycloak_access_key, user_claims.access_token,  max_age=cookie_max_age,

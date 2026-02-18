@@ -32,66 +32,6 @@ from arxiv_bizlogic.fastapi_helpers import TapirCookieToUserClaimsMiddleware, CO
 
 from .transitional.mock_keycloak_admin import MockKeycloakAdmin
 
-#
-# Since this is not a flask app, the config needs to be in the os.environ
-# Fill in these if it's missing. This is required for setting up Tapir session.
-# On Apache, these are found.
-# Since this is running in docker, there is no way to get that value so needs to be set
-# as environment.
-# These look a little redundant (which probably true) but making sure they are present in the
-# os.environ wi
-#
-CONFIG_DEFAULTS = {
-    'SESSION_DURATION': os.environ.get('SESSION_DURATION', '120'),
-    COOKIE_ENV_NAMES.classic_cookie_env: os.environ.get(COOKIE_ENV_NAMES.classic_cookie_env, "tapir_session"),
-    'CLASSIC_SESSION_HASH': os.environ.get('CLASSIC_SESSION_HASH', 'not-very-safe-hash-value')
-}
-
-#
-# LOGOUT_REDIRECT_URL
-
-# You should set BASE_SERVER first.
-# That's the entry point of whole thing
-# Setting has the notion of AUTH_SERVER, and it may be relevant.
-# For the actual deployment, since this is running in a docker with plain HTTP,
-# it's up to the web server's setting.
-
-SERVER_ROOT_PATH = os.environ.get('SERVER_ROOT_PATH', "/aaa")
-#
-KEYCLOAK_SERVER_URL = os.environ.get('KEYCLOAK_SERVER_URL', 'https://auth.arxiv.org')
-
-# This is the public URL that OAuth2 calls back when the authentication succeeds.
-CALLBACK_URL = os.environ.get("OAUTH2_CALLBACK_URL", "https://dev3.arxiv.org/aaa/callback")
-
-# For arxiv-user, the client needs to know the secret.
-# This is in keycloak's setting. Do not ever ues this value. This is for development only.
-# You should generate one, and use it in keycloak. it can generate a good one on UI.
-ARXIV_USER_SECRET = os.environ.get('ARXIV_USER_SECRET', '<arxiv-user-secret-is-not-set>')
-
-# session cookie names
-# NOTE: You also need the classic session cookie name "tapir_session" but it's set
-# slightly differently since it needs to be passed to arxiv-base
-AUTH_SESSION_COOKIE_NAME = os.environ.get(COOKIE_ENV_NAMES.auth_session_cookie_env, "ARXIVNG_SESSION_ID")
-
-# arXiv's Keycloak token names
-KEYCLOAK_ACCESS_TOKEN_NAME = os.environ.get(COOKIE_ENV_NAMES.keycloak_access_token_env, "keycloak_access_token")
-KEYCLOAK_REFRESH_TOKEN_NAME = os.environ.get(COOKIE_ENV_NAMES.keycloak_refresh_token_env, "keycloak_refresh_token")
-
-# OIDC server SSL verify - this should be always true except when you are running locally and with self-signed cert
-OIDC_SERVER_SSL_VERIFY = os.environ.get('OIDC_SERVER_SSL_VERIFY', os.environ.get('SECURE', 'true')) != "false"
-
-# More cors origins
-CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "")
-
-_idp_ = ArxivOidcIdpClient(CALLBACK_URL,
-                           scope=["openid"],
-                           server_url=KEYCLOAK_SERVER_URL,
-                           client_secret=ARXIV_USER_SECRET,
-                           logger=getLogger(__name__),
-                           ssl_verify=OIDC_SERVER_SSL_VERIFY,
-                           )
-
-
 origins = [
     "http://localhost",
     "http://localhost:5000",
@@ -115,6 +55,65 @@ origins = [
     ]
 
 def create_app(*args, **kwargs) -> FastAPI:
+    #
+    # Since this is not a flask app, the config needs to be in the os.environ
+    # Fill in these if it's missing. This is required for setting up Tapir session.
+    # On Apache, these are found.
+    # Since this is running in docker, there is no way to get that value so needs to be set
+    # as environment.
+    # These look a little redundant (which probably true) but making sure they are present in the
+    # os.environ wi
+    #
+    CONFIG_DEFAULTS = {
+        'SESSION_DURATION': os.environ.get('SESSION_DURATION', '120'),
+        COOKIE_ENV_NAMES.classic_cookie_env: os.environ.get(COOKIE_ENV_NAMES.classic_cookie_env, "tapir_session"),
+        'CLASSIC_SESSION_HASH': os.environ.get('CLASSIC_SESSION_HASH', 'not-very-safe-hash-value')
+    }
+
+    #
+    # LOGOUT_REDIRECT_URL
+
+    # You should set BASE_SERVER first.
+    # That's the entry point of whole thing
+    # Setting has the notion of AUTH_SERVER, and it may be relevant.
+    # For the actual deployment, since this is running in a docker with plain HTTP,
+    # it's up to the web server's setting.
+
+    SERVER_ROOT_PATH = os.environ.get('SERVER_ROOT_PATH', "/aaa")
+    #
+    KEYCLOAK_SERVER_URL = os.environ.get('KEYCLOAK_SERVER_URL', 'https://auth.arxiv.org')
+
+    # This is the public URL that OAuth2 calls back when the authentication succeeds.
+    CALLBACK_URL = os.environ.get("OAUTH2_CALLBACK_URL", "https://dev3.arxiv.org/aaa/callback")
+
+    # For arxiv-user, the client needs to know the secret.
+    # This is in keycloak's setting. Do not ever ues this value. This is for development only.
+    # You should generate one, and use it in keycloak. it can generate a good one on UI.
+    ARXIV_USER_SECRET = os.environ.get('ARXIV_USER_SECRET', '<arxiv-user-secret-is-not-set>')
+
+    # session cookie names
+    # NOTE: You also need the classic session cookie name "tapir_session" but it's set
+    # slightly differently since it needs to be passed to arxiv-base
+    AUTH_SESSION_COOKIE_NAME = os.environ.get(COOKIE_ENV_NAMES.auth_session_cookie_env, "ARXIVNG_SESSION_ID")
+
+    # arXiv's Keycloak token names
+    KEYCLOAK_ACCESS_TOKEN_NAME = os.environ.get(COOKIE_ENV_NAMES.keycloak_access_token_env, "keycloak_access_token")
+    KEYCLOAK_REFRESH_TOKEN_NAME = os.environ.get(COOKIE_ENV_NAMES.keycloak_refresh_token_env, "keycloak_refresh_token")
+
+    # OIDC server SSL verify - this should be always true except when you are running locally and with self-signed cert
+    OIDC_SERVER_SSL_VERIFY = os.environ.get('OIDC_SERVER_SSL_VERIFY', os.environ.get('SECURE', 'true')) != "false"
+
+    # More cors origins
+    CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "")
+
+    _idp_ = ArxivOidcIdpClient(CALLBACK_URL,
+                               scope=["openid"],
+                               server_url=KEYCLOAK_SERVER_URL,
+                               client_secret=ARXIV_USER_SECRET,
+                               logger=getLogger(__name__),
+                               ssl_verify=OIDC_SERVER_SSL_VERIFY,
+                               )
+
     setup_logger()
     from arxiv.config import Settings
 

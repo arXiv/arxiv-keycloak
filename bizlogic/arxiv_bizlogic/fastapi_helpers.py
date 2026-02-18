@@ -6,7 +6,7 @@ import hashlib
 import socket
 from dataclasses import dataclass
 from logging import getLogger
-from typing import Optional
+from typing import Optional, Dict
 
 import jwcrypto
 import jwcrypto.jwt

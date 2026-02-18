@@ -115,7 +115,7 @@ if [ "$TARGET" = "localdb" ] && [ ! -r .env.localdb ] ; then
     ARXIV_DB_PORT=21504
     echo ARXIV_DB_HOST=${ARXIV_DB_HOST} >> .env.localdb
     echo ARXIV_DB_PORT=${ARXIV_DB_PORT} >> .env.localdb
-    echo CLASSIC_DB_URI="mysql+mysqldb://arxiv:arxiv_password@${ARXIV_DB_HOST}:${ARXIV_DB_PORT}/arXiv?ssl=false&ssl_mode=DISABLED"  >> .env.localdb
+    echo CLASSIC_DB_URI="mysql+mysqldb://arxiv:arxiv_password@${ARXIV_DB_HOST}:${ARXIV_DB_PORT}/arXiv" >> .env.localdb
     #
     # legacy auth provider
     #
