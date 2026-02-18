@@ -9,6 +9,7 @@ import random
 from typing import Any, Optional, List
 
 import keycloak
+from arxiv.auth.legacy.exceptions import PasswordAuthenticationFailed
 from arxiv.auth.openid.oidc_idp import ArxivOidcIdpClient
 from arxiv_bizlogic.bizmodels.user_model import UserModel
 from arxiv_bizlogic.sqlalchemy_helper import update_model_fields
@@ -933,21 +934,26 @@ async def change_user_password(
     if len(data.old_password) < 8:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Old password is invalid")
 
+    # Is this valid password?
     ok_password, reason = validate_password_strength(data.new_password)
     if not ok_password:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"New password is invalid. {reason}")
 
-    user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
-    if not user:
+    # Tapir objects
+    tapir_user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
+    if not tapir_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user id")
 
-    nick: TapirNickname | None = session.query(TapirNickname).filter(
+    tapir_nick: TapirNickname | None = session.query(TapirNickname).filter(
         TapirNickname.user_id == user_id).one_or_none()
-    if nick is None:
+    if tapir_nick is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user id")
+
+    login_name: str = tapir_nick.nickname
 
     pwd: TapirUsersPassword | None = session.query(TapirUsersPassword).filter(
         TapirUsersPassword.user_id == user_id).one_or_none()
+
     if pwd is None:
         # dummy password record
         pwd = TapirUsersPassword(
@@ -955,6 +961,8 @@ async def change_user_password(
             password_storage=2,
             password_enc=passwords.hash_password(data.old_password),
         )
+        session.add(pwd)
+        session.refresh(pwd)
         pass
 
     # The password is managed by Keycloak - so don't check it against tapir
@@ -962,55 +970,60 @@ async def change_user_password(
     #     domain_user, domain_auth = authenticate.authenticate(user.email, data.old_password)
     # except AuthenticationFailed:
     #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password")
-    admin_override = str(user.user_id) != str(authn_user.user_id) and authn_user.is_admin
+    admin_override = str(tapir_user.user_id) != str(authn_user.user_id) and authn_user.is_admin
     idp = request.app.extra["idp"]
+    client_secret = request.app.extra['ARXIV_USER_SECRET']
 
+    # Is there an account on KC?
     kc_user = None
     try:
         kc_user = kc_admin.get_user(user_id)
     except KeycloakGetError:
         pass
 
-    if admin_override:
-        # use Admin access to change password
-        if kc_user:
+    # use Admin access to change the user's password
+    if kc_user:
+        if admin_override:
+            # This means - the password is changed on KC but tapir password may not...
+            # I think this is okay, since tapir password isn't uesd.
             try:
                 kc_admin.set_user_password(kc_user["id"], data.new_password, temporary=False)
             except KeycloakError as kce:
                 raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(kce)) from kce
-        pass
-    else:
-        # if not kc_check_old_password(kc_admin, idp, nick.nickname, data.old_password, idp._ssl_cert_verify):
-        if kc_access_token is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                detail="Stale access. Please log out/login again.")
 
-        if not await kc_validate_access_token(kc_admin, idp, kc_access_token):
-            if authn_user.user_id == user_id:
+        else:
+            # if not kc_check_old_password(kc_admin, idp, nick.nickname, data.old_password, idp._ssl_cert_verify):
+            if kc_access_token is None:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                     detail="Stale access. Please log out/login again.")
-            if not authn_user.is_admin:
+
+            if not await kc_validate_access_token(kc_admin, idp, kc_access_token):
+                if authn_user.user_id == user_id:
+                    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                        detail="Stale access. Please log out/login again.")
+                if not authn_user.is_admin:
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                        detail="Stale access. Please log out/login again.")
+            kc_cred = kc_login_with_client_credential(kc_admin, login_name, data.old_password, client_secret)
+            if kc_cred is None:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                    detail="Stale access. Please log out/login again.")
+                                    detail="Incorrect password")
 
-        kc_user = None
+    # else
+    #
+    # I thought of migrating user to KC when the admin changes the password, but I think it is not
+    # necessary. Legacy auth provider fetches the password from the tapir table so if the KC user is None,
+    # update the passsword in tapir table and be done.
+
+    # check the tapir password for non-admin override
+    if kc_user is None and not admin_override:
+        # when tapir password doesn't verify, unauthorized
         try:
-            kc_user = kc_admin.get_user(user_id)
-        except KeycloakGetError:
-            pass
+            passwords.check_password(data.old_password, pwd.password_enc.encode("ascii"))
+        except PasswordAuthenticationFailed as tpe:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password") from tpe
 
-    tapir_password: TapirUsersPassword | None = session.query(TapirUsersPassword).filter(
-        TapirUsersPassword.user_id == user_id).one_or_none()
-
-    if not tapir_password:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="Password has never been set")
-
-    um: UserModel | None = UserModel.one_user(session, str(user_id))
-    if um is None:
-        # This should not happen. The tapir user exists and therefore, this must succeed.
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
-
+    # Leave the audit record for changing password
     if admin_override:
         if not authn_user.tapir_session_id:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tapir session is required.")
@@ -1027,48 +1040,9 @@ async def change_user_password(
             ), # obv. no payload
         )
 
-    client_secret = request.app.extra['ARXIV_USER_SECRET']
-
-    if not kc_user:
-        if not authn_user.is_admin:
-            try:
-                passwords.check_password(data.old_password, tapir_password.password_enc.encode("ascii"))
-            except:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                    detail="Incorrect password")
-
-        tapir_password.password_enc = passwords.hash_password(data.new_password)
-        session.commit()
-        try:
-            account = AccountInfoModel(
-                id = str(um.id),
-                email_verified=False,
-                email = um.email,
-                username= um.username,
-                first_name = um.first_name,
-                last_name=um.last_name,
-            )
-            migrate_to_keycloak(kc_admin, account, data.new_password, client_secret)
-        finally:
-            pass
-    else:
-        # I thought of migrating user to KC when the admin changes the password, but I think it is not
-        # necessary. Legacy auth provider fetches the password from the tapir table so if the KC user is None,
-        # update the passsword in tapir table and be done.
-        #
-        # kc_cred = kc_login_with_client_credential(kc_admin, um.username, data.old_password, client_secret)
-        # if kc_cred is None:
-        #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-        #                         detail="Incorrect password")
-        #
-        # try:
-        #     kc_admin.set_user_password(kc_user["id"], data.new_password, temporary=False)
-        # except Exception as _exc:
-        #     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Changing password failed")
-
-        pwd.password_enc = passwords.hash_password(data.new_password)
-        session.commit()
-
+    # once all the checks done, update tapir password
+    pwd.password_enc = passwords.hash_password(data.new_password)
+    session.commit()
     logger.info("User password changed successfully. Old password %s, new password %s",
                 sha256_base64_encode(data.old_password), sha256_base64_encode(data.new_password))
 
