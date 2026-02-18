@@ -6,8 +6,12 @@ import logging
 import os
 import string
 from typing import Optional
-import urllib3
-urllib3.disable_warnings()
+
+try:
+    import urllib3
+    urllib3.disable_warnings()
+except:
+    pass
 
 from keycloak import KeycloakAdmin, KeycloakError, KeycloakPostError
 import argparse
@@ -37,6 +41,7 @@ class KeycloakSetup:
         self.legacy_auth_token = kwargs.pop('legacy_auth_token', None)
         self.legacy_auth_uri = kwargs.pop('legacy_auth_uri', None)
         self.smtp_password = kwargs.pop('smtp_password', '')
+        self.admin_email = kwargs.pop('admin_email', '')
         self.admin = KeycloakAdmin(*args, **kwargs)
 
     @property
@@ -107,12 +112,36 @@ class KeycloakSetup:
                 logger.error(f"Error creating {scope['name']}: {exc}")
 
 
-    def create_admin_user(self):
+    def setup_kc_admin_user(self):
+        """Update the Keycloak admin user (master realm) with the configured email."""
+        if not self.admin_email:
+            return
+        saved_realm = self.admin.get_current_realm()
+        try:
+            self.admin.change_current_realm("master")
+            users = self.admin.get_users({"username": "admin", "exact": True})
+            if not users:
+                logger.error("Admin user not found in master realm.")
+                return
+            admin_user = users[0]
+            self.admin.update_user(admin_user["id"], payload={
+                "email": self.admin_email,
+                "firstName": "Account Manager",
+                "lastName": "arXiv",
+            })
+            logger.info(f"Admin user email updated to '{self.admin_email}'.")
+        except KeycloakError as e:
+            logger.error(f"Error updating admin user: {e}")
+        finally:
+            self.admin.change_current_realm(saved_realm)
+
+
+    def create_arxiv_admin_user(self):
         payload = {
             "username": "arxiv-user-admin",
-            "firstName": "User bot",
+            "firstName": "Account Manager",
             "lastName": "arXiv",
-            "email": "keycloak-admin@arxiv.org",
+            "email": "account-admin@arxiv.org",
             "emailVerified": True,
             "enabled": True,
             "realmRoles": ["manage-users"]
@@ -318,7 +347,8 @@ class KeycloakSetup:
         self.restore_pubsub()
         self.restore_client("arxiv-user", self.client_secret)
         self.restore_client("arxiv-user-migration", self.client_secret)
-        self.create_admin_user()
+        self.setup_kc_admin_user()
+        self.create_arxiv_admin_user()
 
 
 if __name__ == '__main__':
@@ -355,6 +385,7 @@ if __name__ == '__main__':
         user_realm_name="master",
         client_id="admin-cli",
         username="admin",
+        admin_email="account-admin@arxiv.org",
         password=secret,
         realm_name=args.realm,
         verify=False,

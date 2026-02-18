@@ -307,7 +307,7 @@ def kc_login_with_client_credential(kc_admin: KeycloakAdmin, username: str, pass
 
 def migrate_to_keycloak(kc_admin: KeycloakAdmin, account: AccountInfoModel, password: str, client_secret: str):
     # Configuration
-    token = kc_login_with_client_credential(kc_admin, account.username, password, client_secret)
+    token = kc_login_with_client_credential(kc_admin, account.username or "", password, client_secret)
 
     if not token:
         kc_set_user_password(kc_admin, account, password)

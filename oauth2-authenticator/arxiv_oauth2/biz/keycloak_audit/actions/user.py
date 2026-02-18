@@ -83,7 +83,7 @@ def update_last_name(value: Any, user: domain.User, logger: logging.Logger) -> b
 #     return True
 
 
-def update_email_verified(session: Session, representation: dict, key: str, user_id: str, logger: logging.Logger) -> bool:
+def update_email_verified(session: Session, representation: dict, key: str, user_id: str, logger: logging.Logger) -> bool:  # type: ignore[return]
     # There are 3 scenarios to get here.
     # 1. (not here) User responds to the verification email. -> dispatch_user_do_verify_email function
     #
@@ -97,7 +97,7 @@ def update_email_verified(session: Session, representation: dict, key: str, user
     if user is not None:
         if user.flag_email_verified != value:
             logger.info(f'user {user_id} email verify is set to {value!r}')
-            user.flag_email_verified = value
+            user.flag_email_verified = value  # type: ignore[assignment]
             session.commit()
         else:
             logger.info(f'user {user_id} email verify is {value!r} and unchanged')
@@ -174,12 +174,12 @@ def dispatch_user_do_verify_email(data: dict, representation: Any, session: Sess
         logger.debug(f"client id {client_id} is not expected. bailing out")
         return
 
-    biz = EmailHistoryBiz(session, user_id)
-    last_session = get_last_tapir_session(session, user_id)
+    biz = EmailHistoryBiz(session, user_id)  # type: ignore[arg-type]
+    last_session = get_last_tapir_session(session, user_id)  # type: ignore[arg-type]
     details = data.get("details", {})
     if last_session:
         biz.email_verified(session_id=str(last_session.session_id),
-                           remote_ip=data.get("ipAddress"),
+                           remote_ip=data.get("ipAddress", ""),
                            new_email=details.get("email"),
                            )
 

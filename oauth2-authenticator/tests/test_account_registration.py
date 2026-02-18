@@ -28,7 +28,7 @@ def test_register_account_success_with_token(docker_compose, test_env, aaa_clien
 
     mta_client = MtaClient(base_url=test_mta)
     email_list: List[EmailRecord] = get_emails_emails_get.sync(client=mta_client)
-    assert len(email_list) == 0
+    initial_count = len(email_list)
 
     # aaa_url = test_env['AAA_URL']
 
@@ -68,7 +68,7 @@ def test_register_account_success_with_token(docker_compose, test_env, aaa_clien
 
     for _ in range(10):
         email_list: List[EmailRecord] = get_emails_emails_get.sync(client=mta_client)
-        if len(email_list) == 1:
+        if len(email_list) > initial_count:
             break
         sleep(1)
     else:

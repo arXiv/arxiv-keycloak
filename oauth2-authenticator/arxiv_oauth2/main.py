@@ -1,5 +1,5 @@
 import os
-from typing import Callable, List
+from typing import Callable, List, Union
 
 from fastapi import FastAPI, Request, HTTPException, Depends, status
 from fastapi.responses import Response
@@ -181,6 +181,7 @@ def create_app(*args, **kwargs) -> FastAPI:
     #
     realm_name = os.environ.get('ARXIV_REALM_NAME', "arxiv")
     keycloak_admin_secret = os.environ.get('KEYCLOAK_ADMIN_SECRET', "<NOT-SET>")
+    keycloak_admin: Union[KeycloakAdmin, MockKeycloakAdmin]
     if keycloak_admin_secret == "<NOT-SET>":
         logger.warning("KEYCLOAK_ADMIN_SECRET is not set correctly. kc_admin operations will fail.")
         keycloak_admin = MockKeycloakAdmin()
@@ -242,9 +243,9 @@ def create_app(*args, **kwargs) -> FastAPI:
         WELL_KNOWN=well_known,
         AAA_API_SECRET_KEY=os.environ.get("AAA_API_SECRET_KEY", ""),
         KEYCLOAK_DISPATCH_FUNCTIONS=get_keycloak_dispatch_functions(),
-        **URLs,
-        **cookie_names,
-        **extra_options
+        **URLs,         # type: ignore
+        **cookie_names, # type: ignore
+        **extra_options # type: ignore
     )
 
     if CORS_ORIGINS:
@@ -273,7 +274,7 @@ def create_app(*args, **kwargs) -> FastAPI:
 
     app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY, https_only=secure)
 
-    app.add_middleware(MySQLRetryMiddleware, engine=_classic_engine,  retry_attempts=3)
+    app.add_middleware(MySQLRetryMiddleware, engine=_classic_engine,  retry_attempts=3)  # type: ignore[arg-type]
 
     app.add_middleware(TapirCookieToUserClaimsMiddleware)
 
@@ -318,7 +319,7 @@ def create_app(*args, **kwargs) -> FastAPI:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="mysql: " + str(exc))
 
     @app.get("/status/database", response_model=dict)
-    async def health_check(session: Session = Depends(get_db),
+    async def health_check_database(session: Session = Depends(get_db),
                            kc_admin: KeycloakAdmin = Depends(get_keycloak_admin)) -> dict | HTTPException:
         result = {}
 

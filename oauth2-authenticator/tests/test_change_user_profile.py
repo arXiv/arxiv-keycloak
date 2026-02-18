@@ -13,20 +13,20 @@ from arxiv.db.models import TapirAdminAudit
 from arxiv_bizlogic.database import Database
 
 @pytest.mark.asyncio
-def test_change_user_profile(test_env, aaa_client_db_only, aaa_api_headers, aaa_admin_user, reset_test_database):
+def test_change_user_profile(test_env, aaa_client, aaa_api_headers, aaa_admin_user_headers, reset_test_database):
 
     # Test non-audit
-    response1 = aaa_client_db_only.get("/account/identifier/?username=user0001", headers=aaa_api_headers)
+    response1 = aaa_client.get("/account/identifier/?username=user0001", headers=aaa_api_headers)
     ident = AccountIdentifierModel.model_validate(response1.json())
 
-    response2 = aaa_client_db_only.get(f"/account/{ident.user_id}/profile", headers=aaa_api_headers)
+    response2 = aaa_client.get(f"/account/{ident.user_id}/profile", headers=aaa_api_headers)
     profile2 = AccountInfoModel.model_validate(response2.json())
 
     profile2.affiliation = "Mandalore"
-    response3 = aaa_client_db_only.put(f"/account/{ident.user_id}/profile", json=profile2.model_dump(), headers=aaa_api_headers)
+    response3 = aaa_client.put(f"/account/{ident.user_id}/profile", json=profile2.model_dump(), headers=aaa_api_headers)
     assert response3.status_code == 200
 
-    response3 = aaa_client_db_only.get(f"/account/{ident.user_id}/profile", headers=aaa_api_headers)
+    response3 = aaa_client.get(f"/account/{ident.user_id}/profile", headers=aaa_api_headers)
     profile3 = AccountInfoModel.model_validate(response3.json())
 
     assert profile3.affiliation == "Mandalore"
@@ -41,7 +41,7 @@ def test_change_user_profile(test_env, aaa_client_db_only, aaa_api_headers, aaa_
 
     profile2.first_name = "Test"
     profile2.last_name = "User"
-    response4 = aaa_client_db_only.put(f"/account/{ident.user_id}/profile", json=profile2.model_dump(), headers=aaa_admin_user)
+    response4 = aaa_client.put(f"/account/{ident.user_id}/profile", json=profile2.model_dump(), headers=aaa_admin_user_headers)
     assert response4.status_code == 200
 
     session = next(db.get_session())

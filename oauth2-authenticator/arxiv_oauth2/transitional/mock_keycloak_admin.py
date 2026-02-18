@@ -24,7 +24,7 @@ class MockKeycloakAdmin:
     def get_realm_roles_of_user(self, user_id: str) -> list[str]:
         return ["Public"]
 
-    def create_user(self, payload: dict) -> None:
+    def create_user(self, payload: dict, exist_ok: bool = False) -> None:
         return None
 
     def get_credentials(self, user_id: str) -> dict:
@@ -84,5 +84,3 @@ class MockKeycloakAdmin:
     #             "groups": user.groups,
     #             "attributes": user.attributes  # To have the attributes, make sure the unmanaged user profile is enabled
     #         }, exist_ok=exist_ok)
-    def create_user(self, payload: dict, exist_ok: bool = False) -> None:
-        return None

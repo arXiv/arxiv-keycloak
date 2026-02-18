@@ -84,6 +84,12 @@ services:
       - pubsub-emulator
       - legacy-auth-provider
     network_mode: host
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf https://127.0.0.1:${KC_MANAGEMENT_PORT}/health/ready -k || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
 
 
   arxiv-test-db:
@@ -191,7 +197,8 @@ services:
     image: gcr.io/arxiv-development/arxiv-keycloak/python-keycloak-admin:latest
     container_name: aaat-keycloak-setup
     depends_on:
-      - keycloak
+      keycloak:
+        condition: service_healthy
     network_mode: host
     volumes:
       - ../../keycloak_bend:/keycloak_bend:ro

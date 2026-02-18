@@ -6,7 +6,7 @@ import json
 import re
 from datetime import datetime, timezone
 import random
-from typing import Optional, List
+from typing import Any, Optional, List
 
 import keycloak
 from arxiv.auth.openid.oidc_idp import ArxivOidcIdpClient
@@ -178,8 +178,12 @@ async def update_account_profile(
         try:
             kc_admin.update_user(user_id=str(tapir_user.user_id), payload=changes)
         except KeycloakPutError as kc_exc:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                detail=f"Failed to update user profile on Keycloak: {kc_exc}") from kc_exc
+            # ignore 404. The user exists in Tapir but not in Keycloak yet. When the user logs in successfully,
+            # the user migrates to KC. Until then, update Tapir table and done
+            if kc_exc.response_code != 404:
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                    detail=f"Failed to update user profile on Keycloak: {kc_exc}") from kc_exc
+                pass
 
         changes['suffix_name'] = new_data['suffix_name']
         if isinstance(authn, ArxivUserClaims):
@@ -267,7 +271,7 @@ async def update_user_name(
                     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Username {data.username} is already taken") from kc_exc
                 error_message = None
                 try:
-                    body = json.loads(kc_exc.response_body.decode('utf-8'))
+                    body = json.loads(kc_exc.response_body.decode('utf-8') if kc_exc.response_body else '{}')
                     error_message = body.get('errorMessage')
                 except:
                     pass
@@ -479,11 +483,11 @@ async def register_account(
 
     if registration.keycloak_migration:
         data: Optional[TapirNickname] = session.query(TapirNickname).filter(
-            TapirNickname.nickname == registration.username.lower()).one_or_none()
+            TapirNickname.nickname == (registration.username or "").lower()).one_or_none()
         if not data:
             error_response = AccountRegistrationError(message="Username is not found", field_name="username")
             response.status_code = status.HTTP_404_NOT_FOUND
-            return error_response
+            return [error_response]
 
         account = get_account_info(session, str(data.user_id))
         if account is None:
@@ -502,7 +506,7 @@ async def register_account(
     elif isinstance(maybe_tapir_user, AccountRegistrationError):
         response.status_code = status.HTTP_404_NOT_FOUND
         logger.error("Failed to create user account")
-        return maybe_tapir_user
+        return [maybe_tapir_user]
     # notreachd
     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="register_arxiv_account returned an unexpected result")
 
@@ -755,6 +759,7 @@ def change_email(
         # admin change email
         # We can short circuit the rate limit, etc.
         email_verified = True if body.email_verified is None else body.email_verified
+        user.flag_email_verified = 1 if email_verified else 0
         old_email = user.email[:]
 
         if kc_user:
@@ -801,7 +806,7 @@ def change_email(
             AdminAudit_SetEmailVerified(
                 authn_user.user_id,
                 user_id,
-                tapir_session_id,
+                str(tapir_session_id) if tapir_session_id else None,
                 email_verified,
                 remote_ip=remote_ip,
                 remote_hostname=remote_hostname,
@@ -814,13 +819,17 @@ def change_email(
             kc_send_verify_email(kc_admin, kc_user["id"], force_verify=True)
 
         session.commit()
-        return UserModel.one_user(session, user_id)
+        result = UserModel.one_user(session, user_id)
+        if result is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        return result
 
 
     # Case 3 - Normal user change email
     if biz.is_rate_exceeded():
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many email change request.")
 
+    # With keycloak, keep the old email. When the user acks the email link, the audit event updates email to new
     # user.email = body.new_email
     # user.flag_email_verified = False
 
@@ -855,7 +864,10 @@ def change_email(
         # Sends the verify request email
         kc_send_verify_email(kc_admin, kc_user["id"], force_verify=True)
 
-    return UserModel.one_user(session, user_id)
+    result = UserModel.one_user(session, user_id)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return result
 
 
 @router.get("/{user_id:str}/email/history", description="Get the past email history")
@@ -896,7 +908,7 @@ async def change_user_password(
         user_id: str,
         data: PasswordUpdateModel,
         authn_user: ArxivUserClaims = Depends(get_authn_user),
-        kc_access_token: Optional[str] = Depends( get_current_user_access_token),
+        kc_access_token: Optional[str] = Depends(get_current_user_access_token),
         remote_ip: str = Depends(get_client_host),
         remote_hostname: str = Depends(get_client_host_name),
         tracking_cookie: Optional[str] = Depends(get_tapir_tracking_cookie),
@@ -931,6 +943,7 @@ async def change_user_password(
     pwd: TapirUsersPassword | None = session.query(TapirUsersPassword).filter(
         TapirUsersPassword.user_id == user_id).one_or_none()
     if pwd is None:
+        # dummy password record
         pwd = TapirUsersPassword(
             user_id=user_id,
             password_storage=2,
@@ -984,7 +997,7 @@ async def change_user_password(
         admin_audit(
             session,
             AdminAudit_ChangePassword(
-                authn_user.user_id,
+                authn_user.user_id or "",
                 user_id,
                 tsid,
                 remote_ip=remote_ip,
@@ -993,13 +1006,13 @@ async def change_user_password(
         )
 
     client_secret = request.app.extra['ARXIV_USER_SECRET']
-
     if not kc_user:
-        try:
-            passwords.check_password(data.old_password, tapir_password.password_enc.encode("ascii"))
-        except:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail="Incorrect password")
+        if not authn_user.is_admin:
+            try:
+                passwords.check_password(data.old_password, tapir_password.password_enc.encode("ascii"))
+            except:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                    detail="Incorrect password")
 
         tapir_password.password_enc = passwords.hash_password(data.new_password)
         session.commit()
@@ -1101,7 +1114,7 @@ async def reset_user_password(
                             detail="Failed to migrate a user account")
 
     try:
-        kc_admin.send_update_account(user_id=str(user_id), payload={"requiredActions": ["UPDATE_PASSWORD"]})
+        kc_admin.send_update_account(user_id=str(user_id), payload={"requiredActions": ["UPDATE_PASSWORD"]})  # type: ignore[arg-type]
     except KeycloakGetError as kce:
         detail = "Password reset request did not succeed due to arXiv server problem. " + str(kce)
         ex_body: str = kce.response_body.decode('utf-8') if kce.response_body and isinstance(kce.response_body, bytes) else (
@@ -1543,7 +1556,7 @@ def update_user_authorization(
             tapir_user.flag_deleted = deleted
             # Add audit trail for user deletion/undeletion
             # Note: Using suspend audit events as there are no specific delete audit events
-            audit = AdminAudit_SuspendUser(
+            audit: Any = AdminAudit_SuspendUser(
                 admin_user.user_id,
                 user_id,
                 admin_user.tapir_session_id,
@@ -1764,7 +1777,10 @@ def update_user_authorization(
     if not valid_request:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request")
 
-    return UserModel.one_user(session, user_id)
+    result = UserModel.one_user(session, user_id)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return result
 
 
 class PasswordValidationResult(BaseModel):
