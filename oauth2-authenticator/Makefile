@@ -8,6 +8,8 @@ app_name := $(ARXIV_OAUTH2_CLIENT_APP_NAME)
 app_port := $(ARXIV_OAUTH2_APP_PORT)
 dockerport := 8080
 
+test_runner_tag := ghcr.io/arxiv/arxiv-keycloak/aaa-test-runner
+
 ROOT_DIR := $(shell pwd)
 AAA_CPUS := $(shell echo $${AAA_CPUS:-2})
 AAA_WORKERS := $(shell echo $${AAA_WORKERS:-2})
@@ -34,7 +36,7 @@ APP_DOCKER_RUN := docker run --cpus ${AAA_CPUS} --rm -p ${app_port}:${dockerport
 # -e DOMAIN=${DOMAIN} \
 
 
-.PHONY: HELLO docker-image run stop update
+.PHONY: HELLO docker-image run stop update test-runner-image
 
 default: HELLO venv/lib/python3.12/site-packages/fastapi
 
@@ -66,6 +68,7 @@ docker-image:
 		--security-opt seccomp=unconfined  \
 		--progress=plain \
 		--platform=linux/amd64 -t ${app_tag}:latest .
+	$(MAKE) test-runner-image
 
 #-#
 #-# Command: run
@@ -132,6 +135,12 @@ venv/lib/python3.12/site-packages/fastapi: venv/bin/poetry
 show-env:
 	sed -e 's/^/export /g' ../.env
 
+test-runner-image:
+	@echo "tag: ${test_runner_tag}"
+	docker buildx build -f ./Dockerfile.test \
+		--security-opt seccomp=unconfined  \
+		--progress=plain \
+		--platform=linux/amd64 -t ${test_runner_tag}:latest .
 
 test:
 	. venv/bin/activate && poetry run pytest
