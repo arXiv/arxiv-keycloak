@@ -1,0 +1,39 @@
+name: Build oauth2-authenticator test image
+
+run-name: "Build oauth2-authenticator test image ${{ github.ref_name }}"
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "oauth2-authenticator/poetry.lock"
+      - "oauth2-authenticator/pyproject.toml"
+      - "oauth2-authenticator/Dockerfile.test"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push test image
+        uses: docker/build-push-action@v5
+        with:
+          context: oauth2-authenticator
+          file: oauth2-authenticator/Dockerfile.test
+          push: true
+          tags: ghcr.io/arxiv/arxiv-keycloak/aaa-test-runner:latest
