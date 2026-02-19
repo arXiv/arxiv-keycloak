@@ -23,7 +23,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/arxiv/arxiv-keycloak/oauth2-test:latest
+      image: ghcr.io/arxiv/arxiv-keycloak/aaa-test-runner:latest
 
     steps:
       - name: Checkout code
