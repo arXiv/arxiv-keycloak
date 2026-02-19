@@ -4,6 +4,7 @@ from arxiv_bizlogic.fastapi_helpers import sha256_base64_encode
 from dotenv import load_dotenv
 
 from arxiv_oauth2.biz.account_biz import AccountIdentifierModel
+from conftest import kc_login_and_set_cookie
 
 AAA_TEST_DIR = Path(__file__).parent
 ARXIV_KEYCLOAK_DIR = AAA_TEST_DIR.parent.parent
@@ -50,6 +51,16 @@ def test_change_password(docker_compose, test_env, aaa_client, aaa_api_headers, 
     )
     response4 = aaa_client.put(f"/account/{ident.user_id}/password", json=change_password_data.model_dump(), headers=aaa_admin_user_headers)
     assert response4.status_code == 200
+
+    # Mark user's email verified so it can log in to Keycloak
+    email_verified_data = {"email_verified": True, "user_id": str(ident.user_id)}
+    response5 = aaa_client.put(f"/account/{ident.user_id}/email/verified", json=email_verified_data, headers=aaa_admin_user_headers)
+    assert response5.status_code == 200
+
+    # Log in to Keycloak as user0001 with the new password to get an access token cookie
+    client_secret = test_env['ARXIV_USER_SECRET']
+    assert kc_login_and_set_cookie(aaa_client, "user0001", "change_m3!", client_secret), \
+        "Failed to get Keycloak access token for user0001"
 
     # should be success
     change_password_data = PasswordUpdateModel(

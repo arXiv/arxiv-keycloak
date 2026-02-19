@@ -595,7 +595,10 @@ def set_email_verified_status(
         # Update the email verified status. If the user has not migrated to Keycloak yet, no worries.
         kc_user_id = kc_admin.get_user_id(nick.nickname)
         if kc_user_id:
-            kc_admin.update_user(user_id=kc_user_id, payload={"emailVerified": body.email_verified})
+            payload = {"emailVerified": body.email_verified}
+            if body.email_verified:
+                payload["requiredActions"] = []
+            kc_admin.update_user(user_id=kc_user_id, payload=payload)
     except KeycloakGetError as kce:
         # Handle errors here
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(kce)) from kce
@@ -603,22 +606,19 @@ def set_email_verified_status(
     email_verified = 1 if body.email_verified else 0
 
     if authed_user.is_admin:
-        if user.flag_email_verified != email_verified:
-            logger.info(f"User {user_id} email flag being updated to {email_verified!r}")
-            user.flag_email_verified = email_verified
-            admin_audit(
-                session,
-                AdminAudit_SetEmailVerified(
-                    str(authed_user.user_id),
-                    str(user_id),
-                    str(authed_user.tapir_session_id),
-                    body.email_verified,
-                    remote_ip=remote_ip,
-                    remote_hostname=remote_hostname,
-                ),
-            )
-        else:
-            logger.info(f"User {user_id} email flag no-change as {email_verified!r}")
+        logger.info(f"User {user_id} email flag being updated to {email_verified!r}")
+        user.flag_email_verified = email_verified
+        admin_audit(
+            session,
+            AdminAudit_SetEmailVerified(
+                str(authed_user.user_id),
+                str(user_id),
+                str(authed_user.tapir_session_id),
+                body.email_verified,
+                remote_ip=remote_ip,
+                remote_hostname=remote_hostname,
+            ),
+        )
     else:
         biz: EmailHistoryBiz = EmailHistoryBiz(session, user_id=user_id)
         if not biz.email_verified(remote_ip=remote_ip, remote_host=remote_hostname,
@@ -1008,6 +1008,11 @@ async def change_user_password(
             if kc_cred is None:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                     detail="Incorrect password")
+            # finally set the user password
+            try:
+                kc_admin.set_user_password(kc_user["id"], data.new_password, temporary=False)
+            except KeycloakError as kce:
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(kce)) from kce
 
     # else
     #

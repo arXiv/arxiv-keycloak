@@ -377,6 +377,24 @@ def aaa_user0001_headers(test_env, aaa_client, aaa_api_headers):
     return headers
 
 
+def kc_login_and_set_cookie(aaa_client: TestClient, username: str, password: str, client_secret: str) -> bool:
+    """Log in to Keycloak as the given user and set the access token cookie on the test client.
+
+    Returns True if login succeeded and cookie was set, False otherwise.
+    """
+    from arxiv_oauth2.biz.account_biz import kc_login_with_client_credential
+    kc_admin = aaa_client.app.extra["KEYCLOAK_ADMIN"]  # type: ignore[union-attr]
+    token_data = kc_login_with_client_credential(kc_admin, username, password, client_secret)
+    if token_data is None:
+        return False
+    access_token = token_data.get("access_token")
+    if not access_token:
+        return False
+    cookie_name = aaa_client.app.extra.get("KEYCLOAK_ACCESS_TOKEN_NAME", "keycloak_access_token")  # type: ignore[union-attr]
+    aaa_client.cookies.set(cookie_name, access_token)
+    return True
+
+
 @pytest.fixture(scope="function")
 def reset_test_database(test_env, docker_compose):
     """
