@@ -23,7 +23,7 @@ RUN $VIRTUAL_ENV/bin/poetry install --no-ansi
 FROM python:3.12-slim-bookworm
 
 RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends libmariadb3 && \
+    apt-get install -y --no-install-recommends libmariadb3 default-mysql-client && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
