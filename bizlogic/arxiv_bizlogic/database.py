@@ -106,25 +106,41 @@ def is_column_latin1(session: Session, table_name: str, column_name: str) -> boo
         return False
 
     # Use engine URL as cache key
-    cache_key = (str(session.bind.url), table_name, column_name)
+    engine_url = str(session.bind.url)
+    cache_key = (engine_url, table_name, column_name)
 
     # Check if we have a cached result
     if cache_key in _column_charset_cache:
         return _column_charset_cache[cache_key] == 'latin1'
 
-    # Perform reflection
+    # Reflect all columns for this table at once and cache them
     inspector = inspect(session.bind)
+    table_charset = None
+
     try:
+        # Get the table-level default charset
+        table_options = inspector.get_table_options(table_name)
+        if table_options:
+            table_charset = table_options.get('mysql_charset') or table_options.get('mysql_default charset')
+
         columns = inspector.get_columns(table_name)
         for col in columns:
-            if col['name'] == column_name:
-                col_type = col.get('type')
-                charset = getattr(col_type, 'charset', None)
-                _column_charset_cache[cache_key] = charset
-                return charset == 'latin1'
+            col_type = col.get('type')
+            col_name = col.get('name')
+            key = (engine_url, table_name, col_name)
+            try:
+                charset = getattr(col_type, 'charset') or table_charset
+                _column_charset_cache[key] = charset
+            except AttributeError:
+                # not a "charset" colunm
+                _column_charset_cache[key] = None
+                pass
+            pass
     except Exception:
         pass
 
-    _column_charset_cache[cache_key] = None
-    return False
+    # Re-check cache after populating
+    if cache_key in _column_charset_cache:
+        return _column_charset_cache[cache_key] == 'latin1'
 
+    return False

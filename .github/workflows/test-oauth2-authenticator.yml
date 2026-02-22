@@ -32,11 +32,18 @@ jobs:
       - name: Set up test environment
         working-directory: oauth2-authenticator/tests
         run: |
-          # Set UID/GID for docker-compose (allow override for local runs)
-          echo "UID=${HOST_UID:-$(id -u)}" >> $GITHUB_ENV
-          echo "GID=${HOST_GID:-$(id -g)}" >> $GITHUB_ENV
+          # Set UID/GID for docker-compose to run MySQL as non-root.
+          # When running as root (e.g. in gh act or container jobs), default to 1000
+          # to avoid creating root-owned mysql-data that can't be snapshot/restored.
+          _UID=${HOST_UID:-$(id -u)}
+          _GID=${HOST_GID:-$(id -g)}
+          [ "$_UID" = "0" ] && _UID=1000
+          [ "$_GID" = "0" ] && _GID=1000
+          echo "UID=$_UID" >> $GITHUB_ENV
+          echo "GID=$_GID" >> $GITHUB_ENV
           # Create mysql-data directory
           mkdir -p mysql-data
+          chown ${_UID}:${_GID} mysql-data || true
 
       - name: Run tests
         working-directory: oauth2-authenticator
