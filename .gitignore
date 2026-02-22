@@ -211,6 +211,4 @@ oauth2-authenticator/tests/mysql/
 oauth2-authenticator/tests/mysql-data/
 oauth2-authenticator/tests/mysql-data-snapshot/
 
-test_mta_client/
-
 temp-*

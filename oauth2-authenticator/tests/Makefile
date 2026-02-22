@@ -67,13 +67,13 @@ up:
 	echo "UID=${UID}" >> temp-test-env
 	echo "GID=${GID}" >> temp-test-env
 	cp temp-test-env .env
-	docker compose --ansi=none --env-file=temp-test-env up -d
+	docker compose --ansi=never --env-file=temp-test-env up -d
 
 #-#
 #-# down:
 #-#   runs docker compose down
 down:
-	docker compose --ansi=none --env-file=temp-test-env down --remove-orphans
+	docker compose --ansi=never --env-file=temp-test-env down --remove-orphans
 
 
 #-#
@@ -84,13 +84,13 @@ dbo-up:
 	echo "UID=${UID}" >> temp-dbo-test-env
 	echo "GID=${GID}" >> temp-dbo-test-env
 	cp temp-dbo-test-env .env
-	docker compose -f docker-compose-db-only.yaml --ansi=none --env-file=temp-dbo-test-env up -d
+	docker compose -f docker-compose-db-only.yaml --ansi=never --env-file=temp-dbo-test-env up -d
 
 #-#
 #-# dbo-down:
 #-#   runs docker compose down
 dbo-down:
-	docker compose -f docker-compose-db-only.yaml --ansi=none --env-file=temp-dbo-test-env down --remove-orphans
+	docker compose -f docker-compose-db-only.yaml --ansi=never --env-file=temp-dbo-test-env down --remove-orphans
 
 
 tests/test_mta_client/: mta-models

@@ -3,6 +3,7 @@
 This is more abstract than using raw SQLAlchemy table based models
 """
 from __future__ import annotations
+import copy
 
 from enum import Enum
 from typing import Optional, List
@@ -289,12 +290,21 @@ class UserModel(BaseModel):
             # This is just a copy
             return UserModel.model_validate(user.model_dump())
         elif isinstance(user, Row):
-            row = user._asdict()
+            row = copy.deepcopy(user._asdict())
             for field in _tapir_user_utf8_fields_ + _demographic_user_utf8_fields_:
                 if row[field] is None:
                     continue
                 if isinstance(row[field], bytes):
-                    row[field] = row[field].decode("utf-8") if row[field] is not None else None
+                    try:
+                        row[field] = row[field].decode("utf-8") if row[field] is not None else None
+                    except UnicodeDecodeError:
+                        logger.warning(f"Field {field} is not UTF-8. value = '{row[field]!r}'")
+                        try:
+                            row[field] = row[field].decode("iso-8859-1") if row[field] is not None else None
+                        except UnicodeDecodeError:
+                            row[field] = row[field].decode("utf-8", errors="backslashreplace") if row[field] is not None else None
+                            pass
+                        pass
                 elif isinstance(row[field], str):
                     logger.warning(
                         f"Field {field} is unexpectedly string. value = '{row[field]}'. You may need to fix it")
@@ -355,6 +365,7 @@ class UserModel(BaseModel):
         inspector = inspect(model_class)
         columns = {column.key: column for column in model_class.__mapper__.column_attrs}
 
+        field: str
         for field, column in columns.items():
             if field in skip_fields:
                 continue
@@ -414,6 +425,7 @@ class UserModel(BaseModel):
         tapir_user_columns = {column.key: column for column in TapirUser.__mapper__.column_attrs}
         data = UserModel.map_to_row_data(user, list(tapir_user_columns.keys()), _tapir_user_utf8_fields_)
         user_id = data.get("user_id")
+        db_user: Optional[TapirUser] = None
 
         if user_id is None:
             # FIXME: TapirNickname needs to be created
@@ -421,32 +433,34 @@ class UserModel(BaseModel):
             session.add(db_user)
             session.flush()
             session.refresh(db_user)
+            user_id = db_user.user_id
         else:
-            db_user = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
-            if db_user is None:
+            um_user = UserModel.one_user(session, user_id)
+            if um_user is None:
                 raise ValueError("User not found")
-
             # Use the refactored helper function
             UserModel._update_model_fields(
-                session, db_user, TapirUser, data, user_id,
+                session, um_user, TapirUser, data, user_id,
                 skip_fields={"user_id", "email"}
             )
 
         # Handle Demographic
         to_demographics_fields = set([column.key for column in Demographic.__mapper__.column_attrs])
         demographic_data = UserModel.map_to_row_data(user, to_demographics_fields, _demographic_user_utf8_fields_)
-        demographic_data["user_id"] = db_user.user_id
+        demographic_data["user_id"] = user_id
 
-        db_demographic = session.query(Demographic).filter(Demographic.user_id == db_user.user_id).one_or_none()
+        db_demographic = session.query(Demographic).filter(Demographic.user_id == user_id).one_or_none()
         if db_demographic is None:
             db_demographic = Demographic(**demographic_data)
             session.add(db_demographic)
         else:
             # Use the refactored helper function
             UserModel._update_model_fields(
-                session, db_demographic, Demographic, demographic_data, db_user.user_id,
+                session, db_demographic, Demographic, demographic_data, user_id,
                 skip_fields={"user_id"}
             )
+        if db_user is None:
+            db_user = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
         return db_user
 
     @staticmethod
@@ -472,7 +486,7 @@ class UserModel(BaseModel):
         :return:
         """
         if user_model.id is not None:
-            existing = UserModel.one_user(session, user_model.id)
+            existing = UserModel.one_user(session, str(user_model.id))
             if existing is None:
                 raise ValueError("User not found")
         else:

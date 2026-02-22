@@ -251,4 +251,11 @@ update:
 	$(call run_in_all_subdirs,update)
 
 #-#
+#-# update:
+#-#   
 
+.PHONY: gh-act-test
+gh-act-test:
+	NO_COLOR=1 gh act -W .github/workflows/test-oauth2-authenticator.yml --pull=false --env HOST_UID=$(UID) --env HOST_GID=$(GID) 2>&1 | cat
+
+#-#

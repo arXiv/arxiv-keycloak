@@ -29,6 +29,7 @@ class TestAccountModel(unittest.TestCase):
         user_model = info.to_user_model_data()
         self.assertEqual({'affiliation': 'arxiv.org',
                           'archive': 'cs',
+                          'author_id': None,
                           'country': 'us',
                           'dirty': False,
                           'email': 'test@example.com',
@@ -62,6 +63,8 @@ class TestAccountModel(unittest.TestCase):
                           'joined_remote_host': '',
                           'last_name': 'Last',
                           'oidc_id': None,
+                          'orcid_authenticated': None,
+                          'orcid_id': None,
                           'original_subject_classes': 'cs.DB',
                           'policy_class': 2,
                           'scopes': ['great'],

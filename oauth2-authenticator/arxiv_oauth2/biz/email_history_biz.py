@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from arxiv_bizlogic.audit_event import admin_audit, AdminAudit_ChangeEmail
 from arxiv_bizlogic.fastapi_helpers import datetime_to_epoch
@@ -134,7 +134,7 @@ def get_user_email_history(session: Session, user_id: str) -> UserEmailHistory:
             TapirEmailChangeToken.old_email,
             TapirEmailChangeToken.new_email,
             func.space(128).label('who'),
-            func.cast(0, Integer).label('admin_id'),
+            func.cast(0, Integer).label('admin_id'),  # type: ignore[arg-type]
             TapirEmailChangeToken.issued_when,
             TapirEmailChangeToken.used,
         )
@@ -152,7 +152,7 @@ def get_user_email_history(session: Session, user_id: str) -> UserEmailHistory:
             TapirEmailChangeToken.old_email,
             TapirEmailChangeToken.new_email,
             func.space(128).label('who'),
-            func.cast(0, Integer).label('admin_id'),
+            func.cast(0, Integer).label('admin_id'),  # type: ignore[arg-type]
             TapirEmailChangeToken.issued_when,
             TapirEmailChangeToken.used,
         )
@@ -172,12 +172,12 @@ def get_user_email_history(session: Session, user_id: str) -> UserEmailHistory:
     query3 = (
         select(
             TapirAdminAudit.log_date.label('used_when'),
-            func.cast('', String).label('old_email'),
+            func.cast('', String).label('old_email'),  # type: ignore[arg-type]
             TapirAdminAudit.data.label('new_email'),
             TapirNickname.nickname.label('who'),
             TapirAdminAudit.admin_user.label('admin_id'),
             TapirAdminAudit.log_date.label('issued_when'),
-            func.cast(True, Boolean).label('used'),
+            func.cast(True, Boolean).label('used'),  # type: ignore[arg-type]
         )
         .join(
             TapirNickname,
@@ -191,7 +191,7 @@ def get_user_email_history(session: Session, user_id: str) -> UserEmailHistory:
     )
 
     # Combine all queries with UNION and order by used_when
-    union_query = union_all(query1, query2, query3).order_by('used_when')
+    union_query: Any = union_all(query1, query2, query3).order_by('used_when')
 
     email_changes_result = session.execute(union_query).fetchall()
 
@@ -313,7 +313,7 @@ class EmailHistoryBiz:
         return time_since_last_request < self.rate_limit
 
 
-    def add_email_change_request(self, change_request: EmailChangeRequest) -> TapirEmailChangeTokenModel:
+    def add_email_change_request(self, change_request: EmailChangeRequest) -> TapirEmailChangeToken:
         """
         Adds a new email change history entry to the database.
         

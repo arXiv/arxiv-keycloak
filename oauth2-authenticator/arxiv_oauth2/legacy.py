@@ -23,14 +23,12 @@ class LegacySessionCookie(BaseModel):
     def from_tapir_cookie(tapir_cookie: str) -> 'LegacySessionCookie':
         session_id, user_id, ip_address, issued_at, expires_at, capabilities = unpack_legacy_cookie(tapir_cookie)
         return LegacySessionCookie(
-            **{
-                'session_id': session_id,
-                'user_id': user_id,
-                'ip_address': ip_address,
-                'issued_at': issued_at,
-                'expires_at': expires_at,
-                'capabilities': capabilities
-            }
+            session_id=session_id,
+            user_id=user_id,
+            ip_address=ip_address,
+            issued_at=issued_at,
+            expires_at=expires_at,
+            capabilities=capabilities,
         )
 
 

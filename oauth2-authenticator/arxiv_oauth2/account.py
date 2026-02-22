@@ -6,9 +6,10 @@ import json
 import re
 from datetime import datetime, timezone
 import random
-from typing import Optional, List
+from typing import Any, Optional, List
 
 import keycloak
+from arxiv.auth.legacy.exceptions import PasswordAuthenticationFailed
 from arxiv.auth.openid.oidc_idp import ArxivOidcIdpClient
 from arxiv_bizlogic.bizmodels.user_model import UserModel
 from arxiv_bizlogic.sqlalchemy_helper import update_model_fields
@@ -178,8 +179,12 @@ async def update_account_profile(
         try:
             kc_admin.update_user(user_id=str(tapir_user.user_id), payload=changes)
         except KeycloakPutError as kc_exc:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                detail=f"Failed to update user profile on Keycloak: {kc_exc}") from kc_exc
+            # ignore 404. The user exists in Tapir but not in Keycloak yet. When the user logs in successfully,
+            # the user migrates to KC. Until then, update Tapir table and done
+            if kc_exc.response_code != 404:
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                    detail=f"Failed to update user profile on Keycloak: {kc_exc}") from kc_exc
+                pass
 
         changes['suffix_name'] = new_data['suffix_name']
         if isinstance(authn, ArxivUserClaims):
@@ -267,7 +272,7 @@ async def update_user_name(
                     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Username {data.username} is already taken") from kc_exc
                 error_message = None
                 try:
-                    body = json.loads(kc_exc.response_body.decode('utf-8'))
+                    body = json.loads(kc_exc.response_body.decode('utf-8') if kc_exc.response_body else '{}')
                     error_message = body.get('errorMessage')
                 except:
                     pass
@@ -479,11 +484,11 @@ async def register_account(
 
     if registration.keycloak_migration:
         data: Optional[TapirNickname] = session.query(TapirNickname).filter(
-            TapirNickname.nickname == registration.username.lower()).one_or_none()
+            TapirNickname.nickname == (registration.username or "").lower()).one_or_none()
         if not data:
             error_response = AccountRegistrationError(message="Username is not found", field_name="username")
             response.status_code = status.HTTP_404_NOT_FOUND
-            return error_response
+            return [error_response]
 
         account = get_account_info(session, str(data.user_id))
         if account is None:
@@ -502,7 +507,7 @@ async def register_account(
     elif isinstance(maybe_tapir_user, AccountRegistrationError):
         response.status_code = status.HTTP_404_NOT_FOUND
         logger.error("Failed to create user account")
-        return maybe_tapir_user
+        return [maybe_tapir_user]
     # notreachd
     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="register_arxiv_account returned an unexpected result")
 
@@ -590,7 +595,10 @@ def set_email_verified_status(
         # Update the email verified status. If the user has not migrated to Keycloak yet, no worries.
         kc_user_id = kc_admin.get_user_id(nick.nickname)
         if kc_user_id:
-            kc_admin.update_user(user_id=kc_user_id, payload={"emailVerified": body.email_verified})
+            payload = {"emailVerified": body.email_verified}
+            if body.email_verified:
+                payload["requiredActions"] = []
+            kc_admin.update_user(user_id=kc_user_id, payload=payload)
     except KeycloakGetError as kce:
         # Handle errors here
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(kce)) from kce
@@ -598,22 +606,19 @@ def set_email_verified_status(
     email_verified = 1 if body.email_verified else 0
 
     if authed_user.is_admin:
-        if user.flag_email_verified != email_verified:
-            logger.info(f"User {user_id} email flag being updated to {email_verified!r}")
-            user.flag_email_verified = email_verified
-            admin_audit(
-                session,
-                AdminAudit_SetEmailVerified(
-                    str(authed_user.user_id),
-                    str(user_id),
-                    str(authed_user.tapir_session_id),
-                    body.email_verified,
-                    remote_ip=remote_ip,
-                    remote_hostname=remote_hostname,
-                ),
-            )
-        else:
-            logger.info(f"User {user_id} email flag no-change as {email_verified!r}")
+        logger.info(f"User {user_id} email flag being updated to {email_verified!r}")
+        user.flag_email_verified = email_verified
+        admin_audit(
+            session,
+            AdminAudit_SetEmailVerified(
+                str(authed_user.user_id),
+                str(user_id),
+                str(authed_user.tapir_session_id),
+                body.email_verified,
+                remote_ip=remote_ip,
+                remote_hostname=remote_hostname,
+            ),
+        )
     else:
         biz: EmailHistoryBiz = EmailHistoryBiz(session, user_id=user_id)
         if not biz.email_verified(remote_ip=remote_ip, remote_host=remote_hostname,
@@ -755,6 +760,7 @@ def change_email(
         # admin change email
         # We can short circuit the rate limit, etc.
         email_verified = True if body.email_verified is None else body.email_verified
+        user.flag_email_verified = 1 if email_verified else 0
         old_email = user.email[:]
 
         if kc_user:
@@ -801,7 +807,7 @@ def change_email(
             AdminAudit_SetEmailVerified(
                 authn_user.user_id,
                 user_id,
-                tapir_session_id,
+                str(tapir_session_id) if tapir_session_id else None,
                 email_verified,
                 remote_ip=remote_ip,
                 remote_hostname=remote_hostname,
@@ -814,13 +820,17 @@ def change_email(
             kc_send_verify_email(kc_admin, kc_user["id"], force_verify=True)
 
         session.commit()
-        return UserModel.one_user(session, user_id)
+        result = UserModel.one_user(session, user_id)
+        if result is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        return result
 
 
     # Case 3 - Normal user change email
     if biz.is_rate_exceeded():
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many email change request.")
 
+    # With keycloak, keep the old email. When the user acks the email link, the audit event updates email to new
     # user.email = body.new_email
     # user.flag_email_verified = False
 
@@ -855,7 +865,10 @@ def change_email(
         # Sends the verify request email
         kc_send_verify_email(kc_admin, kc_user["id"], force_verify=True)
 
-    return UserModel.one_user(session, user_id)
+    result = UserModel.one_user(session, user_id)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return result
 
 
 @router.get("/{user_id:str}/email/history", description="Get the past email history")
@@ -896,7 +909,7 @@ async def change_user_password(
         user_id: str,
         data: PasswordUpdateModel,
         authn_user: ArxivUserClaims = Depends(get_authn_user),
-        kc_access_token: Optional[str] = Depends( get_current_user_access_token),
+        kc_access_token: Optional[str] = Depends(get_current_user_access_token),
         remote_ip: str = Depends(get_client_host),
         remote_hostname: str = Depends(get_client_host_name),
         tracking_cookie: Optional[str] = Depends(get_tapir_tracking_cookie),
@@ -905,6 +918,12 @@ async def change_user_password(
 ):
     """
     Change user password
+
+    Changing password by the user:
+      Ues keycloak token to update the password on it.
+
+    Changing password by admin:
+      It needs to use kc_admin and smash it.
     """
     logger.debug("User password changed request. Current %s, data %s, Old password %s, new password %s",
                  authn_user.user_id if authn_user else "No User", user_id,
@@ -915,27 +934,35 @@ async def change_user_password(
     if len(data.old_password) < 8:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Old password is invalid")
 
+    # Is this valid password?
     ok_password, reason = validate_password_strength(data.new_password)
     if not ok_password:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"New password is invalid. {reason}")
 
-    user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
-    if not user:
+    # Tapir objects
+    tapir_user: TapirUser | None = session.query(TapirUser).filter(TapirUser.user_id == user_id).one_or_none()
+    if not tapir_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user id")
 
-    nick: TapirNickname | None = session.query(TapirNickname).filter(
+    tapir_nick: TapirNickname | None = session.query(TapirNickname).filter(
         TapirNickname.user_id == user_id).one_or_none()
-    if nick is None:
+    if tapir_nick is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user id")
+
+    login_name: str = tapir_nick.nickname
 
     pwd: TapirUsersPassword | None = session.query(TapirUsersPassword).filter(
         TapirUsersPassword.user_id == user_id).one_or_none()
+
     if pwd is None:
+        # dummy password record
         pwd = TapirUsersPassword(
             user_id=user_id,
             password_storage=2,
             password_enc=passwords.hash_password(data.old_password),
         )
+        session.add(pwd)
+        session.refresh(pwd)
         pass
 
     # The password is managed by Keycloak - so don't check it against tapir
@@ -943,40 +970,66 @@ async def change_user_password(
     #     domain_user, domain_auth = authenticate.authenticate(user.email, data.old_password)
     # except AuthenticationFailed:
     #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect password")
-
+    admin_override = str(tapir_user.user_id) != str(authn_user.user_id) and authn_user.is_admin
     idp = request.app.extra["idp"]
+    client_secret = request.app.extra['ARXIV_USER_SECRET']
 
-    # if not kc_check_old_password(kc_admin, idp, nick.nickname, data.old_password, idp._ssl_cert_verify):
-    if kc_access_token is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail="Stale access. Please log out/login again.")
-
-    if not await kc_validate_access_token(kc_admin, idp, kc_access_token):
-        if authn_user.user_id == user_id:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                detail="Stale access. Please log out/login again.")
-        if not authn_user.is_admin:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail="Stale access. Please log out/login again.")
-
+    # Is there an account on KC?
     kc_user = None
     try:
         kc_user = kc_admin.get_user(user_id)
     except KeycloakGetError:
         pass
 
-    tapir_password: TapirUsersPassword | None = session.query(TapirUsersPassword).filter(
-        TapirUsersPassword.user_id == user_id).one_or_none()
-    if not tapir_password:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="Password has never been set")
+    # use Admin access to change the user's password
+    if kc_user:
+        if admin_override:
+            # This means - the password is changed on KC but tapir password may not...
+            # I think this is okay, since tapir password isn't uesd.
+            try:
+                kc_admin.set_user_password(kc_user["id"], data.new_password, temporary=False)
+            except KeycloakError as kce:
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(kce)) from kce
 
-    um: UserModel | None = UserModel.one_user(session, str(user_id))
-    if um is None:
-        # This should not happen. The tapir user exists and therefore, this must succeed.
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
+        else:
+            # if not kc_check_old_password(kc_admin, idp, nick.nickname, data.old_password, idp._ssl_cert_verify):
+            if kc_access_token is None:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                    detail="Stale access. Please log out/login again.")
 
-    if authn_user.is_admin and authn_user.user_id != user_id:
+            if not await kc_validate_access_token(kc_admin, idp, kc_access_token):
+                if authn_user.user_id == user_id:
+                    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                        detail="Stale access. Please log out/login again.")
+                if not authn_user.is_admin:
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                        detail="Stale access. Please log out/login again.")
+            kc_cred = kc_login_with_client_credential(kc_admin, login_name, data.old_password, client_secret)
+            if kc_cred is None:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                    detail="Incorrect password")
+            # finally set the user password
+            try:
+                kc_admin.set_user_password(kc_user["id"], data.new_password, temporary=False)
+            except KeycloakError as kce:
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(kce)) from kce
+
+    # else
+    #
+    # I thought of migrating user to KC when the admin changes the password, but I think it is not
+    # necessary. Legacy auth provider fetches the password from the tapir table so if the KC user is None,
+    # update the passsword in tapir table and be done.
+
+    # check the tapir password for non-admin override
+    if kc_user is None and not admin_override:
+        # when tapir password doesn't verify, unauthorized
+        try:
+            passwords.check_password(data.old_password, pwd.password_enc.encode("ascii"))
+        except PasswordAuthenticationFailed as tpe:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password") from tpe
+
+    # Leave the audit record for changing password
+    if admin_override:
         if not authn_user.tapir_session_id:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tapir session is required.")
 
@@ -984,7 +1037,7 @@ async def change_user_password(
         admin_audit(
             session,
             AdminAudit_ChangePassword(
-                authn_user.user_id,
+                authn_user.user_id or "",
                 user_id,
                 tsid,
                 remote_ip=remote_ip,
@@ -992,43 +1045,9 @@ async def change_user_password(
             ), # obv. no payload
         )
 
-    client_secret = request.app.extra['ARXIV_USER_SECRET']
-
-    if not kc_user:
-        try:
-            passwords.check_password(data.old_password, tapir_password.password_enc.encode("ascii"))
-        except:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail="Incorrect password")
-
-        tapir_password.password_enc = passwords.hash_password(data.new_password)
-        session.commit()
-        try:
-            account = AccountInfoModel(
-                id = str(um.id),
-                email_verified=False,
-                email = um.email,
-                username= um.username,
-                first_name = um.first_name,
-                last_name=um.last_name,
-            )
-            migrate_to_keycloak(kc_admin, account, data.new_password, client_secret)
-        finally:
-            pass
-    else:
-        kc_cred = kc_login_with_client_credential(kc_admin, um.username, data.old_password, client_secret)
-        if kc_cred is None:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail="Incorrect password")
-
-        try:
-            kc_admin.set_user_password(kc_user["id"], data.new_password, temporary=False)
-        except Exception as _exc:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Changing password failed")
-
-        pwd.password_enc = passwords.hash_password(data.new_password)
-        session.commit()
-
+    # once all the checks done, update tapir password
+    pwd.password_enc = passwords.hash_password(data.new_password)
+    session.commit()
     logger.info("User password changed successfully. Old password %s, new password %s",
                 sha256_base64_encode(data.old_password), sha256_base64_encode(data.new_password))
 
@@ -1101,7 +1120,7 @@ async def reset_user_password(
                             detail="Failed to migrate a user account")
 
     try:
-        kc_admin.send_update_account(user_id=str(user_id), payload={"requiredActions": ["UPDATE_PASSWORD"]})
+        kc_admin.send_update_account(user_id=str(user_id), payload={"requiredActions": ["UPDATE_PASSWORD"]})  # type: ignore[arg-type]
     except KeycloakGetError as kce:
         detail = "Password reset request did not succeed due to arXiv server problem. " + str(kce)
         ex_body: str = kce.response_body.decode('utf-8') if kce.response_body and isinstance(kce.response_body, bytes) else (
@@ -1543,7 +1562,7 @@ def update_user_authorization(
             tapir_user.flag_deleted = deleted
             # Add audit trail for user deletion/undeletion
             # Note: Using suspend audit events as there are no specific delete audit events
-            audit = AdminAudit_SuspendUser(
+            audit: Any = AdminAudit_SuspendUser(
                 admin_user.user_id,
                 user_id,
                 admin_user.tapir_session_id,
@@ -1764,7 +1783,10 @@ def update_user_authorization(
     if not valid_request:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request")
 
-    return UserModel.one_user(session, user_id)
+    result = UserModel.one_user(session, user_id)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return result
 
 
 class PasswordValidationResult(BaseModel):

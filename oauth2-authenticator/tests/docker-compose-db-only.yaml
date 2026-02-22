@@ -1,14 +1,4 @@
 services:
-  cleanup-db:
-    image: alpine:latest
-    container_name: aaa-api-db-cleanup
-    environment:
-      HOST_UID: ${UID}
-      HOST_GID: ${GID}
-    volumes:
-      - ./mysql-data:/mysql-data
-    command: sh -c "rm -rf /mysql-data/* && chown $${HOST_UID}:$${HOST_GID} /mysql-data"
-
   arxiv-test-db:
     image: mysql:8.4.5
     container_name: aaa-db-arxiv-test-db
@@ -25,9 +15,6 @@ services:
       MYSQL_TCP_PORT: ${ARXIV_DB_PORT}
       PORT: ${ARXIV_DB_PORT}
     network_mode: host
-    depends_on:
-      cleanup-db:
-        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-P", "${ARXIV_DB_PORT}", "--silent"]
       interval: 2s

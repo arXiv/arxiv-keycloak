@@ -4,6 +4,8 @@ FROM quay.io/keycloak/keycloak:26.4.5
 
 USER root
 
+COPY --from=ghcr.io/tarampampam/curl:latest /bin/curl /usr/bin/curl
+
 # SSL certificates to connect to database
 # In local dev, you'd need this to talk to the database on GCP.
 # In prod, this is likely done as proxy

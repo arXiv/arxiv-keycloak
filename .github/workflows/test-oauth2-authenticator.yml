@@ -1,0 +1,71 @@
+name: Test oauth2-authenticator
+
+run-name: "Test oauth2-authenticator ${{ github.ref_name }}"
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "oauth2-authenticator/**"
+      - "bizlogic/**"
+      - "tests/data/test-db-dump/**"
+  pull_request:
+    branches:
+      - master
+    paths:
+      - "oauth2-authenticator/**"
+      - "bizlogic/**"
+      - "tests/data/test-db-dump/**"
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/arxiv/arxiv-keycloak/aaa-test-runner:latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up test environment
+        working-directory: oauth2-authenticator/tests
+        run: |
+          # Set UID/GID for docker-compose to run MySQL as non-root.
+          # When running as root (e.g. in gh act or container jobs), default to 1000
+          # to avoid creating root-owned mysql-data that can't be snapshot/restored.
+          _UID=${HOST_UID:-$(id -u)}
+          _GID=${HOST_GID:-$(id -g)}
+          [ "$_UID" = "0" ] && _UID=1000
+          [ "$_GID" = "0" ] && _GID=1000
+          echo "UID=$_UID" >> $GITHUB_ENV
+          echo "GID=$_GID" >> $GITHUB_ENV
+          # Create mysql-data directory
+          mkdir -p mysql-data
+          chown ${_UID}:${_GID} mysql-data || true
+
+      - name: Run tests
+        working-directory: oauth2-authenticator
+        env:
+          UID: ${{ env.UID }}
+          GID: ${{ env.GID }}
+        run: |
+          pytest tests/ -v --tb=short
+
+      - name: Show docker logs on failure
+        if: failure()
+        working-directory: oauth2-authenticator/tests
+        run: |
+          echo "=== Docker container status ==="
+          docker ps -a
+          echo "=== MySQL logs ==="
+          docker logs aaa-db-arxiv-test-db 2>&1 | tail -100 || true
+          echo "=== Myloader logs ==="
+          docker logs aaa-db-myloader 2>&1 || true
+
+      - name: Cleanup
+        if: always()
+        working-directory: oauth2-authenticator/tests
+        run: |
+          docker compose --env-file=test-env -f docker-compose-db-only.yaml down --remove-orphans || true
